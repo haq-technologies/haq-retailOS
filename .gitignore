@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.swp
+
+# Office lock files
+~$*
+
+# Python
+__pycache__/
+*.pyc
+
+# Dependencies and build output (once the code exists)
+/vendor/
+/node_modules/
+/public/build/
+
+# Secrets and local environment: never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key

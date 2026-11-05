@@ -1,0 +1,3204 @@
+{
+  "version": "1.0",
+  "locked": "2026-11-02",
+  "spec": "HAQ Retail OS Product Spec v1.4",
+  "product": {
+    "company": "HAQ Technology",
+    "name": "HAQ Retail OS",
+    "say": "HAQ",
+    "tiers": [
+      "HAQ Retail OS Core",
+      "HAQ Retail OS Pro"
+    ]
+  },
+  "currency": "NGN",
+  "money_unit": "kobo",
+  "counts": {
+    "categories": 21,
+    "sellable_categories": 20,
+    "brands": 75,
+    "brands_plus_no_brand": 76,
+    "models": 28,
+    "generated_lines_before_pruning": 127
+  },
+  "rules": {
+    "category_required": true,
+    "all_other_facets_optional": true,
+    "brand_unique_case_insensitive": true,
+    "new_brand": "Cashier may type any brand. Receipt prints it as typed. It stays on that item only until a manager or owner adds it to the pick-list from the review queue. The brand box suggests typed brands still waiting for approval.",
+    "who_adds_brand_to_list": [
+      "manager",
+      "owner"
+    ],
+    "no_category_fits": "Picker offers 'Not in the list'. Cashier types the product word (minimum 3 characters). It prints as typed as the category word. Item is pending review. Only the owner creates categories.",
+    "product_word_denylist": [
+      "others",
+      "other",
+      "misc",
+      "miscellaneous",
+      "item",
+      "items",
+      "test",
+      "unlisted",
+      "general",
+      "stuff",
+      "product"
+    ],
+    "who_creates_category": [
+      "owner"
+    ],
+    "cable_length_optional": true,
+    "cable_rated_power_optional": true,
+    "brand_not_multiplied_into_generated_lines": true,
+    "generated_lines_need_prune_review": true
+  },
+  "picklists": {
+    "connector_pairs": {
+      "values": [
+        "Type-C to Type-C",
+        "USB-A to Type-C",
+        "USB-A to Lightning",
+        "Type-C to Lightning",
+        "USB-A to Micro-USB",
+        "3-in-1",
+        "3.5mm AUX"
+      ],
+      "origin": "owner"
+    },
+    "cable_lengths": {
+      "values": [
+        "0.25 m",
+        "1 m",
+        "1.5 m",
+        "2 m",
+        "3 m"
+      ],
+      "origin": "owner"
+    },
+    "cable_rated_power": {
+      "values": [
+        "20W",
+        "60W",
+        "100W"
+      ],
+      "origin": "assistant_suggestion"
+    },
+    "wattages": {
+      "values": [
+        "12W",
+        "18W",
+        "20W",
+        "25W",
+        "33W",
+        "35W",
+        "45W",
+        "60W",
+        "65W",
+        "100W"
+      ],
+      "origin": "owner"
+    },
+    "capacities_mah": {
+      "values": [
+        "5000mAh",
+        "10000mAh",
+        "12500mAh",
+        "15000mAh",
+        "20000mAh",
+        "22500mAh",
+        "27000mAh",
+        "30000mAh",
+        "33000mAh",
+        "40000mAh",
+        "44000mAh",
+        "50000mAh",
+        "55000mAh",
+        "60000mAh",
+        "80000mAh"
+      ],
+      "origin": "owner"
+    },
+    "colours": {
+      "values": [
+        "Black",
+        "White",
+        "Blue",
+        "Red",
+        "Pink",
+        "Green",
+        "Gray",
+        "Purple",
+        "Gold",
+        "Silver",
+        "Orange",
+        "Yellow"
+      ],
+      "origin": "owner",
+      "use": "note on the sale line, not separate items"
+    },
+    "case_types": {
+      "values": [
+        "Silicone",
+        "Transparent",
+        "Leather",
+        "Rugged",
+        "Wallet flip",
+        "Magnetic"
+      ],
+      "origin": "owner: Silicone, Transparent; assistant_suggestion: the rest"
+    },
+    "plug_types": {
+      "values": [
+        "3.5mm",
+        "Type-C",
+        "Lightning"
+      ],
+      "origin": "assistant_suggestion"
+    },
+    "screen_protector_types": {
+      "values": [
+        "Tempered glass",
+        "Hydrogel",
+        "Privacy"
+      ],
+      "origin": "assistant_suggestion"
+    },
+    "holder_kinds": {
+      "values": [
+        "Car",
+        "Desk",
+        "Ring",
+        "Magnetic"
+      ],
+      "origin": "assistant_suggestion"
+    },
+    "memory_sizes_gb": {
+      "values": [
+        "8GB",
+        "16GB",
+        "32GB",
+        "64GB",
+        "128GB",
+        "256GB",
+        "512GB"
+      ],
+      "origin": "assistant_suggestion"
+    },
+    "phone_families": {
+      "values": [
+        "iPhone",
+        "Samsung Galaxy A",
+        "Samsung Galaxy S",
+        "Samsung Galaxy M",
+        "Tecno Spark",
+        "Tecno Camon",
+        "Tecno Pova",
+        "Tecno Phantom",
+        "Infinix Hot",
+        "Infinix Note",
+        "Infinix Smart",
+        "Infinix Zero and GT",
+        "itel A, P and S",
+        "Xiaomi Redmi",
+        "Poco",
+        "Oppo",
+        "Realme",
+        "Huawei and Honor",
+        "Nokia and HMD"
+      ],
+      "origin": "owner",
+      "note": "Exact models come in a second pass"
+    }
+  },
+  "brands": [
+    {
+      "name": "Oraimo",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatches"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "New Age",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Romoss",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Anker",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Baseus",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Ugreen",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "OH Mobility",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Infinix",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatches"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Xiaomi",
+      "alias": [
+        "Redmi"
+      ],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatches"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Samsung",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatches",
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "itel",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "car_chargers",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatches"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Tecno",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatches"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Hoco",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Remax",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Joyroom",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Borofone",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "KLY",
+      "alias": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "car_chargers",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Apple",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatches",
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Mcdodo",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "USAMS",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Sauki",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Shplus",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Amaya",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Mikorean",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Focus",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Poga",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "LCZ",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "GC",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "DataCable",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Rayrock",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Highmarks",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Datech",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Otek",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "IFY",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Finnary",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Soncjy",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Chupez",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "BK",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Elegant",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Loko",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Fil",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Epcor",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "iPhone Charger",
+      "alias": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "AA",
+      "alias": [],
+      "shown_first_in": [
+        "car_chargers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Soundcore",
+      "alias": [
+        "Anker Soundcore"
+      ],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "JBL",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Realme",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatches"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Sony",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Huawei",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatches"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Havit",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "Jabra",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "name": "QCY",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Jamax",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Frezzil",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Bose",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Zealot",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Boombest",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Wuf",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Hapilife",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Baseno",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "HF",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "AI",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "LP",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "BM",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "DV",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "JZ",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "EX",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "UWO",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "PRO",
+      "alias": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "name": "Amazfit",
+      "alias": [],
+      "shown_first_in": [
+        "smartwatches"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Spigen",
+      "alias": [],
+      "shown_first_in": [
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Ringke",
+      "alias": [],
+      "shown_first_in": [
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "UAG",
+      "alias": [],
+      "shown_first_in": [
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Nillkin",
+      "alias": [],
+      "shown_first_in": [
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "name": "Otterbox",
+      "alias": [],
+      "shown_first_in": [
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    }
+  ],
+  "no_brand_value": "No brand",
+  "categories": [
+    {
+      "code": "cables",
+      "name": "Cables",
+      "parent": null,
+      "sellable": true,
+      "word": "Cable",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "connector_pair",
+          "label": "Connector pair",
+          "type": "picklist",
+          "list": "connector_pairs"
+        },
+        {
+          "key": "length",
+          "label": "Length",
+          "type": "picklist",
+          "list": "cable_lengths"
+        },
+        {
+          "key": "rated_power",
+          "label": "Rated power",
+          "type": "picklist",
+          "list": "cable_rated_power"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "connector_pair",
+        "{word}",
+        "length",
+        "rated_power"
+      ],
+      "example": "Anker Type-C to Lightning Cable 1 m",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "wall_chargers",
+      "name": "Wall chargers",
+      "parent": null,
+      "sellable": false,
+      "word": null,
+      "facets": [],
+      "name_order": [],
+      "example": null,
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "charger_head",
+      "name": "Charger head",
+      "parent": "wall_chargers",
+      "sellable": true,
+      "word": "Charger Head",
+      "alias": [
+        "charger head",
+        "wall charger without cable",
+        "adapter"
+      ],
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "wattage",
+          "label": "Wattage",
+          "type": "picklist",
+          "list": "wattages"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "{word}",
+        "wattage"
+      ],
+      "example": "Otek Charger Head 20W",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "complete_charger",
+      "name": "Complete charger",
+      "parent": "wall_chargers",
+      "sellable": true,
+      "word": "Complete Charger",
+      "alias": [
+        "complete charger",
+        "charger and cable",
+        "full charger"
+      ],
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "connector_pair",
+          "label": "Connector pair",
+          "type": "picklist",
+          "list": "connector_pairs"
+        },
+        {
+          "key": "wattage",
+          "label": "Wattage",
+          "type": "picklist",
+          "list": "wattages"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "connector_pair",
+        "{word}",
+        "wattage"
+      ],
+      "example": "Oraimo Type-C to Lightning Complete Charger 20W",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "car_chargers",
+      "name": "Car chargers",
+      "parent": null,
+      "sellable": true,
+      "word": "Car Charger",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        },
+        {
+          "key": "wattage",
+          "label": "Wattage",
+          "type": "picklist",
+          "list": "wattages"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}",
+        "wattage"
+      ],
+      "example": "KLY Car Charger 12W",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "wireless_chargers",
+      "name": "Wireless chargers",
+      "parent": null,
+      "sellable": true,
+      "word": "Wireless Charger",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        },
+        {
+          "key": "wattage",
+          "label": "Wattage",
+          "type": "picklist",
+          "list": "wattages"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}",
+        "wattage"
+      ],
+      "example": "Baseus Wireless Charger 15W",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "power_banks",
+      "name": "Power banks",
+      "parent": null,
+      "sellable": true,
+      "word": "Power Bank",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        },
+        {
+          "key": "capacity",
+          "label": "Capacity",
+          "type": "picklist",
+          "list": "capacities_mah"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}",
+        "capacity"
+      ],
+      "example": "Oraimo Traveler 4 Power Bank 20000mAh",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "earbuds",
+      "name": "Earbuds and earpods",
+      "parent": null,
+      "sellable": true,
+      "word": "Earbuds",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}"
+      ],
+      "example": "Oraimo FreePods 3C Earbuds",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "wired_earphones",
+      "name": "Wired earphones and handsfree",
+      "parent": null,
+      "sellable": true,
+      "word": "Earphones",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        },
+        {
+          "key": "plug",
+          "label": "Plug type",
+          "type": "picklist",
+          "list": "plug_types"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}",
+        "plug"
+      ],
+      "example": "Q10 Earphones 3.5mm",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "neckband",
+      "name": "Neckband earphones",
+      "parent": null,
+      "sellable": true,
+      "word": "Neckband Earphones",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}"
+      ],
+      "example": "Oraimo Neckband Earphones",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "headphones",
+      "name": "Headphones",
+      "parent": null,
+      "sellable": true,
+      "word": "Headphones",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}"
+      ],
+      "example": "JBL Headphones",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "bluetooth_speakers",
+      "name": "Bluetooth speakers",
+      "parent": null,
+      "sellable": true,
+      "word": "Bluetooth Speaker",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}"
+      ],
+      "example": "Zealot S32 Bluetooth Speaker",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "smartwatches",
+      "name": "Smartwatches and bands",
+      "parent": null,
+      "sellable": true,
+      "word": "Smartwatch",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        },
+        {
+          "key": "kind",
+          "label": "Kind",
+          "type": "picklist"
+        }
+      ],
+      "kind_values": [
+        "Smartwatch",
+        "Band"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "kind_or_word"
+      ],
+      "example": "Infinix XWatch 3 WE Smartwatch",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "cases",
+      "name": "Phone cases and covers",
+      "parent": null,
+      "sellable": true,
+      "word": "Case",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "phone_model",
+          "label": "Phone model",
+          "type": "text"
+        },
+        {
+          "key": "case_type",
+          "label": "Case type",
+          "type": "picklist",
+          "list": "case_types"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "phone_model",
+        "{word}",
+        "case_type"
+      ],
+      "example": "iPhone 13 Case Transparent",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "screen_protectors",
+      "name": "Screen protectors",
+      "parent": null,
+      "sellable": true,
+      "word": "Screen Protector",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "phone_model",
+          "label": "Phone model",
+          "type": "text"
+        },
+        {
+          "key": "type",
+          "label": "Type",
+          "type": "picklist",
+          "list": "screen_protector_types"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "phone_model",
+        "{word}",
+        "type"
+      ],
+      "example": "Tecno Spark 20 Screen Protector",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "phone_holders",
+      "name": "Phone holders and stands",
+      "parent": null,
+      "sellable": true,
+      "word": "Phone Holder",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "kind",
+          "label": "Kind",
+          "type": "picklist",
+          "list": "holder_kinds"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "kind",
+        "{word}"
+      ],
+      "example": "Baseus Car Phone Holder",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "memory",
+      "name": "Memory cards and flash drives",
+      "parent": null,
+      "sellable": true,
+      "word": null,
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "kind",
+          "label": "Kind",
+          "type": "picklist"
+        },
+        {
+          "key": "capacity",
+          "label": "Capacity",
+          "type": "picklist",
+          "list": "memory_sizes_gb"
+        }
+      ],
+      "kind_values": [
+        "Memory Card",
+        "Flash Drive"
+      ],
+      "name_order": [
+        "brand",
+        "kind",
+        "capacity"
+      ],
+      "example": "Sony Memory Card 64GB",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "batteries",
+      "name": "Replacement batteries",
+      "parent": null,
+      "sellable": true,
+      "word": "Battery",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "phone_model",
+          "label": "Phone model",
+          "type": "text"
+        }
+      ],
+      "name_order": [
+        "brand",
+        "phone_model",
+        "{word}"
+      ],
+      "example": "Tecno Battery",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "selfie_lights_tripods",
+      "name": "Selfie sticks, ring lights, tripods",
+      "parent": null,
+      "sellable": true,
+      "word": null,
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "kind",
+          "label": "Kind",
+          "type": "picklist"
+        },
+        {
+          "key": "size",
+          "label": "Size",
+          "type": "text"
+        }
+      ],
+      "kind_values": [
+        "Selfie Stick",
+        "Ring Light",
+        "Tripod"
+      ],
+      "name_order": [
+        "brand",
+        "kind",
+        "size"
+      ],
+      "example": "Ring Light 10 inch",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "adapters",
+      "name": "Adapters (OTG, AUX, splitters)",
+      "parent": null,
+      "sellable": true,
+      "word": null,
+      "facets": [
+        {
+          "key": "kind",
+          "label": "Kind",
+          "type": "picklist"
+        },
+        {
+          "key": "connector",
+          "label": "Connector",
+          "type": "picklist"
+        }
+      ],
+      "kind_values": [
+        "OTG Adapter",
+        "AUX Adapter",
+        "Splitter"
+      ],
+      "connector_values": [
+        "Type-C",
+        "USB-A",
+        "Lightning",
+        "Micro-USB",
+        "3.5mm"
+      ],
+      "name_order": [
+        "kind",
+        "connector"
+      ],
+      "example": "OTG Adapter Type-C",
+      "fits_all_facets_optional": true
+    },
+    {
+      "code": "computer_accessories",
+      "name": "Computer accessories (mouse, keyboard, hubs)",
+      "parent": null,
+      "sellable": true,
+      "word": null,
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "kind",
+          "label": "Kind",
+          "type": "picklist"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "kind_values": [
+        "Mouse",
+        "Keyboard",
+        "USB Hub"
+      ],
+      "name_order": [
+        "brand",
+        "kind",
+        "model"
+      ],
+      "example": "Mouse Wireless",
+      "fits_all_facets_optional": true
+    }
+  ],
+  "models": [
+    {
+      "brand": null,
+      "name": "Pro 5s",
+      "categories": [
+        "earbuds",
+        "wired_earphones"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "brand": null,
+      "name": "Q10",
+      "categories": [
+        "earbuds",
+        "wired_earphones"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "brand": null,
+      "name": "S195",
+      "categories": [
+        "earbuds",
+        "wired_earphones"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "brand": null,
+      "name": "G133",
+      "categories": [
+        "earbuds",
+        "wired_earphones"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "brand": null,
+      "name": "VIP",
+      "categories": [
+        "earbuds",
+        "wired_earphones"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "brand": null,
+      "name": "J7",
+      "categories": [
+        "car_chargers"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "brand": null,
+      "name": "car mp3 s8",
+      "categories": [
+        "car_chargers"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "FreePods 3",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "FreePods 3C",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "FreePods 4",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "SpaceBuds",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "Traveler 4",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "Traveler Link",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "Slice Link",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "PowerFlow",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "Toast",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "PowerCube",
+      "categories": [
+        "charger_head",
+        "complete_charger"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "FastLine",
+      "categories": [
+        "cables"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "Undo",
+      "categories": [
+        "cables"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "Braid",
+      "categories": [
+        "cables"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "SilkLine",
+      "categories": [
+        "cables"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "Candy",
+      "categories": [
+        "cables"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "SpaceBox",
+      "categories": [
+        "bluetooth_speakers"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "BoomPop",
+      "categories": [
+        "headphones"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Oraimo",
+      "name": "Watch",
+      "categories": [
+        "smartwatches"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "brand": "Infinix",
+      "name": "XBuds NC",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "accessory line from Infinix launch coverage"
+    },
+    {
+      "brand": "Infinix",
+      "name": "XWatch 3 WE",
+      "categories": [
+        "smartwatches"
+      ],
+      "note": "accessory line from Infinix launch coverage"
+    },
+    {
+      "brand": "Infinix",
+      "name": "XPower 20 GO",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "accessory line from Infinix launch coverage"
+    }
+  ],
+  "generated_lines": [
+    {
+      "category": "cables",
+      "name": "Type-C to Type-C Cable",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "length": null
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Type-C Cable 0.25 m",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "length": "0.25 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Type-C Cable 1 m",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "length": "1 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Type-C Cable 1.5 m",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "length": "1.5 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Type-C Cable 2 m",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "length": "2 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Type-C Cable 3 m",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "length": "3 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Type-C Cable",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "length": null
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Type-C Cable 0.25 m",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "length": "0.25 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Type-C Cable 1 m",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "length": "1 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Type-C Cable 1.5 m",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "length": "1.5 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Type-C Cable 2 m",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "length": "2 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Type-C Cable 3 m",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "length": "3 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Lightning Cable",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "length": null
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Lightning Cable 0.25 m",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "length": "0.25 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Lightning Cable 1 m",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "length": "1 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Lightning Cable 1.5 m",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "length": "1.5 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Lightning Cable 2 m",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "length": "2 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Lightning Cable 3 m",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "length": "3 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Lightning Cable",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "length": null
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Lightning Cable 0.25 m",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "length": "0.25 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Lightning Cable 1 m",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "length": "1 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Lightning Cable 1.5 m",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "length": "1.5 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Lightning Cable 2 m",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "length": "2 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "Type-C to Lightning Cable 3 m",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "length": "3 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Micro-USB Cable",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "length": null
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Micro-USB Cable 0.25 m",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "length": "0.25 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Micro-USB Cable 1 m",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "length": "1 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Micro-USB Cable 1.5 m",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "length": "1.5 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Micro-USB Cable 2 m",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "length": "2 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "USB-A to Micro-USB Cable 3 m",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "length": "3 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3-in-1 Cable",
+      "attributes": {
+        "connector_pair": "3-in-1",
+        "length": null
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3-in-1 Cable 0.25 m",
+      "attributes": {
+        "connector_pair": "3-in-1",
+        "length": "0.25 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3-in-1 Cable 1 m",
+      "attributes": {
+        "connector_pair": "3-in-1",
+        "length": "1 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3-in-1 Cable 1.5 m",
+      "attributes": {
+        "connector_pair": "3-in-1",
+        "length": "1.5 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3-in-1 Cable 2 m",
+      "attributes": {
+        "connector_pair": "3-in-1",
+        "length": "2 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3-in-1 Cable 3 m",
+      "attributes": {
+        "connector_pair": "3-in-1",
+        "length": "3 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3.5mm AUX Cable",
+      "attributes": {
+        "connector_pair": "3.5mm AUX",
+        "length": null
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3.5mm AUX Cable 0.25 m",
+      "attributes": {
+        "connector_pair": "3.5mm AUX",
+        "length": "0.25 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3.5mm AUX Cable 1 m",
+      "attributes": {
+        "connector_pair": "3.5mm AUX",
+        "length": "1 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3.5mm AUX Cable 1.5 m",
+      "attributes": {
+        "connector_pair": "3.5mm AUX",
+        "length": "1.5 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3.5mm AUX Cable 2 m",
+      "attributes": {
+        "connector_pair": "3.5mm AUX",
+        "length": "2 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "cables",
+      "name": "3.5mm AUX Cable 3 m",
+      "attributes": {
+        "connector_pair": "3.5mm AUX",
+        "length": "3 m"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "charger_head",
+      "name": "Charger Head 12W",
+      "attributes": {
+        "wattage": "12W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "charger_head",
+      "name": "Charger Head 18W",
+      "attributes": {
+        "wattage": "18W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "charger_head",
+      "name": "Charger Head 20W",
+      "attributes": {
+        "wattage": "20W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "charger_head",
+      "name": "Charger Head 25W",
+      "attributes": {
+        "wattage": "25W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "charger_head",
+      "name": "Charger Head 33W",
+      "attributes": {
+        "wattage": "33W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "charger_head",
+      "name": "Charger Head 35W",
+      "attributes": {
+        "wattage": "35W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "charger_head",
+      "name": "Charger Head 45W",
+      "attributes": {
+        "wattage": "45W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "charger_head",
+      "name": "Charger Head 60W",
+      "attributes": {
+        "wattage": "60W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "charger_head",
+      "name": "Charger Head 65W",
+      "attributes": {
+        "wattage": "65W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "charger_head",
+      "name": "Charger Head 100W",
+      "attributes": {
+        "wattage": "100W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Type-C Complete Charger 12W",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "wattage": "12W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Type-C Complete Charger 18W",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "wattage": "18W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Type-C Complete Charger 20W",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "wattage": "20W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Type-C Complete Charger 25W",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "wattage": "25W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Type-C Complete Charger 33W",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "wattage": "33W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Type-C Complete Charger 35W",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "wattage": "35W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Type-C Complete Charger 45W",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "wattage": "45W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Type-C Complete Charger 60W",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "wattage": "60W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Type-C Complete Charger 65W",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "wattage": "65W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Type-C Complete Charger 100W",
+      "attributes": {
+        "connector_pair": "Type-C to Type-C",
+        "wattage": "100W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Type-C Complete Charger 12W",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "wattage": "12W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Type-C Complete Charger 18W",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "wattage": "18W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Type-C Complete Charger 20W",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "wattage": "20W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Type-C Complete Charger 25W",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "wattage": "25W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Type-C Complete Charger 33W",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "wattage": "33W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Type-C Complete Charger 35W",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "wattage": "35W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Type-C Complete Charger 45W",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "wattage": "45W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Type-C Complete Charger 60W",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "wattage": "60W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Type-C Complete Charger 65W",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "wattage": "65W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Type-C Complete Charger 100W",
+      "attributes": {
+        "connector_pair": "USB-A to Type-C",
+        "wattage": "100W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Lightning Complete Charger 12W",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "wattage": "12W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Lightning Complete Charger 18W",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "wattage": "18W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Lightning Complete Charger 20W",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "wattage": "20W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Lightning Complete Charger 25W",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "wattage": "25W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Lightning Complete Charger 33W",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "wattage": "33W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Lightning Complete Charger 35W",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "wattage": "35W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Lightning Complete Charger 45W",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "wattage": "45W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Lightning Complete Charger 60W",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "wattage": "60W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Lightning Complete Charger 65W",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "wattage": "65W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Lightning Complete Charger 100W",
+      "attributes": {
+        "connector_pair": "USB-A to Lightning",
+        "wattage": "100W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Lightning Complete Charger 12W",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "wattage": "12W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Lightning Complete Charger 18W",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "wattage": "18W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Lightning Complete Charger 20W",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "wattage": "20W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Lightning Complete Charger 25W",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "wattage": "25W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Lightning Complete Charger 33W",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "wattage": "33W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Lightning Complete Charger 35W",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "wattage": "35W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Lightning Complete Charger 45W",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "wattage": "45W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Lightning Complete Charger 60W",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "wattage": "60W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Lightning Complete Charger 65W",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "wattage": "65W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "Type-C to Lightning Complete Charger 100W",
+      "attributes": {
+        "connector_pair": "Type-C to Lightning",
+        "wattage": "100W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Micro-USB Complete Charger 12W",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "wattage": "12W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Micro-USB Complete Charger 18W",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "wattage": "18W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Micro-USB Complete Charger 20W",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "wattage": "20W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Micro-USB Complete Charger 25W",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "wattage": "25W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Micro-USB Complete Charger 33W",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "wattage": "33W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Micro-USB Complete Charger 35W",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "wattage": "35W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Micro-USB Complete Charger 45W",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "wattage": "45W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Micro-USB Complete Charger 60W",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "wattage": "60W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Micro-USB Complete Charger 65W",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "wattage": "65W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "complete_charger",
+      "name": "USB-A to Micro-USB Complete Charger 100W",
+      "attributes": {
+        "connector_pair": "USB-A to Micro-USB",
+        "wattage": "100W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "car_chargers",
+      "name": "Car Charger 12W",
+      "attributes": {
+        "wattage": "12W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "car_chargers",
+      "name": "Car Charger 18W",
+      "attributes": {
+        "wattage": "18W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "car_chargers",
+      "name": "Car Charger 20W",
+      "attributes": {
+        "wattage": "20W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "car_chargers",
+      "name": "Car Charger 25W",
+      "attributes": {
+        "wattage": "25W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "car_chargers",
+      "name": "Car Charger 33W",
+      "attributes": {
+        "wattage": "33W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "car_chargers",
+      "name": "Car Charger 35W",
+      "attributes": {
+        "wattage": "35W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "car_chargers",
+      "name": "Car Charger 45W",
+      "attributes": {
+        "wattage": "45W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "car_chargers",
+      "name": "Car Charger 60W",
+      "attributes": {
+        "wattage": "60W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "car_chargers",
+      "name": "Car Charger 65W",
+      "attributes": {
+        "wattage": "65W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "car_chargers",
+      "name": "Car Charger 100W",
+      "attributes": {
+        "wattage": "100W"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 5000mAh",
+      "attributes": {
+        "capacity": "5000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 10000mAh",
+      "attributes": {
+        "capacity": "10000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 12500mAh",
+      "attributes": {
+        "capacity": "12500mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 15000mAh",
+      "attributes": {
+        "capacity": "15000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 20000mAh",
+      "attributes": {
+        "capacity": "20000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 22500mAh",
+      "attributes": {
+        "capacity": "22500mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 27000mAh",
+      "attributes": {
+        "capacity": "27000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 30000mAh",
+      "attributes": {
+        "capacity": "30000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 33000mAh",
+      "attributes": {
+        "capacity": "33000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 40000mAh",
+      "attributes": {
+        "capacity": "40000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 44000mAh",
+      "attributes": {
+        "capacity": "44000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 50000mAh",
+      "attributes": {
+        "capacity": "50000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 55000mAh",
+      "attributes": {
+        "capacity": "55000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 60000mAh",
+      "attributes": {
+        "capacity": "60000mAh"
+      },
+      "needs_prune_review": true
+    },
+    {
+      "category": "power_banks",
+      "name": "Power Bank 80000mAh",
+      "attributes": {
+        "capacity": "80000mAh"
+      },
+      "needs_prune_review": true
+    }
+  ]
+}

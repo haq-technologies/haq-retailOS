@@ -1,0 +1,46 @@
+# CI for HAQ Retail OS. For now it guards the documents and the catalogue; the Laravel, PostgreSQL and
+# Playwright jobs join when the application code exists (PLAN.md, Phase 2).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    name: docs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Rebuild catalogue v1.1 and compare with the committed files
+        run: |
+          out="$RUNNER_TEMP/catalogue"
+          mkdir -p "$out"
+          python3 -I tools/catalogue/build_catalogue_v11.py docs/archive/starter-catalogue-v1.json \
+            "$out/starter-catalogue-v1.1.json" "$out/starter-catalogue-v1.1.xlsx" "$out/appendix-c-starter-catalogue-v1.1.md"
+          for f in starter-catalogue-v1.1.json starter-catalogue-v1.1.xlsx appendix-c-starter-catalogue-v1.1.md; do
+            cmp "$out/$f" "docs/catalogue/$f" || { echo "::error file=docs/catalogue/$f::Generated file is out of date. Rerun the build command in CLAUDE.md and commit the result."; exit 1; }
+          done
+
+      - name: Verify catalogue v1.1
+        run: |
+          python3 -I tools/catalogue/verify_v11.py docs/archive/starter-catalogue-v1.json \
+            docs/catalogue/starter-catalogue-v1.1.json docs/catalogue/starter-catalogue-v1.1.xlsx \
+            docs/catalogue/appendix-c-starter-catalogue-v1.1.md
+
+      - name: Check Markdown tables and links
+        run: python3 -I tools/docs/check_markdown.py

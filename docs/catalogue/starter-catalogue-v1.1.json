@@ -1,0 +1,5528 @@
+{
+  "schema_version": 2,
+  "version": "1.1",
+  "status": "Draft for the shop owner to re-confirm",
+  "based_on": {
+    "version": "1.0",
+    "locked": "2026-11-02"
+  },
+  "drafted": "2026-11-05",
+  "locked": null,
+  "spec": "HAQ Retail OS Spec v1.5 (docs/spec/retail-os-spec-v1.5.md)",
+  "product": {
+    "company": "HAQ Technology",
+    "name": "HAQ Retail OS",
+    "say": "HAQ",
+    "tiers": [
+      "HAQ Retail OS Core",
+      "HAQ Retail OS Pro"
+    ]
+  },
+  "currency": "NGN",
+  "money_unit": "kobo",
+  "counts": {
+    "categories": 34,
+    "sellable_categories": 28,
+    "parent_categories": 6,
+    "brands": 73,
+    "brands_plus_no_brand": 74,
+    "models": 29,
+    "picklists": 15,
+    "phone_families": 19,
+    "phone_models": 466,
+    "generator_rules": 5,
+    "generated_shapes_on_demand": 127
+  },
+  "rules": {
+    "category_required": true,
+    "all_other_facets_optional": true,
+    "brand_unique_case_insensitive": true,
+    "new_brand": "Cashier may type any brand. Receipt prints it as typed. It stays on that item only until a manager or owner adds it to the pick-list from the review queue. The brand box suggests typed brands still waiting for approval.",
+    "who_adds_brand_to_list": [
+      "manager",
+      "owner"
+    ],
+    "no_category_fits": "Picker offers 'Not in the list'. Cashier types the product word (minimum 3 characters). It prints as typed as the category word. Item is pending review. Only the owner creates categories.",
+    "product_word_denylist": [
+      "others",
+      "other",
+      "misc",
+      "miscellaneous",
+      "item",
+      "items",
+      "test",
+      "unlisted",
+      "general",
+      "stuff",
+      "product"
+    ],
+    "who_creates_category": [
+      "owner"
+    ],
+    "cable_length_optional": true,
+    "cable_rated_power_optional": true,
+    "brand_not_multiplied_into_generated_lines": true,
+    "generated_lines_built_on_demand": true,
+    "every_sellable_category_has_a_word": true,
+    "new_phone_model": "Cashier may type a phone model that is not in the list. It prints as typed, stays on that item, and joins the list when a manager or the owner approves it.",
+    "who_adds_phone_model_to_list": [
+      "manager",
+      "owner"
+    ],
+    "made_by_defaults_to_no_brand": [
+      "cases",
+      "screen_protectors",
+      "batteries"
+    ],
+    "units_written_without_space": true
+  },
+  "picklists": {
+    "connector_pairs": {
+      "label": "Connector pair",
+      "origin": "owner",
+      "values": [
+        {
+          "id": "connector_pairs.type-c-to-type-c",
+          "name": "Type-C to Type-C"
+        },
+        {
+          "id": "connector_pairs.usb-a-to-type-c",
+          "name": "USB-A to Type-C"
+        },
+        {
+          "id": "connector_pairs.usb-a-to-lightning",
+          "name": "USB-A to Lightning",
+          "aliases": [
+            "iphone charger",
+            "iphone"
+          ]
+        },
+        {
+          "id": "connector_pairs.type-c-to-lightning",
+          "name": "Type-C to Lightning",
+          "aliases": [
+            "iphone charger",
+            "iphone"
+          ]
+        },
+        {
+          "id": "connector_pairs.usb-a-to-micro-usb",
+          "name": "USB-A to Micro-USB"
+        },
+        {
+          "id": "connector_pairs.3-in-1",
+          "name": "3-in-1"
+        },
+        {
+          "id": "connector_pairs.3-5mm-aux",
+          "name": "3.5mm AUX"
+        }
+      ]
+    },
+    "cable_lengths": {
+      "label": "Cable length",
+      "origin": "owner",
+      "values": [
+        {
+          "id": "cable_lengths.0-25m",
+          "name": "0.25m"
+        },
+        {
+          "id": "cable_lengths.1m",
+          "name": "1m"
+        },
+        {
+          "id": "cable_lengths.1-5m",
+          "name": "1.5m"
+        },
+        {
+          "id": "cable_lengths.2m",
+          "name": "2m"
+        },
+        {
+          "id": "cable_lengths.3m",
+          "name": "3m"
+        }
+      ]
+    },
+    "cable_rated_power": {
+      "label": "Cable rated power",
+      "origin": "assistant_suggestion",
+      "values": [
+        {
+          "id": "cable_rated_power.20w",
+          "name": "20W"
+        },
+        {
+          "id": "cable_rated_power.60w",
+          "name": "60W"
+        },
+        {
+          "id": "cable_rated_power.100w",
+          "name": "100W"
+        }
+      ]
+    },
+    "wattages": {
+      "label": "Wattage",
+      "origin": "owner",
+      "values": [
+        {
+          "id": "wattages.12w",
+          "name": "12W"
+        },
+        {
+          "id": "wattages.18w",
+          "name": "18W"
+        },
+        {
+          "id": "wattages.20w",
+          "name": "20W"
+        },
+        {
+          "id": "wattages.25w",
+          "name": "25W"
+        },
+        {
+          "id": "wattages.33w",
+          "name": "33W"
+        },
+        {
+          "id": "wattages.35w",
+          "name": "35W"
+        },
+        {
+          "id": "wattages.45w",
+          "name": "45W"
+        },
+        {
+          "id": "wattages.60w",
+          "name": "60W"
+        },
+        {
+          "id": "wattages.65w",
+          "name": "65W"
+        },
+        {
+          "id": "wattages.100w",
+          "name": "100W"
+        }
+      ],
+      "note": "Shared by charger heads, complete chargers, car chargers and wireless chargers (Q19)"
+    },
+    "capacities_mah": {
+      "label": "Capacity (mAh)",
+      "origin": "owner",
+      "values": [
+        {
+          "id": "capacities_mah.5000mah",
+          "name": "5000mAh"
+        },
+        {
+          "id": "capacities_mah.10000mah",
+          "name": "10000mAh"
+        },
+        {
+          "id": "capacities_mah.12500mah",
+          "name": "12500mAh"
+        },
+        {
+          "id": "capacities_mah.15000mah",
+          "name": "15000mAh"
+        },
+        {
+          "id": "capacities_mah.20000mah",
+          "name": "20000mAh"
+        },
+        {
+          "id": "capacities_mah.22500mah",
+          "name": "22500mAh"
+        },
+        {
+          "id": "capacities_mah.27000mah",
+          "name": "27000mAh"
+        },
+        {
+          "id": "capacities_mah.30000mah",
+          "name": "30000mAh"
+        },
+        {
+          "id": "capacities_mah.33000mah",
+          "name": "33000mAh"
+        },
+        {
+          "id": "capacities_mah.40000mah",
+          "name": "40000mAh"
+        },
+        {
+          "id": "capacities_mah.44000mah",
+          "name": "44000mAh"
+        },
+        {
+          "id": "capacities_mah.50000mah",
+          "name": "50000mAh"
+        },
+        {
+          "id": "capacities_mah.55000mah",
+          "name": "55000mAh"
+        },
+        {
+          "id": "capacities_mah.60000mah",
+          "name": "60000mAh"
+        },
+        {
+          "id": "capacities_mah.80000mah",
+          "name": "80000mAh"
+        }
+      ]
+    },
+    "colours": {
+      "label": "Colour",
+      "origin": "owner",
+      "values": [
+        {
+          "id": "colours.black",
+          "name": "Black"
+        },
+        {
+          "id": "colours.white",
+          "name": "White"
+        },
+        {
+          "id": "colours.blue",
+          "name": "Blue"
+        },
+        {
+          "id": "colours.red",
+          "name": "Red"
+        },
+        {
+          "id": "colours.pink",
+          "name": "Pink"
+        },
+        {
+          "id": "colours.green",
+          "name": "Green"
+        },
+        {
+          "id": "colours.grey",
+          "name": "Grey",
+          "aliases": [
+            "gray"
+          ]
+        },
+        {
+          "id": "colours.purple",
+          "name": "Purple"
+        },
+        {
+          "id": "colours.gold",
+          "name": "Gold"
+        },
+        {
+          "id": "colours.silver",
+          "name": "Silver"
+        },
+        {
+          "id": "colours.orange",
+          "name": "Orange"
+        },
+        {
+          "id": "colours.yellow",
+          "name": "Yellow"
+        }
+      ],
+      "note": "A note on the sale line, never a separate item"
+    },
+    "case_types": {
+      "label": "Pouch type",
+      "origin": "owner: Silicone, Transparent; assistant_suggestion: the rest",
+      "values": [
+        {
+          "id": "case_types.silicone",
+          "name": "Silicone"
+        },
+        {
+          "id": "case_types.transparent",
+          "name": "Transparent"
+        },
+        {
+          "id": "case_types.leather",
+          "name": "Leather"
+        },
+        {
+          "id": "case_types.rugged",
+          "name": "Rugged"
+        },
+        {
+          "id": "case_types.wallet-flip",
+          "name": "Wallet Flip"
+        },
+        {
+          "id": "case_types.magnetic",
+          "name": "Magnetic"
+        }
+      ]
+    },
+    "plug_types": {
+      "label": "Plug type",
+      "origin": "assistant_suggestion",
+      "values": [
+        {
+          "id": "plug_types.3-5mm",
+          "name": "3.5mm"
+        },
+        {
+          "id": "plug_types.type-c",
+          "name": "Type-C"
+        },
+        {
+          "id": "plug_types.lightning",
+          "name": "Lightning"
+        }
+      ]
+    },
+    "screen_protector_types": {
+      "label": "Protector type",
+      "origin": "assistant_suggestion",
+      "values": [
+        {
+          "id": "screen_protector_types.tempered-glass",
+          "name": "Tempered Glass"
+        },
+        {
+          "id": "screen_protector_types.hydrogel",
+          "name": "Hydrogel"
+        },
+        {
+          "id": "screen_protector_types.privacy",
+          "name": "Privacy"
+        }
+      ]
+    },
+    "holder_kinds": {
+      "label": "Holder kind",
+      "origin": "assistant_suggestion",
+      "values": [
+        {
+          "id": "holder_kinds.car",
+          "name": "Car"
+        },
+        {
+          "id": "holder_kinds.desk",
+          "name": "Desk"
+        },
+        {
+          "id": "holder_kinds.ring",
+          "name": "Ring"
+        },
+        {
+          "id": "holder_kinds.magnetic",
+          "name": "Magnetic"
+        }
+      ]
+    },
+    "memory_sizes_gb": {
+      "label": "Capacity (GB)",
+      "origin": "assistant_suggestion",
+      "values": [
+        {
+          "id": "memory_sizes_gb.8gb",
+          "name": "8GB"
+        },
+        {
+          "id": "memory_sizes_gb.16gb",
+          "name": "16GB"
+        },
+        {
+          "id": "memory_sizes_gb.32gb",
+          "name": "32GB"
+        },
+        {
+          "id": "memory_sizes_gb.64gb",
+          "name": "64GB"
+        },
+        {
+          "id": "memory_sizes_gb.128gb",
+          "name": "128GB"
+        },
+        {
+          "id": "memory_sizes_gb.256gb",
+          "name": "256GB"
+        },
+        {
+          "id": "memory_sizes_gb.512gb",
+          "name": "512GB"
+        }
+      ]
+    },
+    "adapter_connectors": {
+      "label": "Adapter connector",
+      "origin": "assistant_suggestion (v1 inline values)",
+      "values": [
+        {
+          "id": "adapter_connectors.type-c",
+          "name": "Type-C"
+        },
+        {
+          "id": "adapter_connectors.usb-a",
+          "name": "USB-A"
+        },
+        {
+          "id": "adapter_connectors.lightning",
+          "name": "Lightning"
+        },
+        {
+          "id": "adapter_connectors.micro-usb",
+          "name": "Micro-USB"
+        },
+        {
+          "id": "adapter_connectors.3-5mm",
+          "name": "3.5mm"
+        }
+      ]
+    },
+    "connectivity": {
+      "label": "Connectivity",
+      "origin": "assistant_suggestion",
+      "values": [
+        {
+          "id": "connectivity.wired",
+          "name": "Wired"
+        },
+        {
+          "id": "connectivity.wireless",
+          "name": "Wireless"
+        },
+        {
+          "id": "connectivity.bluetooth",
+          "name": "Bluetooth"
+        }
+      ]
+    },
+    "phone_families": {
+      "label": "Phone family",
+      "origin": "owner",
+      "values": [
+        {
+          "id": "phone_families.iphone",
+          "name": "iPhone"
+        },
+        {
+          "id": "phone_families.samsung-galaxy-a",
+          "name": "Samsung Galaxy A"
+        },
+        {
+          "id": "phone_families.samsung-galaxy-s",
+          "name": "Samsung Galaxy S"
+        },
+        {
+          "id": "phone_families.samsung-galaxy-m",
+          "name": "Samsung Galaxy M"
+        },
+        {
+          "id": "phone_families.tecno-spark",
+          "name": "Tecno Spark"
+        },
+        {
+          "id": "phone_families.tecno-camon",
+          "name": "Tecno Camon"
+        },
+        {
+          "id": "phone_families.tecno-pova",
+          "name": "Tecno Pova"
+        },
+        {
+          "id": "phone_families.tecno-phantom",
+          "name": "Tecno Phantom"
+        },
+        {
+          "id": "phone_families.infinix-hot",
+          "name": "Infinix Hot"
+        },
+        {
+          "id": "phone_families.infinix-note",
+          "name": "Infinix Note"
+        },
+        {
+          "id": "phone_families.infinix-smart",
+          "name": "Infinix Smart"
+        },
+        {
+          "id": "phone_families.infinix-zero-and-gt",
+          "name": "Infinix Zero and GT"
+        },
+        {
+          "id": "phone_families.itel-a-p-and-s",
+          "name": "itel A, P and S"
+        },
+        {
+          "id": "phone_families.xiaomi-redmi",
+          "name": "Xiaomi Redmi"
+        },
+        {
+          "id": "phone_families.poco",
+          "name": "Poco"
+        },
+        {
+          "id": "phone_families.oppo",
+          "name": "Oppo"
+        },
+        {
+          "id": "phone_families.realme",
+          "name": "Realme"
+        },
+        {
+          "id": "phone_families.huawei-and-honor",
+          "name": "Huawei and Honor"
+        },
+        {
+          "id": "phone_families.nokia-and-hmd",
+          "name": "Nokia and HMD"
+        }
+      ],
+      "note": "First level of the phone-model picker; family names are never printed"
+    },
+    "phone_models": {
+      "label": "Phone model",
+      "origin": "assistant_draft",
+      "group_by": "phone_families",
+      "values": [
+        {
+          "id": "phone_models.iphone-6",
+          "name": "iPhone 6",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-6-plus",
+          "name": "iPhone 6 Plus",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-6s",
+          "name": "iPhone 6s",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-6s-plus",
+          "name": "iPhone 6s Plus",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-7",
+          "name": "iPhone 7",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-7-plus",
+          "name": "iPhone 7 Plus",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-8",
+          "name": "iPhone 8",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-8-plus",
+          "name": "iPhone 8 Plus",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-x",
+          "name": "iPhone X",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-xr",
+          "name": "iPhone XR",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-xs",
+          "name": "iPhone XS",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-xs-max",
+          "name": "iPhone XS Max",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-se-2020",
+          "name": "iPhone SE 2020",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-11",
+          "name": "iPhone 11",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-11-pro",
+          "name": "iPhone 11 Pro",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-11-pro-max",
+          "name": "iPhone 11 Pro Max",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-12-mini",
+          "name": "iPhone 12 mini",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-12",
+          "name": "iPhone 12",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-12-pro",
+          "name": "iPhone 12 Pro",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-12-pro-max",
+          "name": "iPhone 12 Pro Max",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-13-mini",
+          "name": "iPhone 13 mini",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-13",
+          "name": "iPhone 13",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-13-pro",
+          "name": "iPhone 13 Pro",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-13-pro-max",
+          "name": "iPhone 13 Pro Max",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-se-2022",
+          "name": "iPhone SE 2022",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-14",
+          "name": "iPhone 14",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-14-plus",
+          "name": "iPhone 14 Plus",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-14-pro",
+          "name": "iPhone 14 Pro",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-14-pro-max",
+          "name": "iPhone 14 Pro Max",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-15",
+          "name": "iPhone 15",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-15-plus",
+          "name": "iPhone 15 Plus",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-15-pro",
+          "name": "iPhone 15 Pro",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-15-pro-max",
+          "name": "iPhone 15 Pro Max",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-16",
+          "name": "iPhone 16",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-16-plus",
+          "name": "iPhone 16 Plus",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-16-pro",
+          "name": "iPhone 16 Pro",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-16-pro-max",
+          "name": "iPhone 16 Pro Max",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-16e",
+          "name": "iPhone 16e",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-17",
+          "name": "iPhone 17",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-air",
+          "name": "iPhone Air",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-17-pro",
+          "name": "iPhone 17 Pro",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.iphone-17-pro-max",
+          "name": "iPhone 17 Pro Max",
+          "family": "phone_families.iphone"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a02s",
+          "name": "Samsung Galaxy A02s",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a03",
+          "name": "Samsung Galaxy A03",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a03s",
+          "name": "Samsung Galaxy A03s",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a04",
+          "name": "Samsung Galaxy A04",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a04e",
+          "name": "Samsung Galaxy A04e",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a04s",
+          "name": "Samsung Galaxy A04s",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a05",
+          "name": "Samsung Galaxy A05",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a05s",
+          "name": "Samsung Galaxy A05s",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a06",
+          "name": "Samsung Galaxy A06",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a10",
+          "name": "Samsung Galaxy A10",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a10s",
+          "name": "Samsung Galaxy A10s",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a11",
+          "name": "Samsung Galaxy A11",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a12",
+          "name": "Samsung Galaxy A12",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a13",
+          "name": "Samsung Galaxy A13",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a14",
+          "name": "Samsung Galaxy A14",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a15",
+          "name": "Samsung Galaxy A15",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a16",
+          "name": "Samsung Galaxy A16",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a20",
+          "name": "Samsung Galaxy A20",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a20s",
+          "name": "Samsung Galaxy A20s",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a21s",
+          "name": "Samsung Galaxy A21s",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a22",
+          "name": "Samsung Galaxy A22",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a23",
+          "name": "Samsung Galaxy A23",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a24",
+          "name": "Samsung Galaxy A24",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a25",
+          "name": "Samsung Galaxy A25",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a26",
+          "name": "Samsung Galaxy A26",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a30",
+          "name": "Samsung Galaxy A30",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a30s",
+          "name": "Samsung Galaxy A30s",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a31",
+          "name": "Samsung Galaxy A31",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a32",
+          "name": "Samsung Galaxy A32",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a33",
+          "name": "Samsung Galaxy A33",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a34",
+          "name": "Samsung Galaxy A34",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a35",
+          "name": "Samsung Galaxy A35",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a36",
+          "name": "Samsung Galaxy A36",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a50",
+          "name": "Samsung Galaxy A50",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a51",
+          "name": "Samsung Galaxy A51",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a52",
+          "name": "Samsung Galaxy A52",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a52s",
+          "name": "Samsung Galaxy A52s",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a53",
+          "name": "Samsung Galaxy A53",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a54",
+          "name": "Samsung Galaxy A54",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a55",
+          "name": "Samsung Galaxy A55",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a56",
+          "name": "Samsung Galaxy A56",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a70",
+          "name": "Samsung Galaxy A70",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a71",
+          "name": "Samsung Galaxy A71",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a72",
+          "name": "Samsung Galaxy A72",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-a73",
+          "name": "Samsung Galaxy A73",
+          "family": "phone_families.samsung-galaxy-a"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s8",
+          "name": "Samsung Galaxy S8",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s8-plus",
+          "name": "Samsung Galaxy S8+",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s9",
+          "name": "Samsung Galaxy S9",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s9-plus",
+          "name": "Samsung Galaxy S9+",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s10e",
+          "name": "Samsung Galaxy S10e",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s10",
+          "name": "Samsung Galaxy S10",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s10-plus",
+          "name": "Samsung Galaxy S10+",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s20",
+          "name": "Samsung Galaxy S20",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s20-plus",
+          "name": "Samsung Galaxy S20+",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s20-ultra",
+          "name": "Samsung Galaxy S20 Ultra",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s20-fe",
+          "name": "Samsung Galaxy S20 FE",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s21",
+          "name": "Samsung Galaxy S21",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s21-plus",
+          "name": "Samsung Galaxy S21+",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s21-ultra",
+          "name": "Samsung Galaxy S21 Ultra",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s21-fe",
+          "name": "Samsung Galaxy S21 FE",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s22",
+          "name": "Samsung Galaxy S22",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s22-plus",
+          "name": "Samsung Galaxy S22+",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s22-ultra",
+          "name": "Samsung Galaxy S22 Ultra",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s23",
+          "name": "Samsung Galaxy S23",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s23-plus",
+          "name": "Samsung Galaxy S23+",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s23-ultra",
+          "name": "Samsung Galaxy S23 Ultra",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s23-fe",
+          "name": "Samsung Galaxy S23 FE",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s24",
+          "name": "Samsung Galaxy S24",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s24-plus",
+          "name": "Samsung Galaxy S24+",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s24-ultra",
+          "name": "Samsung Galaxy S24 Ultra",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s24-fe",
+          "name": "Samsung Galaxy S24 FE",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s25",
+          "name": "Samsung Galaxy S25",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s25-plus",
+          "name": "Samsung Galaxy S25+",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s25-ultra",
+          "name": "Samsung Galaxy S25 Ultra",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s25-edge",
+          "name": "Samsung Galaxy S25 Edge",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-s25-fe",
+          "name": "Samsung Galaxy S25 FE",
+          "family": "phone_families.samsung-galaxy-s"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m12",
+          "name": "Samsung Galaxy M12",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m13",
+          "name": "Samsung Galaxy M13",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m14",
+          "name": "Samsung Galaxy M14",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m15",
+          "name": "Samsung Galaxy M15",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m21",
+          "name": "Samsung Galaxy M21",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m22",
+          "name": "Samsung Galaxy M22",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m23",
+          "name": "Samsung Galaxy M23",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m31",
+          "name": "Samsung Galaxy M31",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m32",
+          "name": "Samsung Galaxy M32",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m33",
+          "name": "Samsung Galaxy M33",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m34",
+          "name": "Samsung Galaxy M34",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m35",
+          "name": "Samsung Galaxy M35",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m51",
+          "name": "Samsung Galaxy M51",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m52",
+          "name": "Samsung Galaxy M52",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m53",
+          "name": "Samsung Galaxy M53",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m54",
+          "name": "Samsung Galaxy M54",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.samsung-galaxy-m55",
+          "name": "Samsung Galaxy M55",
+          "family": "phone_families.samsung-galaxy-m"
+        },
+        {
+          "id": "phone_models.tecno-spark-5",
+          "name": "Tecno Spark 5",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-5-pro",
+          "name": "Tecno Spark 5 Pro",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-6",
+          "name": "Tecno Spark 6",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-6-go",
+          "name": "Tecno Spark 6 Go",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-7",
+          "name": "Tecno Spark 7",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-7p",
+          "name": "Tecno Spark 7P",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-7-pro",
+          "name": "Tecno Spark 7 Pro",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-8",
+          "name": "Tecno Spark 8",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-8c",
+          "name": "Tecno Spark 8C",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-8p",
+          "name": "Tecno Spark 8P",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-8-pro",
+          "name": "Tecno Spark 8 Pro",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-9",
+          "name": "Tecno Spark 9",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-9-pro",
+          "name": "Tecno Spark 9 Pro",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-9t",
+          "name": "Tecno Spark 9T",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-10",
+          "name": "Tecno Spark 10",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-10c",
+          "name": "Tecno Spark 10C",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-10-pro",
+          "name": "Tecno Spark 10 Pro",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-20",
+          "name": "Tecno Spark 20",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-20c",
+          "name": "Tecno Spark 20C",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-20-pro",
+          "name": "Tecno Spark 20 Pro",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-20-pro-plus",
+          "name": "Tecno Spark 20 Pro+",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-30",
+          "name": "Tecno Spark 30",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-30c",
+          "name": "Tecno Spark 30C",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-30-pro",
+          "name": "Tecno Spark 30 Pro",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-go-2022",
+          "name": "Tecno Spark Go 2022",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-go-2023",
+          "name": "Tecno Spark Go 2023",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-spark-go-2024",
+          "name": "Tecno Spark Go 2024",
+          "family": "phone_families.tecno-spark"
+        },
+        {
+          "id": "phone_models.tecno-camon-12",
+          "name": "Tecno Camon 12",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-12-pro",
+          "name": "Tecno Camon 12 Pro",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-15",
+          "name": "Tecno Camon 15",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-15-pro",
+          "name": "Tecno Camon 15 Pro",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-16",
+          "name": "Tecno Camon 16",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-16-premier",
+          "name": "Tecno Camon 16 Premier",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-17",
+          "name": "Tecno Camon 17",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-17p",
+          "name": "Tecno Camon 17P",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-17-pro",
+          "name": "Tecno Camon 17 Pro",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-18",
+          "name": "Tecno Camon 18",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-18p",
+          "name": "Tecno Camon 18P",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-18-premier",
+          "name": "Tecno Camon 18 Premier",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-19",
+          "name": "Tecno Camon 19",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-19-neo",
+          "name": "Tecno Camon 19 Neo",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-19-pro",
+          "name": "Tecno Camon 19 Pro",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-20",
+          "name": "Tecno Camon 20",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-20-pro",
+          "name": "Tecno Camon 20 Pro",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-20-premier",
+          "name": "Tecno Camon 20 Premier",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-30",
+          "name": "Tecno Camon 30",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-30-pro",
+          "name": "Tecno Camon 30 Pro",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-30-premier",
+          "name": "Tecno Camon 30 Premier",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-40",
+          "name": "Tecno Camon 40",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-40-pro",
+          "name": "Tecno Camon 40 Pro",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-camon-40-premier",
+          "name": "Tecno Camon 40 Premier",
+          "family": "phone_families.tecno-camon"
+        },
+        {
+          "id": "phone_models.tecno-pova",
+          "name": "Tecno Pova",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-2",
+          "name": "Tecno Pova 2",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-3",
+          "name": "Tecno Pova 3",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-4",
+          "name": "Tecno Pova 4",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-4-pro",
+          "name": "Tecno Pova 4 Pro",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-5",
+          "name": "Tecno Pova 5",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-5-pro",
+          "name": "Tecno Pova 5 Pro",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-6-pro",
+          "name": "Tecno Pova 6 Pro",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-6-neo",
+          "name": "Tecno Pova 6 Neo",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-neo",
+          "name": "Tecno Pova Neo",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-neo-2",
+          "name": "Tecno Pova Neo 2",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-pova-neo-3",
+          "name": "Tecno Pova Neo 3",
+          "family": "phone_families.tecno-pova"
+        },
+        {
+          "id": "phone_models.tecno-phantom-9",
+          "name": "Tecno Phantom 9",
+          "family": "phone_families.tecno-phantom"
+        },
+        {
+          "id": "phone_models.tecno-phantom-x",
+          "name": "Tecno Phantom X",
+          "family": "phone_families.tecno-phantom"
+        },
+        {
+          "id": "phone_models.tecno-phantom-x2",
+          "name": "Tecno Phantom X2",
+          "family": "phone_families.tecno-phantom"
+        },
+        {
+          "id": "phone_models.tecno-phantom-x2-pro",
+          "name": "Tecno Phantom X2 Pro",
+          "family": "phone_families.tecno-phantom"
+        },
+        {
+          "id": "phone_models.tecno-phantom-v-fold",
+          "name": "Tecno Phantom V Fold",
+          "family": "phone_families.tecno-phantom"
+        },
+        {
+          "id": "phone_models.tecno-phantom-v-flip",
+          "name": "Tecno Phantom V Flip",
+          "family": "phone_families.tecno-phantom"
+        },
+        {
+          "id": "phone_models.tecno-phantom-v-fold2",
+          "name": "Tecno Phantom V Fold2",
+          "family": "phone_families.tecno-phantom"
+        },
+        {
+          "id": "phone_models.tecno-phantom-v-flip2",
+          "name": "Tecno Phantom V Flip2",
+          "family": "phone_families.tecno-phantom"
+        },
+        {
+          "id": "phone_models.infinix-hot-8",
+          "name": "Infinix Hot 8",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-9",
+          "name": "Infinix Hot 9",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-9-play",
+          "name": "Infinix Hot 9 Play",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-10",
+          "name": "Infinix Hot 10",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-10-play",
+          "name": "Infinix Hot 10 Play",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-10i",
+          "name": "Infinix Hot 10i",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-10s",
+          "name": "Infinix Hot 10S",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-11",
+          "name": "Infinix Hot 11",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-11-play",
+          "name": "Infinix Hot 11 Play",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-11s",
+          "name": "Infinix Hot 11S",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-12",
+          "name": "Infinix Hot 12",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-12-play",
+          "name": "Infinix Hot 12 Play",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-12i",
+          "name": "Infinix Hot 12i",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-20",
+          "name": "Infinix Hot 20",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-20i",
+          "name": "Infinix Hot 20i",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-20-play",
+          "name": "Infinix Hot 20 Play",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-20s",
+          "name": "Infinix Hot 20S",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-30",
+          "name": "Infinix Hot 30",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-30i",
+          "name": "Infinix Hot 30i",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-30-play",
+          "name": "Infinix Hot 30 Play",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-40",
+          "name": "Infinix Hot 40",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-40i",
+          "name": "Infinix Hot 40i",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-40-pro",
+          "name": "Infinix Hot 40 Pro",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-50",
+          "name": "Infinix Hot 50",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-50i",
+          "name": "Infinix Hot 50i",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-50-pro",
+          "name": "Infinix Hot 50 Pro",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-hot-50-pro-plus",
+          "name": "Infinix Hot 50 Pro+",
+          "family": "phone_families.infinix-hot"
+        },
+        {
+          "id": "phone_models.infinix-note-7",
+          "name": "Infinix Note 7",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-8",
+          "name": "Infinix Note 8",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-8i",
+          "name": "Infinix Note 8i",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-10",
+          "name": "Infinix Note 10",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-10-pro",
+          "name": "Infinix Note 10 Pro",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-11",
+          "name": "Infinix Note 11",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-11-pro",
+          "name": "Infinix Note 11 Pro",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-11s",
+          "name": "Infinix Note 11S",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-12",
+          "name": "Infinix Note 12",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-12-pro",
+          "name": "Infinix Note 12 Pro",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-12-g96",
+          "name": "Infinix Note 12 G96",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-12-vip",
+          "name": "Infinix Note 12 VIP",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-30",
+          "name": "Infinix Note 30",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-30-pro",
+          "name": "Infinix Note 30 Pro",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-30-vip",
+          "name": "Infinix Note 30 VIP",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-40",
+          "name": "Infinix Note 40",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-40-pro",
+          "name": "Infinix Note 40 Pro",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-40-pro-plus",
+          "name": "Infinix Note 40 Pro+",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-40s",
+          "name": "Infinix Note 40S",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-50",
+          "name": "Infinix Note 50",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-50-pro",
+          "name": "Infinix Note 50 Pro",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-note-50-pro-plus",
+          "name": "Infinix Note 50 Pro+",
+          "family": "phone_families.infinix-note"
+        },
+        {
+          "id": "phone_models.infinix-smart-4",
+          "name": "Infinix Smart 4",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-5",
+          "name": "Infinix Smart 5",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-6",
+          "name": "Infinix Smart 6",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-6-hd",
+          "name": "Infinix Smart 6 HD",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-6-plus",
+          "name": "Infinix Smart 6 Plus",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-7",
+          "name": "Infinix Smart 7",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-7-hd",
+          "name": "Infinix Smart 7 HD",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-8",
+          "name": "Infinix Smart 8",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-8-hd",
+          "name": "Infinix Smart 8 HD",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-8-plus",
+          "name": "Infinix Smart 8 Plus",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-8-pro",
+          "name": "Infinix Smart 8 Pro",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-9",
+          "name": "Infinix Smart 9",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-smart-9-hd",
+          "name": "Infinix Smart 9 HD",
+          "family": "phone_families.infinix-smart"
+        },
+        {
+          "id": "phone_models.infinix-zero-8",
+          "name": "Infinix Zero 8",
+          "family": "phone_families.infinix-zero-and-gt"
+        },
+        {
+          "id": "phone_models.infinix-zero-x",
+          "name": "Infinix Zero X",
+          "family": "phone_families.infinix-zero-and-gt"
+        },
+        {
+          "id": "phone_models.infinix-zero-x-pro",
+          "name": "Infinix Zero X Pro",
+          "family": "phone_families.infinix-zero-and-gt"
+        },
+        {
+          "id": "phone_models.infinix-zero-20",
+          "name": "Infinix Zero 20",
+          "family": "phone_families.infinix-zero-and-gt"
+        },
+        {
+          "id": "phone_models.infinix-zero-ultra",
+          "name": "Infinix Zero Ultra",
+          "family": "phone_families.infinix-zero-and-gt"
+        },
+        {
+          "id": "phone_models.infinix-zero-30",
+          "name": "Infinix Zero 30",
+          "family": "phone_families.infinix-zero-and-gt"
+        },
+        {
+          "id": "phone_models.infinix-zero-40",
+          "name": "Infinix Zero 40",
+          "family": "phone_families.infinix-zero-and-gt"
+        },
+        {
+          "id": "phone_models.infinix-zero-flip",
+          "name": "Infinix Zero Flip",
+          "family": "phone_families.infinix-zero-and-gt"
+        },
+        {
+          "id": "phone_models.infinix-gt-10-pro",
+          "name": "Infinix GT 10 Pro",
+          "family": "phone_families.infinix-zero-and-gt"
+        },
+        {
+          "id": "phone_models.infinix-gt-20-pro",
+          "name": "Infinix GT 20 Pro",
+          "family": "phone_families.infinix-zero-and-gt"
+        },
+        {
+          "id": "phone_models.itel-a05s",
+          "name": "itel A05s",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a18",
+          "name": "itel A18",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a25",
+          "name": "itel A25",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a26",
+          "name": "itel A26",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a27",
+          "name": "itel A27",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a48",
+          "name": "itel A48",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a49",
+          "name": "itel A49",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a50",
+          "name": "itel A50",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a56",
+          "name": "itel A56",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a58",
+          "name": "itel A58",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a60",
+          "name": "itel A60",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a60s",
+          "name": "itel A60s",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-a70",
+          "name": "itel A70",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-p17",
+          "name": "itel P17",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-p36",
+          "name": "itel P36",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-p37",
+          "name": "itel P37",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-p38",
+          "name": "itel P38",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-p40",
+          "name": "itel P40",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-p55",
+          "name": "itel P55",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-s16",
+          "name": "itel S16",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-s18",
+          "name": "itel S18",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-s23",
+          "name": "itel S23",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.itel-s24",
+          "name": "itel S24",
+          "family": "phone_families.itel-a-p-and-s"
+        },
+        {
+          "id": "phone_models.redmi-9",
+          "name": "Redmi 9",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-9a",
+          "name": "Redmi 9A",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-9c",
+          "name": "Redmi 9C",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-9t",
+          "name": "Redmi 9T",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-10",
+          "name": "Redmi 10",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-10a",
+          "name": "Redmi 10A",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-10c",
+          "name": "Redmi 10C",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-12",
+          "name": "Redmi 12",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-12c",
+          "name": "Redmi 12C",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-13",
+          "name": "Redmi 13",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-13c",
+          "name": "Redmi 13C",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-14c",
+          "name": "Redmi 14C",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-a1",
+          "name": "Redmi A1",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-a2",
+          "name": "Redmi A2",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-a3",
+          "name": "Redmi A3",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-8",
+          "name": "Redmi Note 8",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-8-pro",
+          "name": "Redmi Note 8 Pro",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-9",
+          "name": "Redmi Note 9",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-9-pro",
+          "name": "Redmi Note 9 Pro",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-9s",
+          "name": "Redmi Note 9S",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-10",
+          "name": "Redmi Note 10",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-10-pro",
+          "name": "Redmi Note 10 Pro",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-10s",
+          "name": "Redmi Note 10S",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-11",
+          "name": "Redmi Note 11",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-11-pro",
+          "name": "Redmi Note 11 Pro",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-11s",
+          "name": "Redmi Note 11S",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-12",
+          "name": "Redmi Note 12",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-12-pro",
+          "name": "Redmi Note 12 Pro",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-13",
+          "name": "Redmi Note 13",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-13-pro",
+          "name": "Redmi Note 13 Pro",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-13-pro-plus",
+          "name": "Redmi Note 13 Pro+",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-14",
+          "name": "Redmi Note 14",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-14-pro",
+          "name": "Redmi Note 14 Pro",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.redmi-note-14-pro-plus",
+          "name": "Redmi Note 14 Pro+",
+          "family": "phone_families.xiaomi-redmi"
+        },
+        {
+          "id": "phone_models.poco-x3-nfc",
+          "name": "Poco X3 NFC",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-x3-pro",
+          "name": "Poco X3 Pro",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-x4-pro",
+          "name": "Poco X4 Pro",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-x5",
+          "name": "Poco X5",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-x5-pro",
+          "name": "Poco X5 Pro",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-x6",
+          "name": "Poco X6",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-x6-pro",
+          "name": "Poco X6 Pro",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-x7",
+          "name": "Poco X7",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-x7-pro",
+          "name": "Poco X7 Pro",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-f3",
+          "name": "Poco F3",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-f4",
+          "name": "Poco F4",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-f5",
+          "name": "Poco F5",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-f5-pro",
+          "name": "Poco F5 Pro",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-f6",
+          "name": "Poco F6",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-f6-pro",
+          "name": "Poco F6 Pro",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-f7-pro",
+          "name": "Poco F7 Pro",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-f7-ultra",
+          "name": "Poco F7 Ultra",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-m3",
+          "name": "Poco M3",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-m4-pro",
+          "name": "Poco M4 Pro",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-m5",
+          "name": "Poco M5",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-m6-pro",
+          "name": "Poco M6 Pro",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-c40",
+          "name": "Poco C40",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-c51",
+          "name": "Poco C51",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-c61",
+          "name": "Poco C61",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-c65",
+          "name": "Poco C65",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.poco-c75",
+          "name": "Poco C75",
+          "family": "phone_families.poco"
+        },
+        {
+          "id": "phone_models.oppo-a5s",
+          "name": "Oppo A5s",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a12",
+          "name": "Oppo A12",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a15",
+          "name": "Oppo A15",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a16",
+          "name": "Oppo A16",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a17",
+          "name": "Oppo A17",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a18",
+          "name": "Oppo A18",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a38",
+          "name": "Oppo A38",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a54",
+          "name": "Oppo A54",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a57",
+          "name": "Oppo A57",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a58",
+          "name": "Oppo A58",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a77",
+          "name": "Oppo A77",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a78",
+          "name": "Oppo A78",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a79",
+          "name": "Oppo A79",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-a3x",
+          "name": "Oppo A3x",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno5",
+          "name": "Oppo Reno5",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno6",
+          "name": "Oppo Reno6",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno7",
+          "name": "Oppo Reno7",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno8",
+          "name": "Oppo Reno8",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno8-t",
+          "name": "Oppo Reno8 T",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno10",
+          "name": "Oppo Reno10",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno11",
+          "name": "Oppo Reno11",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno11-f",
+          "name": "Oppo Reno11 F",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno12",
+          "name": "Oppo Reno12",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno12-f",
+          "name": "Oppo Reno12 F",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno13",
+          "name": "Oppo Reno13",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.oppo-reno13-f",
+          "name": "Oppo Reno13 F",
+          "family": "phone_families.oppo"
+        },
+        {
+          "id": "phone_models.realme-c11",
+          "name": "Realme C11",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c12",
+          "name": "Realme C12",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c15",
+          "name": "Realme C15",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c21",
+          "name": "Realme C21",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c21y",
+          "name": "Realme C21Y",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c25",
+          "name": "Realme C25",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c30",
+          "name": "Realme C30",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c31",
+          "name": "Realme C31",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c33",
+          "name": "Realme C33",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c35",
+          "name": "Realme C35",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c51",
+          "name": "Realme C51",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c53",
+          "name": "Realme C53",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c55",
+          "name": "Realme C55",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c61",
+          "name": "Realme C61",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c63",
+          "name": "Realme C63",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c65",
+          "name": "Realme C65",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c67",
+          "name": "Realme C67",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-c75",
+          "name": "Realme C75",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-note-50",
+          "name": "Realme Note 50",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-note-60",
+          "name": "Realme Note 60",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-8",
+          "name": "Realme 8",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-9",
+          "name": "Realme 9",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-10",
+          "name": "Realme 10",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-11",
+          "name": "Realme 11",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-12",
+          "name": "Realme 12",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-12-pro",
+          "name": "Realme 12 Pro",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-12-pro-plus",
+          "name": "Realme 12 Pro+",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-13",
+          "name": "Realme 13",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-13-pro",
+          "name": "Realme 13 Pro",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.realme-13-pro-plus",
+          "name": "Realme 13 Pro+",
+          "family": "phone_families.realme"
+        },
+        {
+          "id": "phone_models.huawei-y6p",
+          "name": "Huawei Y6p",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.huawei-y7a",
+          "name": "Huawei Y7a",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.huawei-y9a",
+          "name": "Huawei Y9a",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.huawei-nova-7i",
+          "name": "Huawei Nova 7i",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.huawei-nova-9",
+          "name": "Huawei Nova 9",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.huawei-nova-10",
+          "name": "Huawei Nova 10",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.huawei-nova-11",
+          "name": "Huawei Nova 11",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.huawei-nova-12",
+          "name": "Huawei Nova 12",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.huawei-p30",
+          "name": "Huawei P30",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.huawei-p30-lite",
+          "name": "Huawei P30 Lite",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.huawei-p40-lite",
+          "name": "Huawei P40 Lite",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x5",
+          "name": "Honor X5",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x6",
+          "name": "Honor X6",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x7",
+          "name": "Honor X7",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x7a",
+          "name": "Honor X7a",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x7b",
+          "name": "Honor X7b",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x8",
+          "name": "Honor X8",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x8a",
+          "name": "Honor X8a",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x8b",
+          "name": "Honor X8b",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x9a",
+          "name": "Honor X9a",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x9b",
+          "name": "Honor X9b",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-x9c",
+          "name": "Honor X9c",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-90",
+          "name": "Honor 90",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.honor-200",
+          "name": "Honor 200",
+          "family": "phone_families.huawei-and-honor"
+        },
+        {
+          "id": "phone_models.nokia-c1",
+          "name": "Nokia C1",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-c2",
+          "name": "Nokia C2",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-c10",
+          "name": "Nokia C10",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-c12",
+          "name": "Nokia C12",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-c20",
+          "name": "Nokia C20",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-c21",
+          "name": "Nokia C21",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-c21-plus",
+          "name": "Nokia C21 Plus",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-c22",
+          "name": "Nokia C22",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-c30",
+          "name": "Nokia C30",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-c31",
+          "name": "Nokia C31",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-c32",
+          "name": "Nokia C32",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-g10",
+          "name": "Nokia G10",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-g11",
+          "name": "Nokia G11",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-g20",
+          "name": "Nokia G20",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-g21",
+          "name": "Nokia G21",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-g22",
+          "name": "Nokia G22",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-g42",
+          "name": "Nokia G42",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-x10",
+          "name": "Nokia X10",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.nokia-x20",
+          "name": "Nokia X20",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.hmd-pulse",
+          "name": "HMD Pulse",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.hmd-pulse-plus",
+          "name": "HMD Pulse Plus",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.hmd-pulse-pro",
+          "name": "HMD Pulse Pro",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.hmd-skyline",
+          "name": "HMD Skyline",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.hmd-fusion",
+          "name": "HMD Fusion",
+          "family": "phone_families.nokia-and-hmd"
+        },
+        {
+          "id": "phone_models.hmd-arc",
+          "name": "HMD Arc",
+          "family": "phone_families.nokia-and-hmd"
+        }
+      ],
+      "note": "Public model names drafted from memory as of mid-2025. Verify against the shelf and supplier lists. A cashier can type a model that is missing; it prints as typed and joins the list once a manager or the owner approves it."
+    }
+  },
+  "no_brand": {
+    "id": "brand.no-brand",
+    "name": "No brand"
+  },
+  "brands": [
+    {
+      "id": "brand.oraimo",
+      "name": "Oraimo",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatch",
+        "band"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.new-age",
+      "name": "New Age",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.romoss",
+      "name": "Romoss",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.anker",
+      "name": "Anker",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.baseus",
+      "name": "Baseus",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.ugreen",
+      "name": "Ugreen",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.oh-mobility",
+      "name": "OH Mobility",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.infinix",
+      "name": "Infinix",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatch",
+        "band"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.xiaomi",
+      "name": "Xiaomi",
+      "aliases": [
+        "Redmi"
+      ],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatch",
+        "band"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.samsung",
+      "name": "Samsung",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatch",
+        "band"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.itel",
+      "name": "itel",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "car_chargers",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatch",
+        "band"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.tecno",
+      "name": "Tecno",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatch",
+        "band"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.hoco",
+      "name": "Hoco",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.remax",
+      "name": "Remax",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.joyroom",
+      "name": "Joyroom",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.borofone",
+      "name": "Borofone",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.kly",
+      "name": "KLY",
+      "aliases": [],
+      "shown_first_in": [
+        "power_banks",
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "car_chargers",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.apple",
+      "name": "Apple",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatch",
+        "band"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.mcdodo",
+      "name": "Mcdodo",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.usams",
+      "name": "USAMS",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.sauki",
+      "name": "Sauki",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.shplus",
+      "name": "Shplus",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.amaya",
+      "name": "Amaya",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.mikorean",
+      "name": "Mikorean",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.focus",
+      "name": "Focus",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.poga",
+      "name": "Poga",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.lcz",
+      "name": "LCZ",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.gc",
+      "name": "GC",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.datacable",
+      "name": "DataCable",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved",
+      "note": "Printed label on the packaging (owner, 5 Nov 2026)"
+    },
+    {
+      "id": "brand.rayrock",
+      "name": "Rayrock",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.highmarks",
+      "name": "Highmarks",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.datech",
+      "name": "Datech",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.otek",
+      "name": "Otek",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.ify",
+      "name": "IFY",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.finnary",
+      "name": "Finnary",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.soncjy",
+      "name": "Soncjy",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.chupez",
+      "name": "Chupez",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.bk",
+      "name": "BK",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.elegant",
+      "name": "Elegant",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.loko",
+      "name": "Loko",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger",
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.fil",
+      "name": "Fil",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.epcor",
+      "name": "Epcor",
+      "aliases": [],
+      "shown_first_in": [
+        "cables",
+        "charger_head",
+        "complete_charger"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.aa",
+      "name": "AA",
+      "aliases": [],
+      "shown_first_in": [
+        "car_chargers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.soundcore",
+      "name": "Soundcore",
+      "aliases": [
+        "Anker Soundcore"
+      ],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.jbl",
+      "name": "JBL",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.realme",
+      "name": "Realme",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatch",
+        "band"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.sony",
+      "name": "Sony",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.huawei",
+      "name": "Huawei",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers",
+        "smartwatch",
+        "band"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.havit",
+      "name": "Havit",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.jabra",
+      "name": "Jabra",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "ng_sources",
+      "status": "approved"
+    },
+    {
+      "id": "brand.qcy",
+      "name": "QCY",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.jamax",
+      "name": "Jamax",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.frezzil",
+      "name": "Frezzil",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.bose",
+      "name": "Bose",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.zealot",
+      "name": "Zealot",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.boombest",
+      "name": "Boombest",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.wuf",
+      "name": "Wuf",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.hapilife",
+      "name": "Hapilife",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved"
+    },
+    {
+      "id": "brand.baseno",
+      "name": "Baseno",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved",
+      "note": "Kept exactly as written"
+    },
+    {
+      "id": "brand.hf",
+      "name": "HF",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved",
+      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+    },
+    {
+      "id": "brand.ai",
+      "name": "AI",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved",
+      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+    },
+    {
+      "id": "brand.lp",
+      "name": "LP",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved",
+      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+    },
+    {
+      "id": "brand.bm",
+      "name": "BM",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved",
+      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+    },
+    {
+      "id": "brand.dv",
+      "name": "DV",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved",
+      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+    },
+    {
+      "id": "brand.jz",
+      "name": "JZ",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved",
+      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+    },
+    {
+      "id": "brand.ex",
+      "name": "EX",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved",
+      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+    },
+    {
+      "id": "brand.uwo",
+      "name": "UWO",
+      "aliases": [],
+      "shown_first_in": [
+        "earbuds",
+        "wired_earphones",
+        "neckband",
+        "headphones",
+        "bluetooth_speakers"
+      ],
+      "provenance": "owner_supplied",
+      "status": "approved",
+      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+    },
+    {
+      "id": "brand.amazfit",
+      "name": "Amazfit",
+      "aliases": [],
+      "shown_first_in": [
+        "smartwatch",
+        "band"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.spigen",
+      "name": "Spigen",
+      "aliases": [],
+      "shown_first_in": [
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.ringke",
+      "name": "Ringke",
+      "aliases": [],
+      "shown_first_in": [
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.uag",
+      "name": "UAG",
+      "aliases": [],
+      "shown_first_in": [
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.nillkin",
+      "name": "Nillkin",
+      "aliases": [],
+      "shown_first_in": [
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    },
+    {
+      "id": "brand.otterbox",
+      "name": "Otterbox",
+      "aliases": [],
+      "shown_first_in": [
+        "cases",
+        "screen_protectors"
+      ],
+      "provenance": "to_confirm",
+      "status": "approved"
+    }
+  ],
+  "categories": [
+    {
+      "code": "cables",
+      "name": "Cables",
+      "parent": null,
+      "sellable": true,
+      "word": "Cable",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "connector_pair",
+          "label": "Connector pair",
+          "type": "picklist",
+          "list": "connector_pairs"
+        },
+        {
+          "key": "length",
+          "label": "Length",
+          "type": "picklist",
+          "list": "cable_lengths"
+        },
+        {
+          "key": "rated_power",
+          "label": "Rated power",
+          "type": "picklist",
+          "list": "cable_rated_power"
+        }
+      ],
+      "drill_order": [
+        "connector_pair",
+        "length",
+        "brand",
+        "rated_power"
+      ],
+      "name_order": [
+        "brand",
+        "connector_pair",
+        "{word}",
+        "length",
+        "rated_power"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.anker",
+          "connector_pair": "connector_pairs.type-c-to-lightning",
+          "length": "cable_lengths.1m"
+        },
+        "prints": "Anker Type-C to Lightning Cable 1m"
+      }
+    },
+    {
+      "code": "wall_chargers",
+      "name": "Wall chargers",
+      "parent": null,
+      "sellable": false,
+      "word": null,
+      "facets": [],
+      "drill_order": [],
+      "name_order": [],
+      "example": null
+    },
+    {
+      "code": "charger_head",
+      "name": "Charger head",
+      "parent": "wall_chargers",
+      "sellable": true,
+      "word": "Charger Head",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "wattage",
+          "label": "Wattage",
+          "type": "picklist",
+          "list": "wattages"
+        }
+      ],
+      "drill_order": [
+        "wattage",
+        "brand"
+      ],
+      "name_order": [
+        "brand",
+        "{word}",
+        "wattage"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.otek",
+          "wattage": "wattages.20w"
+        },
+        "prints": "Otek Charger Head 20W"
+      },
+      "aliases": [
+        "charger head",
+        "wall charger without cable",
+        "adapter"
+      ]
+    },
+    {
+      "code": "complete_charger",
+      "name": "Complete charger",
+      "parent": "wall_chargers",
+      "sellable": true,
+      "word": "Complete Charger",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "connector_pair",
+          "label": "Connector pair",
+          "type": "picklist",
+          "list": "connector_pairs"
+        },
+        {
+          "key": "wattage",
+          "label": "Wattage",
+          "type": "picklist",
+          "list": "wattages"
+        }
+      ],
+      "drill_order": [
+        "connector_pair",
+        "wattage",
+        "brand"
+      ],
+      "name_order": [
+        "brand",
+        "connector_pair",
+        "{word}",
+        "wattage"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.oraimo",
+          "connector_pair": "connector_pairs.type-c-to-lightning",
+          "wattage": "wattages.20w"
+        },
+        "prints": "Oraimo Type-C to Lightning Complete Charger 20W"
+      },
+      "aliases": [
+        "complete charger",
+        "charger and cable",
+        "full charger"
+      ]
+    },
+    {
+      "code": "car_chargers",
+      "name": "Car chargers",
+      "parent": null,
+      "sellable": true,
+      "word": "Car Charger",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        },
+        {
+          "key": "wattage",
+          "label": "Wattage",
+          "type": "picklist",
+          "list": "wattages"
+        }
+      ],
+      "drill_order": [
+        "wattage",
+        "brand",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}",
+        "wattage"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.kly",
+          "wattage": "wattages.12w"
+        },
+        "prints": "KLY Car Charger 12W"
+      }
+    },
+    {
+      "code": "wireless_chargers",
+      "name": "Wireless chargers",
+      "parent": null,
+      "sellable": true,
+      "word": "Wireless Charger",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        },
+        {
+          "key": "wattage",
+          "label": "Wattage",
+          "type": "picklist",
+          "list": "wattages"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "model",
+        "wattage"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}",
+        "wattage"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.baseus",
+          "wattage": "wattages.20w"
+        },
+        "prints": "Baseus Wireless Charger 20W"
+      }
+    },
+    {
+      "code": "power_banks",
+      "name": "Power banks",
+      "parent": null,
+      "sellable": true,
+      "word": "Power Bank",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        },
+        {
+          "key": "capacity",
+          "label": "Capacity",
+          "type": "picklist",
+          "list": "capacities_mah"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "capacity",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}",
+        "capacity"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.oraimo",
+          "model": "Traveler 4",
+          "capacity": "capacities_mah.20000mah"
+        },
+        "prints": "Oraimo Traveler 4 Power Bank 20000mAh"
+      }
+    },
+    {
+      "code": "earbuds",
+      "name": "Earbuds and earpods",
+      "parent": null,
+      "sellable": true,
+      "word": "Earbuds",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.oraimo",
+          "model": "FreePods 3C"
+        },
+        "prints": "Oraimo FreePods 3C Earbuds"
+      },
+      "aliases": [
+        "earpods"
+      ]
+    },
+    {
+      "code": "wired_earphones",
+      "name": "Wired earphones and handsfree",
+      "parent": null,
+      "sellable": true,
+      "word": "Earphones",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        },
+        {
+          "key": "plug",
+          "label": "Plug type",
+          "type": "picklist",
+          "list": "plug_types"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "model",
+        "plug"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}",
+        "plug"
+      ],
+      "example": {
+        "values": {
+          "model": "Q10",
+          "plug": "plug_types.3-5mm"
+        },
+        "prints": "Q10 Earphones 3.5mm"
+      }
+    },
+    {
+      "code": "neckband",
+      "name": "Neckband earphones",
+      "parent": null,
+      "sellable": true,
+      "word": "Neckband Earphones",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.oraimo"
+        },
+        "prints": "Oraimo Neckband Earphones"
+      }
+    },
+    {
+      "code": "headphones",
+      "name": "Headphones",
+      "parent": null,
+      "sellable": true,
+      "word": "Headphones",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.jbl"
+        },
+        "prints": "JBL Headphones"
+      }
+    },
+    {
+      "code": "bluetooth_speakers",
+      "name": "Bluetooth speakers",
+      "parent": null,
+      "sellable": true,
+      "word": "Bluetooth Speaker",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.zealot",
+          "model": "S32"
+        },
+        "prints": "Zealot S32 Bluetooth Speaker"
+      }
+    },
+    {
+      "code": "smartwatches",
+      "name": "Smartwatches and bands",
+      "parent": null,
+      "sellable": false,
+      "word": null,
+      "facets": [],
+      "drill_order": [],
+      "name_order": [],
+      "example": null
+    },
+    {
+      "code": "smartwatch",
+      "name": "Smartwatch",
+      "parent": "smartwatches",
+      "sellable": true,
+      "word": "Smartwatch",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.infinix",
+          "model": "XWatch 3 WE"
+        },
+        "prints": "Infinix XWatch 3 WE Smartwatch"
+      }
+    },
+    {
+      "code": "band",
+      "name": "Band",
+      "parent": "smartwatches",
+      "sellable": true,
+      "word": "Band",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "model",
+        "{word}"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.huawei"
+        },
+        "prints": "Huawei Band"
+      }
+    },
+    {
+      "code": "cases",
+      "name": "Phone pouches and covers",
+      "parent": null,
+      "sellable": true,
+      "word": "Pouch",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Made by",
+          "type": "brand",
+          "default": "brand.no-brand"
+        },
+        {
+          "key": "phone_model",
+          "label": "Phone model",
+          "type": "picklist",
+          "list": "phone_models",
+          "group_by": "phone_families",
+          "allow_typed": true
+        },
+        {
+          "key": "case_type",
+          "label": "Pouch type",
+          "type": "picklist",
+          "list": "case_types"
+        }
+      ],
+      "drill_order": [
+        "phone_model",
+        "case_type",
+        "brand"
+      ],
+      "name_order": [
+        "brand",
+        "phone_model",
+        "case_type",
+        "{word}"
+      ],
+      "example": {
+        "values": {
+          "phone_model": "phone_models.iphone-11",
+          "case_type": "case_types.silicone"
+        },
+        "prints": "iPhone 11 Silicone Pouch"
+      },
+      "aliases": [
+        "case",
+        "phone case",
+        "cover"
+      ]
+    },
+    {
+      "code": "screen_protectors",
+      "name": "Screen protectors",
+      "parent": null,
+      "sellable": true,
+      "word": "Screen Protector",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Made by",
+          "type": "brand",
+          "default": "brand.no-brand"
+        },
+        {
+          "key": "phone_model",
+          "label": "Phone model",
+          "type": "picklist",
+          "list": "phone_models",
+          "group_by": "phone_families",
+          "allow_typed": true
+        },
+        {
+          "key": "type",
+          "label": "Protector type",
+          "type": "picklist",
+          "list": "screen_protector_types"
+        }
+      ],
+      "drill_order": [
+        "phone_model",
+        "type",
+        "brand"
+      ],
+      "name_order": [
+        "brand",
+        "phone_model",
+        "type",
+        "{word}"
+      ],
+      "example": {
+        "values": {
+          "phone_model": "phone_models.tecno-spark-20",
+          "type": "screen_protector_types.tempered-glass"
+        },
+        "prints": "Tecno Spark 20 Tempered Glass Screen Protector"
+      }
+    },
+    {
+      "code": "phone_holders",
+      "name": "Phone holders and stands",
+      "parent": null,
+      "sellable": true,
+      "word": "Phone Holder",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "kind",
+          "label": "Kind",
+          "type": "picklist",
+          "list": "holder_kinds"
+        }
+      ],
+      "drill_order": [
+        "kind",
+        "brand"
+      ],
+      "name_order": [
+        "brand",
+        "kind",
+        "{word}"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.baseus",
+          "kind": "holder_kinds.car"
+        },
+        "prints": "Baseus Car Phone Holder"
+      }
+    },
+    {
+      "code": "memory",
+      "name": "Memory cards and flash drives",
+      "parent": null,
+      "sellable": false,
+      "word": null,
+      "facets": [],
+      "drill_order": [],
+      "name_order": [],
+      "example": null
+    },
+    {
+      "code": "memory_card",
+      "name": "Memory card",
+      "parent": "memory",
+      "sellable": true,
+      "word": "Memory Card",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "capacity",
+          "label": "Capacity",
+          "type": "picklist",
+          "list": "memory_sizes_gb"
+        }
+      ],
+      "drill_order": [
+        "capacity",
+        "brand"
+      ],
+      "name_order": [
+        "brand",
+        "{word}",
+        "capacity"
+      ],
+      "example": {
+        "values": {
+          "brand": "brand.sony",
+          "capacity": "memory_sizes_gb.64gb"
+        },
+        "prints": "Sony Memory Card 64GB"
+      }
+    },
+    {
+      "code": "flash_drive",
+      "name": "Flash drive",
+      "parent": "memory",
+      "sellable": true,
+      "word": "Flash Drive",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "capacity",
+          "label": "Capacity",
+          "type": "picklist",
+          "list": "memory_sizes_gb"
+        }
+      ],
+      "drill_order": [
+        "capacity",
+        "brand"
+      ],
+      "name_order": [
+        "brand",
+        "{word}",
+        "capacity"
+      ],
+      "example": {
+        "values": {
+          "capacity": "memory_sizes_gb.32gb"
+        },
+        "prints": "Flash Drive 32GB"
+      }
+    },
+    {
+      "code": "batteries",
+      "name": "Replacement batteries",
+      "parent": null,
+      "sellable": true,
+      "word": "Battery",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Made by",
+          "type": "brand",
+          "default": "brand.no-brand"
+        },
+        {
+          "key": "phone_model",
+          "label": "Phone model",
+          "type": "picklist",
+          "list": "phone_models",
+          "group_by": "phone_families",
+          "allow_typed": true
+        }
+      ],
+      "drill_order": [
+        "phone_model",
+        "brand"
+      ],
+      "name_order": [
+        "brand",
+        "phone_model",
+        "{word}"
+      ],
+      "example": {
+        "values": {
+          "phone_model": "phone_models.tecno-spark-5"
+        },
+        "prints": "Tecno Spark 5 Battery"
+      }
+    },
+    {
+      "code": "selfie_lights_tripods",
+      "name": "Selfie sticks, ring lights, tripods",
+      "parent": null,
+      "sellable": false,
+      "word": null,
+      "facets": [],
+      "drill_order": [],
+      "name_order": [],
+      "example": null
+    },
+    {
+      "code": "selfie_stick",
+      "name": "Selfie stick",
+      "parent": "selfie_lights_tripods",
+      "sellable": true,
+      "word": "Selfie Stick",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "size",
+          "label": "Size",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "size"
+      ],
+      "name_order": [
+        "brand",
+        "{word}",
+        "size"
+      ],
+      "example": {
+        "values": {},
+        "prints": "Selfie Stick"
+      }
+    },
+    {
+      "code": "ring_light",
+      "name": "Ring light",
+      "parent": "selfie_lights_tripods",
+      "sellable": true,
+      "word": "Ring Light",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "size",
+          "label": "Size",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "size",
+        "brand"
+      ],
+      "name_order": [
+        "brand",
+        "{word}",
+        "size"
+      ],
+      "example": {
+        "values": {
+          "size": "10 inch"
+        },
+        "prints": "Ring Light 10 inch"
+      }
+    },
+    {
+      "code": "tripod",
+      "name": "Tripod",
+      "parent": "selfie_lights_tripods",
+      "sellable": true,
+      "word": "Tripod",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "size",
+          "label": "Size",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "size",
+        "brand"
+      ],
+      "name_order": [
+        "brand",
+        "{word}",
+        "size"
+      ],
+      "example": {
+        "values": {},
+        "prints": "Tripod"
+      }
+    },
+    {
+      "code": "adapters",
+      "name": "Adapters (OTG, AUX, splitters)",
+      "parent": null,
+      "sellable": false,
+      "word": null,
+      "facets": [],
+      "drill_order": [],
+      "name_order": [],
+      "example": null
+    },
+    {
+      "code": "otg_adapter",
+      "name": "OTG adapter",
+      "parent": "adapters",
+      "sellable": true,
+      "word": "OTG Adapter",
+      "facets": [
+        {
+          "key": "connector",
+          "label": "Connector",
+          "type": "picklist",
+          "list": "adapter_connectors"
+        }
+      ],
+      "drill_order": [
+        "connector"
+      ],
+      "name_order": [
+        "{word}",
+        "connector"
+      ],
+      "example": {
+        "values": {
+          "connector": "adapter_connectors.type-c"
+        },
+        "prints": "OTG Adapter Type-C"
+      }
+    },
+    {
+      "code": "aux_adapter",
+      "name": "AUX adapter",
+      "parent": "adapters",
+      "sellable": true,
+      "word": "AUX Adapter",
+      "facets": [
+        {
+          "key": "connector",
+          "label": "Connector",
+          "type": "picklist",
+          "list": "adapter_connectors"
+        }
+      ],
+      "drill_order": [
+        "connector"
+      ],
+      "name_order": [
+        "{word}",
+        "connector"
+      ],
+      "example": {
+        "values": {
+          "connector": "adapter_connectors.lightning"
+        },
+        "prints": "AUX Adapter Lightning"
+      }
+    },
+    {
+      "code": "splitter",
+      "name": "Splitter",
+      "parent": "adapters",
+      "sellable": true,
+      "word": "Splitter",
+      "facets": [
+        {
+          "key": "connector",
+          "label": "Connector",
+          "type": "picklist",
+          "list": "adapter_connectors"
+        }
+      ],
+      "drill_order": [
+        "connector"
+      ],
+      "name_order": [
+        "{word}",
+        "connector"
+      ],
+      "example": {
+        "values": {
+          "connector": "adapter_connectors.3-5mm"
+        },
+        "prints": "Splitter 3.5mm"
+      }
+    },
+    {
+      "code": "computer_accessories",
+      "name": "Computer accessories (mouse, keyboard, hubs)",
+      "parent": null,
+      "sellable": false,
+      "word": null,
+      "facets": [],
+      "drill_order": [],
+      "name_order": [],
+      "example": null
+    },
+    {
+      "code": "mouse",
+      "name": "Mouse",
+      "parent": "computer_accessories",
+      "sellable": true,
+      "word": "Mouse",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "connectivity",
+          "label": "Connectivity",
+          "type": "picklist",
+          "list": "connectivity"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "connectivity",
+        "brand",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "connectivity",
+        "{word}",
+        "model"
+      ],
+      "example": {
+        "values": {
+          "connectivity": "connectivity.wireless"
+        },
+        "prints": "Wireless Mouse"
+      }
+    },
+    {
+      "code": "keyboard",
+      "name": "Keyboard",
+      "parent": "computer_accessories",
+      "sellable": true,
+      "word": "Keyboard",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "connectivity",
+          "label": "Connectivity",
+          "type": "picklist",
+          "list": "connectivity"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "connectivity",
+        "brand",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "connectivity",
+        "{word}",
+        "model"
+      ],
+      "example": {
+        "values": {
+          "connectivity": "connectivity.wired"
+        },
+        "prints": "Wired Keyboard"
+      }
+    },
+    {
+      "code": "usb_hub",
+      "name": "USB hub",
+      "parent": "computer_accessories",
+      "sellable": true,
+      "word": "USB Hub",
+      "facets": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "type": "brand"
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "type": "text"
+        }
+      ],
+      "drill_order": [
+        "brand",
+        "model"
+      ],
+      "name_order": [
+        "brand",
+        "{word}",
+        "model"
+      ],
+      "example": {
+        "values": {},
+        "prints": "USB Hub"
+      }
+    }
+  ],
+  "models": [
+    {
+      "id": "model.no-brand.pro-5s",
+      "brand": null,
+      "name": "Pro 5s",
+      "categories": [
+        "earbuds",
+        "wired_earphones"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "id": "model.no-brand.q10",
+      "brand": null,
+      "name": "Q10",
+      "categories": [
+        "earbuds",
+        "wired_earphones"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "id": "model.no-brand.s195",
+      "brand": null,
+      "name": "S195",
+      "categories": [
+        "earbuds",
+        "wired_earphones"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "id": "model.no-brand.g133",
+      "brand": null,
+      "name": "G133",
+      "categories": [
+        "earbuds",
+        "wired_earphones"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "id": "model.no-brand.vip",
+      "brand": null,
+      "name": "VIP",
+      "categories": [
+        "earbuds",
+        "wired_earphones"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "id": "model.no-brand.j7",
+      "brand": null,
+      "name": "J7",
+      "categories": [
+        "car_chargers"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "id": "model.no-brand.car-mp3-s8",
+      "brand": null,
+      "name": "car mp3 s8",
+      "categories": [
+        "car_chargers"
+      ],
+      "note": "model code, brand unknown (owner)"
+    },
+    {
+      "id": "model.oraimo.freepods-3",
+      "brand": "brand.oraimo",
+      "name": "FreePods 3",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.freepods-3c",
+      "brand": "brand.oraimo",
+      "name": "FreePods 3C",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.freepods-4",
+      "brand": "brand.oraimo",
+      "name": "FreePods 4",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.spacebuds",
+      "brand": "brand.oraimo",
+      "name": "SpaceBuds",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.traveler-4",
+      "brand": "brand.oraimo",
+      "name": "Traveler 4",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.traveler-link",
+      "brand": "brand.oraimo",
+      "name": "Traveler Link",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.slice-link",
+      "brand": "brand.oraimo",
+      "name": "Slice Link",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.powerflow",
+      "brand": "brand.oraimo",
+      "name": "PowerFlow",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.toast",
+      "brand": "brand.oraimo",
+      "name": "Toast",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.powercube",
+      "brand": "brand.oraimo",
+      "name": "PowerCube",
+      "categories": [
+        "charger_head",
+        "complete_charger"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.fastline",
+      "brand": "brand.oraimo",
+      "name": "FastLine",
+      "categories": [
+        "cables"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.undo",
+      "brand": "brand.oraimo",
+      "name": "Undo",
+      "categories": [
+        "cables"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.braid",
+      "brand": "brand.oraimo",
+      "name": "Braid",
+      "categories": [
+        "cables"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.silkline",
+      "brand": "brand.oraimo",
+      "name": "SilkLine",
+      "categories": [
+        "cables"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.candy",
+      "brand": "brand.oraimo",
+      "name": "Candy",
+      "categories": [
+        "cables"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.spacebox",
+      "brand": "brand.oraimo",
+      "name": "SpaceBox",
+      "categories": [
+        "bluetooth_speakers"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.boompop",
+      "brand": "brand.oraimo",
+      "name": "BoomPop",
+      "categories": [
+        "headphones"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.oraimo.watch",
+      "brand": "brand.oraimo",
+      "name": "Watch",
+      "categories": [
+        "smartwatch"
+      ],
+      "note": "product line from ng.oraimo.com and retailers, not a full model number"
+    },
+    {
+      "id": "model.infinix.xbuds-nc",
+      "brand": "brand.infinix",
+      "name": "XBuds NC",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "accessory line from Infinix launch coverage"
+    },
+    {
+      "id": "model.infinix.xwatch-3-we",
+      "brand": "brand.infinix",
+      "name": "XWatch 3 WE",
+      "categories": [
+        "smartwatch"
+      ],
+      "note": "accessory line from Infinix launch coverage"
+    },
+    {
+      "id": "model.infinix.xpower-20-go",
+      "brand": "brand.infinix",
+      "name": "XPower 20 GO",
+      "categories": [
+        "power_banks"
+      ],
+      "note": "accessory line from Infinix launch coverage"
+    },
+    {
+      "id": "model.no-brand.pro",
+      "brand": null,
+      "name": "Pro",
+      "categories": [
+        "earbuds"
+      ],
+      "note": "Product name sold as earpods (owner, 5 Nov 2026); moved from Brands; not the same product as Pro 5s"
+    }
+  ],
+  "generators": [
+    {
+      "category": "cables",
+      "combine": [
+        "connector_pair",
+        "length"
+      ],
+      "blank_allowed": [
+        "length"
+      ],
+      "exclude": {},
+      "shapes": 42
+    },
+    {
+      "category": "charger_head",
+      "combine": [
+        "wattage"
+      ],
+      "blank_allowed": [],
+      "exclude": {},
+      "shapes": 10
+    },
+    {
+      "category": "complete_charger",
+      "combine": [
+        "connector_pair",
+        "wattage"
+      ],
+      "blank_allowed": [],
+      "exclude": {
+        "connector_pair": [
+          "connector_pairs.3-in-1",
+          "connector_pairs.3-5mm-aux"
+        ]
+      },
+      "shapes": 50
+    },
+    {
+      "category": "car_chargers",
+      "combine": [
+        "wattage"
+      ],
+      "blank_allowed": [],
+      "exclude": {},
+      "shapes": 10
+    },
+    {
+      "category": "power_banks",
+      "combine": [
+        "capacity"
+      ],
+      "blank_allowed": [],
+      "exclude": {},
+      "shapes": 15
+    }
+  ],
+  "changelog": [
+    {
+      "ref": "C1",
+      "change": "Four word-less categories, plus Smartwatches, became parents with 13 sellable children",
+      "detail": "Memory card, Flash drive; Selfie stick, Ring light, Tripod; OTG adapter, AUX adapter, Splitter; Mouse, Keyboard, USB hub; Smartwatch, Band. Every sellable category now has a category word, so no receipt line can print blank. The inline kind lists and the kind_or_word token are retired. The top level still shows 19 tiles."
+    },
+    {
+      "ref": "C2",
+      "change": "Phone models became a two-level pick-list used by pouches, screen protectors and batteries",
+      "detail": "19 families, 466 models drafted from public names; verify at the shelf walk. A missing model can be typed at the counter; it waits for approval like a typed brand."
+    },
+    {
+      "ref": "C3 + Q16",
+      "change": "\"Made by\" replaces Brand on pouches, protectors and batteries, defaulting to No brand",
+      "detail": "The phone's maker now comes from the phone model. Apple and Samsung are no longer shown first there, because on pouches the owner uses them to mean the phone."
+    },
+    {
+      "ref": "C4 + Q17",
+      "change": "\"iPhone Charger\" left the brand list",
+      "detail": "It is a description, so \"iphone charger\" and \"iphone\" became search words on the two Lightning connector pairs. DataCable stays a brand: it is printed on the packaging."
+    },
+    {
+      "ref": "C5 + C6 + F5",
+      "change": "PRO moved from Brands to Models",
+      "detail": "Pro is an earpods product (No brand, Earbuds), separate from Pro 5s. J7 and car mp3 s8 stay under Car chargers and print as typed."
+    },
+    {
+      "ref": "C7 + Q19",
+      "change": "Wireless chargers keep the shared wattage list",
+      "detail": "The example now uses 20W; 15W was never in the list."
+    },
+    {
+      "ref": "C9",
+      "change": "Every entry has a permanent ID, and the file has a schema_version",
+      "detail": "IDs never change when a name changes, so a later catalogue pull can tell a rename from a new entry."
+    },
+    {
+      "ref": "C10",
+      "change": "The adapters' inline connector values became the named list adapter_connectors",
+      "detail": ""
+    },
+    {
+      "ref": "C11",
+      "change": "Units are written without a space, and printed values use title case",
+      "detail": "0.25m, 1m, 1.5m, 2m, 3m; Wallet Flip; Tempered Glass. Search treats \"1 m\" and \"1m\" as the same."
+    },
+    {
+      "ref": "C12",
+      "change": "Gray became Grey",
+      "detail": "\"gray\" stays a search word."
+    },
+    {
+      "ref": "C13",
+      "change": "Mouse and Keyboard gained a Connectivity facet",
+      "detail": "Wired, Wireless or Bluetooth, printed before the word: \"Wireless Mouse\"."
+    },
+    {
+      "ref": "F4",
+      "change": "Cases print as \"Pouch\", with the pouch type before the word",
+      "detail": "\"iPhone 11 Silicone Pouch\". The category is now \"Phone pouches and covers\"; \"case\", \"phone case\" and \"cover\" are search words. Screen protectors follow the same order (\"Tecno Spark 20 Tempered Glass Screen Protector\"); confirm with the owner."
+    },
+    {
+      "ref": "F5",
+      "change": "\"earpods\" became a search word for Earbuds",
+      "detail": ""
+    },
+    {
+      "ref": "R1",
+      "change": "Each category has a drill order for the tap-through tiles",
+      "detail": "Proposed defaults; the cashier timing test at G1 confirms them."
+    },
+    {
+      "ref": "R2",
+      "change": "The 127 stored generated lines became 5 generator rules",
+      "detail": "The same 127 shapes are offered at the counter and an item is created on its first sale, so there is no prune review at setup."
+    }
+  ],
+  "still_open": [
+    "C8: brands shown first for Wireless chargers, Phone holders, Memory cards and flash drives, Batteries, Selfie sticks, ring lights and tripods, and Computer accessories are assigned at the shelf walk.",
+    "The 16 brands marked \"To confirm on the shelf walk\", and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO.",
+    "Oraimo \"Watch\" prints as \"Oraimo Watch Smartwatch\"; rename it if the owner prefers.",
+    "Phone models are a first draft: add, rename or remove against the shelf and supplier lists.",
+    "Drill orders are proposals until the cashier timing test at G1."
+  ]
+}
