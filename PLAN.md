@@ -2,7 +2,7 @@
 
 The living plan from today to the pilot go-live decision and on to the MVP. The spec ([docs/spec/retail-os-spec-v1.5.md](docs/spec/retail-os-spec-v1.5.md)) says what to build; this file says when, by whom, and what happens next. Decisions and their sources are in [docs/decisions.md](docs/decisions.md).
 
-Last updated: 5 November 2026.
+Last updated: 6 November 2026.
 
 ## Goal
 
@@ -104,7 +104,7 @@ Choices and their tradeoffs (runners, registry, environments, housekeeping) are 
 - [x] Push the first commit to the public repository and protect main (Claude). The repository stays public for now (D10)
 - [ ] Docker Compose for development (Developer B)
 - [ ] Bench test: print, cut, barcode, drawer kick, printer status, scanner suffix and speed, Chrome kiosk keys, touch, UPS changeover, phone hotspot (Developer B, field lead)
-- [ ] Touch-first, responsive wireframes in Apple's system colours on a new canvas, including the price-floor prompt, pending print, lost window, Pending transfers and the idle lock (Claude, designer). In progress
+- [ ] Touch-first, responsive wireframes in Apple's system colours on a new canvas (Claude, designer). The counter screens are drawn, including the price-floor prompt, pending print, lost window, Pending transfers and the idle lock; the owner's back office is next
 - [ ] Confirm the team's start dates and GitHub access (product owner)
 - [ ] Sign off spec v1.5 and catalogue v1.1: gate G0 (product owner, shop owner)
 
@@ -162,6 +162,7 @@ Assumptions:
 | Screen-protector name order ("Tecno Spark 20 Tempered Glass Screen Protector") and capitals for car mp3 s8 | Shop owner | G0 | As drafted; car mp3 s8 printed as typed |
 | Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | Recommended before application code lands in Phase 2 (week 3) | Public, documents only (D10) |
 | Tile (drill) order per category | Cashier timing | G1 | The v1.1 proposal |
+| Receipt header and footer: the shop name, address, phone and any returns wording | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Field lead | Week 13 | The paper-pad downtime procedure (spec section 9) |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
 | Bundles or packs (phone plus case, wholesale carton) | Product owner | MVP | Not supported in the pilot |
@@ -178,3 +179,4 @@ Assumptions:
 |---|---|
 | 5 November 2026 | First version, built from the v1.4 review; spec v1.5 and catalogue v1.1 written; the folder organised |
 | 5 November 2026 | Counter decisions D7 to D9 recorded; the repository stays public for now (D10) |
+| 6 November 2026 | Counter wireframes drawn; a bench check for the ₦ sign; the receipt text added to the open items |

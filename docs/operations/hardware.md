@@ -32,6 +32,7 @@ Buy one of each, so Developer B and the field lead can prove printing, the drawe
 ## Bench test checklist
 
 - [ ] The server prints to the network printer on port 9100: a receipt, a cut and a Code 128 barcode.
+- [ ] The printer prints the ₦ sign legibly. If it cannot, choose the fallback (NGN or N) before G3; the receipt wireframe shows ₦.
 - [ ] The printer kicks the drawer, and its status query reports paper out and cover open.
 - [ ] Record the scanner's suffix (Enter) and its typing speed, and check that scans are told apart from typing by timing.
 - [ ] In Chrome kiosk mode, record which keys reach the page: Ctrl+N, F2, F4, F9, F12 and numpad +.
