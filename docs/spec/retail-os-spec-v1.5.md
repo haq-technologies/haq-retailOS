@@ -2,7 +2,7 @@
 
 HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026.
 
-**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D6, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
+**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D10, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
 
 **How to read it.** A tag such as [F3] marks text that exists because of finding F3 of the engineering teardown (Appendix A). A tag such as [S4], [R3], [C1] or [D2] marks text set by the v1.4 review; Appendix E lists every such change, and docs/decisions.md records where each came from. [Q5] or [FU6] points to an answer in that log; FU1 to FU10 are the review's follow-up questions, not teardown findings.
 
@@ -91,7 +91,7 @@ Laravel with Inertia and React. The active catalogue is cached in the browser wi
 ## Docker and GitHub delivery
 - Compose stack per branch: app (PHP-FPM), web (Nginx), db (PostgreSQL), scheduler and queue workers (the print queue among them), backup (pgBackRest). The migration job is a separate one-shot container that alone holds the owner database role. [F3]
 - Pinned versions for every image and framework, a named volume for the database, and no bind mounts in production, so every shop behaves the same and rebuilds are reproducible. Code sits in a thin image layer above a pinned base, so a routine update downloads a few MB, and servers ship pre-imaged with every image loaded. [S18]
-- Code lives in one private GitHub repository, developed trunk-based: short-lived branches, a protected main, and a merge only with one review and green CI. GitHub Actions runs the full test suite against a real PostgreSQL on every pull request. Images are built once on merge and pushed to GitHub Container Registry (GHCR), pinned by digest. A release is a semantic-version tag plus a release manifest that lists the image digests, the compose file and the migrations. Signing is not done by CI: the release signing key lives on an offline hardware token, and a person signs the manifest. Config bundles and licences are signed by the same offline process or by a derived key you can revoke. [F17, D1]
+- Code lives in one GitHub repository, developed trunk-based: short-lived branches, a protected main, and a merge only with green CI and, once the developers join, one review. The repository is public until the owner makes it private, so nothing secret or personal is ever committed. [D6, D10] GitHub Actions runs the full test suite against a real PostgreSQL on every pull request. Images are built once on merge and pushed to GitHub Container Registry (GHCR), pinned by digest. A release is a semantic-version tag plus a release manifest that lists the image digests, the compose file and the migrations. Signing is not done by CI: the release signing key lives on an offline hardware token, and a person signs the manifest. Config bundles and licences are signed by the same offline process or by a derived key you can revoke. [F17, D1]
 - Two embedded public keys (current and next) let you rotate the signing key while shops are offline. A revocation list travels in config bundles. [F17]
 - Release channels: stable, beta, pinned. An update goes to a beta shop first, then the fleet. The pilot shop is the beta channel and takes a weekly release. [D2]
 - Updates and rollback. Updates are pulled, never pushed: the updater on the shop server checks the signed release manifest, pulls the images from GHCR by digest with a read-only token of its own, and only then backs up, migrates and runs the health check. A shop with no internet connects a phone hotspot for the update; a MiFi is optional. [D2, D3, S18] A backup always precedes an update. Migrations follow expand-then-contract, so the previous image still works against the new schema. A failed post-update health check rolls back the code only. The database snapshot is restored only if the migration itself failed before trading resumed. After trading has resumed, the fix is a new release rolled forward, so no sale made since the update is ever discarded. [F16]
@@ -139,7 +139,7 @@ Local interactions respond in under 100 ms. Search under 100 ms from the browser
 | item_prices | item_id, customer_type (retail, wholesale), price_kobo, effective_from, set_by. Append-only; the latest row is the set price. Owner and manager. [S4] |
 | brands | id, name (unique ignoring case), aliases, status (approved, pending, merged), merged_into_id, created_by, source (starter, owner, cashier). A typed brand stays pending until a manager or owner approves it. [v1.3] |
 | merge_events | item_id, merged_into_id, kind (merge, undo), at, by. Append-only: an undo is a new row. Needed for undo and for cycle checks. [F18, S15] |
-| category_templates | category, facets, drill order, name order, generator rules (combine, blank allowed, exclude). Generated shapes are offered at the counter, and an item row is created on the first sale. [R1, R2] |
+| category_templates | category, facets, drill order, name order, generator rules (combine, blank allowed, exclude), and whether the counter asks for colour [D9]. Generated shapes are offered at the counter, and an item row is created on the first sale. [R1, R2] |
 | barcodes | code, item_id, learned_at, learned_by, status (unconfirmed, confirmed, disabled), confirmations. One code may map to several items. [F13] |
 | barcode_ignore | pattern or code, reason. Placeholder and junk codes that never learn. [F13] |
 | aliases | item_id, term, hits, distinct_sales, status (candidate, active). Active only after the activation count (default 3). [F13] |
@@ -240,7 +240,7 @@ Every printed name is built by one routine in this order: Brand, Model or connec
 
 | Situation | What happens | Target |
 |---|---|---|
-| Barcode known | Scan, confirm price, done | About 3 seconds |
+| Barcode known | Scan, done when the item has a set price; otherwise confirm or type the price [D7] | About 3 seconds |
 | Barcode unknown, item exists | Search once. The barcode is linked and flagged for review | About 10 seconds the first time |
 | Item not in the catalogue | New item [S1], pick category, facet pickers with autocomplete, price, sell | About 20 seconds |
 
@@ -264,11 +264,11 @@ Every printed name is built by one routine in this order: Brand, Model or connec
 - Products that fit no category. The category picker has a “Not in the list” option. The cashier types the product word (for example “Solar light”, at least 3 characters, and a denylist rejects words such as others, misc, item and test). The receipt prints that word as the category word, never “Others”. The item is pending review, and only the owner creates the new category and moves the item into it. [v1.3]
 - Item creation per cashier is counted and a high rate is flagged on the owner dashboard. [F11]
 ## Colours
-Colour is a quick-pick note on the sale line, configurable per shop. It prints on the receipt and never creates a separate catalogue item. An optional shop setting, Track colour in stock, off by default, also records the colour as variant_key on stock movements and counts, so Pro stock and low-stock alerts can tell black from white without multiplying catalogue items. [F22]
+Colour is a quick-pick note on the sale line, configurable per shop. It prints on the receipt and never creates a separate catalogue item. An optional shop setting, Track colour in stock, off by default, also records the colour as variant_key on stock movements and counts, so Pro stock and low-stock alerts can tell black from white without multiplying catalogue items. [F22] When an item from a category that asks for colour is added, its sale line opens a row of the shop's colours, most used first, then More. One tap sets the colour and closes the row. The next item or Pay closes it with no colour, and tapping the line opens it again. Colour never blocks a sale, and the owner ticks which categories ask for colour at install. [D9]
 # 7. Counter flow
-- Scan, search or tap the tiles. Search splits words on letter and digit boundaries, matches prefixes, allows one typo in words of 4 or more letters, treats "1m" as "1 m" and "20w" as "20W", and ranks by sales in the last 30 days. It covers item names, active aliases and the generated shapes not yet sold. [S10, R2]
+- Scan, search or tap the tiles. Tiles step through the category's drill order and show a price only on the last step. An optional facet, such as cable length or rated power, has a Skip tile, and the item prints without it. [D7] Search splits words on letter and digit boundaries, matches prefixes, allows one typo in words of 4 or more letters, treats "1m" as "1 m" and "20w" as "20W", and ranks by sales in the last 30 days. It covers item names, active aliases and the generated shapes not yet sold. [S10, R2]
 - Scanner input is detected by timing (keys under 30 ms apart) and goes to the barcode handler wherever focus is, so the Enter a scanner sends never triggers payment. [S1]
-- The price field is pre-filled with the item's set price for that customer type. With no set price it shows the last price sold for that item and customer type; a shop setting uses the median of the last 10 sales instead, for shops that haggle. With no sale yet, the field is empty and the cashier types the price. The cashier overrides it freely, and flipping the retail or wholesale toggle pre-fills that type's price. The owner and the manager set prices, and one tap on the first-sale price list turns a first price into the set price. [S4]
+- An item with a set price for the customer type is added at that price with one tap or scan. Otherwise a price pad opens, and one tap confirms the price it shows, or the cashier types another. [D7] The price field is pre-filled with the item's set price for that customer type. With no set price it shows the last price sold for that item and customer type; a shop setting uses the median of the last 10 sales instead, for shops that haggle. With no sale yet, the field is empty and the cashier types the price. The cashier overrides it freely, and flipping the retail or wholesale toggle pre-fills that type's price. The owner and the manager set prices, and one tap on the first-sale price list turns a first price into the set price. [S4] The retail or wholesale toggle sits in the counter's top bar and covers the whole sale; one sale never mixes the two. [D8]
 - Price range and floor. With a set price, the usual price is the set price. Otherwise the usual range is the 10th to 90th percentile of the item's last 20 sales for that customer type, given at least 5 sales; a new item inherits a range from sibling items (same category and nearest facets, otherwise the category median). If there is still nothing to inherit, no prompt fires, and the item's first sales go on a first-sale price list the owner reviews the same day. [F11, S5]
   - Inside the range: no prompt.
   - Outside the range: “Usual ₦2,500 to ₦3,000. Sell at ₦2,000?” with a one-tap confirm by the cashier. It never reveals cost.
@@ -621,7 +621,7 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
   - Swap recorded for v1.2: the minimal print agent with drawer kick and drawer log enters the pilot slice. Weekly and monthly report views and the top-items report leave the pilot slice for the MVP. The advanced print agent features stay in Pro. [F12] Superseded in v1.5: printing goes from the server to network printers, so there is no agent. [R3]
 - Scripted migrations and seeders, so a rebuild is fast. Migrations follow expand-then-contract. [F16]
 - Concurrency, crash and restore tests run on a real PostgreSQL in CI and are never replaced by rolled-back test transactions. [F6]
-- One private GitHub monorepo, trunk-based: short-lived branches, a protected main, one review and green CI to merge. [D1]
+- One GitHub monorepo, public until the owner makes it private, trunk-based: short-lived branches, a protected main, and green CI to merge, with one review once the developers join. [D1, D6, D10]
 - The spec is Markdown in Git, and the JSON seed is the only master for catalogue data; its workbook and appendix are generated. Every decision is recorded in docs/decisions.md. [R8, Q9]
 ## Work that must finish before the first shop goes live
 
@@ -712,7 +712,7 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
 | Counters | Windows touchscreens running Chrome in kiosk mode; keyboard and mouse as fallbacks [Q5] |
 | Receipts | Printed for every sale, with the receipt number as a Code 128 barcode [Q14, S9] |
 | Sync | One-way in the MVP; two-way straight after [R7, FU7] |
-| Code and CI | One private GitHub monorepo, trunk-based; GitHub Actions CI on every pull request with a real PostgreSQL; images on GHCR [D1] |
+| Code and CI | One GitHub monorepo, public until the owner makes it private, trunk-based; GitHub Actions CI on every pull request with a real PostgreSQL; images on GHCR [D1, D10] |
 | Spec and records | Markdown in Git; the JSON seed is the catalogue master; decisions in docs/decisions.md [R8, Q9] |
 | Owner remote view | Not in Core for now [S13] |
 
@@ -815,4 +815,6 @@ Every change below comes from the v1.4 review of 5 November 2026; docs/decisions
 | Process (section 16) | The spec in Markdown in Git; the seed as the catalogue master; the schedule in PLAN.md | R8, Q9 |
 | Acceptance (section 14) | 47 pilot checks: A12, A13 and B12 are new, and the wording of others follows the changes above | S1, S2, S12 |
 | Design (section 15) | Apple's system colours as fixed tokens, the Inter typeface, and responsive layouts from phone to large monitor | D4, D5 |
+| Counter (sections 6 and 7) | One tap adds an item with a set price; otherwise a price pad confirms the pre-filled price. Optional facets have a Skip tile, and tiles show a price only on the last step. Retail or Wholesale covers the whole sale from the top bar. A colour row opens on a new line for categories that ask for colour | D7, D8, D9 |
+| Repository (section 4) | Public until the owner makes it private; nothing secret or personal is committed | D10 |
 | Not adopted | An owner phone summary and read-only cloud view in Core | S13 |

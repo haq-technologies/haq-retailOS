@@ -24,8 +24,8 @@ Done:
 - Spec v1.5 written, with the decisions applied and tagged.
 - Starter catalogue v1.1 drafted with 466 phone models, built and verified by script. It waits for the shop owner's re-confirmation.
 - Project folder organised: README.md, CLAUDE.md, this plan, docs/ and tools/.
-- GitHub prepared locally: the first commit and a docs CI workflow. Nothing is pushed yet, because haq-technologies/haq-retailOS is public; it goes up once the repository is private.
-- Design direction decided: Apple's system colours, the Inter typeface, and responsive layouts (D4, D5). The wireframes are in progress on a new canvas.
+- GitHub: main is pushed to haq-technologies/haq-retailOS, and the first CI run passed. The "Protect main" ruleset allows changes only through a pull request with the docs check green, and blocks force-pushes and deletion. The repository stays public for now (D10), and commits use the GitHub noreply email.
+- Design direction decided: Apple's system colours, the Inter typeface, and responsive layouts (D4, D5). The wireframes are in progress on a new canvas, and the counter decisions D7 to D9 are recorded.
 
 Next: the Phase 0 checklist below.
 
@@ -74,7 +74,7 @@ The notebook stays the shop's record until G5, so real cashiers meet the system 
 
 Every change runs the full test suite against a real PostgreSQL before it can merge, and every release reaches a shop as Docker images pulled from GitHub and checked against a signed release manifest [D1, D2].
 
-1. **Branch and pull request.** Short-lived branches off main; one review and green CI to merge; no direct pushes.
+1. **Branch and pull request.** Short-lived branches off main; green CI to merge, plus one review once the developers join (D6); no direct pushes.
 2. **CI on every pull request.** Lint and static analysis (Pint, PHPStan, ESLint); unit tests (Pest, Vitest); concurrency, crash and restore tests on a real PostgreSQL; counter flows in Playwright on Docker Compose; the previous release's code against the new schema, and an upgrade from two versions back; the seed validator, the cost-leak scan and an image scan.
 3. **Merge to main.** Docker images are built once and pushed to GHCR, pinned by digest.
 4. **Staging box.** The office mini-PC, with the same printer and scanner and 5,000 test items, deploys from main.
@@ -86,7 +86,7 @@ Every change runs the full test suite against a real PostgreSQL before it can me
 
 | Phase | CI/CD work | Owner |
 |---|---|---|
-| 0 (weeks 1–2) | GitHub organisation and private repository, branch protection, and the first workflow: lint, unit tests, a PostgreSQL service | Developer B |
+| 0 (weeks 1–2) | GitHub organisation and repository (public for now, D10), branch protection, and the first workflow: lint, unit tests, a PostgreSQL service | Developer B |
 | 2 (weeks 3–8) | Dockerfiles and Compose; images to GHCR on merge; the staging box deploying from main; the multi-process PostgreSQL harness in CI | Developer B |
 | 3 (weeks 6–12) | Playwright counter tests in CI; the release manifest and the updater with code-only rollback; a signing dry run. G3 installs by pulling from GHCR | Developers A and B |
 | 4 and 5 (weeks 13–22) | A weekly signed release pulled at the shop over a phone hotspot; the upgrade-path test; a scheduled restore drill in CI | Developer B and the field lead |
@@ -101,7 +101,7 @@ Choices and their tradeoffs (runners, registry, environments, housekeeping) are 
 - [x] Organise the project folder (Claude)
 - [ ] Buy the bench hardware: [docs/operations/hardware.md](docs/operations/hardware.md) (product owner). Deferred on 5 November; it is needed before the G3 dress rehearsal in week 12
 - [ ] Shop visit: the owner re-confirms catalogue v1.1; shelf walk; 20-item barcode test; two hours of observation; a week of sales counted from the notebook; a power and network survey: [docs/operations/shop-visit-checklist.md](docs/operations/shop-visit-checklist.md) (field lead). Deferred on 5 November; catalogue v1.1 must be re-confirmed before it is loaded at the shop in week 13
-- [ ] Make haq-technologies/haq-retailOS private (product owner), then push the prepared first commit and protect main (Claude, product owner). The first commit and the docs CI workflow are ready locally
+- [x] Push the first commit to the public repository and protect main (Claude). The repository stays public for now (D10)
 - [ ] Docker Compose for development (Developer B)
 - [ ] Bench test: print, cut, barcode, drawer kick, printer status, scanner suffix and speed, Chrome kiosk keys, touch, UPS changeover, phone hotspot (Developer B, field lead)
 - [ ] Touch-first, responsive wireframes in Apple's system colours on a new canvas, including the price-floor prompt, pending print, lost window, Pending transfers and the idle lock (Claude, designer). In progress
@@ -160,7 +160,7 @@ Assumptions:
 | The 16 brands to confirm, and the short codes HF, AI, LP, BM, DV, JZ, EX, UWO | Field lead, shelf walk | G0 | Kept until shown not stocked |
 | Phone-model list corrections | Field lead, shelf walk | G0 | The v1.1 draft |
 | Screen-protector name order ("Tecno Spark 20 Tempered Glass Screen Protector") and capitals for car mp3 s8 | Shop owner | G0 | As drafted; car mp3 s8 printed as typed |
-| Make the repository private | Product owner | Before the first push | Nothing is pushed while it is public |
+| Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | Recommended before application code lands in Phase 2 (week 3) | Public, documents only (D10) |
 | Tile (drill) order per category | Cashier timing | G1 | The v1.1 proposal |
 | What the shop does today when the PC fails | Field lead | Week 13 | The paper-pad downtime procedure (spec section 9) |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
@@ -177,3 +177,4 @@ Assumptions:
 | Date | Change |
 |---|---|
 | 5 November 2026 | First version, built from the v1.4 review; spec v1.5 and catalogue v1.1 written; the folder organised |
+| 5 November 2026 | Counter decisions D7 to D9 recorded; the repository stays public for now (D10) |

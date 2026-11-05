@@ -26,10 +26,15 @@ A point-of-sale system for phone-accessory shops in Nigeria, by HAQ Technology. 
 ## Links
 
 - Spec v1.4 review and build plan, the Claude Doc where the decisions were made: https://claude.ai/artifact/DW5VWtw3J6xgMg6xMSgKSY
-- POS pilot wireframes v1.4 (superseded; to be redrawn on a new canvas): https://claude.ai/artifact/UwPPkLC7LDwxCBLSzMCK7i
+- Wireframes v1.5, the current design canvas: https://claude.ai/artifact/2Z3qtkr9F4AM9k9PmuRqh1
+- POS pilot wireframes v1.4 (superseded): https://claude.ai/artifact/UwPPkLC7LDwxCBLSzMCK7i
 
 ## How we work
 
-- One private GitHub repository, developed trunk-based: short-lived branches, and merges only through pull requests with green CI and one review. Nobody pushes directly to main.
+- One GitHub repository, public for now (D10), developed trunk-based: short-lived branches, and merges only through pull requests with green CI, plus one review once the developers join. Nobody pushes directly to main.
 - The JSON seed is the only master for catalogue data. Never hand-edit the generated workbook or appendix; change the build script and rerun it (see CLAUDE.md).
 - Every decision goes into docs/decisions.md first, then into the spec.
+
+## Copyright
+
+Copyright © 2026 HAQ Technology. All rights reserved. This repository is public for now, but it is not open source: no licence is granted to use, copy, modify or distribute its contents.
