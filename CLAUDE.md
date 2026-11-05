@@ -57,7 +57,7 @@ tools/catalogue/   scripts that build and verify the catalogue
 
 ## Stack (planned)
 
-Laravel, PostgreSQL, Inertia and React (the counter is a local-first client inside one Inertia page), Docker Compose, pgBackRest, MiniSearch, ESC/POS to network printers, Pest, Vitest and Playwright. Code goes in one private GitHub monorepo, developed trunk-based, with GitHub Actions CI on every pull request and images on GHCR. Releases are signed offline by a person; shop servers pull them against the signed manifest.
+Laravel, PostgreSQL, Inertia and React (the counter is a local-first client inside one Inertia page), Docker Compose, pgBackRest, MiniSearch, ESC/POS to network printers, Pest, Vitest and Playwright. Code goes in one GitHub monorepo (public until the owner makes it private, D10), developed trunk-based, with GitHub Actions CI on every pull request and images on GHCR. Releases are signed offline by a person; shop servers pull them against the signed manifest.
 
 ## Commands
 
@@ -85,14 +85,14 @@ Apple's system colours with fixed roles, the Inter typeface, and responsive layo
 - Never edit anything in docs/archive/.
 - Never hand-edit generated files (the catalogue .xlsx and Appendix C). Change the data in tools/catalogue/build_catalogue_v11.py, then rerun the build and verify commands.
 - Name new documents in lowercase kebab-case.
-- Never commit secrets, signing keys, .env files or shop data.
+- Never commit secrets, signing keys, .env files, shop data or personal data (names, phone numbers, email addresses).
 
 ## Git
 
-- Remote: https://github.com/haq-technologies/haq-retailOS. Never push while the repository is public; check first, because the spec, plan and decision log are business documents.
-- Branch from main and keep branches short-lived. Merge only through a pull request with green CI; never push directly to main. Until the developers join, no approval is required, because GitHub does not let an author approve their own pull request; after that, one review is required (D6).
+- Remote: https://github.com/haq-technologies/haq-retailOS. It stays public until the owner makes it private (D10), so every push publishes. Commit with the GitHub noreply email set in this repository's git config, never a personal address, and check each diff for secrets, shop data and personal data before pushing.
+- Branch from main and keep branches short-lived. Merge only through a pull request with green CI; never push directly to main. Until the developers join, no approval is required, because GitHub does not let an author approve their own pull request; after that, one review is required (D6). GitHub enforces this with the "Protect main" ruleset: a pull request, the docs check green and up to date, squash merges only, no force-push or deletion, and no bypass.
 - End every commit message with the co-author line for Claude.
 
 ## Environment notes (5 November 2026)
 
-This Mac has git and Node. Docker, PHP, Composer, PostgreSQL and the GitHub CLI are not installed, and neither are openpyxl or LibreOffice, which is why the catalogue tools use only the Python standard library.
+This Mac has git, Node and the GitHub CLI (gh 2.103.3, installed 5 November 2026). Docker, PHP, Composer and PostgreSQL are not installed, and neither are openpyxl or LibreOffice, which is why the catalogue tools use only the Python standard library.

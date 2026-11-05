@@ -73,12 +73,16 @@ v1.1 waits for the shop owner's re-confirmation (see PLAN.md).
 
 | ID | Decision | Status | Date | Source |
 |---|---|---|---|---|
-| D1 | CI/CD with Git, GitHub and Docker: one private monorepo, trunk-based, GitHub Actions CI on every pull request with a real PostgreSQL, images on GHCR | Accepted | 5 Nov 2026 | Chat |
+| D1 | CI/CD with Git, GitHub and Docker: one private monorepo, trunk-based, GitHub Actions CI on every pull request with a real PostgreSQL, images on GHCR | Accepted; privacy superseded by D10 | 5 Nov 2026 | Chat |
 | D2 | Updates are Docker images pulled from GHCR against a signed release manifest; no USB delivery | Accepted | 5 Nov 2026 | Chat |
 | D3 | A shop with no internet connects a phone hotspot for updates; a MiFi is optional per shop | Accepted | 5 Nov 2026 | Chat, FU10 |
 | D4 | Apple's system colours, with fixed roles and increased-contrast variants for text (spec section 15, Colour tokens), and the Inter typeface. The earlier proposals (Red Orange #F42902, Snowy White #FDFDFF, #83FD80, and the extra working colours) are dropped | Accepted | 5 Nov 2026 | Chat |
 | D5 | Every screen is responsive, from phone width to large monitors, with compact, medium and large layouts | Accepted | 5 Nov 2026 | Chat |
-| D6 | The repository haq-technologies/haq-retailOS must be private before anything is pushed. Until the developers join, main takes changes only through a pull request with green CI and no approval required, because GitHub does not let an author approve their own pull request; one approval becomes required when they join | Accepted | 5 Nov 2026 | Chat (left to Claude) |
+| D6 | The repository haq-technologies/haq-retailOS must be private before anything is pushed. Until the developers join, main takes changes only through a pull request with green CI and no approval required, because GitHub does not let an author approve their own pull request; one approval becomes required when they join | Privacy rule superseded by D10; the pull-request rule stands | 5 Nov 2026 | Chat (left to Claude) |
+| D7 | At the counter, an item with a set price for the customer type is added at that price with one tap or scan. Otherwise a price pad opens, filled with the last price sold (or the median, by shop setting), or empty for an item that has never sold, and one tap confirms it or the cashier types another. Tiles step through the drill order and show a price only on the last step. An optional facet, such as cable length or rated power, has a Skip tile, and the item prints without it | Accepted | 5 Nov 2026 | Chat (left to Claude) |
+| D8 | Retail or Wholesale is set in the counter's top bar and covers the whole sale; one sale never mixes the two | Accepted | 5 Nov 2026 | Chat |
+| D9 | When an item from a category that asks for colour is added, its sale line opens a row of the shop's colours, most used first, then More. One tap sets the colour; the next item or Pay closes the row with no colour, and tapping the line opens it again. Colour never blocks a sale. The owner ticks which categories ask for colour at install | Accepted | 5 Nov 2026 | Chat (left to Claude) |
+| D10 | The repository stays public for now; the product owner will make it private and move the organisation to GitHub Team later. Until then every push publishes, so commits use the GitHub noreply email, and no secret, signing key, .env file, shop data or personal data is committed. This supersedes D6's privacy rule. D6's pull-request rule stands, and GitHub enforces it free of charge on a public repository | Accepted | 5 Nov 2026 | Chat |
 
 ## Answers that set facts or scope
 
