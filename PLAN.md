@@ -179,4 +179,4 @@ Assumptions:
 |---|---|
 | 5 November 2026 | First version, built from the v1.4 review; spec v1.5 and catalogue v1.1 written; the folder organised |
 | 5 November 2026 | Counter decisions D7 to D9 recorded; the repository stays public for now (D10) |
-| 6 November 2026 | Counter wireframes drawn; a bench check for the ₦ sign; the receipt text added to the open items |
+| 6 November 2026 | Counter wireframes drawn; a bench check for the ₦ sign; the receipt text added to the open items; a POS payment needs nothing typed (D11) |

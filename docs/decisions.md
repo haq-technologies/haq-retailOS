@@ -83,6 +83,7 @@ v1.1 waits for the shop owner's re-confirmation (see PLAN.md).
 | D8 | Retail or Wholesale is set in the counter's top bar and covers the whole sale; one sale never mixes the two | Accepted | 5 Nov 2026 | Chat |
 | D9 | When an item from a category that asks for colour is added, its sale line opens a row of the shop's colours, most used first, then More. One tap sets the colour; the next item or Pay closes the row with no colour, and tapping the line opens it again. Colour never blocks a sale. The owner ticks which categories ask for colour at install | Accepted | 5 Nov 2026 | Chat (left to Claude) |
 | D10 | The repository stays public for now; the product owner will make it private and move the organisation to GitHub Team later. Until then every push publishes, so commits use the GitHub noreply email, and no secret, signing key, .env file, shop data or personal data is committed. This supersedes D6's privacy rule. D6's pull-request rule stands, and GitHub enforces it free of charge on a public repository | Accepted | 5 Nov 2026 | Chat |
+| D11 | A POS card payment needs nothing typed: the cashier charges the card on the POS terminal, chooses POS and taps Finish. POS payments are totalled by method and are not checked against a bank | Accepted | 6 Nov 2026 | Chat |
 
 ## Answers that set facts or scope
 
