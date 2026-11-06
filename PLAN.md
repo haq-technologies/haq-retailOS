@@ -17,7 +17,7 @@ The pilot succeeds when (spec section 14):
 
 ## Status
 
-Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go.
+Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3, the dress rehearsal, waits for the pilot hardware, the release signing key and the server's GHCR token.
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
@@ -31,8 +31,9 @@ Done:
 - Phase 2, the foundation (D20 to D26): the shop server in apps/shop-server/ as a modular monolith; the three database roles with grants and triggers from the mutability matrix; audit chains, roots and the spool; settings and the shop profile tool; identity with name tiles, PINs, acting-user tokens and bound approvals; the catalogue with the one name routine and the seeder; the multi-process test harness in CI; a shop's Docker stack with images on GHCR, the installer and staging. G2's criteria are met.
 
 - Gate G2 passed on 6 November 2026 (D27); the identity timings accepted (D28); back-office devices for the owner's phone or laptop (D29).
+- Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the G3 tooling. See the Phase 3 checklist below.
 
-Next: the rest of the Phase 3 checklist below.
+Next: gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md), once the open items it needs are done: the release signing key, the server's read-only GHCR token and the hardware. Phase 4 starts only at the product owner's go.
 
 ## Team
 
@@ -147,7 +148,8 @@ Phase 3, the counter and sale core, started on 6 November 2026 at the product ow
 - [x] Backups with pgBackRest 2.60: WAL to the second disk, a weekly full and daily incrementals with catch-up, the weekly test restore verified by the scheduler (row counts and every audit chain), the key and epochs kept beside the backups, `shop:after-restore`, and deploy/restore.sh, rehearsed on staging (Claude, 6 November 2026, D35; docs/operations/restore-drill.md)
 - [x] Playwright 1.65 tests in CI: the counter in Chromium against a fresh test shop in retail_e2e, on every pull request; `apps/shop-server/e2e/run.sh` runs them on this computer (Claude, 6 November 2026)
 - [x] The release manifest, offline signing and the updater: images by digest and the Compose file by hash, signed with an offline Ed25519 key; `update.sh` checks, pulls, backs up, switches, health-checks and rolls back the code only; a signing dry run in CI; rehearsed on staging (Claude, 6 November 2026, D36; docs/operations/releases.md). The product owner makes the real key
-- [ ] Gate G3: the dress rehearsal on the pilot hardware (product owner, Claude)
+- [x] The G3 tooling: `shop:rehearse` (scripted sales on two counters at once, through the print queue) and `shop:rehearsal-check` (gapless numbers, whole sales, receipts, audit chains, grants), the power-cut procedure and the restore onto the spare box (Claude, 6 November 2026; docs/operations/g3-dress-rehearsal.md). Rehearsed on staging with the database and app killed mid-run
+- [ ] Gate G3: the dress rehearsal on the pilot hardware (product owner, Claude). It waits for the pilot hardware, the release signing key and the server's read-only GHCR token
 
 ## Before Phase 3
 
@@ -248,3 +250,4 @@ Assumptions:
 | 6 November 2026 | The counter client and the browser tests in CI (D34) |
 | 6 November 2026 | Backups, the weekly test restore and the restore script (D35) |
 | 6 November 2026 | The release manifest, offline signing and the updater (D36) |
+| 6 November 2026 | The G3 tooling: scripted sales, the rehearsal check and the procedure; Phase 3 built, G3 waits for the pilot hardware |

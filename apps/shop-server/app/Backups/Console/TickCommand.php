@@ -45,8 +45,9 @@ final class TickCommand extends Command
         $port = is_int($restore['port'] ?? null) ? $restore['port'] : config()->integer('backups.restore_port');
         $result = $check->run(config()->string('backups.restore_host'), $port);
         $status->write("verified-{$label}.json", [...$result, 'label' => $label, 'checked_at' => now()->toIso8601String()]);
+        // The label goes in the values: an audit subject is always a ULID.
         $audit->record(new AuditEntry(action: $result['ok'] ? 'backup.restore_verified' : 'backup.restore_failed',
-            subjectType: 'backup', subjectId: $label, after: ['counts' => $result['counts'], 'problems' => $result['problems']]));
+            subjectType: 'backup', after: ['label' => $label, 'counts' => $result['counts'], 'problems' => $result['problems']]));
         $this->line($result['ok'] ? "The test restore of {$label} verified." : "The test restore of {$label} FAILED: ".implode(' ', $result['problems']));
 
         return $result['ok'] ? self::SUCCESS : self::FAILURE;

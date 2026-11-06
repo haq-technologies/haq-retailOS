@@ -17,6 +17,9 @@ class CounterServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadRoutesFrom(__DIR__.'/routes.php');
+        if ($this->app->runningInConsole()) {
+            $this->commands([Console\RehearseCommand::class, Console\RehearseCounterCommand::class, Console\RehearsalCheckCommand::class]);
+        }
         Event::listen(SaleFinished::class, [LearnFromSale::class, 'handle']);
     }
 }
