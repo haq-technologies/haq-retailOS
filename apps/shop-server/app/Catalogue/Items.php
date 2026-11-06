@@ -40,14 +40,16 @@ final readonly class Items
         string $source = 'owner',
         ?string $createdBy = null,
         string $status = 'active',
+        ?string $typedCategoryWord = null,
     ): Item {
         $template = CategoryTemplate::query()->where('category_id', $category->id)->first()
             ?? throw new InvalidArgumentException("{$category->name} is not a sellable category.");
 
         $resolved = $this->resolveFacets($template, $facets);
-        $key = $this->identityKey($category->id, $brand?->id, $brandText, $resolved, $freeText);
+        $key = $this->identityKey($category->id, $brand?->id, $brandText, $resolved, $freeText)
+            .($typedCategoryWord === null ? '' : '|word:'.NameBuilder::normalise($typedCategoryWord));
 
-        return DB::transaction(function () use ($category, $template, $resolved, $key, $brand, $brandText, $freeText, $source, $createdBy, $status): Item {
+        return DB::transaction(function () use ($category, $template, $resolved, $key, $brand, $brandText, $freeText, $source, $createdBy, $status, $typedCategoryWord): Item {
             // Concurrent creates of the same item meet at this lock, so the second finds the first.
             DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['item:'.$key]);
             $existing = Item::query()->where('identity_key', $key)->first();
@@ -55,12 +57,13 @@ final readonly class Items
                 return $existing;
             }
 
-            $name = $this->name($category, $template, $brand, $brandText, $resolved, $freeText);
+            $name = $this->name($category, $template, $brand, $brandText, $resolved, $freeText, $typedCategoryWord);
             $item = Item::query()->create([
                 'category_id' => $category->id,
                 'brand_id' => $brand?->id,
                 'brand_text' => $brandText,
                 'free_text' => $freeText,
+                'typed_category_word' => $typedCategoryWord,
                 'item_code' => $this->newCode(),
                 'display_name' => $name,
                 'search_text' => NameBuilder::normalise($name),
@@ -85,6 +88,18 @@ final readonly class Items
         });
     }
 
+    /**
+     * The name an item would print with, before it exists: for the similar-item check.
+     *
+     * @param  array<string, string>  $facets
+     */
+    public function previewName(Category $category, array $facets, ?Brand $brand, ?string $brandText, ?string $freeText, ?string $typedCategoryWord = null): string
+    {
+        $template = CategoryTemplate::query()->where('category_id', $category->id)->firstOrFail();
+
+        return $this->name($category, $template, $brand, $brandText, $this->resolveFacets($template, $facets), $freeText, $typedCategoryWord);
+    }
+
     /** Rebuilds an item's cached name and search text from its parts. Returns true if they changed. */
     public function rebuildName(Item $item): bool
     {
@@ -98,7 +113,7 @@ final readonly class Items
         }
         ksort($resolved);
 
-        $name = $this->name($category, $template, $brand, $item->brand_text, $resolved, $item->free_text);
+        $name = $this->name($category, $template, $brand, $item->brand_text, $resolved, $item->free_text, $item->typed_category_word);
         if ($name === $item->display_name) {
             return false;
         }
@@ -110,7 +125,7 @@ final readonly class Items
     /**
      * @param  array<string, array{value_id: ?string, text: ?string}>  $resolved
      */
-    private function name(Category $category, CategoryTemplate $template, ?Brand $brand, ?string $brandText, array $resolved, ?string $freeText): string
+    private function name(Category $category, CategoryTemplate $template, ?Brand $brand, ?string $brandText, array $resolved, ?string $freeText, ?string $typedCategoryWord = null): string
     {
         $parts = ['brand' => $brand === null
             ? $brandText
@@ -123,7 +138,8 @@ final readonly class Items
             $parts[$key] = $value['value_id'] !== null ? ($names[$value['value_id']] ?? null) : $value['text'];
         }
 
-        return NameBuilder::build($template->name_order, $category->word ?? $category->name, $parts, $freeText);
+        // "Not in the list": the cashier's product word prints as the category word, never "Others" [v1.3].
+        return NameBuilder::build($template->name_order, $typedCategoryWord ?? $category->word ?? $category->name, $parts, $freeText);
     }
 
     /**

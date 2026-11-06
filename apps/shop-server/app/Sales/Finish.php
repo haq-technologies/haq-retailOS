@@ -103,7 +103,7 @@ final class Finish
                         'cost_snapshot_kobo' => Costs::current($item->id, $now),
                         'price_source' => $line['price_source'],
                         'approval_id' => $lines[$i]['approval_id'],
-                        'flags' => json_encode((object) $lines[$i]['flags'], JSON_THROW_ON_ERROR),
+                        'flags' => json_encode((object) array_filter([...$lines[$i]['flags'], 'barcode' => $line['barcode'], 'learned' => $line['added_by'] === 'learn' ? true : null, 'search_term' => $line['search_term']], fn (mixed $v) => $v !== null), JSON_THROW_ON_ERROR),
                     ]);
                 }
 
