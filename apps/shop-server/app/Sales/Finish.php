@@ -238,10 +238,21 @@ final class Finish
 
     private function completeParked(string $parkedSaleId, Terminal $terminal, User $cashier, string $at): void
     {
-        $updated = DB::table('parked_sales')->where('id', $parkedSaleId)->where('branch_id', $terminal->branch_id)
-            ->whereIn('status', ['open', 'resumed'])->update(['status' => 'completed']);
-        if ($updated === 0) {
+        /** @var object{status: string, kind: string}|null $parked */
+        $parked = DB::table('parked_sales')->where('id', $parkedSaleId)->where('branch_id', $terminal->branch_id)->lockForUpdate()->first(['status', 'kind']);
+        $resumedHere = $parked !== null && $parked->status === 'resumed' && DB::table('parked_sale_events')
+            ->where('parked_sale_id', $parkedSaleId)->where('type', 'resumed')->where('terminal_id', $terminal->id)->exists()
+            && ! DB::table('parked_sale_events')->where('parked_sale_id', $parkedSaleId)->where('type', 'completed')->exists();
+        if ($parked === null || ($parked->status !== 'open' && ! $resumedHere)) {
             throw new SaleRefused('That held sale was already finished or discarded on another counter.');
+        }
+        // An open row (Awaiting transfer) closes here; a held cart was closed when it was resumed.
+        if ($parked->status === 'open') {
+            DB::table('parked_sales')->where('id', $parkedSaleId)->update(['status' => 'completed']);
+        }
+        if ($parked->kind === 'awaiting_transfer') {
+            DB::table('parked_sale_events')->insert(['id' => Ulid::generate(), 'parked_sale_id' => $parkedSaleId, 'type' => 'transfer_confirmed',
+                'actor_id' => $cashier->id, 'terminal_id' => $terminal->id, 'at' => $at]);
         }
         DB::table('parked_sale_events')->insert([
             'id' => Ulid::generate(), 'parked_sale_id' => $parkedSaleId, 'type' => 'completed',
