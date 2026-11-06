@@ -35,7 +35,10 @@ final readonly class Epochs
         return is_numeric($epoch) ? (int) $epoch : $this->begin($terminal, 1, 'install');
     }
 
-    public function begin(Terminal $terminal, int $epoch, string $reason): int
+    /**
+     * @param  int  $afterNumber  the receipt number the epoch counts on from: 1,000 after a restore (spec section 4) [F1]
+     */
+    public function begin(Terminal $terminal, int $epoch, string $reason, int $afterNumber = 0): int
     {
         $startedAt = CarbonImmutable::now()->format('Y-m-d\TH:i:s.u\Z');
         DB::table('epochs')->insert([
@@ -47,7 +50,7 @@ final readonly class Epochs
             'signature' => $this->key->sign(self::message($terminal->id, $epoch, $startedAt, $reason)),
         ]);
         DB::table('receipt_counters')->insert([
-            'id' => Ulid::generate(), 'terminal_id' => $terminal->id, 'epoch' => $epoch, 'last_no' => 0,
+            'id' => Ulid::generate(), 'terminal_id' => $terminal->id, 'epoch' => $epoch, 'last_no' => $afterNumber,
         ]);
 
         return $epoch;

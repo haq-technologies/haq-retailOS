@@ -4,10 +4,10 @@
 # images, starts the stack (the migration job runs first) and reapplies the profile, which changes nothing
 # the second time.
 #
-#   sudo deploy/install.sh --profile shop.profile.json --name haq-server.local --ip 192.168.1.10
+#   sudo deploy/install.sh --profile shop.profile.json --name haq-server.local --ip 192.168.1.10 --backup-dir /mnt/backup
 #
 # Options: --dir (default /opt/haq-retail-os), --tag (image tag, default main), --http-port, --https-port,
-# --project (Compose project name). If the images are private, set GHCR_USER and GHCR_TOKEN (a token that
+# --project (Compose project name), --backup-dir (the second internal disk's folder for backups). If the images are private, set GHCR_USER and GHCR_TOKEN (a token that
 # can only read packages) and the script signs in to GHCR first.
 set -euo pipefail
 
@@ -21,6 +21,7 @@ http_port=80
 https_port=443
 project=haq-retail-os
 registry=ghcr.io/haq-technologies
+backup_dir=
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -33,6 +34,7 @@ while [ $# -gt 0 ]; do
         --https-port) https_port="$2"; shift 2 ;;
         --project) project="$2"; shift 2 ;;
         --registry) registry="$2"; shift 2 ;;
+        --backup-dir) backup_dir="$2"; shift 2 ;;
         *) echo "Unknown option $1" >&2; exit 2 ;;
     esac
 done
@@ -68,7 +70,7 @@ if [ ! -f "$dir/.env" ]; then
     } > "$dir/.env"
 fi
 # The image tags, name and ports may change on a rerun; the secrets never do.
-grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|SERVER_NAME|SERVER_IP|HTTP_PORT|HTTPS_PORT)=' "$dir/.env" > "$dir/.env.new" || true
+grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|SERVER_NAME|SERVER_IP|HTTP_PORT|HTTPS_PORT|BACKUP_DIR)=' "$dir/.env" > "$dir/.env.new" || true
 {
     echo "APP_IMAGE=$registry/retail-os-app:$tag"
     echo "WEB_IMAGE=$registry/retail-os-web:$tag"
@@ -77,9 +79,18 @@ grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|SERVER_NAME|SERVER_IP|HTTP_PORT|HTTPS
     echo "SERVER_IP=$ip"
     echo "HTTP_PORT=$http_port"
     echo "HTTPS_PORT=$https_port"
+    if [ -n "$backup_dir" ]; then echo "BACKUP_DIR=$backup_dir"; fi
 } >> "$dir/.env.new"
 mv "$dir/.env.new" "$dir/.env"
 chmod 600 "$dir/.env"
+
+# Backups go to the second internal disk (spec section 9). PostgreSQL's user (999) owns the folder.
+if [ -n "$backup_dir" ]; then
+    mkdir -p "$backup_dir"
+    chown 999:999 "$backup_dir" 2>/dev/null || echo "Could not give $backup_dir to PostgreSQL's user (999); do it before trading." >&2
+else
+    echo "WARNING: no --backup-dir. Backups share the database's disk until the second disk is mounted and this is run again with --backup-dir." >&2
+fi
 
 compose() { docker compose --project-name "$project" --project-directory "$dir" -f "$dir/compose.yaml" --env-file "$dir/.env" "$@"; }
 

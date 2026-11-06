@@ -16,3 +16,6 @@ Schedule::command('audit:verify')->dailyAt('02:45')->withoutOverlapping();
 
 // A shift left open four hours past closing time closes as unclosed [S12].
 Schedule::command('shifts:auto-close')->everyFiveMinutes()->withoutOverlapping();
+
+// Beside the backup service: the key and epochs on the backup disk, and the weekly test restore's checks.
+Schedule::command('backups:tick')->everyFiveMinutes()->withoutOverlapping();

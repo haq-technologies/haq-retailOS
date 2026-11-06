@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Audit\AuditServiceProvider;
+use App\Backups\BackupsServiceProvider;
 use App\Catalogue\CatalogueServiceProvider;
 use App\Counter\CounterServiceProvider;
 use App\Identity\IdentityServiceProvider;
@@ -27,4 +28,5 @@ return [
     SalesServiceProvider::class,
     PrintingServiceProvider::class,
     CounterServiceProvider::class,
+    BackupsServiceProvider::class,
 ];

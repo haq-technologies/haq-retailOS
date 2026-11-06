@@ -52,6 +52,32 @@ services:
   scheduler:
     <<: *php
     command: ["php", "artisan", "schedule:work"]
+    environment:
+      <<: *app-env
+      BACKUP_STATUS_DIR: /backup/status
+      BACKUP_RESTORE_HOST: backup
+    volumes:
+      - ./apps/shop-server:/app
+      - ./docs/catalogue:/catalogue:ro
+      - backup-repo:/backup
+
+  # Backups (spec section 9): pgBackRest beside PostgreSQL, a weekly full and daily incrementals with
+  # catch-up, and the weekly test restore that the scheduler verifies. In development the "second disk"
+  # is a named volume. `docker compose exec backup haq-backup.sh full` takes a full backup now.
+  backup:
+    image: retail-os/shop-server-db:local
+    user: postgres
+    entrypoint: ["/usr/local/bin/haq-backup.sh"]
+    environment:
+      TZ: Africa/Lagos
+    volumes:
+      - db-data:/var/lib/postgresql:ro
+      - pg-socket:/var/run/postgresql
+      - backup-repo:/backup
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   # The one-shot migration job: migrates as the owner role, then applies the mutability matrix.
   migrate:
@@ -140,8 +166,13 @@ services:
 
   # PostgreSQL. Its port is never published (spec section 4); use `docker compose exec db psql -U postgres`.
   # The roles and databases are created by docker/postgres/init/01-roles.sh when the volume is new.
+  # The shop's own PostgreSQL image: PostgreSQL 18 with pgBackRest, archiving WAL to the backup volume.
   db:
-    image: postgres:18.6-trixie
+    image: retail-os/shop-server-db:local
+    build:
+      context: .
+      dockerfile: apps/shop-server/docker/Dockerfile
+      target: db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres-dev
@@ -150,6 +181,8 @@ services:
       RETAIL_REPORTING_PASSWORD: reporting-dev
     volumes:
       - db-data:/var/lib/postgresql
+      - pg-socket:/var/run/postgresql
+      - backup-repo:/backup
       - ./apps/shop-server/docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       # Over TCP, so the check passes only once initialisation is over and the real server listens.
@@ -161,3 +194,5 @@ services:
 
 volumes:
   db-data:
+  pg-socket:
+  backup-repo:

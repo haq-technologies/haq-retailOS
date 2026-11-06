@@ -35,6 +35,9 @@ services:
     secrets: [postgres_password]
     volumes:
       - db-data:/var/lib/postgresql
+      - pg-socket:/var/run/postgresql
+      # The second internal disk (spec section 9): WAL is archived there continuously.
+      - ${BACKUP_DIR:-backup-repo}:/backup
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d postgres"]
       interval: 2s
@@ -95,6 +98,43 @@ services:
   scheduler:
     <<: *app
     command: ["php", "artisan", "schedule:work"]
+    environment:
+      <<: *app-env
+      BACKUP_STATUS_DIR: /backup/status
+      BACKUP_RESTORE_HOST: backup
+    volumes:
+      - storage:/app/storage
+      - ${BACKUP_DIR:-backup-repo}:/backup
+
+  # Backups (spec section 9) [S16, F24]: pgBackRest beside PostgreSQL. A weekly full and daily
+  # incrementals with catch-up, retention of four weeks, and the weekly test restore that the scheduler
+  # verifies. The updater runs `haq-backup.sh full` here before every update.
+  backup:
+    image: ${DB_IMAGE}
+    user: postgres
+    entrypoint: ["/usr/local/bin/haq-backup.sh"]
+    environment:
+      TZ: ${SHOP_TIMEZONE:-Africa/Lagos}
+    volumes:
+      - db-data:/var/lib/postgresql:ro
+      - pg-socket:/var/run/postgresql
+      - ${BACKUP_DIR:-backup-repo}:/backup
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # One-shot, only for deploy/restore.sh (profile restore): pgBackRest writes the latest backup and every
+  # archived WAL segment into the database volume while PostgreSQL is stopped.
+  restore:
+    image: ${DB_IMAGE}
+    profiles: [restore]
+    user: postgres
+    entrypoint: ["pgbackrest", "--stanza=shop", "--delta", "restore"]
+    volumes:
+      - db-data:/var/lib/postgresql
+      - ${BACKUP_DIR:-backup-repo}:/backup
+    restart: "no"
 
   # Staging only (COMPOSE_PROFILES=standin): a stand-in receipt printer. A shop never runs it.
   printer:
@@ -130,3 +170,6 @@ volumes:
   db-data:
   storage:
   tls:
+  pg-socket:
+  # Only when no second disk is given: backups then share the database's disk, which the installer warns of.
+  backup-repo:

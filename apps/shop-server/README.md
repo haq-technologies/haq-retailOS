@@ -85,6 +85,18 @@ apps/shop-server/e2e/run.sh                 # all of them
 apps/shop-server/e2e/run.sh -g "holds"      # the ones whose name matches
 ```
 
+## Backups
+
+pgBackRest archives WAL to the backup volume (in a shop, the second internal disk given to `install.sh --backup-dir`), and the `backup` service takes a weekly full and daily incrementals, with a weekly test restore that the scheduler verifies (D35). From the repository root, in development:
+
+```
+docker compose exec backup haq-backup.sh full            # a full backup now
+docker compose exec backup haq-backup.sh test-restore    # the test restore now (the scheduler verifies it)
+docker compose exec scheduler php artisan backups:status
+```
+
+A shop's restore is `deploy/restore.sh`; docs/operations/restore-drill.md walks through it.
+
 ## Printing
 
 The server prints receipts to each counter's network printer on port 9100 (spec section 4); the profile gives each counter's printer. Until the pilot's printer arrives, the development stack runs a stand-in printer that writes each receipt as text to `storage/logs/fake-printer.log`, and staging runs one too. A shop never does.

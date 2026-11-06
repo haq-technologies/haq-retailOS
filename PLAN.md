@@ -144,7 +144,7 @@ Phase 3, the counter and sale core, started on 6 November 2026 at the product ow
 - [x] The counter's API: a paged catalogue snapshot and the change feed in commit order; prices in bulk; new items with their guardrails (category first, similar items, typed brands and phone models pending, "Not in the list", Request-only mode and the denylist); barcode learning with the picker, junk codes, confirmation, conflicts and undo; aliases; opening a shift with its float (Claude, 6 November 2026, D32)
 - [x] Held sales and Awaiting transfer on the server: park, the branch's strip with the 30-minute flag, resume on any counter, finish from any counter, and discards with a reason and a bound manager approval above the limit (Claude, 6 November 2026, D33)
 - [x] The counter client: one Inertia page with the catalogue in IndexedDB, search (MiniSearch 7.2) in a Web Worker, the tiles with Skip and generated shapes, the price pad and its checks with manager approval, the colour row, Retail or Wholesale, cash, transfer, POS and split payments, Finish with its idempotency key, After Pay with reprint and Opened with key, hold and resume, Awaiting transfer, pending print, scanner detection and barcode learning, new items, No sale, opening the shift, the idle lock that keeps the sale, Reconnecting, the seven-day counter journal, the sale timings and a service worker for the app shell (Claude, 6 November 2026, D34)
-- [ ] Backups with pgBackRest, and the weekly test restore (Claude)
+- [x] Backups with pgBackRest 2.60: WAL to the second disk, a weekly full and daily incrementals with catch-up, the weekly test restore verified by the scheduler (row counts and every audit chain), the key and epochs kept beside the backups, `shop:after-restore`, and deploy/restore.sh, rehearsed on staging (Claude, 6 November 2026, D35; docs/operations/restore-drill.md)
 - [x] Playwright 1.65 tests in CI: the counter in Chromium against a fresh test shop in retail_e2e, on every pull request; `apps/shop-server/e2e/run.sh` runs them on this computer (Claude, 6 November 2026)
 - [ ] The release manifest, offline signing and the updater (Claude; the product owner holds the signing key)
 - [ ] Gate G3: the dress rehearsal on the pilot hardware (product owner, Claude)
@@ -245,3 +245,4 @@ Assumptions:
 | 6 November 2026 | The counter's API: the catalogue feed, new items, barcodes and aliases (D32) |
 | 6 November 2026 | Held sales and Awaiting transfer on the server (D33) |
 | 6 November 2026 | The counter client and the browser tests in CI (D34) |
+| 6 November 2026 | Backups, the weekly test restore and the restore script (D35) |
