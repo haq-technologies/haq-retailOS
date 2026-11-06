@@ -118,7 +118,7 @@ Phase 2 started on 6 November 2026, at the product owner's go. Before it started
 Then, by week 8:
 
 - [x] Docker Compose for development, with the shop server's skeleton in apps/shop-server/: Laravel, Inertia, React in TypeScript and the colour tokens, PostgreSQL for sessions, jobs and the cache, and CI for PHP, the frontend and the image (Claude, 6 November 2026, D20 to D22)
-- [ ] The Docker stack, with images pushed to GHCR and staging on the product owner's computer (Claude)
+- [ ] The Docker stack, with images pushed to GHCR and staging on the product owner's computer (Claude). The stack, the installer and staging are built and run from local images (D26); the tick waits for the first images from GHCR
 - [x] Database roles, grants and triggers generated from the mutability matrix, and the one-shot migration job, with the nightly grant check and the code laid out as a modular monolith (Claude, 6 November 2026, D23)
 - [x] Identity: name tiles, PINs, acting-user tokens, bound approvals and the idle lock, with counter enrolment, lockouts and terminal backoff (Claude, 6 November 2026, D24)
 - [x] Audit chains, roots and the spool, with the shop, branches and terminals they hang on (Claude, 6 November 2026)

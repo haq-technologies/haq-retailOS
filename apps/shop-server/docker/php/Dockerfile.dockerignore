@@ -1,3 +1,0 @@
-# The build context is the repository root. Send only what the image needs.
-*
-!apps/shop-server/docker/php/conf.d/

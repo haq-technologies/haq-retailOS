@@ -47,6 +47,31 @@ docker compose exec app php artisan shop:enrol-terminal T01                # a o
 
 A cashier's or storekeeper's PIN is 4 to 6 digits; a manager's or owner's is 6, because it also approves (D24).
 
+## Install a shop's server
+
+A shop's server runs the images CI publishes to GHCR on every merge to main (D26). On the server (Ubuntu Server with Docker), from a checkout of this repository:
+
+```
+sudo apps/shop-server/deploy/install.sh --profile shop.profile.json --name haq-server.local --ip 192.168.1.10
+```
+
+It makes every secret on the server, pulls the images, starts the stack (the roles, migration and certificate jobs run first and exit), applies the profile and loads the starter catalogue. It is safe to run again. If the images are private, set `GHCR_USER` and `GHCR_TOKEN` (a read-only token) first.
+
+Then check the install (gate G2; spec section 14, checks D and E):
+
+```
+sudo apps/shop-server/deploy/check-install.sh
+```
+
+It checks every service and one-shot job, that no running container holds the owner's password, HTTPS against the shop's authority, a second catalogue load changing nothing, append-only holding against a deliberately widened grant (and the grant check reporting it), and the audit trail. It puts back what it touches.
+
+## Staging on this computer
+
+```
+apps/shop-server/deploy/staging.sh           # the latest images from main, at https://localhost:8443
+apps/shop-server/deploy/staging.sh --local   # images built here: docker build ... --target app|web|db -t retail-os/retail-os-<target>:local
+```
+
 ## Check it
 
 From the repository root, with the stack running. CI runs the same checks on every pull request.
@@ -75,7 +100,8 @@ Other commands run the same way: `docker compose exec app php artisan …`, `doc
 | `tests/Arch/` | Architecture tests: module boundaries, the Page rule, strict types |
 | `tests/Feature/` | Pest tests, each in a rolled-back transaction, including the product invariants and the mutability matrix |
 | `tests/Concurrency/` | The multi-process suite (spec section 14): worker processes released together, committed transactions, a real PostgreSQL, its own database |
-| `docker/` | The PHP image, the nginx config, the development database setup and `dev-setup.sh` |
+| `docker/` | The Dockerfile for every image (dev, app, web, db), the nginx and PHP settings, the database role script and `dev-setup.sh` |
+| `deploy/` | A shop's Compose stack, `install.sh` and `staging.sh` |
 
 ## Rules built in so far
 

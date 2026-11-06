@@ -16,7 +16,7 @@ x-php: &php
   image: retail-os/shop-server-dev:local
   build:
     context: .
-    dockerfile: apps/shop-server/docker/php/Dockerfile
+    dockerfile: apps/shop-server/docker/Dockerfile
     target: dev
   volumes:
     - ./apps/shop-server:/app

@@ -93,7 +93,7 @@ docker compose run --rm test test:concurrency   # the multi-process suite, again
 docker compose exec vite npm run lint      # ESLint (also: npm run types, npm test)
 ```
 
-CI also runs these on every pull request, with PostgreSQL 18, and builds the PHP image.
+CI also runs these on every pull request, with PostgreSQL 18, and builds every image (dev, app, web, db); on each merge to main it publishes app, web and db to GHCR. `apps/shop-server/deploy/staging.sh` installs the latest images on this Mac at https://localhost:8443, as a shop would (D16, D26).
 
 ## Code structure (D23)
 
