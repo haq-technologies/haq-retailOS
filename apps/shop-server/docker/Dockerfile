@@ -95,4 +95,21 @@ COPY --from=assets /app/public /app/public
 # --- A shop's PostgreSQL, with the script the one-shot `roles` job runs to create the three roles -------
 FROM ${POSTGRES_IMAGE} AS db
 
+# pgBackRest from the PostgreSQL project's own packages, pinned (spec section 9) [S16, R6], and jq for the
+# backup loop. /backup is the second disk; a new volume takes its owner from here.
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends pgbackrest=2.60.0-1.pgdg13+1 jq; \
+    rm -rf /var/lib/apt/lists/*; \
+    mkdir -p /backup /etc/pgbackrest; \
+    chown postgres:postgres /backup
+
 COPY --chmod=755 apps/shop-server/docker/postgres/init/01-roles.sh /usr/local/bin/haq-roles.sh
+COPY --chmod=755 apps/shop-server/docker/postgres/haq-backup.sh /usr/local/bin/haq-backup.sh
+COPY --chmod=644 apps/shop-server/docker/postgres/pgbackrest.conf /etc/pgbackrest/pgbackrest.conf
+
+# WAL goes to the backup disk continuously; a quiet shop still archives at least every 15 minutes, the
+# most a disk loss may cost (spec section 9) [F2]. Until the backup service has made the stanza there is
+# nowhere to archive, so a segment is let go; afterwards a failure keeps it in pg_wal until the backup
+# disk answers again, and the health page warns.
+CMD ["postgres", "-c", "archive_mode=on", "-c", "archive_command=test ! -f /backup/repo/archive/shop/archive.info || pgbackrest --stanza=shop archive-push %p", "-c", "archive_timeout=900", "-c", "wal_compression=zstd"]

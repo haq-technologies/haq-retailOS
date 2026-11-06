@@ -7,7 +7,7 @@ set -eu
 cd "$(dirname "$0")/../../.."   # the repository root, where compose.yaml lives
 app=apps/shop-server
 
-docker compose build app
+docker compose build app db
 docker compose run --rm --no-deps app composer install
 docker compose run --rm --no-deps vite npm ci
 

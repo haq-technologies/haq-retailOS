@@ -32,6 +32,12 @@ final class BranchKey
         return sodium_crypto_sign_verify_detached($signatureBytes, $message, $keyBytes);
     }
 
+    /** Where the key file lives (it may not exist yet). */
+    public function path(): string
+    {
+        return $this->directory.'/branch.key';
+    }
+
     /** The public half, base64; recorded on the local branch the first time the key is made. */
     public function publicKey(): string
     {

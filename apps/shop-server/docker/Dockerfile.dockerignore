@@ -11,3 +11,7 @@ apps/shop-server/storage/
 apps/shop-server/bootstrap/cache/*.php
 apps/shop-server/.phpunit.cache/
 !docs/catalogue/starter-catalogue-v1.1.json
+apps/shop-server/e2e/results/
+apps/shop-server/e2e/report/
+apps/shop-server/e2e/.auth/
+apps/shop-server/e2e/.state.json
