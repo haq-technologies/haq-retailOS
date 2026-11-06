@@ -1,0 +1,13 @@
+# The build context is the repository root. Send only what the images need: the shop server's code
+# (without dependencies, local settings or build output) and the starter catalogue's master file.
+*
+!apps/shop-server/
+apps/shop-server/vendor/
+apps/shop-server/node_modules/
+apps/shop-server/.env
+apps/shop-server/public/build/
+apps/shop-server/public/hot
+apps/shop-server/storage/
+apps/shop-server/bootstrap/cache/*.php
+apps/shop-server/.phpunit.cache/
+!docs/catalogue/starter-catalogue-v1.1.json

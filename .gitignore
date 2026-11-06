@@ -20,6 +20,8 @@ __pycache__/
 
 # Secrets and local environment: never commit these
 # Shop profiles hold shop data (names, addresses, phone numbers)
+# The install folder's secrets are made on the server, never in the repository
+apps/shop-server/deploy/secrets/
 *.profile.json
 /profiles/
 .env

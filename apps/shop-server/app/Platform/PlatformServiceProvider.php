@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Platform;
 
+use App\Platform\Console\MakeCertificateCommand;
 use App\Platform\Console\MutabilityCommand;
 use App\Platform\Database\Mutability\Applier;
 use App\Platform\Database\Mutability\Matrix;
@@ -27,7 +28,7 @@ class PlatformServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([MutabilityCommand::class]);
+            $this->commands([MutabilityCommand::class, MakeCertificateCommand::class]);
         }
 
         // Every migration run ends by applying the matrix on the same connection, so a new table never
