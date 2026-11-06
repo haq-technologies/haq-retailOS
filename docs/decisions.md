@@ -89,6 +89,7 @@ v1.1 waits for the shop owner's re-confirmation (see PLAN.md).
 | D14 | The receipt header (shop name, address and phone) and footer (returns wording) are a shop setting that only the sysadmin changes. A branch can override the address and phone, so each branch's receipts show where they were printed. In the pilot the sysadmin sets them in the shop profile with the command-line tool, and from the MVP in the console | Accepted | 6 Nov 2026 | Chat |
 | D15 | One person builds HAQ Retail OS: the product owner, working with Claude, does the development, design, field work and support, with no other developer, designer or field lead. The scope and the dates stay as they are, met with extra hours, and the pace is checked at G2. Pull requests merge on green CI with no approval, because nobody else can review them. This supersedes Q1 and D6's review rule | Accepted | 6 Nov 2026 | Chat |
 | D16 | No mini-PC is bought for testing or staging: the product owner's own computer is the development, staging and test machine. G2's clean install runs in a fresh Ubuntu virtual machine on it, because the shop server runs Ubuntu. Checks that need the shop's own hardware (touch and Chrome's kiosk keys on the Windows counters, the UPS and power cuts on the server) run first on the pilot hardware at G3 | Accepted | 6 Nov 2026 | Chat; the G2 virtual machine proposed by Claude |
+| D17 | The hardware list in docs/operations/hardware.md is locked as the pilot's hardware. Every device bought for the pilot must meet it, and a change to it is a new decision | Accepted | 6 Nov 2026 | Chat |
 
 ## Answers that set facts or scope
 
@@ -125,3 +126,4 @@ v1.1 waits for the shop owner's re-confirmation (see PLAN.md).
 | FU8 | No figures for pouch and protector sales | C2 stands |
 | Prices (chat) | The owner and the manager set prices; adopt the set-price and last-price rule, with the median as a shop setting | S4 revised |
 | Shop visit and hardware (chat) | The product owner reports the shop visit done, including the shop owner's re-confirmation of catalogue v1.1, and the pilot hardware chosen (6 November 2026) | Gate G0 passes |
+| Shop visit results (chat) | No changes to catalogue v1.1 | Its shelf-walk items keep their drafted values: the six C8 categories show the full brand list, with none first; the 16 brands and the short codes are kept; the v1.1 phone models and the name orders stand |

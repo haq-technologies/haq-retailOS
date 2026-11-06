@@ -4,7 +4,7 @@ What each pilot-shop device must do, and how it is tested. The requirements come
 
 ## Devices
 
-The hardware is chosen (6 November 2026). No mini-PC is bought for testing: the product owner's computer is the development, staging and test machine (D16). Buy the receipt printer and the scanner first, by week 6, so printing and scanning are tested against them as they are built; the rest comes before the G3 dress rehearsal in week 12.
+The hardware is chosen and this list is locked (6 November 2026, D17): every device bought for the pilot must meet it, and a change to it is a new decision. No mini-PC is bought for testing: the product owner's computer is the development, staging and test machine (D16). Buy the receipt printer and the scanner first, by week 6, so printing and scanning are tested against them as they are built; the rest comes before the G3 dress rehearsal in week 12.
 
 | Device | Must have | Why |
 |---|---|---|
