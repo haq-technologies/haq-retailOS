@@ -9,9 +9,9 @@ use App\Audit\AuditLog;
 use App\Organisation\Models\Branch;
 use App\Organisation\Models\Tenant;
 use App\Organisation\Models\Terminal;
+use App\Platform\Ulid;
 use App\Settings\Settings;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
@@ -68,7 +68,7 @@ final readonly class ProfileApplier
                 $drawer = DB::table('drawers')->where('terminal_id', $terminal->id)->first();
                 if ($drawer === null) {
                     DB::table('drawers')->insert([
-                        'id' => (string) Str::ulid(), 'branch_id' => $branch->id, 'terminal_id' => $terminal->id,
+                        'id' => Ulid::generate(), 'branch_id' => $branch->id, 'terminal_id' => $terminal->id,
                         'label' => "{$wanted['code']} drawer", 'fitted' => $wanted['drawer'], 'created_at' => now(), 'updated_at' => now(),
                     ]);
                     $changes[] = $wanted['drawer'] ? "{$wanted['code']} has a cash drawer." : "{$wanted['code']} has no cash drawer.";

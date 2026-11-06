@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Audit;
 
+use App\Platform\Ulid;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Audit roots (spec section 10) [F4]: every minute, and at every Z-report and daily summary, a root hashes
@@ -45,7 +45,7 @@ final class Roots
             $root['hash'] = Hasher::hash($root);
 
             DB::table('audit_roots')->insert([
-                'id' => (string) Str::ulid(),
+                'id' => Ulid::generate(),
                 ...$root,
                 'heads' => Hasher::canonical($heads === [] ? new \stdClass : $heads),
             ]);

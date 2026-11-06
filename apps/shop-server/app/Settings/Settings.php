@@ -7,10 +7,10 @@ namespace App\Settings;
 use App\Audit\AuditEntry;
 use App\Audit\AuditLog;
 use App\Organisation\Models\Branch;
+use App\Platform\Ulid;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 /**
  * Reads and changes settings (spec section 11). A value is resolved from the branch, then the shop, then
@@ -103,7 +103,7 @@ final class Settings
             $now = CarbonImmutable::now();
             if ($current === null) {
                 DB::table('settings')->insert([
-                    'id' => (string) Str::ulid(), 'scope' => $scope, 'scope_id' => $scopeId, 'key' => $key,
+                    'id' => Ulid::generate(), 'scope' => $scope, 'scope_id' => $scopeId, 'key' => $key,
                     'value' => $json, 'locked_by_sysadmin' => $newLocked, 'created_at' => $now, 'updated_at' => $now,
                 ]);
             } else {
@@ -111,7 +111,7 @@ final class Settings
             }
 
             DB::table('settings_history')->insert([
-                'id' => (string) Str::ulid(), 'scope' => $scope, 'scope_id' => $scopeId, 'key' => $key,
+                'id' => Ulid::generate(), 'scope' => $scope, 'scope_id' => $scopeId, 'key' => $key,
                 'old_value' => $current === null ? null : $current->value, 'new_value' => $json,
                 'locked_by_sysadmin' => $newLocked, 'changed_by' => $actorId, 'source' => $source, 'changed_at' => $now,
             ]);

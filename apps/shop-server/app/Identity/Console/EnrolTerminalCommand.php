@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Identity\Console;
+
+use App\Identity\Enrolment;
+use App\Organisation\Models\Branch;
+use App\Organisation\Models\Terminal;
+use Illuminate\Console\Command;
+use Symfony\Component\Console\Attribute\AsCommand;
+
+/**
+ * Issues the one-time code that enrols a counter PC as a terminal (spec section 3) [F9].
+ */
+#[AsCommand(name: 'shop:enrol-terminal')]
+class EnrolTerminalCommand extends Command
+{
+    protected $signature = 'shop:enrol-terminal {code : The terminal code, such as T01}';
+
+    protected $description = 'Make a one-time code that enrols a counter PC as a terminal';
+
+    public function handle(Enrolment $enrolment): int
+    {
+        $terminal = Terminal::query()->where('branch_id', Branch::local()->id)->where('code', (string) $this->argument('code'))->first();
+        if ($terminal === null) {
+            $this->components->error("This branch has no terminal {$this->argument('code')}. Add it to the shop profile first.");
+
+            return self::FAILURE;
+        }
+
+        $code = $enrolment->issueCode($terminal);
+        $this->components->info("On {$terminal->code}, open /enrol in Chrome and type {$code}. The code works once, for 15 minutes.");
+        $this->line($code);
+
+        return self::SUCCESS;
+    }
+}

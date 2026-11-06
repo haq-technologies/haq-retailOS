@@ -8,9 +8,10 @@ use App\Audit\Hasher;
 use App\Audit\Roots;
 use App\Audit\Spool;
 use App\Audit\Verifier;
+use App\Identity\Role;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Tests\Support\People;
 use Tests\Support\Shop;
 
 /*
@@ -31,7 +32,7 @@ it('puts terminal actions on the terminal chain and the rest on the branch chain
     [$t1] = $shop['terminals'];
     $log = app(AuditLog::class);
 
-    $log->record(new AuditEntry(action: 'pin.signed_in', terminalId: $t1->id, actorId: (string) Str::ulid()));
+    $log->record(new AuditEntry(action: 'pin.signed_in', terminalId: $t1->id, actorId: People::add('Amina', Role::Cashier)->id));
     $log->record(new AuditEntry(action: 'settings.changed'));
     $log->record(new AuditEntry(action: 'pin.signed_out', terminalId: $t1->id));
 

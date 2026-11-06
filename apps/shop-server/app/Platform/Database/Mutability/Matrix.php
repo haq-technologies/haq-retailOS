@@ -53,6 +53,8 @@ final readonly class Matrix
             'audit_log', 'audit_sensitive', 'audit_roots', 'epochs',
             // Stock, once stock tracking is on (Pro)
             'stock_movements',
+            // Every PIN entry, right or wrong: lockouts, backoff and the owner dashboard [F8]
+            'sign_in_attempts',
         ];
 
         $mutable = [

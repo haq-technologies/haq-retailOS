@@ -120,7 +120,7 @@ Then, by week 8:
 - [x] Docker Compose for development, with the shop server's skeleton in apps/shop-server/: Laravel, Inertia, React in TypeScript and the colour tokens, PostgreSQL for sessions, jobs and the cache, and CI for PHP, the frontend and the image (Claude, 6 November 2026, D20 to D22)
 - [ ] The Docker stack, with images pushed to GHCR and staging on the product owner's computer (Claude)
 - [x] Database roles, grants and triggers generated from the mutability matrix, and the one-shot migration job, with the nightly grant check and the code laid out as a modular monolith (Claude, 6 November 2026, D23)
-- [ ] Identity: name tiles, PINs, acting-user tokens, bound approvals and the idle lock (Claude)
+- [x] Identity: name tiles, PINs, acting-user tokens, bound approvals and the idle lock, with counter enrolment, lockouts and terminal backoff (Claude, 6 November 2026, D24)
 - [x] Audit chains, roots and the spool, with the shop, branches and terminals they hang on (Claude, 6 November 2026)
 - [x] Settings and the profile tool, including the receipt text: `shop:make-profile` before the visit, `shop:apply-profile` at install, idempotent (Claude, 6 November 2026, D14)
 - [ ] The catalogue model, the name routine and the seeder for catalogue v1.1 (Claude)
@@ -184,6 +184,8 @@ Assumptions:
 | Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
+| Identity timings the spec leaves open: the lockout cooldown after five wrong PINs, how long a manager or owner stays signed in at a counter when idle, and the terminal backoff curve | Product owner | Install (week 13) | Proposed: a 15-minute cooldown; 2 minutes idle for a manager or owner (a cashier's idle lock stays at 3); a 1-second wait after the tenth wrong PIN in 10 minutes, doubling each time, at most 5 minutes. All three are locked settings |
+| How the owner's phone or laptop reaches the back office on the shop's network | Product owner | Phase 4 (owner features) | Enrolled like a counter, but unable to sell |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
 | Bundles or packs (phone plus case, wholesale carton) | Product owner | MVP | Not supported in the pilot |
 | Warranty claims | Product owner | MVP | Returns with the supplier_claim disposition |
@@ -210,3 +212,4 @@ Assumptions:
 | 6 November 2026 | The modular monolith (D23); the three database roles, with grants and triggers from the mutability matrix |
 | 6 November 2026 | Audit chains, roots and the spool; the multi-process test harness in CI |
 | 6 November 2026 | Settings with history and sysadmin locks; the shop profile tool |
+| 6 November 2026 | Identity: name tiles and PINs, acting-user tokens, approvals, enrolment (D24) |

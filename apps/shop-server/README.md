@@ -32,6 +32,15 @@ docker compose exec app php artisan shop:apply-profile storage/app/profiles/<sho
 
 `docker/profile.example.json` shows the format with placeholder values.
 
+Then add the people and enrol each counter (spec section 3):
+
+```
+docker compose exec app php artisan shop:add-user "Amina" --role=cashier   # asks for the PIN twice
+docker compose exec app php artisan shop:enrol-terminal T01                # a one-time code; type it at /enrol on that counter
+```
+
+A cashier's or storekeeper's PIN is 4 to 6 digits; a manager's or owner's is 6, because it also approves (D24).
+
 ## Check it
 
 From the repository root, with the stack running. CI runs the same checks on every pull request.
@@ -52,7 +61,7 @@ Other commands run the same way: `docker compose exec app php artisan …`, `doc
 
 | Path | What it is |
 |---|---|
-| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation` holds the shop, its branches and terminals; `Audit` the hash chains, roots and spool; `Settings` the settings, their history and the shop profile tool; `Identity` and `Catalogue` follow in Phase 2. `Http/` and `Providers/` are Laravel's glue |
+| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation` holds the shop, its branches and terminals; `Audit` the hash chains, roots and spool; `Settings` the settings, their history and the shop profile tool; `Identity` name tiles and PINs, acting-user tokens, approvals and counter enrolment; `Catalogue` follows in Phase 2. `Http/` and `Providers/` are Laravel's glue |
 | `config/` | Every setting. Laravel's defaults are not merged in, so Redis and the other unused drivers stay out |
 | `database/migrations/` | The schema. Every application table has a ULID key (D21) |
 | `resources/js/` | The React side: `app.tsx` boots Inertia, `pages/` holds the pages |

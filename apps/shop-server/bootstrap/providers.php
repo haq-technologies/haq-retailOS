@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Audit\AuditServiceProvider;
+use App\Identity\IdentityServiceProvider;
 use App\Organisation\OrganisationServiceProvider;
 use App\Platform\PlatformServiceProvider;
 use App\Providers\AppServiceProvider;
@@ -15,4 +16,5 @@ return [
     OrganisationServiceProvider::class,
     AuditServiceProvider::class,
     SettingsServiceProvider::class,
+    IdentityServiceProvider::class,
 ];
