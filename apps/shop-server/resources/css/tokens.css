@@ -1,0 +1,51 @@
+/*
+ * Design tokens from spec section 15 (Colour tokens), D4 and D5: Apple's system colours in the light
+ * appearance with fixed roles, frozen here so a later change at Apple never moves ours. Tailwind's own
+ * palette is switched off, so only these colours exist in the app. Contrast rules are checked by
+ * resources/js/design/tokens.test.ts; change a value only through a decision in docs/decisions.md.
+ *
+ * Never put white text on success-tint (#34C759, 2.2:1), and never let colour alone carry meaning:
+ * warnings, errors and flags always carry an icon and text as well.
+ */
+@theme {
+    --color-*: initial;
+
+    --color-transparent: transparent;
+    --color-current: currentColor;
+    --color-white: #ffffff;
+
+    /* Surfaces */
+    --color-background: #ffffff; /* System background: every screen */
+    --color-panel: #f2f2f7; /* System gray 6: cart panel, sheets, grouped lists */
+    --color-border: #d1d1d6; /* System gray 4: tile outlines and dividers */
+
+    /* Text */
+    --color-text: #000000; /* Label: all primary text (21:1) */
+    --color-text-secondary: #6c6c70; /* System gray, increased contrast: hints, captions, units (5.2:1) */
+
+    /* Actions and selection: primary buttons, links, the selected tile and the focus ring */
+    --color-action: #007aff; /* Fill. A white label on it must be at least 18.66px bold */
+    --color-action-text: #0040dd; /* Text and icons on white (7.6:1) */
+
+    /* Pay and success */
+    --color-pay: #248a3d; /* The Pay button. Its white label is bold and at least 18.66px (4.4:1) */
+    --color-success-tint: #34c759; /* Tints only. Never white text on it */
+
+    /* Warning: unusual price, awaiting transfer; always with an icon */
+    --color-warning: #ff9500; /* Fill, with black text (9.6:1) */
+    --color-warning-text: #c93400; /* Text and icons on white (5.3:1) */
+
+    /* Destructive and error: void, discard and errors only; always with an icon and a verb */
+    --color-destructive: #d70015; /* Fill with white text, and text on white (5.4:1) */
+
+    /* Inter, bundled with the app (SIL Open Font License), so the counter needs no internet. */
+    --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+
+    /* Layouts (D5): compact under 600px, medium 600 to 1023px, large from 1024px. */
+    --breakpoint-*: initial;
+    --breakpoint-medium: 600px;
+    --breakpoint-large: 1024px;
+
+    /* Touch targets are at least 56px at every size (spec section 15). */
+    --spacing-touch: 56px;
+}

@@ -1,0 +1,44 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "name": "shop-server",
+    "private": true,
+    "license": "UNLICENSED",
+    "type": "module",
+    "engines": {
+        "node": ">=26.13 <27"
+    },
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite",
+        "lint": "eslint .",
+        "types": "tsc --noEmit",
+        "test": "vitest run"
+    },
+    "dependencies": {
+        "@fontsource-variable/inter": "^5.3.0",
+        "@inertiajs/react": "^3.11.0",
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@inertiajs/vite": "^3.11.0",
+        "@tailwindcss/vite": "^4.3.4",
+        "@types/node": "^26.0.0",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@vitejs/plugin-react": "^6.2.1",
+        "eslint": "^10.14.0",
+        "eslint-plugin-react-hooks": "^7.1.1",
+        "globals": "^17.14.0",
+        "laravel-vite-plugin": "^3.2.1",
+        "tailwindcss": "^4.3.4",
+        "typescript": "~6.0.3",
+        "typescript-eslint": "^8.72.1",
+        "vite": "^8.3.6",
+        "vitest": "^5.1.0"
+    },
+    "overrides": {
+        "minimatch": "^11.0.5"
+    }
+}

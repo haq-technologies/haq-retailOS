@@ -1,5 +1,7 @@
-# CI for HAQ Retail OS. For now it guards the documents and the catalogue; the Laravel, PostgreSQL and
-# Playwright jobs join when the application code exists (PLAN.md, Phase 2).
+# CI for HAQ Retail OS. It guards the documents and the catalogue, and checks the shop server on every
+# pull request: PHP style, static analysis and tests against a real PostgreSQL; the frontend's lint,
+# types, tests and build; and the PHP image build. Playwright and the multi-process PostgreSQL harness
+# join later in Phase 2 and in Phase 3 (PLAN.md).
 name: CI
 
 on:
@@ -20,9 +22,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
 
@@ -44,3 +46,113 @@ jobs:
 
       - name: Check Markdown tables and links
         run: python3 -I tools/docs/check_markdown.py
+
+  shop-server-php:
+    name: shop-server PHP
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/shop-server
+    services:
+      postgres:
+        image: postgres:18.6-trixie
+        env:
+          POSTGRES_USER: retail
+          POSTGRES_PASSWORD: retail-ci
+          POSTGRES_DB: retail_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U retail -d retail_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      DB_USERNAME: retail
+      DB_PASSWORD: retail-ci
+    steps:
+      - uses: actions/checkout@v7
+
+      # The same PHP minor and extensions as the image (apps/shop-server/docker/php/Dockerfile).
+      - uses: shivammathur/setup-php@2.40.0
+        with:
+          php-version: "8.5"
+          extensions: pdo_pgsql, intl, pcntl, bcmath
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ hashFiles('apps/shop-server/composer.lock') }}
+
+      - name: Install
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Pint
+        run: composer lint
+
+      - name: Larastan
+        run: composer analyse
+
+      - name: Pest, against PostgreSQL 18
+        run: composer test
+
+  shop-server-js:
+    name: shop-server JS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/shop-server
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26.13.0"
+          cache: npm
+          cache-dependency-path: apps/shop-server/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript
+        run: npm run types
+
+      - name: Vitest
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  shop-server-image:
+    name: shop-server image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check the development Compose file
+        run: docker compose config --quiet
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build the PHP image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/shop-server/docker/php/Dockerfile
+          target: dev
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

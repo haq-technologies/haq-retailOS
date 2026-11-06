@@ -17,7 +17,7 @@ The pilot succeeds when (spec section 14):
 
 ## Status
 
-Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, starts when the product owner says so, once Docker runs on the product owner's computer. There is no application code yet.
+Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, started on 6 November 2026, ahead of its week-3 slot, at the product owner's go. The shop server's skeleton and development stack are in apps/shop-server/ (D20), and application code goes into the public repository (D22).
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
@@ -29,7 +29,7 @@ Done:
 - The shop visit is done, with no changes to catalogue v1.1, and the hardware list is locked (D17), so gate G0 is passed (6 November 2026).
 - Wireframes signed off by the product owner, so gate G1 is passed (D19). The printed daily summary carries no profit or cost amounts (D18).
 
-Next: Phase 2, when the product owner says so. Docker comes first, then the Phase 2 checklist below.
+Next: the rest of the Phase 2 checklist below, starting with the database roles, grants and triggers.
 
 ## Team
 
@@ -110,14 +110,14 @@ Choices and their tradeoffs (runners, registry, environments, housekeeping) are 
 
 ## Phase 2 checklist
 
-Phase 2 starts when the product owner says so. Before it starts:
+Phase 2 started on 6 November 2026, at the product owner's go. Before it started:
 
 - [x] Docker running on the product owner's computer, through Colima (Claude, 6 November 2026)
-- [ ] At least 50 GB free on that computer, for Docker and the Ubuntu virtual machine used at G2 (product owner)
+- [ ] At least 50 GB free on that computer, for Docker and the Ubuntu virtual machine used at G2 (product owner). 45 GB were free on 6 November 2026, enough until the virtual machine is needed at G2
 
-Then, in weeks 3 to 8:
+Then, by week 8:
 
-- [ ] Docker Compose for development (Claude)
+- [x] Docker Compose for development, with the shop server's skeleton in apps/shop-server/: Laravel, Inertia, React in TypeScript and the colour tokens, PostgreSQL for sessions, jobs and the cache, and CI for PHP, the frontend and the image (Claude, 6 November 2026, D20 to D22)
 - [ ] The Docker stack, with images pushed to GHCR and staging on the product owner's computer (Claude)
 - [ ] Database roles, grants and triggers generated from the mutability matrix, and the one-shot migration job (Claude)
 - [ ] Identity: name tiles, PINs, acting-user tokens, bound approvals and the idle lock (Claude)
@@ -180,7 +180,7 @@ Assumptions:
 |---|---|---|---|
 | Barcode scan result (20 items) | Product owner, from the shop visit | Install (week 13) | Assume 40% scannable |
 | Busy-day sales volume | Product owner, from the notebook | Install (week 13) | Measured in the shadow weeks |
-| Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | Recommended before application code lands in Phase 2 (week 3) | Public, documents only (D10) |
+| Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | When the product owner chooses; application code is public from Phase 2 (D22) | Public (D10) |
 | Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
@@ -206,3 +206,4 @@ Assumptions:
 | 6 November 2026 | Back-office wireframes drawn: the dashboard, Needs cost, first-sale prices, review and merging, catalogue health, flags, the daily summary printout and server health |
 | 6 November 2026 | Wireframes signed off, so G1 passes and Phases 0 and 1 are closed and locked (D19); the printed daily summary carries no profit or cost amounts (D18); a Phase 2 checklist |
 | 6 November 2026 | Docker runs on the product owner's computer through Colima |
+| 6 November 2026 | Phase 2 starts: the shop server's skeleton and development stack in apps/shop-server/, and CI for it (D20 to D22) |
