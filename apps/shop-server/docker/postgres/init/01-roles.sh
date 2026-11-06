@@ -11,7 +11,7 @@
 set -euo pipefail
 
 : "${RETAIL_OWNER_PASSWORD:?}" "${RETAIL_APP_PASSWORD:?}" "${RETAIL_REPORTING_PASSWORD:?}"
-databases="${RETAIL_DATABASES:-retail retail_test}"
+databases="${RETAIL_DATABASES:-retail retail_test retail_concurrency}"
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres \
     -v owner_password="$RETAIL_OWNER_PASSWORD" \

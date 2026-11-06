@@ -88,7 +88,8 @@ docker compose up -d                       # start the stack; http://localhost:8
 docker compose exec app composer lint      # Pint
 docker compose exec app composer analyse   # Larastan, level 9
 docker compose run --rm migrate            # migrate as the owner role, then apply the mutability matrix
-docker compose run --rm test               # Pest, against the retail_test database
+docker compose run --rm test               # Pest: architecture and feature tests, against retail_test
+docker compose run --rm test test:concurrency   # the multi-process suite, against retail_concurrency
 docker compose exec vite npm run lint      # ESLint (also: npm run types, npm test)
 ```
 

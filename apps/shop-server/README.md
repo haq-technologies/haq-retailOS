@@ -29,6 +29,7 @@ From the repository root, with the stack running. CI runs the same checks on eve
 docker compose exec app composer lint       # Pint (code style)
 docker compose exec app composer analyse    # Larastan, level 9
 docker compose run --rm test               # Pest: architecture and feature tests, against retail_test
+docker compose run --rm test test:concurrency   # the multi-process suite, against retail_concurrency
 docker compose exec vite npm run lint       # ESLint
 docker compose exec vite npm run types      # TypeScript
 docker compose exec vite npm test           # Vitest
@@ -40,13 +41,14 @@ Other commands run the same way: `docker compose exec app php artisan …`, `doc
 
 | Path | What it is |
 |---|---|
-| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation`, `Audit`, `Settings`, `Identity` and `Catalogue` follow in Phase 2. `Http/` and `Providers/` are Laravel's glue |
+| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation` holds the shop, its branches and terminals; `Audit` the hash chains, roots and spool; `Settings`, `Identity` and `Catalogue` follow in Phase 2. `Http/` and `Providers/` are Laravel's glue |
 | `config/` | Every setting. Laravel's defaults are not merged in, so Redis and the other unused drivers stay out |
 | `database/migrations/` | The schema. Every application table has a ULID key (D21) |
 | `resources/js/` | The React side: `app.tsx` boots Inertia, `pages/` holds the pages |
 | `resources/css/tokens.css` | The colour, type and layout tokens from spec section 15. Only these colours exist in the app |
 | `tests/Arch/` | Architecture tests: module boundaries, the Page rule, strict types |
-| `tests/Feature/` | Pest tests, including the product invariants and the mutability matrix |
+| `tests/Feature/` | Pest tests, each in a rolled-back transaction, including the product invariants and the mutability matrix |
+| `tests/Concurrency/` | The multi-process suite (spec section 14): worker processes released together, committed transactions, a real PostgreSQL, its own database |
 | `docker/` | The PHP image, the nginx config, the development database setup and `dev-setup.sh` |
 
 ## Rules built in so far
@@ -55,6 +57,8 @@ Other commands run the same way: `docker compose exec app php artisan …`, `doc
 - Every application table has a ULID primary key. A test fails on any other key.
 - Three database roles (spec section 4). The app runs as `retail_app`; only the one-shot `migrate` job holds the owner's password. Grants and triggers come from the mutability matrix in `app/Platform/Database/Mutability/Matrix.php`, applied after every migration; a table missing from it stops the migration. Triggers hold the rules even against a widened grant, and `db:mutability --check` runs nightly to report any drift.
 - Times are UTC, in PHP and in PostgreSQL. A test checks both.
+- Every action can be written to the audit trail (spec section 10): a hash chain per terminal and one per branch, a root over every chain head each minute, sensitive values in their own table, and failures spooled when their chain is busy. `audit:verify` checks it all, nightly.
+- Tests only ever rebuild a database whose name ends in `_test` or `_concurrency`.
 - Queued jobs dispatch only after the transaction commits, so a rolled-back sale never prints. A test checks the setting.
 - Every PHP file declares strict types (Pint enforces it), so a value such as a kobo amount is never coerced silently.
 - On a shop server, commands that wipe the database refuse to run.

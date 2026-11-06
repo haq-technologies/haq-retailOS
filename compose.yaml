@@ -8,7 +8,7 @@
 # First run: apps/shop-server/docker/dev-setup.sh
 # Then:      docker compose up -d     and open http://localhost:8080
 # Migrate:   docker compose run --rm migrate
-# Test:      docker compose run --rm test
+# Test:      docker compose run --rm test     (and: docker compose run --rm test test:concurrency)
 
 name: retail-os
 
@@ -58,14 +58,18 @@ services:
     environment: *owner-env
     command: ["sh", "-c", "php artisan migrate --database=pgsql_owner --force && php artisan db:mutability --database=pgsql_owner"]
 
-  # Pest, against the retail_test database: it rebuilds the schema as the owner and tests as retail_app.
+  # Pest: it rebuilds the schema as the owner and tests as retail_app. `docker compose run --rm test` runs
+  # the architecture and feature tests; `docker compose run --rm test test:concurrency` the multi-process suite.
   test:
     <<: *php
     profiles: [tools]
     restart: "no"
-    environment: *owner-env
-    entrypoint: ["composer", "test", "--"]
-    command: []
+    entrypoint: ["composer"]
+    command: ["test"]
+    # Never the development database; phpunit.xml and phpunit.concurrency.xml choose the test databases.
+    environment:
+      <<: *owner-env
+      DB_DATABASE: retail_test
 
   web:
     image: nginx:1.30.6-alpine
