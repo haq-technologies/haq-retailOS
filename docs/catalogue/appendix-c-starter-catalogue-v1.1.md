@@ -10,7 +10,7 @@ Draft for the shop owner to re-confirm, built on 5 November 2026 from v1 (locked
 | Sellable categories | 28 |
 | Parent categories | 6 |
 | Brands (No brand is added on top) | 73 |
-| Brands to confirm on the shelf walk | 16 |
+| Brands confirmed at the shop visit | 16 |
 | Models and product lines | 29 |
 | Phone families | 19 |
 | Phone models (first draft) | 466 |
@@ -100,7 +100,7 @@ Printed names follow each category's name order; blank parts are skipped and No 
 
 ## C5. Phone models (first draft)
 
-Public model names drafted from memory as of mid-2025. Verify against the shelf and supplier lists. A cashier can type a model that is missing; it prints as typed and joins the list once a manager or the owner approves it.
+Public model names drafted from memory as of mid-2025, and checked at the shop visit on 6 November 2026 with no changes. A cashier can type a model that is missing; it prints as typed and joins the list once a manager or the owner approves it.
 
 - **iPhone** (42): iPhone 6, iPhone 6 Plus, iPhone 6s, iPhone 6s Plus, iPhone 7, iPhone 7 Plus, iPhone 8, iPhone 8 Plus, iPhone X, iPhone XR, iPhone XS, iPhone XS Max, iPhone SE 2020, iPhone 11, iPhone 11 Pro, iPhone 11 Pro Max, iPhone 12 mini, iPhone 12, iPhone 12 Pro, iPhone 12 Pro Max, iPhone 13 mini, iPhone 13, iPhone 13 Pro, iPhone 13 Pro Max, iPhone SE 2022, iPhone 14, iPhone 14 Plus, iPhone 14 Pro, iPhone 14 Pro Max, iPhone 15, iPhone 15 Plus, iPhone 15 Pro, iPhone 15 Pro Max, iPhone 16, iPhone 16 Plus, iPhone 16 Pro, iPhone 16 Pro Max, iPhone 16e, iPhone 17, iPhone Air, iPhone 17 Pro, iPhone 17 Pro Max
 - **Samsung Galaxy A** (45): Samsung Galaxy A02s, Samsung Galaxy A03, Samsung Galaxy A03s, Samsung Galaxy A04, Samsung Galaxy A04e, Samsung Galaxy A04s, Samsung Galaxy A05, Samsung Galaxy A05s, Samsung Galaxy A06, Samsung Galaxy A10, Samsung Galaxy A10s, Samsung Galaxy A11, Samsung Galaxy A12, Samsung Galaxy A13, Samsung Galaxy A14, Samsung Galaxy A15, Samsung Galaxy A16, Samsung Galaxy A20, Samsung Galaxy A20s, Samsung Galaxy A21s, Samsung Galaxy A22, Samsung Galaxy A23, Samsung Galaxy A24, Samsung Galaxy A25, Samsung Galaxy A26, Samsung Galaxy A30, Samsung Galaxy A30s, Samsung Galaxy A31, Samsung Galaxy A32, Samsung Galaxy A33, Samsung Galaxy A34, Samsung Galaxy A35, Samsung Galaxy A36, Samsung Galaxy A50, Samsung Galaxy A51, Samsung Galaxy A52, Samsung Galaxy A52s, Samsung Galaxy A53, Samsung Galaxy A54, Samsung Galaxy A55, Samsung Galaxy A56, Samsung Galaxy A70, Samsung Galaxy A71, Samsung Galaxy A72, Samsung Galaxy A73
@@ -137,17 +137,17 @@ Public model names drafted from memory as of mid-2025. Verify against the shelf 
 | OH Mobility |  | power_banks, cables, charger_head, complete_charger | Seen in Nigerian sources |  |
 | Infinix |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | Seen in Nigerian sources |  |
 | Xiaomi | Redmi | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | Seen in Nigerian sources |  |
-| Samsung |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | To confirm on the shelf walk |  |
+| Samsung |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | Confirmed at the shop visit |  |
 | itel |  | power_banks, cables, charger_head, complete_charger, car_chargers, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | Seen in Nigerian sources |  |
-| Tecno |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | To confirm on the shelf walk |  |
-| Hoco |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | To confirm on the shelf walk |  |
-| Remax |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | To confirm on the shelf walk |  |
-| Joyroom |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | To confirm on the shelf walk |  |
-| Borofone |  | power_banks, cables, charger_head, complete_charger | To confirm on the shelf walk |  |
+| Tecno |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | Confirmed at the shop visit |  |
+| Hoco |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Confirmed at the shop visit |  |
+| Remax |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Confirmed at the shop visit |  |
+| Joyroom |  | power_banks, cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Confirmed at the shop visit |  |
+| Borofone |  | power_banks, cables, charger_head, complete_charger | Confirmed at the shop visit |  |
 | KLY |  | power_banks, cables, charger_head, complete_charger, car_chargers, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner |  |
 | Apple |  | cables, charger_head, complete_charger, earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | Seen in Nigerian sources |  |
-| Mcdodo |  | cables, charger_head, complete_charger | To confirm on the shelf walk |  |
-| USAMS |  | cables, charger_head, complete_charger | To confirm on the shelf walk |  |
+| Mcdodo |  | cables, charger_head, complete_charger | Confirmed at the shop visit |  |
+| USAMS |  | cables, charger_head, complete_charger | Confirmed at the shop visit |  |
 | Sauki |  | cables, charger_head, complete_charger | Supplied by the shop owner |  |
 | Shplus |  | cables, charger_head, complete_charger | Supplied by the shop owner |  |
 | Amaya |  | cables, charger_head, complete_charger | Supplied by the shop owner |  |
@@ -173,12 +173,12 @@ Public model names drafted from memory as of mid-2025. Verify against the shelf 
 | AA |  | car_chargers | Supplied by the shop owner |  |
 | Soundcore | Anker Soundcore | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Seen in Nigerian sources |  |
 | JBL |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Seen in Nigerian sources |  |
-| Realme |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | To confirm on the shelf walk |  |
+| Realme |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | Confirmed at the shop visit |  |
 | Sony |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Seen in Nigerian sources |  |
 | Huawei |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers, smartwatch, band | Seen in Nigerian sources |  |
 | Havit |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Seen in Nigerian sources |  |
 | Jabra |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Seen in Nigerian sources |  |
-| QCY |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | To confirm on the shelf walk |  |
+| QCY |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Confirmed at the shop visit |  |
 | Jamax |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner |  |
 | Frezzil |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner |  |
 | Bose |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner |  |
@@ -187,20 +187,20 @@ Public model names drafted from memory as of mid-2025. Verify against the shelf 
 | Wuf |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner |  |
 | Hapilife |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner |  |
 | Baseno |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Kept exactly as written |
-| HF |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirm against the real product at the shelf walk (C5) |
-| AI |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirm against the real product at the shelf walk (C5) |
-| LP |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirm against the real product at the shelf walk (C5) |
-| BM |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirm against the real product at the shelf walk (C5) |
-| DV |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirm against the real product at the shelf walk (C5) |
-| JZ |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirm against the real product at the shelf walk (C5) |
-| EX |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirm against the real product at the shelf walk (C5) |
-| UWO |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirm against the real product at the shelf walk (C5) |
-| Amazfit |  | smartwatch, band | To confirm on the shelf walk |  |
-| Spigen |  | cases, screen_protectors | To confirm on the shelf walk |  |
-| Ringke |  | cases, screen_protectors | To confirm on the shelf walk |  |
-| UAG |  | cases, screen_protectors | To confirm on the shelf walk |  |
-| Nillkin |  | cases, screen_protectors | To confirm on the shelf walk |  |
-| Otterbox |  | cases, screen_protectors | To confirm on the shelf walk |  |
+| HF |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirmed at the shop visit, 6 Nov 2026 (C5) |
+| AI |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirmed at the shop visit, 6 Nov 2026 (C5) |
+| LP |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirmed at the shop visit, 6 Nov 2026 (C5) |
+| BM |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirmed at the shop visit, 6 Nov 2026 (C5) |
+| DV |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirmed at the shop visit, 6 Nov 2026 (C5) |
+| JZ |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirmed at the shop visit, 6 Nov 2026 (C5) |
+| EX |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirmed at the shop visit, 6 Nov 2026 (C5) |
+| UWO |  | earbuds, wired_earphones, neckband, headphones, bluetooth_speakers | Supplied by the shop owner | Short code; confirmed at the shop visit, 6 Nov 2026 (C5) |
+| Amazfit |  | smartwatch, band | Confirmed at the shop visit |  |
+| Spigen |  | cases, screen_protectors | Confirmed at the shop visit |  |
+| Ringke |  | cases, screen_protectors | Confirmed at the shop visit |  |
+| UAG |  | cases, screen_protectors | Confirmed at the shop visit |  |
+| Nillkin |  | cases, screen_protectors | Confirmed at the shop visit |  |
+| Otterbox |  | cases, screen_protectors | Confirmed at the shop visit |  |
 
 ## C7. Models and product lines
 
@@ -268,11 +268,8 @@ The counter offers these unbranded shapes in search and on the tiles; an item is
 | F5 | "earpods" became a search word for Earbuds |  |
 | R1 | Each category has a drill order for the tap-through tiles | Proposed defaults; speed data from the shadow pilot confirms them (D12). |
 | R2 | The 127 stored generated lines became 5 generator rules | The same 127 shapes are offered at the counter and an item is created on its first sale, so there is no prune review at setup. |
+| Shop visit | Catalogue v1.1 confirmed with no changes | 6 November 2026. The six C8 categories show the full brand list, with none first; the 16 brands to confirm and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO are kept; Oraimo Watch prints as "Oraimo Watch Smartwatch"; the phone models stand. |
 
 ## C10. Still open
 
-- C8: brands shown first for Wireless chargers, Phone holders, Memory cards and flash drives, Batteries, Selfie sticks, ring lights and tripods, and Computer accessories are assigned at the shelf walk.
-- The 16 brands marked "To confirm on the shelf walk", and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO.
-- Oraimo "Watch" prints as "Oraimo Watch Smartwatch"; rename it if the owner prefers.
-- Phone models are a first draft: add, rename or remove against the shelf and supplier lists.
 - Drill orders are proposals until speed data from the shadow pilot confirms them (D12).

@@ -151,7 +151,8 @@ for fam, names in PHONES.items():
         phone_vals.append({"id": f"phone_models.{slug(n)}", "name": n, "family": fam_id[fam]})
 picklists["phone_models"] = {
     "label": "Phone model", "origin": "assistant_draft", "group_by": "phone_families", "values": phone_vals,
-    "note": ("Public model names drafted from memory as of mid-2025. Verify against the shelf and supplier lists. "
+    "note": ("Public model names drafted from memory as of mid-2025, and checked at the shop visit on 6 November 2026 "
+             "with no changes. "
              "A cashier can type a model that is missing; it prints as typed and joins the list once a manager or "
              "the owner approves it.")}
 
@@ -170,9 +171,12 @@ for b in v1["brands"]:
         else:
             sfi.append(c)
     entry = {"id": "brand." + slug(b["name"]), "name": b["name"], "aliases": b.get("alias", []),
-             "shown_first_in": sfi, "provenance": b["provenance"], "status": b["status"]}
+             "shown_first_in": sfi,
+             # The shop visit (6 Nov 2026) confirmed the brands marked to confirm, with no changes
+             "provenance": "shop_visit" if b["provenance"] == "to_confirm" else b["provenance"],
+             "status": b["status"]}
     if b["name"] in SHORT_CODES:
-        entry["note"] = "Short code; confirm against the real product at the shelf walk (C5)"
+        entry["note"] = "Short code; confirmed at the shop visit, 6 Nov 2026 (C5)"
     elif b["name"] == "DataCable":
         entry["note"] = "Printed label on the packaging (owner, 5 Nov 2026)"
     elif b["name"] == "Baseno":
@@ -423,12 +427,11 @@ changelog = [
      "The same 127 shapes are offered at the counter and an item is created on its first sale, so there is no prune "
      "review at setup."),
 ]
+changelog.append(("Shop visit", "Catalogue v1.1 confirmed with no changes",
+                  "6 November 2026. The six C8 categories show the full brand list, with none first; the 16 brands "
+                  "to confirm and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO are kept; Oraimo Watch prints "
+                  "as \"Oraimo Watch Smartwatch\"; the phone models stand."))
 still_open = [
-    "C8: brands shown first for Wireless chargers, Phone holders, Memory cards and flash drives, Batteries, "
-    "Selfie sticks, ring lights and tripods, and Computer accessories are assigned at the shelf walk.",
-    "The 16 brands marked \"To confirm on the shelf walk\", and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO.",
-    "Oraimo \"Watch\" prints as \"Oraimo Watch Smartwatch\"; rename it if the owner prefers.",
-    "Phone models are a first draft: add, rename or remove against the shelf and supplier lists.",
     "Drill orders are proposals until speed data from the shadow pilot confirms them (D12).",
 ]
 
@@ -620,7 +623,7 @@ def labels(c, tokens):
 
 
 EVIDENCE = {"ng_sources": "Seen in Nigerian sources", "owner_supplied": "Supplied by the shop owner",
-            "to_confirm": "To confirm on the shelf walk"}
+            "to_confirm": "To confirm on the shelf walk", "shop_visit": "Confirmed at the shop visit"}
 
 sh_cat = Sheet("Categories", [24, 30, 22, 12, 20, 44, 52, 46, 34])
 sh_cat.rows.append(header(["Code", "Category", "Parent", "Sellable", "Category word", "Facets, in drill order",
@@ -689,8 +692,8 @@ counts_rows = [
     ("Sellable categories", 'COUNTIF(Categories!D2:D1000,"Yes")', seed["counts"]["sellable_categories"]),
     ("Parent categories", 'COUNTIF(Categories!D2:D1000,"No (parent)")', seed["counts"]["parent_categories"]),
     ("Brands (No brand is added on top)", "COUNTA(Brands!B2:B1000)", seed["counts"]["brands"]),
-    ("Brands to confirm on the shelf walk", 'COUNTIF(Brands!E2:E1000,"To confirm on the shelf walk")',
-     sum(b["provenance"] == "to_confirm" for b in brands)),
+    ("Brands confirmed at the shop visit", 'COUNTIF(Brands!E2:E1000,"Confirmed at the shop visit")',
+     sum(b["provenance"] == "shop_visit" for b in brands)),
     ("Models and product lines", "COUNTA(Models!C2:C1000)", seed["counts"]["models"]),
     ("Phone families", f'COUNTIF({PL_RANGE},"phone_families")', seed["counts"]["phone_families"]),
     ("Phone models (first draft)", "COUNTA('Phone models'!B2:B2000)", seed["counts"]["phone_models"]),
@@ -713,7 +716,7 @@ for line in [
     "1. Changes: what moved from v1 and why. Each row names the review item or answer behind it.",
     "2. Categories: check each category word and example printed name reads the way the shop says it.",
     "3. Phone models: a first draft; strike models the shop never sees and add missing ones.",
-    "4. Brands and Models: confirm the brands marked \"To confirm on the shelf walk\" and the short codes.",
+    "4. Brands and Models: the brands and short codes marked to confirm were confirmed at the shop visit.",
 ]:
     sh_rd.rows.append([line])
 sh_rd.rows.append([])

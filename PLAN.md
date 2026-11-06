@@ -26,7 +26,7 @@ Done:
 - Project folder organised: README.md, CLAUDE.md, this plan, docs/ and tools/.
 - GitHub: main is pushed to haq-technologies/haq-retailOS, and the first CI run passed. The "Protect main" ruleset allows changes only through a pull request with the docs check green, and blocks force-pushes and deletion. The repository stays public for now (D10), and commits use the GitHub noreply email.
 - Design direction decided: Apple's system colours, the Inter typeface, and responsive layouts (D4, D5). The counter wireframes are drawn on the new canvas, and the counter decisions D7 to D9 and D11 are recorded.
-- The shop visit is done and the pilot hardware is chosen, so gate G0 is passed (6 November 2026).
+- The shop visit is done, with no changes to catalogue v1.1, and the hardware list is locked (D17), so gate G0 is passed (6 November 2026).
 
 Next: the owner's back-office wireframes, which finish Phase 1, and the open items of the Phase 0 checklist below.
 
@@ -99,7 +99,7 @@ Choices and their tradeoffs (runners, registry, environments, housekeeping) are 
 - [x] Write spec v1.5 (Claude)
 - [x] Draft starter catalogue v1.1 (Claude)
 - [x] Organise the project folder (Claude)
-- [x] Choose the hardware: [docs/operations/hardware.md](docs/operations/hardware.md) (product owner, 6 November 2026). No mini-PC is bought for testing; the product owner's computer stands in (D16)
+- [x] Choose the hardware and lock the list: [docs/operations/hardware.md](docs/operations/hardware.md) (product owner, 6 November 2026, D17). No mini-PC is bought for testing; the product owner's computer stands in (D16)
 - [ ] Buy the pilot hardware (product owner): the receipt printer and the scanner by week 6, when printing is built, and the rest before the G3 dress rehearsal in week 12
 - [x] Shop visit: the owner re-confirms catalogue v1.1; shelf walk; 20-item barcode test; two hours of observation; a week of sales counted from the notebook; a power and network survey: [docs/operations/shop-visit-checklist.md](docs/operations/shop-visit-checklist.md) (product owner). Done by 6 November 2026
 - [x] Push the first commit to the public repository and protect main (Claude). The repository stays public for now (D10)
@@ -157,10 +157,6 @@ Assumptions:
 |---|---|---|---|
 | Barcode scan result (20 items) | Product owner, from the shop visit | Install (week 13) | Assume 40% scannable |
 | Busy-day sales volume | Product owner, from the notebook | Install (week 13) | Measured in the shadow weeks |
-| Brands shown first for six categories (C8) | Product owner, from the shelf walk | Install (week 13) | The full brand list |
-| The 16 brands to confirm, and the short codes HF, AI, LP, BM, DV, JZ, EX, UWO | Product owner, from the shelf walk | Install (week 13) | Kept until shown not stocked |
-| Phone-model list corrections | Product owner, from the shelf walk | Install (week 13) | The v1.1 draft |
-| Screen-protector name order ("Tecno Spark 20 Tempered Glass Screen Protector") and capitals for car mp3 s8 | Shop owner | Install (week 13) | As drafted; car mp3 s8 printed as typed |
 | Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | Recommended before application code lands in Phase 2 (week 3) | Public, documents only (D10) |
 | Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
@@ -183,3 +179,4 @@ Assumptions:
 | 6 November 2026 | Counter wireframes drawn; a bench check for the ₦ sign; the receipt text added to the open items; a POS payment needs nothing typed (D11) |
 | 6 November 2026 | Spec v1.5 signed off (D13); the clickable prototype dropped, so G1 is the wireframe sign-off (D12); the receipt text is a sysadmin setting with a branch override (D14); one person builds it, and the dates stay (D15) |
 | 6 November 2026 | Shop visit done and hardware chosen, so G0 is passed; the product owner's computer is the staging and test machine (D16) |
+| 6 November 2026 | Catalogue v1.1 confirmed with no changes, which closes its shelf-walk items; the hardware list locked (D17) |

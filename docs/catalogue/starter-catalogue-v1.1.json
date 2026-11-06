@@ -2919,7 +2919,7 @@
           "family": "phone_families.nokia-and-hmd"
         }
       ],
-      "note": "Public model names drafted from memory as of mid-2025. Verify against the shelf and supplier lists. A cashier can type a model that is missing; it prints as typed and joins the list once a manager or the owner approves it."
+      "note": "Public model names drafted from memory as of mid-2025, and checked at the shop visit on 6 November 2026 with no changes. A cashier can type a model that is missing; it prints as typed and joins the list once a manager or the owner approves it."
     }
   },
   "no_brand": {
@@ -3093,7 +3093,7 @@
         "smartwatch",
         "band"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3134,7 +3134,7 @@
         "smartwatch",
         "band"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3152,7 +3152,7 @@
         "headphones",
         "bluetooth_speakers"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3170,7 +3170,7 @@
         "headphones",
         "bluetooth_speakers"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3188,7 +3188,7 @@
         "headphones",
         "bluetooth_speakers"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3201,7 +3201,7 @@
         "charger_head",
         "complete_charger"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3251,7 +3251,7 @@
         "charger_head",
         "complete_charger"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3263,7 +3263,7 @@
         "charger_head",
         "complete_charger"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3604,7 +3604,7 @@
         "smartwatch",
         "band"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3676,7 +3676,7 @@
         "headphones",
         "bluetooth_speakers"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3805,7 +3805,7 @@
       ],
       "provenance": "owner_supplied",
       "status": "approved",
-      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+      "note": "Short code; confirmed at the shop visit, 6 Nov 2026 (C5)"
     },
     {
       "id": "brand.ai",
@@ -3820,7 +3820,7 @@
       ],
       "provenance": "owner_supplied",
       "status": "approved",
-      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+      "note": "Short code; confirmed at the shop visit, 6 Nov 2026 (C5)"
     },
     {
       "id": "brand.lp",
@@ -3835,7 +3835,7 @@
       ],
       "provenance": "owner_supplied",
       "status": "approved",
-      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+      "note": "Short code; confirmed at the shop visit, 6 Nov 2026 (C5)"
     },
     {
       "id": "brand.bm",
@@ -3850,7 +3850,7 @@
       ],
       "provenance": "owner_supplied",
       "status": "approved",
-      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+      "note": "Short code; confirmed at the shop visit, 6 Nov 2026 (C5)"
     },
     {
       "id": "brand.dv",
@@ -3865,7 +3865,7 @@
       ],
       "provenance": "owner_supplied",
       "status": "approved",
-      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+      "note": "Short code; confirmed at the shop visit, 6 Nov 2026 (C5)"
     },
     {
       "id": "brand.jz",
@@ -3880,7 +3880,7 @@
       ],
       "provenance": "owner_supplied",
       "status": "approved",
-      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+      "note": "Short code; confirmed at the shop visit, 6 Nov 2026 (C5)"
     },
     {
       "id": "brand.ex",
@@ -3895,7 +3895,7 @@
       ],
       "provenance": "owner_supplied",
       "status": "approved",
-      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+      "note": "Short code; confirmed at the shop visit, 6 Nov 2026 (C5)"
     },
     {
       "id": "brand.uwo",
@@ -3910,7 +3910,7 @@
       ],
       "provenance": "owner_supplied",
       "status": "approved",
-      "note": "Short code; confirm against the real product at the shelf walk (C5)"
+      "note": "Short code; confirmed at the shop visit, 6 Nov 2026 (C5)"
     },
     {
       "id": "brand.amazfit",
@@ -3920,7 +3920,7 @@
         "smartwatch",
         "band"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3931,7 +3931,7 @@
         "cases",
         "screen_protectors"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3942,7 +3942,7 @@
         "cases",
         "screen_protectors"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3953,7 +3953,7 @@
         "cases",
         "screen_protectors"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3964,7 +3964,7 @@
         "cases",
         "screen_protectors"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     },
     {
@@ -3975,7 +3975,7 @@
         "cases",
         "screen_protectors"
       ],
-      "provenance": "to_confirm",
+      "provenance": "shop_visit",
       "status": "approved"
     }
   ],
@@ -5516,13 +5516,14 @@
       "ref": "R2",
       "change": "The 127 stored generated lines became 5 generator rules",
       "detail": "The same 127 shapes are offered at the counter and an item is created on its first sale, so there is no prune review at setup."
+    },
+    {
+      "ref": "Shop visit",
+      "change": "Catalogue v1.1 confirmed with no changes",
+      "detail": "6 November 2026. The six C8 categories show the full brand list, with none first; the 16 brands to confirm and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO are kept; Oraimo Watch prints as \"Oraimo Watch Smartwatch\"; the phone models stand."
     }
   ],
   "still_open": [
-    "C8: brands shown first for Wireless chargers, Phone holders, Memory cards and flash drives, Batteries, Selfie sticks, ring lights and tripods, and Computer accessories are assigned at the shelf walk.",
-    "The 16 brands marked \"To confirm on the shelf walk\", and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO.",
-    "Oraimo \"Watch\" prints as \"Oraimo Watch Smartwatch\"; rename it if the owner prefers.",
-    "Phone models are a first draft: add, rename or remove against the shelf and supplier lists.",
     "Drill orders are proposals until speed data from the shadow pilot confirms them (D12)."
   ]
 }
