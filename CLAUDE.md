@@ -8,7 +8,7 @@ HAQ Retail OS, by HAQ Technology: a point-of-sale system for phone-accessory sho
 
 ## Where we are
 
-Phase 1 (wireframes), as of 6 November 2026: gate G0 is passed, the wireframes are drawn and wait for the product owner's sign-off at G1, and there is no application code yet. [PLAN.md](PLAN.md) has the phases, gates, status, Phase 0 checklist and open items.
+Phases 0 and 1 are closed and locked (gates G0 and G1 passed on 6 November 2026, D19). Phase 2, the foundation, starts only when the product owner says so, once Docker runs on this Mac. There is no application code yet. [PLAN.md](PLAN.md) has the phases, gates, status, Phase 0 checklist and open items.
 
 ## Sources of truth
 
