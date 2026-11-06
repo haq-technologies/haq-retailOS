@@ -22,7 +22,7 @@ class ShiftsServiceProvider extends ServiceProvider
             // nothing closes by itself.
             $registry->define(new Definition('shifts.closing_time', 'Closing time', null,
                 ['nullable', 'string', 'regex:/^([01][0-9]|2[0-3]):[0-5][0-9]$/'], lockedByDefault: false, source: 'S12, D37',
-                ownerFacing: true, help: 'A shift still open 4 hours after closing time closes by itself, marked as not counted. Leave it empty to turn this off.'));
+                ownerFacing: true, ownerKind: 'time', help: 'A shift still open 4 hours after closing time closes by itself, marked as not counted. Leave it empty to turn this off.'));
 
             return $registry;
         });

@@ -26,8 +26,10 @@ class SalesServiceProvider extends ServiceProvider
             $registry->define(new Definition('pricing.retype_multiple', 'Retype a price above this many times the usual', 3, ['required', 'integer', 'min:2', 'max:20'], lockedByDefault: true, source: 'S5'));
 
             // A cashier discards their own parked sale up to this amount; above it, a manager approves [F12].
-            // Until the owner sets it, every cashier discard needs a manager (D33).
-            $registry->define(new Definition('parked.discard_limit_kobo', 'Parked-sale discard limit for a cashier (kobo)', 0, ['required', 'integer', 'min:0'], lockedByDefault: true, source: 'F12'));
+            // The owner sets it in Shop settings (D38); until then it is ₦0, so every cashier discard needs a manager (D33).
+            $registry->define(new Definition('parked.discard_limit_kobo', 'Discard limit for a cashier', 0, ['required', 'integer', 'min:0', 'max:100000000'],
+                lockedByDefault: false, source: 'F12, D33, D38', ownerFacing: true, ownerKind: 'money',
+                help: 'A cashier may discard their own held sale up to this amount, with a reason. Above it, or for someone else\'s sale, a manager or you must type a PIN. At ₦0 every discard needs one.'));
 
             return $registry;
         });
