@@ -229,7 +229,7 @@ Every printed name is built by one routine in this order: Brand, Model or connec
 
 | Phase | What happens | Time |
 |---|---|---|
-| 0. Prepare | Starter catalogue and shop profile file generated before the visit. In the pilot, where the console is not built yet, you generate the profile with a command-line tool; the profile carries the receipt text. [F25, D14] | Before the visit |
+| 0. Prepare | Starter catalogue and shop profile file generated before the visit. In the pilot, where the console is not built yet, you generate the profile with a command-line tool (shop:make-profile); the profile carries the shop, the branch, its counters and drawers, and the receipt text, and applying it twice changes nothing. [F25, D14] | Before the visit |
 | 1. Install | Your team installs the Docker bundle, applies the profile, creates users, ticks categories and brands, connects printer, drawer and scanner, prints a test receipt, and runs the power-cut drill | About 2 hours |
 | 2. Learn while selling | Items and barcodes are learned from real sales | Weeks 1 to 2 |
 | 3. Cost queue | The owner prices items sold without cost, sorted by revenue, with bulk apply | From day 2 |

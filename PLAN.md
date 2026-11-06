@@ -122,7 +122,7 @@ Then, by week 8:
 - [x] Database roles, grants and triggers generated from the mutability matrix, and the one-shot migration job, with the nightly grant check and the code laid out as a modular monolith (Claude, 6 November 2026, D23)
 - [ ] Identity: name tiles, PINs, acting-user tokens, bound approvals and the idle lock (Claude)
 - [x] Audit chains, roots and the spool, with the shop, branches and terminals they hang on (Claude, 6 November 2026)
-- [ ] Settings and the profile tool, including the receipt text (Claude, D14)
+- [x] Settings and the profile tool, including the receipt text: `shop:make-profile` before the visit, `shop:apply-profile` at install, idempotent (Claude, 6 November 2026, D14)
 - [ ] The catalogue model, the name routine and the seeder for catalogue v1.1 (Claude)
 - [x] The multi-process PostgreSQL test harness in CI: worker processes released together, committed transactions, its own database (Claude, 6 November 2026)
 - [ ] Gate G2: a clean Ubuntu virtual machine installs from a profile; the seed loads twice with no change; append-only holds against a deliberately widened grant (product owner, Claude)
@@ -209,3 +209,4 @@ Assumptions:
 | 6 November 2026 | Phase 2 starts: the shop server's skeleton and development stack in apps/shop-server/, and CI for it (D20 to D22) |
 | 6 November 2026 | The modular monolith (D23); the three database roles, with grants and triggers from the mutability matrix |
 | 6 November 2026 | Audit chains, roots and the spool; the multi-process test harness in CI |
+| 6 November 2026 | Settings with history and sysadmin locks; the shop profile tool |

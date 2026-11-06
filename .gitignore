@@ -19,6 +19,9 @@ __pycache__/
 /public/build/
 
 # Secrets and local environment: never commit these
+# Shop profiles hold shop data (names, addresses, phone numbers)
+*.profile.json
+/profiles/
 .env
 .env.*
 !.env.example

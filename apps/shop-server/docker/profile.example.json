@@ -1,0 +1,29 @@
+{
+    "schema_version": 1,
+    "shop": {
+        "name": "Example Accessories"
+    },
+    "branch": {
+        "code": "B01",
+        "name": "Main branch"
+    },
+    "terminals": [
+        {
+            "code": "T01",
+            "name": "Counter 1",
+            "drawer": true
+        },
+        {
+            "code": "T02",
+            "name": "Counter 2",
+            "drawer": false
+        }
+    ],
+    "receipt": {
+        "shop_name": "Example Accessories",
+        "address": "1 Example Street",
+        "phone": "0800 000 0000",
+        "footer": "Goods sold in good condition."
+    },
+    "settings": {}
+}
