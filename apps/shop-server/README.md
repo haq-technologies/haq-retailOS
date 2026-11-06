@@ -16,6 +16,7 @@ apps/shop-server/docker/dev-setup.sh
 
 # Every day
 docker compose up -d          # start; open http://localhost:8080
+docker compose run --rm migrate   # migrate as the owner role, then apply the mutability matrix
 docker compose down           # stop (the database volume is kept)
 docker compose logs -f app    # follow a service's log
 ```
@@ -27,32 +28,34 @@ From the repository root, with the stack running. CI runs the same checks on eve
 ```
 docker compose exec app composer lint       # Pint (code style)
 docker compose exec app composer analyse    # Larastan, level 9
-docker compose exec app composer test       # Pest, against the retail_test database
+docker compose run --rm test               # Pest: architecture and feature tests, against retail_test
 docker compose exec vite npm run lint       # ESLint
 docker compose exec vite npm run types      # TypeScript
 docker compose exec vite npm test           # Vitest
 ```
 
-Other commands run the same way: `docker compose exec app php artisan …`, `docker compose exec app composer …` and `docker compose exec vite npm …`. For the database, use `docker compose exec db psql -U retail`.
+Other commands run the same way: `docker compose exec app php artisan …`, `docker compose exec app composer …` and `docker compose exec vite npm …`. For the database, use `docker compose exec db psql -U postgres -d retail`.
 
 ## What is where
 
 | Path | What it is |
 |---|---|
-| `app/` | The Laravel application |
+| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation`, `Audit`, `Settings`, `Identity` and `Catalogue` follow in Phase 2. `Http/` and `Providers/` are Laravel's glue |
 | `config/` | Every setting. Laravel's defaults are not merged in, so Redis and the other unused drivers stay out |
 | `database/migrations/` | The schema. Every application table has a ULID key (D21) |
 | `resources/js/` | The React side: `app.tsx` boots Inertia, `pages/` holds the pages |
 | `resources/css/tokens.css` | The colour, type and layout tokens from spec section 15. Only these colours exist in the app |
-| `tests/Feature/` | Pest tests, including the product invariants |
+| `tests/Arch/` | Architecture tests: module boundaries, the Page rule, strict types |
+| `tests/Feature/` | Pest tests, including the product invariants and the mutability matrix |
 | `docker/` | The PHP image, the nginx config, the development database setup and `dev-setup.sh` |
 
 ## Rules built in so far
 
 - PostgreSQL holds sessions, jobs and the cache; there is no Redis (spec section 4). A test fails if a Redis setting or client appears.
 - Every application table has a ULID primary key. A test fails on any other key.
+- Three database roles (spec section 4). The app runs as `retail_app`; only the one-shot `migrate` job holds the owner's password. Grants and triggers come from the mutability matrix in `app/Platform/Database/Mutability/Matrix.php`, applied after every migration; a table missing from it stops the migration. Triggers hold the rules even against a widened grant, and `db:mutability --check` runs nightly to report any drift.
 - Times are UTC, in PHP and in PostgreSQL. A test checks both.
 - Queued jobs dispatch only after the transaction commits, so a rolled-back sale never prints. A test checks the setting.
 - Every PHP file declares strict types (Pint enforces it), so a value such as a kobo amount is never coerced silently.
 - On a shop server, commands that wipe the database refuse to run.
-- Pages receive explicit arrays or API Resources, never Eloquent models, so cost never reaches a role that may not see it. For now it is a convention; an automated check comes with the first model.
+- Pages receive explicit arrays or API Resources, never Eloquent models, so cost never reaches a role that may not see it. Pages render only through `App\Platform\Http\Page`, which refuses a model, and an architecture test stops any other use of Inertia.

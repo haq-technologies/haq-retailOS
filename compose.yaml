@@ -1,10 +1,14 @@
 # Development stack for the shop server (PLAN.md, Phase 2). For the development computer only, never
 # for a shop: the code is bind-mounted and the passwords are development placeholders. The production
-# stack (images from GHCR pinned by digest, no bind mounts, the one-shot migration job and three database
-# roles) comes later in Phase 2. Image versions are pinned (D20).
+# stack (images from GHCR pinned by digest, no bind mounts) comes later in Phase 2. Versions are pinned (D20).
+#
+# The running containers connect as retail_app. Only the one-shot migrate and test services hold the
+# owner role's password, as in a shop (spec section 4).
 #
 # First run: apps/shop-server/docker/dev-setup.sh
 # Then:      docker compose up -d     and open http://localhost:8080
+# Migrate:   docker compose run --rm migrate
+# Test:      docker compose run --rm test
 
 name: retail-os
 
@@ -16,16 +20,21 @@ x-php: &php
     target: dev
   volumes:
     - ./apps/shop-server:/app
-  environment:
+  environment: &app-env
     DB_HOST: db
     DB_PORT: "5432"
     DB_DATABASE: retail
-    DB_USERNAME: retail
-    DB_PASSWORD: retail-dev
+    DB_USERNAME: retail_app
+    DB_PASSWORD: app-dev
   depends_on:
     db:
       condition: service_healthy
   restart: unless-stopped
+
+x-owner-env: &owner-env
+  <<: *app-env
+  DB_OWNER_USERNAME: retail_owner
+  DB_OWNER_PASSWORD: owner-dev
 
 services:
   # PHP-FPM, serving the app to nginx.
@@ -40,6 +49,23 @@ services:
   scheduler:
     <<: *php
     command: ["php", "artisan", "schedule:work"]
+
+  # The one-shot migration job: migrates as the owner role, then applies the mutability matrix.
+  migrate:
+    <<: *php
+    profiles: [tools]
+    restart: "no"
+    environment: *owner-env
+    command: ["sh", "-c", "php artisan migrate --database=pgsql_owner --force && php artisan db:mutability --database=pgsql_owner"]
+
+  # Pest, against the retail_test database: it rebuilds the schema as the owner and tests as retail_app.
+  test:
+    <<: *php
+    profiles: [tools]
+    restart: "no"
+    environment: *owner-env
+    entrypoint: ["composer", "test", "--"]
+    command: []
 
   web:
     image: nginx:1.30.6-alpine
@@ -66,18 +92,22 @@ services:
       VITE_POLL: "1"
     restart: unless-stopped
 
-  # PostgreSQL. Its port is never published (spec section 4); use `docker compose exec db psql -U retail`.
+  # PostgreSQL. Its port is never published (spec section 4); use `docker compose exec db psql -U postgres`.
+  # The roles and databases are created by docker/postgres/init/01-roles.sh when the volume is new.
   db:
     image: postgres:18.6-trixie
     environment:
-      POSTGRES_DB: retail
-      POSTGRES_USER: retail
-      POSTGRES_PASSWORD: retail-dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres-dev
+      RETAIL_OWNER_PASSWORD: owner-dev
+      RETAIL_APP_PASSWORD: app-dev
+      RETAIL_REPORTING_PASSWORD: reporting-dev
     volumes:
       - db-data:/var/lib/postgresql
       - ./apps/shop-server/docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U retail -d retail"]
+      # Over TCP, so the check passes only once initialisation is over and the real server listens.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d retail"]
       interval: 2s
       timeout: 3s
       retries: 30

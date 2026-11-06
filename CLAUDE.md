@@ -32,7 +32,7 @@ docs/operations/   hardware list and shop-visit checklist
 docs/archive/      superseded originals: spec v1.4 (.docx), locked catalogue v1. Read-only
 tools/catalogue/   scripts that build and verify the catalogue
 tools/docs/        the Markdown checker
-apps/shop-server/  the shop server: Laravel, Inertia and React (its README has the commands)
+apps/shop-server/  the shop server: Laravel, Inertia and React (its README has the commands and modules)
 compose.yaml       the development stack for the shop server
 ```
 
@@ -87,11 +87,16 @@ apps/shop-server/docker/dev-setup.sh       # first time: build, install, migrate
 docker compose up -d                       # start the stack; http://localhost:8080
 docker compose exec app composer lint      # Pint
 docker compose exec app composer analyse   # Larastan, level 9
-docker compose exec app composer test      # Pest, against the retail_test database
+docker compose run --rm migrate            # migrate as the owner role, then apply the mutability matrix
+docker compose run --rm test               # Pest, against the retail_test database
 docker compose exec vite npm run lint      # ESLint (also: npm run types, npm test)
 ```
 
 CI also runs these on every pull request, with PostgreSQL 18, and builds the PHP image.
+
+## Code structure (D23)
+
+The shop server is a modular monolith. Each module is a namespace under app/ (Platform, Organisation, Audit, Settings, Identity, Catalogue, and later Sales, Printing, Cost, Shifts, Reports, Sync) and owns its models, actions, policies, controllers and API Resources. A module uses only the modules beneath it, as listed in tests/Arch/ArchitectureTest.php; add a module there before writing it. Pages render only through App\Platform\Http\Page. Migrations stay in database/migrations, and every new table gets its rule in the mutability matrix (app/Platform/Database/Mutability/Matrix.php) or the migration fails.
 
 ## Design
 

@@ -2,7 +2,8 @@
 <!--
     Tests run on a real PostgreSQL (spec section 14). DB_DATABASE is forced to retail_test, so a test
     can never touch the development database, even inside a container whose environment names it.
-    DB_HOST, DB_USERNAME and DB_PASSWORD come from the environment: compose.yaml or the CI job.
+    DB_HOST, DB_USERNAME and DB_PASSWORD (the app role) and DB_OWNER_USERNAME and DB_OWNER_PASSWORD (the
+    owner role, which rebuilds the schema) come from the environment: compose.yaml or the CI job.
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
@@ -10,6 +11,9 @@
          colors="true"
 >
     <testsuites>
+        <testsuite name="Arch">
+            <directory>tests/Arch</directory>
+        </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>

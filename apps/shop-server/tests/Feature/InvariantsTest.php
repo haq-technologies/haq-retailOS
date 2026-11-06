@@ -2,15 +2,14 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Platform\Database\Mutability\Matrix;
+use App\Platform\Database\Mutability\Schema;
 use Illuminate\Support\Facades\DB;
 
 /*
  * Product invariants from CLAUDE.md and the spec that hold from the first line of code.
- * Each later phase adds the invariants it makes testable.
+ * Each later step adds the invariants it makes testable.
  */
-
-uses(RefreshDatabase::class);
 
 // Laravel's own tables keep Laravel's keys: they hold no business records and never sync (D21).
 const FRAMEWORK_TABLES = ['migrations', 'sessions', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs'];
@@ -32,7 +31,7 @@ it('runs on PostgreSQL 18 in UTC', function () {
 
 it('has no Redis: sessions, jobs and the cache live in PostgreSQL', function () {
     expect(config('database.redis'))->toBeNull();
-    expect(array_keys((array) config('database.connections')))->toBe(['pgsql']);
+    expect(array_keys((array) config('database.connections')))->toBe(['pgsql', 'pgsql_owner']);
 
     /** @var array<string, array{driver: string}> $stores */
     $stores = config('cache.stores');
@@ -59,16 +58,21 @@ it('dispatches queued jobs only after the surrounding transaction commits', func
     expect(config('queue.connections.database.after_commit'))->toBeTrue();
 });
 
+it('runs the app as the app role, never as the owner', function () {
+    /** @var object{user: string} $row */
+    $row = DB::selectOne('SELECT current_user AS user');
+    expect($row->user)->toBe(config('database.roles.app'));
+});
+
 it('gives every application table a ULID primary key', function () {
-    $all = collect(DB::select(
-        "select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'"
-    ))->pluck('table_name');
+    $owner = DB::connection('pgsql_owner');
+    $all = collect(Schema::tables($owner));
 
     // The query sees the schema: Laravel's own tables are there after migrating.
     expect($all)->toContain('migrations', 'sessions', 'cache', 'jobs');
 
     foreach ($all->diff(FRAMEWORK_TABLES) as $table) {
-        $keys = DB::select(<<<'SQL'
+        $keys = $owner->select(<<<'SQL'
             select a.attname as column_name, format_type(a.atttypid, a.atttypmod) as type
             from pg_index i
             join pg_attribute a on a.attrelid = i.indrelid and a.attnum = any(i.indkey)
@@ -78,5 +82,12 @@ it('gives every application table a ULID primary key', function () {
         expect($keys)->toHaveCount(1, "{$table} must have a single-column primary key");
         expect($keys[0]->column_name)->toBe('id', "{$table}'s primary key must be id");
         expect($keys[0]->type)->toBe('character(26)', "{$table}'s primary key must be a ULID");
+    }
+});
+
+it('classifies every table in the mutability matrix', function () {
+    $matrix = app(Matrix::class);
+    foreach (Schema::tables(DB::connection('pgsql_owner')) as $table) {
+        expect($matrix->rule($table))->not->toBeNull("{$table} is not in the mutability matrix");
     }
 });

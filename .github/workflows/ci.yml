@@ -58,23 +58,37 @@ jobs:
       postgres:
         image: postgres:18.6-trixie
         env:
-          POSTGRES_USER: retail
-          POSTGRES_PASSWORD: retail-ci
-          POSTGRES_DB: retail_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres-ci
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U retail -d retail_test"
+          --health-cmd "pg_isready -U postgres"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 30
     env:
       DB_HOST: 127.0.0.1
       DB_PORT: "5432"
-      DB_USERNAME: retail
-      DB_PASSWORD: retail-ci
+      # Tests run as the app role; the owner role only rebuilds the schema (spec section 4).
+      DB_USERNAME: retail_app
+      DB_PASSWORD: app-ci
+      DB_OWNER_USERNAME: retail_owner
+      DB_OWNER_PASSWORD: owner-ci
     steps:
       - uses: actions/checkout@v7
+
+      - name: Create the three database roles and the test database
+        working-directory: .
+        env:
+          PGHOST: 127.0.0.1
+          PGPASSWORD: postgres-ci
+          POSTGRES_USER: postgres
+          RETAIL_OWNER_PASSWORD: owner-ci
+          RETAIL_APP_PASSWORD: app-ci
+          RETAIL_REPORTING_PASSWORD: reporting-ci
+          RETAIL_DATABASES: retail_test
+        run: apps/shop-server/docker/postgres/init/01-roles.sh
 
       # The same PHP minor and extensions as the image (apps/shop-server/docker/php/Dockerfile).
       - uses: shivammathur/setup-php@2.40.0
@@ -101,7 +115,7 @@ jobs:
       - name: Larastan
         run: composer analyse
 
-      - name: Pest, against PostgreSQL 18
+      - name: Pest, against PostgreSQL 18 (architecture and feature tests)
         run: composer test
 
   shop-server-js:
