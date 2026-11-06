@@ -2,7 +2,7 @@
 
 HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026; signed off by the product owner on 6 November 2026 [D13].
 
-**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D17, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
+**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D19, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
 
 **How to read it.** A tag such as [F3] marks text that exists because of finding F3 of the engineering teardown (Appendix A). A tag such as [S4], [R3], [C1] or [D2] marks text set by the v1.4 review; Appendix E lists every such change, and docs/decisions.md records where each came from. [Q5] or [FU6] points to an answer in that log; FU1 to FU10 are the review's follow-up questions, not teardown findings.
 
@@ -394,7 +394,7 @@ After any restore or server replacement, the system starts a new epoch, and the 
 - Contributions land in a staging queue your team curates. Nothing publishes automatically.
 # 12. Reports
 ## Pilot slice
-- Daily summary, with sales, the three profit buckets and the percentage in each, by payment method, and the audit root hash. [F14]
+- Daily summary, with sales, the three profit buckets and the percentage in each, by payment method, and the audit root hash. [F14] The printed slip carries no profit or cost amounts; the owner sees profit on screen. [D18]
 - Below-cost, price-anomaly and cashier-behaviour flag list (below-range confirms, discards, no-sale openings, transfers without reference).
 - Catalogue health: percentage of revenue with cost, items pending review, brands and product words waiting for approval, unconfirmed barcode links, barcode coverage. [v1.3]
 - CSV export of items and sales, opening cleanly in Excel. Exports never contain cost for roles that cannot see it. [F10]
@@ -627,7 +627,7 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
 
 | Area | Deliverable |
 |---|---|
-| Wireframes and speed test | The five v1.4 screens predate the catalogue and are redrawn touch-first on a new canvas, adding the price-floor prompt, pending print, lost window, Pending transfers and the idle lock. There is no clickable prototype: the product owner signs off the wireframes at gate G1, and the speed instrumentation times real cashiers on the counter from the shadow pilot. Returns, shift close and the console are drawn in the MVP phase. [Q10, D12] |
+| Wireframes and speed test | The five v1.4 screens predate the catalogue and are redrawn touch-first on a new canvas, adding the price-floor prompt, pending print, lost window, Pending transfers and the idle lock. There is no clickable prototype: the product owner signs off the wireframes at gate G1, and the speed instrumentation times real cashiers on the counter from the shadow pilot. Returns, shift close and the console are drawn in the MVP phase. The product owner signed the wireframes off on 6 November 2026. [Q10, D12, D19] |
 | Release policy | GitHub Actions CI on every pull request with a real PostgreSQL; images on GHCR; a release manifest signed offline with a hardware token; staging on the product owner's computer with 5,000 test items [D16]; the pilot shop as the beta channel with a weekly release; automatic code rollback on a failed health check. [D1, D2] |
 | Hardware specification | Server with SSDs that have power-loss protection. UPS covering server, switch and router; one counter and its printer on the UPS or the inverter. Network thermal printers; cash drawers optional. Fixed IP and local name. Local certificate authority and renewal steps. Optional standby device. The tested list lives in docs/operations/hardware.md. [F24, S7, R3, S21] The list in docs/operations/hardware.md is locked. [D17] |
 | Support model | Remote access when online. A send-diagnostics bundle. A runbook for printer, PC start, wrong-date and restore problems. A pre-imaged spare PC with a licence transfer procedure. |
@@ -816,5 +816,6 @@ Every change below comes from the v1.4 review of 5 November 2026 or a decision a
 | Repository (section 4) | Public until the owner makes it private; nothing secret or personal is committed; green CI to merge, with no review while one person builds it | D10, D15 |
 | Receipts (sections 7 and 11) | The header and footer are a shop setting that only the sysadmin changes, with a branch override for the address and phone | D14 |
 | Hardware (section 16) | The hardware list is locked | D17 |
-| Delivery (section 16) | No clickable prototype: gate G1 is the product owner's sign-off of the wireframes, and real cashiers are first timed on the counter in the shadow pilot. The product owner's computer is the staging and test machine, with no office mini-PC | D12, D16 |
+| Delivery (section 16) | No clickable prototype: gate G1 is the product owner's sign-off of the wireframes, and real cashiers are first timed on the counter in the shadow pilot. The product owner's computer is the staging and test machine, with no office mini-PC. The wireframes are signed off | D12, D16, D19 |
+| Reports (section 12) | The printed daily summary carries no profit or cost amounts | D18 |
 | Not adopted | An owner phone summary and read-only cloud view in Core | S13 |
