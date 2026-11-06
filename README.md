@@ -2,7 +2,7 @@
 
 A point-of-sale system for phone-accessory shops in Nigeria, by HAQ Technology. A small server in each shop runs everything on the shop's own network, so selling never depends on the internet. Every receipt names the product properly, profit stays honest while cost prices are still being filled in, and every sale survives power cuts and tampering. The tiers are Core and Pro.
 
-**Status:** 6 November 2026. Phases 0, 1 and 2 are closed: gate G2 passed (D27). Phase 3, the counter and sale core, is built (D30 to D36); its gate G3, the dress rehearsal on the pilot hardware, waits for the hardware, the release signing key and the server's GHCR token.
+**Status:** 6 November 2026. Phases 0, 1 and 2 are closed: gate G2 passed (D27). Phase 3, the counter and sale core, is built (D30 to D36); its gate G3, the dress rehearsal on the pilot hardware, waits for the hardware.
 
 ## Start here
 
