@@ -2,7 +2,7 @@
 
 The HAQ Retail OS server that runs in each branch, on the shop's own network: Laravel 13 and PostgreSQL 18, with the counter and the back office in React through Inertia. The spec is [docs/spec/retail-os-spec-v1.5.md](../../docs/spec/retail-os-spec-v1.5.md), and the build order is in [PLAN.md](../../PLAN.md).
 
-**Status:** Phase 2, the foundation. The stack runs end to end, but there is nothing to sell yet.
+**Status:** Phase 2, the foundation, is built, and gate G2's criteria are met. The counter and selling come in Phase 3.
 
 ## Run it on the development computer
 
