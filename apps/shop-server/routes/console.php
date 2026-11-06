@@ -13,3 +13,6 @@ Schedule::command('db:mutability --check')->dailyAt('02:30')->withoutOverlapping
 Schedule::command('audit:root')->everyMinute()->withoutOverlapping();
 Schedule::command('audit:ingest-spool')->everyMinute()->withoutOverlapping();
 Schedule::command('audit:verify')->dailyAt('02:45')->withoutOverlapping();
+
+// A shift left open four hours past closing time closes as unclosed [S12].
+Schedule::command('shifts:auto-close')->everyFiveMinutes()->withoutOverlapping();

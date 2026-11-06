@@ -8,7 +8,9 @@ use App\Identity\IdentityServiceProvider;
 use App\Organisation\OrganisationServiceProvider;
 use App\Platform\PlatformServiceProvider;
 use App\Providers\AppServiceProvider;
+use App\Sales\SalesServiceProvider;
 use App\Settings\SettingsServiceProvider;
+use App\Shifts\ShiftsServiceProvider;
 
 // One service provider per module (D23), in dependency order.
 return [
@@ -19,4 +21,6 @@ return [
     SettingsServiceProvider::class,
     IdentityServiceProvider::class,
     CatalogueServiceProvider::class,
+    ShiftsServiceProvider::class,
+    SalesServiceProvider::class,
 ];

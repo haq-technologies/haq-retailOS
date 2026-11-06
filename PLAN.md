@@ -17,7 +17,7 @@ The pilot succeeds when (spec section 14):
 
 ## Status
 
-Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, starts when the product owner says so.
+Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go.
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
@@ -32,7 +32,7 @@ Done:
 
 - Gate G2 passed on 6 November 2026 (D27); the identity timings accepted (D28); back-office devices for the owner's phone or laptop (D29).
 
-Next: Phase 3 at the product owner's go.
+Next: the rest of the Phase 3 checklist below.
 
 ## Team
 
@@ -134,6 +134,20 @@ Then, by week 8:
   - Append-only holds against a deliberately widened grant: with UPDATE, DELETE and TRUNCATE granted on the audit tables, the triggers refused all three; the nightly grant check reported the grant; rerunning the migration job put it back; the audit trail verified.
   - deploy/check-install.sh ran all 18 checks, which passed, including that no running container holds the owner's password and that HTTPS verifies against the shop's own authority. A cashier enrolled a counter and signed in over HTTPS in production mode.
 
+## Phase 3 checklist
+
+Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go. In weeks 6 to 12:
+
+- [x] Finish, with idempotency and a payload hash, gapless receipt numbers per terminal and epoch, signed epochs, payments, a pending print job, timings and the audit entry in one transaction; minimal shifts per drawer that set the business day and close themselves four hours after closing time; the multi-process crash and concurrency tests (Claude, 6 November 2026)
+- [ ] Prices: set prices, the last price or median pre-fill, the usual range, the floor and its manager approval, the confirm count and the retype check (Claude)
+- [ ] Server printing: ESC/POS receipts with the Code 128 receipt number, pending print, DUPLICATE reprints, the drawer kick and the drawer log (Claude)
+- [ ] The counter's API: catalogue polling, new items with their guardrails, barcode learning and aliases (Claude)
+- [ ] The counter client: the local-first page, search, tiles, price pad, colour row, payments, hold and resume, Awaiting transfer, the counter journal and the speed timings (Claude)
+- [ ] Backups with pgBackRest, and the weekly test restore (Claude)
+- [ ] Playwright tests in CI (Claude)
+- [ ] The release manifest, offline signing and the updater (Claude; the product owner holds the signing key)
+- [ ] Gate G3: the dress rehearsal on the pilot hardware (product owner, Claude)
+
 ## Before Phase 3
 
 - [ ] Buy the pilot hardware (product owner): the receipt printer and the scanner by week 6, when printing is built, and the rest before the G3 dress rehearsal in week 12
@@ -192,6 +206,7 @@ Assumptions:
 | Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
+| The pilot shop's closing time, for the forgotten-shift rule: a shift still open four hours later closes as unclosed (S12) | Shop owner | Install (week 13) | None set: no shift closes by itself. It goes in the shop profile as shifts.closing_time |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
 | Bundles or packs (phone plus case, wholesale carton) | Product owner | MVP | Not supported in the pilot |
 | Warranty claims | Product owner | MVP | Returns with the supplier_claim disposition |
@@ -222,3 +237,4 @@ Assumptions:
 | 6 November 2026 | The catalogue model, the name routine and the starter-catalogue seeder (D25) |
 | 6 November 2026 | A shop's Docker stack, images on GHCR, the installer and staging (D26); Phase 2's work is done and G2's criteria are met on a clean Ubuntu virtual machine |
 | 6 November 2026 | Gate G2 passed and Phase 2 closed (D27); the identity timings accepted (D28); back-office devices (D29); staging pulls from GHCR |
+| 6 November 2026 | Phase 3 starts at the product owner's go: the sale core (Finish, receipt numbers, epochs, minimal shifts) |

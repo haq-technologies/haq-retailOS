@@ -13,6 +13,6 @@ class OrganisationServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->singleton(BranchKey::class, fn () => new BranchKey(config()->string('organisation.key_dir')));
     }
 }
