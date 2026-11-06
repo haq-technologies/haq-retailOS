@@ -28,6 +28,8 @@ apps/shop-server/deploy/secrets/
 .env.*
 !.env.example
 *.pem
+# The release public key is the one key that belongs in the repository (D36).
+!apps/shop-server/deploy/release-public.pem
 *.key
 
 # Release folders made by tools/release/make-manifest.sh: published as GitHub releases, never committed.

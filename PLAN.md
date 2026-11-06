@@ -17,7 +17,7 @@ The pilot succeeds when (spec section 14):
 
 ## Status
 
-Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3, the dress rehearsal, waits for the pilot hardware, the release signing key and the server's GHCR token.
+Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3, the dress rehearsal, waits for the pilot hardware; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026.
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
@@ -33,7 +33,7 @@ Done:
 - Gate G2 passed on 6 November 2026 (D27); the identity timings accepted (D28); back-office devices for the owner's phone or laptop (D29).
 - Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the G3 tooling. See the Phase 3 checklist below.
 
-Next: gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md), once the open items it needs are done: the release signing key, the server's read-only GHCR token and the hardware. Phase 4 starts only at the product owner's go.
+Next: gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md), once the pilot hardware is set up. Before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. Phase 4 starts only at the product owner's go.
 
 ## Team
 
@@ -149,7 +149,7 @@ Phase 3, the counter and sale core, started on 6 November 2026 at the product ow
 - [x] Playwright 1.65 tests in CI: the counter in Chromium against a fresh test shop in retail_e2e, on every pull request; `apps/shop-server/e2e/run.sh` runs them on this computer (Claude, 6 November 2026)
 - [x] The release manifest, offline signing and the updater: images by digest and the Compose file by hash, signed with an offline Ed25519 key; `update.sh` checks, pulls, backs up, switches, health-checks and rolls back the code only; a signing dry run in CI; rehearsed on staging (Claude, 6 November 2026, D36; docs/operations/releases.md). The product owner makes the real key
 - [x] The G3 tooling: `shop:rehearse` (scripted sales on two counters at once, through the print queue) and `shop:rehearsal-check` (gapless numbers, whole sales, receipts, audit chains, grants), the power-cut procedure and the restore onto the spare box (Claude, 6 November 2026; docs/operations/g3-dress-rehearsal.md). Rehearsed on staging with the database and app killed mid-run
-- [ ] Gate G3: the dress rehearsal on the pilot hardware (product owner, Claude). It waits for the pilot hardware, the release signing key and the server's read-only GHCR token
+- [ ] Gate G3: the dress rehearsal on the pilot hardware (product owner, Claude). It waits for the pilot hardware; the signing key and the GHCR token are ready (7 November 2026)
 
 ## Before Phase 3
 
@@ -205,12 +205,11 @@ Assumptions:
 | Barcode scan result (20 items) | Product owner, from the shop visit | Install (week 13) | Assume 40% scannable |
 | Busy-day sales volume | Product owner, from the notebook | Install (week 13) | Measured in the shadow weeks |
 | Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | When the product owner chooses; application code is public from Phase 2 (D22) | Public (D10) |
-| A read-only GHCR token for each shop server's updater: the image packages are private. Staging on this computer already pulls from GHCR | Product owner, Claude | The G3 install pulls from GHCR (week 12) | Made with the updater in Phase 3 |
+| A read-only GHCR token for each shop server's updater: the image packages are private. Staging on this computer already pulls from GHCR | Product owner, Claude | The G3 install pulls from GHCR (week 12) | The pilot server's token was made by the product owner on 7 November 2026 (classic, read:packages only); it is given to install.sh on the pilot server, which keeps it in secrets/ |
 | Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
 | The pilot shop's closing time, for the forgotten-shift rule: a shift still open four hours later closes as unclosed (S12) | Shop owner, in Shop settings on a back-office device (D37) | Install (week 13) | None set: no shift closes by itself |
-| The release signing key: run tools/release/new-key.sh on the offline signing computer and commit release-public.pem (D36) | Product owner | Before the G3 install (week 12) | None: servers refuse every update until it exists |
 | The pilot shop's discard limit: the most a cashier may discard of their own parked sale without a manager (F12) | Shop owner, in Shop settings on a back-office device (D38) | Install (week 13) | ₦0: every cashier discard needs a manager (D33) |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
 | Bundles or packs (phone plus case, wholesale carton) | Product owner | MVP | Not supported in the pilot |
@@ -253,3 +252,4 @@ Assumptions:
 | 6 November 2026 | The G3 tooling: scripted sales, the rehearsal check and the procedure; Phase 3 built, G3 waits for the pilot hardware |
 | 6 November 2026 | The owner sets the closing time in Shop settings (D37) |
 | 6 November 2026 | The owner sets the cashier's discard limit in Shop settings (D38) |
+| 7 November 2026 | The release signing key made by the product owner, kept offline on two drives; its public half committed (D36) |
