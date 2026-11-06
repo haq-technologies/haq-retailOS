@@ -2,7 +2,7 @@
 
 HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026; signed off by the product owner on 6 November 2026 [D13].
 
-**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D24, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
+**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D25, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
 
 **How to read it.** A tag such as [F3] marks text that exists because of finding F3 of the engineering teardown (Appendix A). A tag such as [S4], [R3], [C1] or [D2] marks text set by the v1.4 review; Appendix E lists every such change, and docs/decisions.md records where each came from. [Q5] or [FU6] points to an answer in that log; FU1 to FU10 are the review's follow-up questions, not teardown findings.
 
@@ -138,6 +138,7 @@ Local interactions respond in under 100 ms. Search under 100 ms from the browser
 | picklist_values | id (permanent), list, name, aliases, parent_id (a phone model's family), status (active, pending, archived). A typed phone model stays pending until a manager or the owner approves it. [C2, C9] |
 | item_prices | item_id, customer_type (retail, wholesale), price_kobo, effective_from, set_by. Append-only; the latest row is the set price. Owner and manager. [S4] |
 | brands | id, name (unique ignoring case), aliases, status (approved, pending, merged), merged_into_id, created_by, source (starter, owner, cashier). A typed brand stays pending until a manager or owner approves it. [v1.3] |
+| product_models | id, seed_id, brand_id (none for a model code with no brand), name, categories. The seed's models and product lines, offered for an item's model. [D25] |
 | merge_events | item_id, merged_into_id, kind (merge, undo), at, by. Append-only: an undo is a new row. Needed for undo and for cycle checks. [F18, S15] |
 | category_templates | category, facets, drill order, name order, generator rules (combine, blank allowed, exclude), and whether the counter asks for colour [D9]. Generated shapes are offered at the counter, and an item row is created on the first sale. [R1, R2] |
 | barcodes | code, item_id, learned_at, learned_by, status (unconfirmed, confirmed, disabled), confirmations. One code may map to several items. [F13] |
@@ -194,7 +195,7 @@ Local interactions respond in under 100 ms. Search under 100 ms from the browser
 | shifts, parked_sales | Mutable while open | A trigger locks a closed shift |
 | receipt_counters | Mutable | last_no only, inside the sale transaction |
 | print_jobs | Mutable | status and attempts |
-| categories, items, item_facets, picklist_values, brands, barcodes, aliases, category_templates | Mutable | Every change is audited |
+| categories, items, item_facets, picklist_values, brands, product_models, barcodes, aliases, category_templates | Mutable | Every change is audited. Seed IDs, category codes and item codes never change once written [C9, D25] |
 | users, terminals, drawers, branches, tenants, customers, settings, licenses, sync_conflicts | Mutable | Users are deactivated, never deleted |
 
 # 6. Catalogue and onboarding
