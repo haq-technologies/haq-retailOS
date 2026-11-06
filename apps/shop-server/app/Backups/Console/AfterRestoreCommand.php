@@ -7,6 +7,7 @@ namespace App\Backups\Console;
 use App\Audit\AuditEntry;
 use App\Audit\AuditLog;
 use App\Backups\Status;
+use App\Organisation\BranchKey;
 use App\Organisation\Models\Terminal;
 use App\Sales\Epochs;
 use Illuminate\Console\Command;
@@ -64,7 +65,7 @@ final class AfterRestoreCommand extends Command
 
     private function bringBackKey(Status $status): void
     {
-        $key = config()->string('organisation.key_dir').'/branch.key';
+        $key = app(BranchKey::class)->path();
         $copy = $status->path('keys/branch.key');
         if (is_file($key) || ! $status->enabled() || ! is_file($copy)) {
             return;

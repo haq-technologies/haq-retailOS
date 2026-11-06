@@ -41,6 +41,7 @@ abstract class TestCase extends BaseTestCase
         // And its own branch key.
         $keyDir = storage_path('framework/testing/keys-'.getmypid().'-'.bin2hex(random_bytes(4)));
         $this->app->instance(BranchKey::class, new BranchKey($keyDir));
+        config(['organisation.key_dir' => $keyDir]);
         $this->beforeApplicationDestroyed(function () use ($keyDir): void {
             @unlink($keyDir.'/branch.key');
             @rmdir($keyDir);

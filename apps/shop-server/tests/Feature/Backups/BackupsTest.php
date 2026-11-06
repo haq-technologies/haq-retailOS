@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Organisation\BranchKey;
 use App\Sales\Finish;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -54,7 +55,7 @@ it('starts a new signed epoch on every counter after a restore, numbering from 1
 it('keeps the branch key and the epochs on the backup disk, and brings the key back to a new machine', function () {
     app(Finish::class)->finish($this->t1, $this->counter['cashier'], Counter::request(Counter::cashSale([$this->a->id => [1, 5000]])));
     $this->artisan('backups:tick')->assertSuccessful();
-    $key = config()->string('organisation.key_dir').'/branch.key';
+    $key = app(BranchKey::class)->path();
     expect(file_get_contents($this->dir.'/keys/branch.key'))->toBe(file_get_contents($key));
     expect(json_decode((string) file_get_contents($this->dir.'/epochs.json'), true)['epochs'])->toBe(['T01' => 1]);
 

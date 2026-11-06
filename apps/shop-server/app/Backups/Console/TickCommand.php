@@ -8,6 +8,7 @@ use App\Audit\AuditEntry;
 use App\Audit\AuditLog;
 use App\Backups\RestoreCheck;
 use App\Backups\Status;
+use App\Organisation\BranchKey;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -69,7 +70,7 @@ final class TickCommand extends Command
     /** The branch key's copy on the backup disk; the same box's database is readable anyway (spec section 9). */
     private function keepKey(Status $status): void
     {
-        $key = config()->string('organisation.key_dir').'/branch.key';
+        $key = app(BranchKey::class)->path();
         if (! is_file($key)) {
             return;
         }
