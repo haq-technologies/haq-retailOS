@@ -17,17 +17,18 @@ The pilot succeeds when (spec section 14):
 
 ## Status
 
-Phase 0, week 1. There is no application code yet.
+Week 1. Gate G0 passed on 6 November 2026, so Phase 1, the wireframes, is under way. There is no application code yet.
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
 - Spec v1.5 written, with the decisions applied and tagged, and signed off by the product owner on 6 November 2026 (D13).
-- Starter catalogue v1.1 drafted with 466 phone models, built and verified by script. It waits for the shop owner's re-confirmation.
+- Starter catalogue v1.1 drafted with 466 phone models, built and verified by script, and re-confirmed by the shop owner at the shop visit.
 - Project folder organised: README.md, CLAUDE.md, this plan, docs/ and tools/.
 - GitHub: main is pushed to haq-technologies/haq-retailOS, and the first CI run passed. The "Protect main" ruleset allows changes only through a pull request with the docs check green, and blocks force-pushes and deletion. The repository stays public for now (D10), and commits use the GitHub noreply email.
 - Design direction decided: Apple's system colours, the Inter typeface, and responsive layouts (D4, D5). The counter wireframes are drawn on the new canvas, and the counter decisions D7 to D9 and D11 are recorded.
+- The shop visit is done and the pilot hardware is chosen, so gate G0 is passed (6 November 2026).
 
-Next: the rest of the Phase 0 checklist below, and the owner's back-office wireframes, which finish Phase 1.
+Next: the owner's back-office wireframes, which finish Phase 1, and the open items of the Phase 0 checklist below.
 
 ## Team
 
@@ -44,10 +45,10 @@ Weeks count from kickoff. A gate ends a phase only when its criteria are met.
 
 | Phase | Weeks | Delivers | Gate |
 |---|---|---|---|
-| 0. Decide and discover | 1–2 | Decisions; spec v1.5; catalogue v1.1 re-confirmed; the shop visit; the bench hardware test; the GitHub repository and first CI workflow | **G0:** decisions recorded; v1.5 and v1.1 signed off; hardware chosen |
+| 0. Decide and discover | 1–2 | Decisions; spec v1.5; catalogue v1.1 re-confirmed; the shop visit; the bench hardware test; the GitHub repository and first CI workflow | **G0:** decisions recorded; v1.5 and v1.1 signed off; hardware chosen. Passed on 6 November 2026 |
 | 1. Wireframes | 2–4 | Touch-first, responsive wireframes on a new canvas: the counter, then the owner's back office. No clickable prototype and no cashier timing before the build (D12) | **G1:** the product owner signs off the wireframes, and the counter interaction model is frozen |
-| 2. Foundation | 3–8 | Docker stack; database roles, grants and triggers generated from the mutability matrix; the one-shot migration job; identity (name tiles, PINs, acting-user tokens, bound approvals, idle lock); audit chains, roots and spool; settings and the profile tool; catalogue model, name routine and seeder; the multi-process PostgreSQL harness in CI; images pushed to GHCR; the office staging box | **G2:** a clean box installs from a profile; the seed loads twice with no change; append-only holds against a deliberately widened grant |
-| 3. Counter and sale core | 6–12 | Counter client; Finish with idempotency, receipt counters, epochs, payments and print jobs; server printing with pending print and the drawer log where a drawer is fitted; Awaiting transfer; catalogue polling; counter journal; speed instrumentation; backups with a test restore; Playwright tests in CI; the release manifest and the updater | **G3 (week 12):** a dress rehearsal on the pilot hardware, installed by pulling from GHCR: 300 scripted sales on two counters, power pulled mid-sale and mid-print, and a restore onto the spare box |
+| 2. Foundation | 3–8 | Docker stack; database roles, grants and triggers generated from the mutability matrix; the one-shot migration job; identity (name tiles, PINs, acting-user tokens, bound approvals, idle lock); audit chains, roots and spool; settings and the profile tool; catalogue model, name routine and seeder; the multi-process PostgreSQL harness in CI; images pushed to GHCR; staging on the product owner's computer (D16) | **G2:** a clean Ubuntu virtual machine installs from a profile (D16); the seed loads twice with no change; append-only holds against a deliberately widened grant |
+| 3. Counter and sale core | 6–12 | Counter client; Finish with idempotency, receipt counters, epochs, payments and print jobs; server printing with pending print and the drawer log where a drawer is fitted; Awaiting transfer; catalogue polling; counter journal; speed instrumentation; backups with a test restore; Playwright tests in CI; the release manifest and the updater | **G3 (week 12):** a dress rehearsal on the pilot hardware, installed by pulling from GHCR: 300 scripted sales on two counters, power pulled mid-sale and mid-print, and a restore onto the spare box. Touch, the kiosk keys and the UPS are first tested here (D16) |
 | 4. Shadow pilot, owner features, hardening | 13–20 | Install at the shop in week 13; one counter beside the notebook at agreed hours in weeks 13–18; a weekly release; the Needs-cost queue, backfill preview, three profit buckets, alerts, printed daily summary, review queues with merge and undo, catalogue health, CSV export, restore epochs end to end, the lost-window screen, health page, reboot recovery and catch-up scheduling. In weeks 17–20: the 47 checks automated, the cost-leak scanner, a soak test, and an install rehearsal in under 2 hours | **G4 (week 20):** all 47 checks pass and are written down |
 | 5. Measured pilot and decision | 21–22 | Every counter beside the notebook for 14 trading days, measured against the success thresholds | **G5 (week 22):** the owner decides to continue or stop; on continue, the app becomes the record and the notebook stops a week later |
 
@@ -76,7 +77,7 @@ Every change runs the full test suite against a real PostgreSQL before it can me
 1. **Branch and pull request.** Short-lived branches off main; green CI to merge, with no review while one person builds it (D6, D15); no direct pushes.
 2. **CI on every pull request.** Lint and static analysis (Pint, PHPStan, ESLint); unit tests (Pest, Vitest); concurrency, crash and restore tests on a real PostgreSQL; counter flows in Playwright on Docker Compose; the previous release's code against the new schema, and an upgrade from two versions back; the seed validator, the cost-leak scan and an image scan.
 3. **Merge to main.** Docker images are built once and pushed to GHCR, pinned by digest.
-4. **Staging box.** The office mini-PC, with the same printer and scanner and 5,000 test items, deploys from main.
+4. **Staging.** The product owner's computer, with the pilot's printer and scanner and 5,000 test items, deploys from main (D16).
 5. **Tag a release.** A semantic version, weekly in the pilot, with notes generated from the merged pull requests.
 6. **Release manifest.** Image digests, the compose file and the migrations, in one file the updater trusts.
 7. **Offline signing.** A person signs the manifest with a hardware key; CI never holds the release key.
@@ -86,7 +87,7 @@ Every change runs the full test suite against a real PostgreSQL before it can me
 | Phase | CI/CD work | Owner |
 |---|---|---|
 | 0 (weeks 1–2) | GitHub organisation and repository (public for now, D10), branch protection, and the first workflow: lint, unit tests, a PostgreSQL service | Claude |
-| 2 (weeks 3–8) | Dockerfiles and Compose; images to GHCR on merge; the staging box deploying from main; the multi-process PostgreSQL harness in CI | Claude; the product owner sets up the staging box |
+| 2 (weeks 3–8) | Dockerfiles and Compose; images to GHCR on merge; staging on the product owner's computer, deploying from main; the multi-process PostgreSQL harness in CI | Claude |
 | 3 (weeks 6–12) | Playwright counter tests in CI; the release manifest and the updater with code-only rollback; a signing dry run. G3 installs by pulling from GHCR | Claude; the product owner holds the signing key |
 | 4 and 5 (weeks 13–22) | A weekly signed release pulled at the shop over a phone hotspot; the upgrade-path test; a scheduled restore drill in CI | Claude and the product owner |
 
@@ -98,14 +99,15 @@ Choices and their tradeoffs (runners, registry, environments, housekeeping) are 
 - [x] Write spec v1.5 (Claude)
 - [x] Draft starter catalogue v1.1 (Claude)
 - [x] Organise the project folder (Claude)
-- [ ] Buy the bench hardware: [docs/operations/hardware.md](docs/operations/hardware.md) (product owner). Deferred on 5 November; it is needed before the G3 dress rehearsal in week 12
-- [ ] Shop visit: the owner re-confirms catalogue v1.1; shelf walk; 20-item barcode test; two hours of observation; a week of sales counted from the notebook; a power and network survey: [docs/operations/shop-visit-checklist.md](docs/operations/shop-visit-checklist.md) (product owner). Deferred on 5 November; catalogue v1.1 must be re-confirmed before it is loaded at the shop in week 13
+- [x] Choose the hardware: [docs/operations/hardware.md](docs/operations/hardware.md) (product owner, 6 November 2026). No mini-PC is bought for testing; the product owner's computer stands in (D16)
+- [ ] Buy the pilot hardware (product owner): the receipt printer and the scanner by week 6, when printing is built, and the rest before the G3 dress rehearsal in week 12
+- [x] Shop visit: the owner re-confirms catalogue v1.1; shelf walk; 20-item barcode test; two hours of observation; a week of sales counted from the notebook; a power and network survey: [docs/operations/shop-visit-checklist.md](docs/operations/shop-visit-checklist.md) (product owner). Done by 6 November 2026
 - [x] Push the first commit to the public repository and protect main (Claude). The repository stays public for now (D10)
 - [ ] Docker Compose for development (Claude). This Mac needs Docker first
-- [ ] Bench test: print, cut, barcode, drawer kick, printer status, scanner suffix and speed, Chrome kiosk keys, touch, UPS changeover, phone hotspot (product owner, Claude)
+- [ ] Bench test (product owner, Claude): print, cut, barcode, drawer kick, printer status, scanner suffix and speed, and the phone hotspot on the product owner's computer once the printer and scanner arrive; Chrome kiosk keys, touch and the UPS changeover on the pilot hardware at G3 (D16)
 - [ ] Touch-first, responsive wireframes in Apple's system colours on a new canvas (Claude). The counter screens are drawn, including the price-floor prompt, pending print, lost window, Pending transfers and the idle lock; the owner's back office is next. The product owner's sign-off of them is gate G1 (D12)
 - [x] Sign off spec v1.5 (product owner, 6 November 2026, D13)
-- [ ] Re-confirm catalogue v1.1 at the shop visit; with the hardware choice, this completes gate G0 (shop owner)
+- [x] Re-confirm catalogue v1.1 at the shop visit (shop owner). With the spec sign-off and the hardware choice, gate G0 is passed (6 November 2026)
 
 ## After the pilot
 
@@ -141,7 +143,7 @@ Assumptions:
 |---|---|---|
 | Cashiers miss the speed targets | The speed instrumentation in the shadow weeks; there is no prototype to time first (D12) | Changes ship in the weekly release. They cost more than on a prototype, because the counter is already built |
 | One person does the work planned for two developers and a field lead, with no spare week (D15) | Foundation pace at G2 | Move G5 later, or move an item of equal size to the MVP under the swap rule |
-| Catalogue v1.1 re-confirmation slips | G0 | Take the workbook to the first visit; every change is on its Changes tab |
+| Touch, the Windows kiosk keys and the server's power behaviour are first tested at G3, because development and testing run on one computer (D16) | The G3 dress rehearsal in week 12 | Set up the pilot hardware as soon as it arrives, and test the printing code against the real printer from week 6 |
 | Fewer barcodes scan than hoped (the spec assumes 40%) | The 20-item scan test | Search and tiles carry the counter; print item-code labels for the 50 best sellers |
 | An update fails half-way at the shop | The updater's health check | The signed manifest is checked and every image pulled before anything changes; backup first; code-only rollback to the previous images |
 | No connection at update time | A missed weekly update | A phone hotspot by default; a MiFi is optional; trading never depends on it |
@@ -153,12 +155,12 @@ Assumptions:
 
 | Item | Who | Needed by | Default until answered |
 |---|---|---|---|
-| Barcode scan result (20 items) | Product owner, shop visit | G0 | Assume 40% scannable |
-| Busy-day sales volume | Product owner, from the notebook | G0 | Measured in the shadow weeks |
-| Brands shown first for six categories (C8) | Product owner, shelf walk | G0 | The full brand list |
-| The 16 brands to confirm, and the short codes HF, AI, LP, BM, DV, JZ, EX, UWO | Product owner, shelf walk | G0 | Kept until shown not stocked |
-| Phone-model list corrections | Product owner, shelf walk | G0 | The v1.1 draft |
-| Screen-protector name order ("Tecno Spark 20 Tempered Glass Screen Protector") and capitals for car mp3 s8 | Shop owner | G0 | As drafted; car mp3 s8 printed as typed |
+| Barcode scan result (20 items) | Product owner, from the shop visit | Install (week 13) | Assume 40% scannable |
+| Busy-day sales volume | Product owner, from the notebook | Install (week 13) | Measured in the shadow weeks |
+| Brands shown first for six categories (C8) | Product owner, from the shelf walk | Install (week 13) | The full brand list |
+| The 16 brands to confirm, and the short codes HF, AI, LP, BM, DV, JZ, EX, UWO | Product owner, from the shelf walk | Install (week 13) | Kept until shown not stocked |
+| Phone-model list corrections | Product owner, from the shelf walk | Install (week 13) | The v1.1 draft |
+| Screen-protector name order ("Tecno Spark 20 Tempered Glass Screen Protector") and capitals for car mp3 s8 | Shop owner | Install (week 13) | As drafted; car mp3 s8 printed as typed |
 | Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | Recommended before application code lands in Phase 2 (week 3) | Public, documents only (D10) |
 | Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
@@ -180,3 +182,4 @@ Assumptions:
 | 5 November 2026 | Counter decisions D7 to D9 recorded; the repository stays public for now (D10) |
 | 6 November 2026 | Counter wireframes drawn; a bench check for the ₦ sign; the receipt text added to the open items; a POS payment needs nothing typed (D11) |
 | 6 November 2026 | Spec v1.5 signed off (D13); the clickable prototype dropped, so G1 is the wireframe sign-off (D12); the receipt text is a sysadmin setting with a branch override (D14); one person builds it, and the dates stay (D15) |
+| 6 November 2026 | Shop visit done and hardware chosen, so G0 is passed; the product owner's computer is the staging and test machine (D16) |

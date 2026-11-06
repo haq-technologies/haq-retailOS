@@ -1,10 +1,10 @@
 # Hardware
 
-What to buy for the bench test now, and what each pilot-shop device must do. The requirements come from spec v1.5, sections 4 and 16. There are no prices here, because they change too fast.
+What each pilot-shop device must do, and how it is tested. The requirements come from spec v1.5, sections 4 and 16. There are no prices here, because they change too fast.
 
-## Bench kit (Phase 0)
+## Devices
 
-Buy one of each, so the bench test can prove printing, the drawer, scanning, the kiosk and power behaviour before anything is built on them.
+The hardware is chosen (6 November 2026). No mini-PC is bought for testing: the product owner's computer is the development, staging and test machine (D16). Buy the receipt printer and the scanner first, by week 6, so printing and scanning are tested against them as they are built; the rest comes before the G3 dress rehearsal in week 12.
 
 | Device | Must have | Why |
 |---|---|---|
@@ -30,6 +30,8 @@ Buy one of each, so the bench test can prove printing, the drawer, scanning, the
 - A pre-imaged spare PC (support model, spec section 16).
 
 ## Bench test checklist
+
+Printing, the drawer, the scanner and the hotspot are tested on the product owner's computer as soon as the printer and scanner arrive. The kiosk keys, touch and the UPS need the pilot hardware, so they are first tested at G3 (D16).
 
 - [ ] The server prints to the network printer on port 9100: a receipt, a cut and a Code 128 barcode.
 - [ ] The printer prints the ₦ sign legibly. If it cannot, choose the fallback (NGN or N) before G3; the receipt wireframe shows ₦.
