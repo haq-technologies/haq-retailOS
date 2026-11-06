@@ -25,10 +25,10 @@ Done:
 - Starter catalogue v1.1 drafted with 466 phone models, built and verified by script, and re-confirmed by the shop owner at the shop visit.
 - Project folder organised: README.md, CLAUDE.md, this plan, docs/ and tools/.
 - GitHub: main is pushed to haq-technologies/haq-retailOS, and the first CI run passed. The "Protect main" ruleset allows changes only through a pull request with the docs check green, and blocks force-pushes and deletion. The repository stays public for now (D10), and commits use the GitHub noreply email.
-- Design direction decided: Apple's system colours, the Inter typeface, and responsive layouts (D4, D5). The counter wireframes are drawn on the new canvas, and the counter decisions D7 to D9 and D11 are recorded.
+- Design direction decided: Apple's system colours, the Inter typeface, and responsive layouts (D4, D5). The counter and the owner's back office are drawn on the new canvas (36 boards), and the counter decisions D7 to D9 and D11 are recorded.
 - The shop visit is done, with no changes to catalogue v1.1, and the hardware list is locked (D17), so gate G0 is passed (6 November 2026).
 
-Next: the owner's back-office wireframes, which finish Phase 1, and the open items of the Phase 0 checklist below.
+Next: the product owner's sign-off of the wireframes (gate G1), then Docker Compose for development on the product owner's computer.
 
 ## Team
 
@@ -105,7 +105,8 @@ Choices and their tradeoffs (runners, registry, environments, housekeeping) are 
 - [x] Push the first commit to the public repository and protect main (Claude). The repository stays public for now (D10)
 - [ ] Docker Compose for development (Claude). This Mac needs Docker first
 - [ ] Bench test (product owner, Claude): print, cut, barcode, drawer kick, printer status, scanner suffix and speed, and the phone hotspot on the product owner's computer once the printer and scanner arrive; Chrome kiosk keys, touch and the UPS changeover on the pilot hardware at G3 (D16)
-- [ ] Touch-first, responsive wireframes in Apple's system colours on a new canvas (Claude). The counter screens are drawn, including the price-floor prompt, pending print, lost window, Pending transfers and the idle lock; the owner's back office is next. The product owner's sign-off of them is gate G1 (D12)
+- [x] Touch-first, responsive wireframes in Apple's system colours on a new canvas (Claude, 6 November 2026): the counter, including the price-floor prompt, pending print, lost window, Pending transfers and the idle lock, and the owner's back office
+- [ ] Sign off the wireframes: gate G1 (product owner, D12)
 - [x] Sign off spec v1.5 (product owner, 6 November 2026, D13)
 - [x] Re-confirm catalogue v1.1 at the shop visit (shop owner). With the spec sign-off and the hardware choice, gate G0 is passed (6 November 2026)
 
@@ -180,3 +181,4 @@ Assumptions:
 | 6 November 2026 | Spec v1.5 signed off (D13); the clickable prototype dropped, so G1 is the wireframe sign-off (D12); the receipt text is a sysadmin setting with a branch override (D14); one person builds it, and the dates stay (D15) |
 | 6 November 2026 | Shop visit done and hardware chosen, so G0 is passed; the product owner's computer is the staging and test machine (D16) |
 | 6 November 2026 | Catalogue v1.1 confirmed with no changes, which closes its shelf-walk items; the hardware list locked (D17) |
+| 6 November 2026 | Back-office wireframes drawn: the dashboard, Needs cost, first-sale prices, review and merging, catalogue health, flags, the daily summary printout and server health |
