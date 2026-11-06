@@ -20,12 +20,15 @@ x-php: &php
     target: dev
   volumes:
     - ./apps/shop-server:/app
+    # The starter catalogue's master file, read-only (R8).
+    - ./docs/catalogue:/catalogue:ro
   environment: &app-env
     DB_HOST: db
     DB_PORT: "5432"
     DB_DATABASE: retail
     DB_USERNAME: retail_app
     DB_PASSWORD: app-dev
+    CATALOGUE_SEED: /catalogue/starter-catalogue-v1.1.json
   depends_on:
     db:
       condition: service_healthy

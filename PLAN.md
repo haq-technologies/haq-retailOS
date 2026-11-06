@@ -123,7 +123,7 @@ Then, by week 8:
 - [x] Identity: name tiles, PINs, acting-user tokens, bound approvals and the idle lock, with counter enrolment, lockouts and terminal backoff (Claude, 6 November 2026, D24)
 - [x] Audit chains, roots and the spool, with the shop, branches and terminals they hang on (Claude, 6 November 2026)
 - [x] Settings and the profile tool, including the receipt text: `shop:make-profile` before the visit, `shop:apply-profile` at install, idempotent (Claude, 6 November 2026, D14)
-- [ ] The catalogue model, the name routine and the seeder for catalogue v1.1 (Claude)
+- [x] The catalogue model, the name routine and the seeder for catalogue v1.1: every seed example prints exactly, the generators offer 127 shapes, and a second load changes nothing (Claude, 6 November 2026, D25)
 - [x] The multi-process PostgreSQL test harness in CI: worker processes released together, committed transactions, its own database (Claude, 6 November 2026)
 - [ ] Gate G2: a clean Ubuntu virtual machine installs from a profile; the seed loads twice with no change; append-only holds against a deliberately widened grant (product owner, Claude)
 
@@ -213,3 +213,4 @@ Assumptions:
 | 6 November 2026 | Audit chains, roots and the spool; the multi-process test harness in CI |
 | 6 November 2026 | Settings with history and sysadmin locks; the shop profile tool |
 | 6 November 2026 | Identity: name tiles and PINs, acting-user tokens, approvals, enrolment (D24) |
+| 6 November 2026 | The catalogue model, the name routine and the starter-catalogue seeder (D25) |

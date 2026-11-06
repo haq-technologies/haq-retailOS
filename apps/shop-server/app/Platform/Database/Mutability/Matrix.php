@@ -59,8 +59,7 @@ final readonly class Matrix
 
         $mutable = [
             // Catalogue: every change is audited
-            'categories', 'category_templates', 'items', 'item_facets', 'picklist_values', 'brands',
-            'barcodes', 'barcode_ignore', 'aliases',
+            'category_templates', 'item_facets', 'barcodes', 'barcode_ignore', 'aliases',
             // Organisation and configuration
             'tenants', 'branches', 'terminals', 'drawers', 'customers', 'settings', 'licenses',
             'sync_conflicts',
@@ -69,6 +68,13 @@ final readonly class Matrix
         return new self([
             ...array_map(Rule::appendOnly(...), $appendOnly),
             ...array_map(Rule::mutable(...), $mutable),
+
+            // Permanent codes and seed IDs never change once written [C9]; item codes are immutable (spec section 6).
+            Rule::mutable('categories', fixed: ['code']),
+            Rule::mutable('items', fixed: ['item_code']),
+            Rule::mutable('picklist_values', fixed: ['seed_id']),
+            Rule::mutable('brands', fixed: ['seed_id']),
+            Rule::mutable('product_models', fixed: ['seed_id']),
 
             // Only bound_at may be set, once, from NULL [S3]
             Rule::setOnce('approvals', ['bound_at']),

@@ -119,6 +119,12 @@ final readonly class Applier
             Kind::ReadOnly => [],
         };
 
+        if ($rule->fixed !== []) {
+            $fixed = implode(', ', array_map(fn (string $c) => $this->literal($c), $rule->fixed));
+            $triggers['fixed'] = "CREATE TRIGGER {$p}fixed BEFORE UPDATE ON {$t} FOR EACH ROW "
+                ."EXECUTE FUNCTION haq_guard_fixed({$fixed})";
+        }
+
         $named = [];
         foreach ($triggers as $name => $sql) {
             $named[$p.$name] = $sql;
@@ -174,6 +180,21 @@ final readonly class Applier
                             RAISE EXCEPTION 'HAQ Retail OS: %.% is set once, and it is already set', TG_TABLE_NAME, col
                                 USING ERRCODE = '42501';
                         END IF;
+                    END IF;
+                END LOOP;
+                RETURN NEW;
+            END
+            $fn$
+            SQL,
+            <<<'SQL'
+            CREATE OR REPLACE FUNCTION haq_guard_fixed() RETURNS trigger LANGUAGE plpgsql AS $fn$
+            DECLARE
+                col text;
+            BEGIN
+                FOREACH col IN ARRAY TG_ARGV LOOP
+                    IF to_jsonb(OLD) -> col IS DISTINCT FROM to_jsonb(NEW) -> col THEN
+                        RAISE EXCEPTION 'HAQ Retail OS: %.% never changes once written', TG_TABLE_NAME, col
+                            USING ERRCODE = '42501';
                     END IF;
                 END LOOP;
                 RETURN NEW;

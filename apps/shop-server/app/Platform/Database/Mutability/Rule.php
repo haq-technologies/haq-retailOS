@@ -15,6 +15,8 @@ final readonly class Rule
      * @param  list<string>  $columns  For SetOnce and MutableColumns: the columns that may change.
      * @param  string|null  $lockColumn  For MutableWhileOpen: the column that says whether the row is closed.
      * @param  list<string>  $lockedValues  For MutableWhileOpen: the values that close the row.
+     * @param  list<string>  $fixed  For Mutable and NeverDeleted: columns that never change once written,
+     *                               such as permanent codes and seed IDs.
      */
     public function __construct(
         public string $table,
@@ -22,6 +24,7 @@ final readonly class Rule
         public array $columns = [],
         public ?string $lockColumn = null,
         public array $lockedValues = [],
+        public array $fixed = [],
     ) {
         $needsColumns = in_array($kind, [Kind::SetOnce, Kind::MutableColumns], true);
         if ($needsColumns && $columns === []) {
@@ -29,6 +32,9 @@ final readonly class Rule
         }
         if (! $needsColumns && $columns !== []) {
             throw new InvalidArgumentException("{$table}: a {$kind->value} rule takes no columns.");
+        }
+        if ($fixed !== [] && ! in_array($kind, [Kind::Mutable, Kind::NeverDeleted], true)) {
+            throw new InvalidArgumentException("{$table}: only a mutable or never-deleted table names fixed columns.");
         }
     }
 
@@ -64,14 +70,20 @@ final readonly class Rule
         return new self($table, Kind::MutableWhileOpen, lockColumn: $lockColumn, lockedValues: $lockedValues);
     }
 
-    public static function neverDeleted(string $table): self
+    /**
+     * @param  list<string>  $fixed
+     */
+    public static function neverDeleted(string $table, array $fixed = []): self
     {
-        return new self($table, Kind::NeverDeleted);
+        return new self($table, Kind::NeverDeleted, fixed: $fixed);
     }
 
-    public static function mutable(string $table): self
+    /**
+     * @param  list<string>  $fixed
+     */
+    public static function mutable(string $table, array $fixed = []): self
     {
-        return new self($table, Kind::Mutable);
+        return new self($table, Kind::Mutable, fixed: $fixed);
     }
 
     public static function framework(string $table): self

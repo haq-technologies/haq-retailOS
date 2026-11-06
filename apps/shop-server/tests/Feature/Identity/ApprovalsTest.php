@@ -11,6 +11,7 @@ use App\Identity\Role;
 use App\Identity\SignIn;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Tests\Support\Catalogue;
 use Tests\Support\People;
 use Tests\Support\Shop;
 
@@ -25,7 +26,7 @@ beforeEach(function () {
     $this->manager = People::add('Bola', Role::Manager, '135790');
     $this->approvals = app(Approvals::class);
     $this->line = (string) Str::uuid();
-    $this->item = (string) Str::ulid();
+    $this->item = Catalogue::anyItem()->id;
 });
 
 function grant(array $overrides = []): array
