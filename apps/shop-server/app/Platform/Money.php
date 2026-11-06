@@ -9,6 +9,16 @@ namespace App\Platform;
  */
 final class Money
 {
+    /** Without the sign, as a receipt prints line amounts: 14,000 or 14,000.50. */
+    public static function plain(int $kobo): string
+    {
+        $sign = $kobo < 0 ? '-' : '';
+        $kobo = abs($kobo);
+        $rest = $kobo % 100;
+
+        return $sign.number_format(intdiv($kobo, 100)).($rest === 0 ? '' : sprintf('.%02d', $rest));
+    }
+
     public static function naira(int $kobo): string
     {
         $sign = $kobo < 0 ? '-' : '';

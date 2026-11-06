@@ -90,11 +90,17 @@ services:
 
   queue:
     <<: *app
-    command: ["php", "artisan", "queue:work", "--sleep=1", "--tries=3"]
+    command: ["php", "artisan", "queue:work", "--queue=print,default", "--sleep=1", "--tries=3"]
 
   scheduler:
     <<: *app
     command: ["php", "artisan", "schedule:work"]
+
+  # Staging only (COMPOSE_PROFILES=standin): a stand-in receipt printer. A shop never runs it.
+  printer:
+    <<: *app
+    profiles: [standin]
+    command: ["php", "artisan", "printing:fake-printer", "--port=9100"]
 
   web:
     image: ${WEB_IMAGE}

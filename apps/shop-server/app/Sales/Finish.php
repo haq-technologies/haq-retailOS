@@ -11,6 +11,7 @@ use App\Cost\Costs;
 use App\Identity\Models\User;
 use App\Organisation\Models\Terminal;
 use App\Platform\Ulid;
+use App\Sales\Events\SaleFinished;
 use App\Settings\Settings;
 use App\Shifts\Shifts;
 use Carbon\CarbonImmutable;
@@ -148,6 +149,12 @@ final class Finish
 
                 return $saleId;
             }, attempts: 3);
+
+            // After commit: printing can never run inside a transaction that might be retried [F5].
+            $printJobId = DB::table('print_jobs')->where('sale_id', $saleId)->where('kind', 'receipt')->value('id');
+            if (is_string($printJobId)) {
+                event(new SaleFinished($saleId, $printJobId));
+            }
 
             return Sales::summary($saleId);
         } catch (DuplicateSale|UniqueConstraintViolationException $e) {

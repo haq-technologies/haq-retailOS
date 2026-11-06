@@ -12,13 +12,21 @@
             "code": "T01",
             "name": "Counter 1",
             "drawer": true,
-            "kind": "counter"
+            "kind": "counter",
+            "printer": {
+                "host": "printer",
+                "port": 9100
+            }
         },
         {
             "code": "T02",
             "name": "Counter 2",
             "drawer": false,
-            "kind": "counter"
+            "kind": "counter",
+            "printer": {
+                "host": "printer",
+                "port": 9100
+            }
         },
         {
             "code": "D01",

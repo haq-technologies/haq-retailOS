@@ -74,6 +74,10 @@ apps/shop-server/deploy/staging.sh           # the latest images from main, at h
 apps/shop-server/deploy/staging.sh --local   # images built here: docker build ... --target app|web|db -t retail-os/retail-os-<target>:local
 ```
 
+## Printing
+
+The server prints receipts to each counter's network printer on port 9100 (spec section 4); the profile gives each counter's printer. Until the pilot's printer arrives, the development stack runs a stand-in printer that writes each receipt as text to `storage/logs/fake-printer.log`, and staging runs one too. A shop never does.
+
 ## Check it
 
 From the repository root, with the stack running. CI runs the same checks on every pull request.

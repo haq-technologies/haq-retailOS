@@ -18,6 +18,9 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+# Staging prints to a stand-in printer; a shop never runs it.
+export COMPOSE_PROFILES=standin
+
 exec "$here/install.sh" \
     --profile "$here/../docker/profile.example.json" \
     --name localhost --ip 127.0.0.1 \

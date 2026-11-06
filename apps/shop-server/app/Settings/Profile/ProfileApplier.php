@@ -67,6 +67,14 @@ final readonly class ProfileApplier
                     $terminal->update(['name' => $wanted['name']]);
                 }
 
+                // The counter's network printer (spec section 4) [R3].
+                if ($terminal->getAttribute('printer_host') !== $wanted['printer_host'] || $terminal->getAttribute('printer_port') !== $wanted['printer_port']) {
+                    $terminal->forceFill(['printer_host' => $wanted['printer_host'], 'printer_port' => $wanted['printer_port']])->save();
+                    $changes[] = $wanted['printer_host'] === null
+                        ? "{$wanted['code']} has no printer set."
+                        : "{$wanted['code']} prints to {$wanted['printer_host']}:{$wanted['printer_port']}.";
+                }
+
                 // Only a counter has a drawer row; a back-office device never takes cash (D29).
                 if (! $terminal->canSell()) {
                     continue;

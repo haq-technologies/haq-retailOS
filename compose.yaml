@@ -47,7 +47,7 @@ services:
   # Queue worker: jobs live in PostgreSQL (no Redis). The print queue joins it in Phase 3.
   queue:
     <<: *php
-    command: ["php", "artisan", "queue:work", "--sleep=1", "--tries=3"]
+    command: ["php", "artisan", "queue:work", "--queue=print,default", "--sleep=1", "--tries=3"]
 
   scheduler:
     <<: *php
@@ -73,6 +73,12 @@ services:
     environment:
       <<: *owner-env
       DB_DATABASE: retail_test
+
+  # A stand-in receipt printer until the pilot's printer arrives: it writes each receipt as text to
+  # apps/shop-server/storage/logs/fake-printer.log. The example profile points the counters at it.
+  printer:
+    <<: *php
+    command: ["php", "artisan", "printing:fake-printer", "--port=9100"]
 
   web:
     image: nginx:1.30.6-alpine

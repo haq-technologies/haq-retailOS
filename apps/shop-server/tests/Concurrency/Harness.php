@@ -125,7 +125,8 @@ final class Harness
             'APP_ENV' => 'testing',
             'CACHE_STORE' => 'array',
             'SESSION_DRIVER' => 'array',
-            'QUEUE_CONNECTION' => 'sync',
+            // The database queue, as a shop runs it, so a dispatched print waits for the queue worker.
+            'QUEUE_CONNECTION' => 'database',
             'DB_CONNECTION' => 'pgsql',
             'DB_HOST' => (string) $db['host'],
             'DB_PORT' => (string) $db['port'],
