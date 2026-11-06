@@ -8,7 +8,7 @@ HAQ Retail OS, by HAQ Technology: a point-of-sale system for phone-accessory sho
 
 ## Where we are
 
-Phase 1 (wireframes), as of 6 November 2026: gate G0 is passed, and there is no application code yet. [PLAN.md](PLAN.md) has the phases, gates, status, Phase 0 checklist and open items.
+Phase 1 (wireframes), as of 6 November 2026: gate G0 is passed, the wireframes are drawn and wait for the product owner's sign-off at G1, and there is no application code yet. [PLAN.md](PLAN.md) has the phases, gates, status, Phase 0 checklist and open items.
 
 ## Sources of truth
 
