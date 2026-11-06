@@ -112,7 +112,7 @@ Choices and their tradeoffs (runners, registry, environments, housekeeping) are 
 
 Phase 2 starts when the product owner says so. Before it starts:
 
-- [ ] Docker running on the product owner's computer (product owner)
+- [x] Docker running on the product owner's computer, through Colima (Claude, 6 November 2026)
 - [ ] At least 50 GB free on that computer, for Docker and the Ubuntu virtual machine used at G2 (product owner)
 
 Then, in weeks 3 to 8:
@@ -205,3 +205,4 @@ Assumptions:
 | 6 November 2026 | Catalogue v1.1 confirmed with no changes, which closes its shelf-walk items; the hardware list locked (D17) |
 | 6 November 2026 | Back-office wireframes drawn: the dashboard, Needs cost, first-sale prices, review and merging, catalogue health, flags, the daily summary printout and server health |
 | 6 November 2026 | Wireframes signed off, so G1 passes and Phases 0 and 1 are closed and locked (D19); the printed daily summary carries no profit or cost amounts (D18); a Phase 2 checklist |
+| 6 November 2026 | Docker runs on the product owner's computer through Colima |

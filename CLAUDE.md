@@ -96,4 +96,4 @@ Apple's system colours with fixed roles, the Inter typeface, and responsive layo
 
 ## Environment notes (6 November 2026)
 
-This Mac is the development, staging and test machine; there is no office mini-PC (D16). It has git, Node and the GitHub CLI (gh 2.103.3, installed 5 November 2026). Docker, PHP, Composer and PostgreSQL are not installed, and neither are openpyxl or LibreOffice, which is why the catalogue tools use only the Python standard library.
+This Mac is the development, staging and test machine; there is no office mini-PC (D16). It has git, Node and the GitHub CLI (gh 2.103.3, installed 5 November 2026). Docker runs through Colima, installed on 6 November 2026 from the official release files (Colima 0.10.3, Lima 2.2.1, the Docker CLI 29.9.3, Compose 5.7.0 and buildx 0.38.2); after a restart, run `colima start` before using Docker. PHP, Composer and PostgreSQL are not installed on the Mac itself; Phase 2 runs them in containers. Neither openpyxl nor LibreOffice is installed, which is why the catalogue tools use only the Python standard library.
