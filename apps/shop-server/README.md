@@ -57,6 +57,14 @@ sudo apps/shop-server/deploy/install.sh --profile shop.profile.json --name haq-s
 
 It makes every secret on the server, pulls the images, starts the stack (the roles, migration and certificate jobs run first and exit), applies the profile and loads the starter catalogue. It is safe to run again. If the images are private, set `GHCR_USER` and `GHCR_TOKEN` (a read-only token) first.
 
+Then check the install (gate G2; spec section 14, checks D and E):
+
+```
+sudo apps/shop-server/deploy/check-install.sh
+```
+
+It checks every service and one-shot job, that no running container holds the owner's password, HTTPS against the shop's authority, a second catalogue load changing nothing, append-only holding against a deliberately widened grant (and the grant check reporting it), and the audit trail. It puts back what it touches.
+
 ## Staging on this computer
 
 ```
