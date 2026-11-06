@@ -6,6 +6,7 @@ namespace Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Tests\Support\TestDatabase;
 
 /**
  * Every feature test runs against the migrated retail_test database. RefreshDatabase lives here, not in
@@ -39,6 +40,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function migrateDatabases(): void
     {
+        TestDatabase::assertSafe();
         $this->refreshDatabaseMigrateDatabases();
         $this->artisan('db:mutability', ['--database' => 'pgsql_owner'])->assertSuccessful();
     }

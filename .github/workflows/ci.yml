@@ -87,7 +87,7 @@ jobs:
           RETAIL_OWNER_PASSWORD: owner-ci
           RETAIL_APP_PASSWORD: app-ci
           RETAIL_REPORTING_PASSWORD: reporting-ci
-          RETAIL_DATABASES: retail_test
+          RETAIL_DATABASES: retail_test retail_concurrency
         run: apps/shop-server/docker/postgres/init/01-roles.sh
 
       # The same PHP minor and extensions as the image (apps/shop-server/docker/php/Dockerfile).
@@ -117,6 +117,9 @@ jobs:
 
       - name: Pest, against PostgreSQL 18 (architecture and feature tests)
         run: composer test
+
+      - name: Pest, the multi-process suite (concurrency, committed transactions)
+        run: composer test:concurrency
 
   shop-server-js:
     name: shop-server JS

@@ -22,8 +22,9 @@ docker compose up -d db --wait
 
 # A database volume made before the three roles existed has no retail_app role. It holds only
 # development data, so it is safe to remove: docker compose down -v
-if ! docker compose exec -T db psql -U postgres -d retail -tAc "SELECT 1 FROM pg_roles WHERE rolname = 'retail_app'" 2>/dev/null | grep -q 1; then
-    echo "This database volume predates the three database roles. Remove it with" >&2
+if ! docker compose exec -T db psql -U postgres -d retail -tAc "SELECT 1 FROM pg_roles WHERE rolname = 'retail_app'" 2>/dev/null | grep -q 1 \
+    || ! docker compose exec -T db psql -U postgres -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'retail_concurrency'" 2>/dev/null | grep -q 1; then
+    echo "This database volume predates the three database roles or the test databases. Remove it with" >&2
     echo "  docker compose down -v" >&2
     echo "(development data only), then run this script again." >&2
     exit 1
