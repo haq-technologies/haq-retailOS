@@ -2,7 +2,7 @@
 
 A point-of-sale system for phone-accessory shops in Nigeria, by HAQ Technology. A small server in each shop runs everything on the shop's own network, so selling never depends on the internet. Every receipt names the product properly, profit stays honest while cost prices are still being filled in, and every sale survives power cuts and tampering. The tiers are Core and Pro.
 
-**Status:** Phase 2, the foundation, as of 6 November 2026. Phases 0 and 1 are closed, and the shop server's skeleton runs in Docker.
+**Status:** 6 November 2026. Phases 0 and 1 are closed. Phase 2, the foundation, is built and gate G2's criteria are met; the gate waits for the product owner's pace check before Phase 3.
 
 ## Start here
 
