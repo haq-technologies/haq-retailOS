@@ -34,7 +34,8 @@ final class FinishSales implements Scenario
         $durations = [];
         for ($i = 1; $i <= $count; $i++) {
             /** @var array<string, mixed> $data */
-            $data = is_array($args['sale'] ?? null) ? $args['sale'] : Counter::cashSale([$items[$i % count($items)] => [1 + $i % 3, 1000 + $worker * 10 + $i]]);
+            // One steady price per item, so the price checks never interrupt the soak; quantities vary.
+            $data = is_array($args['sale'] ?? null) ? $args['sale'] : Counter::cashSale([$items[$i % count($items)] => [1 + $i % 3, 1000]]);
             if ($failEvery > 0 && $i % $failEvery === 0) {
                 /** @var array{0: array<string, mixed>} $payments */
                 $payments = $data['payments'];

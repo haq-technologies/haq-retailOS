@@ -76,8 +76,8 @@ final class Finish
                     (self::$afterNumberTaken)();
                 }
 
-                $lines = $this->prices->check($terminal, $cashier, $request, $items);
                 $shift = $this->shifts->openFor($terminal, $cashier->id);
+                $lines = $this->prices->check($terminal, $cashier, $request, $items, $shift->id);
                 $now = CarbonImmutable::now();
                 $at = $now->format('Y-m-d H:i:s.uP');
                 $saleId = Ulid::generate();

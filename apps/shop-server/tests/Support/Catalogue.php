@@ -23,4 +23,20 @@ final class Catalogue
 
         return app(Items::class)->findOrCreate($category, freeText: $text);
     }
+
+    /**
+     * An item in a small test category with two text facets, for sibling and range tests.
+     *
+     * @param  array<string, string>  $facets  model and size
+     */
+    public static function gadget(array $facets, string $category = 'test_gadgets'): Item
+    {
+        $model = Category::query()->firstOrCreate(['code' => $category], ['name' => 'Test gadgets', 'word' => 'Gadget', 'sellable' => true]);
+        CategoryTemplate::query()->firstOrCreate(['category_id' => $model->id], [
+            'facets' => [['key' => 'brand', 'label' => 'Brand', 'type' => 'brand'], ['key' => 'model', 'label' => 'Model', 'type' => 'text'], ['key' => 'size', 'label' => 'Size', 'type' => 'text']],
+            'drill_order' => ['model', 'size'], 'name_order' => ['brand', 'model', '{word}', 'size'],
+        ]);
+
+        return app(Items::class)->findOrCreate($model, $facets);
+    }
 }

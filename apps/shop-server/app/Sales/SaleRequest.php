@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Validator;
 final readonly class SaleRequest
 {
     /**
-     * @param  list<array{client_line_id: string, item_id: string, qty: int, unit_price_kobo: int, colour: ?string, added_by: string, price_source: string, approval_token: ?string, confirmed_below_range: bool, retyped: bool}>  $lines
+     * @param  list<array{client_line_id: string, item_id: string, qty: int, unit_price_kobo: int, colour: ?string, added_by: string, price_source: string, approval_token: ?string, confirmed_outside_range: bool, retyped: bool}>  $lines
      * @param  list<array{method: string, amount_kobo: int, tendered_kobo: ?int, reference: ?string, alert_seen: ?bool}>  $payments
      */
     public function __construct(
@@ -45,7 +45,7 @@ final readonly class SaleRequest
             'lines.*.added_by' => ['required', 'in:scan,search,tile,new'],
             'lines.*.price_source' => ['required', 'in:set_price,last_price,median,typed'],
             'lines.*.approval_token' => ['nullable', 'string', 'max:64'],
-            'lines.*.confirmed_below_range' => ['sometimes', 'boolean'],
+            'lines.*.confirmed_outside_range' => ['sometimes', 'boolean'],
             'lines.*.retyped' => ['sometimes', 'boolean'],
             'payments' => ['required', 'array', 'min:1', 'max:5'],
             'payments.*.method' => ['required', 'in:cash,transfer,pos'],
@@ -64,7 +64,7 @@ final readonly class SaleRequest
         }
 
         // The validator has checked every field above; this names their types for the code below.
-        /** @var array{idempotency_key: string, customer_type: string, started_at?: string|null, parked_sale_id?: string|null, lines: list<array{client_line_id: string|int, item_id: string, qty: int|string, unit_price_kobo: int|string, colour?: string|null, added_by: string, price_source: string, approval_token?: string|null, confirmed_below_range?: bool|int|string, retyped?: bool|int|string}>, payments: list<array{method: string, amount_kobo: int|string, tendered_kobo?: int|string|null, reference?: string|null, alert_seen?: bool|int|string|null}>} $data */
+        /** @var array{idempotency_key: string, customer_type: string, started_at?: string|null, parked_sale_id?: string|null, lines: list<array{client_line_id: string|int, item_id: string, qty: int|string, unit_price_kobo: int|string, colour?: string|null, added_by: string, price_source: string, approval_token?: string|null, confirmed_outside_range?: bool|int|string, retyped?: bool|int|string}>, payments: list<array{method: string, amount_kobo: int|string, tendered_kobo?: int|string|null, reference?: string|null, alert_seen?: bool|int|string|null}>} $data */
         $lines = [];
         foreach ($data['lines'] as $l) {
             $colour = isset($l['colour']) ? trim($l['colour']) : '';
@@ -77,7 +77,7 @@ final readonly class SaleRequest
                 'added_by' => $l['added_by'],
                 'price_source' => $l['price_source'],
                 'approval_token' => $l['approval_token'] ?? null,
-                'confirmed_below_range' => (bool) ($l['confirmed_below_range'] ?? false),
+                'confirmed_outside_range' => (bool) ($l['confirmed_outside_range'] ?? false),
                 'retyped' => (bool) ($l['retyped'] ?? false),
             ];
         }
