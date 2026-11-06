@@ -21,6 +21,17 @@ docker compose down           # stop (the database volume is kept)
 docker compose logs -f app    # follow a service's log
 ```
 
+## Set up a shop
+
+A shop profile describes the shop, this server's branch, its counters (and which have a cash drawer) and the receipt text. It holds shop data, so it never goes into Git (`*.profile.json` and `profiles/` are ignored).
+
+```
+docker compose exec app php artisan shop:make-profile                      # before the visit; asks for what it needs
+docker compose exec app php artisan shop:apply-profile storage/app/profiles/<shop>.json   # at install; safe to run again
+```
+
+`docker/profile.example.json` shows the format with placeholder values.
+
 ## Check it
 
 From the repository root, with the stack running. CI runs the same checks on every pull request.
@@ -41,7 +52,7 @@ Other commands run the same way: `docker compose exec app php artisan …`, `doc
 
 | Path | What it is |
 |---|---|
-| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation` holds the shop, its branches and terminals; `Audit` the hash chains, roots and spool; `Settings`, `Identity` and `Catalogue` follow in Phase 2. `Http/` and `Providers/` are Laravel's glue |
+| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation` holds the shop, its branches and terminals; `Audit` the hash chains, roots and spool; `Settings` the settings, their history and the shop profile tool; `Identity` and `Catalogue` follow in Phase 2. `Http/` and `Providers/` are Laravel's glue |
 | `config/` | Every setting. Laravel's defaults are not merged in, so Redis and the other unused drivers stay out |
 | `database/migrations/` | The schema. Every application table has a ULID key (D21) |
 | `resources/js/` | The React side: `app.tsx` boots Inertia, `pages/` holds the pages |

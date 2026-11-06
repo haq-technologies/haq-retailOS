@@ -6,6 +6,7 @@ use App\Audit\AuditServiceProvider;
 use App\Organisation\OrganisationServiceProvider;
 use App\Platform\PlatformServiceProvider;
 use App\Providers\AppServiceProvider;
+use App\Settings\SettingsServiceProvider;
 
 // One service provider per module (D23), in dependency order.
 return [
@@ -13,4 +14,5 @@ return [
     PlatformServiceProvider::class,
     OrganisationServiceProvider::class,
     AuditServiceProvider::class,
+    SettingsServiceProvider::class,
 ];
