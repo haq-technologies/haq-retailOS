@@ -6,6 +6,7 @@ use App\Identity\ActingToken;
 use App\Identity\Enrolment;
 use App\Identity\Models\User;
 use App\Identity\Role;
+use App\Sales\Parked;
 use App\Settings\Settings;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\People;
@@ -53,4 +54,15 @@ it('shows a setting HAQ locked, and refuses to change it', function () {
     $owner = ($this->as)('Halima', '135790');
     $owner->getJson('/api/back-office/settings')->assertJsonPath('settings.0.locked', true)->assertJsonPath('settings.0.value', '22:00');
     $owner->postJson('/api/back-office/settings', ['key' => 'shifts.closing_time', 'value' => '21:00'])->assertStatus(423);
+});
+
+it('lets the owner set a cashier\'s discard limit in naira, kept in kobo, and the discard rule uses it (D38)', function () {
+    $owner = ($this->as)('Halima', '135790');
+    $owner->getJson('/api/back-office/settings')->assertJsonPath('settings.1.key', 'parked.discard_limit_kobo')
+        ->assertJsonPath('settings.1.kind', 'money')->assertJsonPath('settings.1.value', 0);
+
+    $owner->postJson('/api/back-office/settings', ['key' => 'parked.discard_limit_kobo', 'value' => 500_000])->assertOk()->assertJsonPath('value', 500_000);
+    expect(app(Parked::class)->limitKobo())->toBe(500_000);
+    $owner->postJson('/api/back-office/settings', ['key' => 'parked.discard_limit_kobo', 'value' => ''])->assertStatus(422)
+        ->assertJsonPath('message', 'That value is not right for this setting. Type an amount in naira, such as 5000.');
 });

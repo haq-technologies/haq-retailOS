@@ -211,7 +211,7 @@ Assumptions:
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
 | The pilot shop's closing time, for the forgotten-shift rule: a shift still open four hours later closes as unclosed (S12) | Shop owner, in Shop settings on a back-office device (D37) | Install (week 13) | None set: no shift closes by itself |
 | The release signing key: run tools/release/new-key.sh on the offline signing computer and commit release-public.pem (D36) | Product owner | Before the G3 install (week 12) | None: servers refuse every update until it exists |
-| The pilot shop's discard limit: the most a cashier may discard of their own parked sale without a manager (F12) | Shop owner | Install (week 13) | ₦0: every cashier discard needs a manager (D33). It goes in the shop profile as parked.discard_limit_kobo |
+| The pilot shop's discard limit: the most a cashier may discard of their own parked sale without a manager (F12) | Shop owner, in Shop settings on a back-office device (D38) | Install (week 13) | ₦0: every cashier discard needs a manager (D33) |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
 | Bundles or packs (phone plus case, wholesale carton) | Product owner | MVP | Not supported in the pilot |
 | Warranty claims | Product owner | MVP | Returns with the supplier_claim disposition |
@@ -252,3 +252,4 @@ Assumptions:
 | 6 November 2026 | The release manifest, offline signing and the updater (D36) |
 | 6 November 2026 | The G3 tooling: scripted sales, the rehearsal check and the procedure; Phase 3 built, G3 waits for the pilot hardware |
 | 6 November 2026 | The owner sets the closing time in Shop settings (D37) |
+| 6 November 2026 | The owner sets the cashier's discard limit in Shop settings (D38) |

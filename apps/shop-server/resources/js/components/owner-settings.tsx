@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Notice } from '@/components/notice';
+import { naira } from '@/counter/money';
 import { getJson, postJson } from '@/lib/api';
 
 /**
@@ -10,6 +11,7 @@ interface Setting {
     key: string;
     label: string;
     help: string | null;
+    kind: 'time' | 'money' | 'text';
     value: unknown;
     locked: boolean;
 }
@@ -24,7 +26,7 @@ export function OwnerSettings({ token }: { token: string }) {
             .then((a) => {
                 if (a.ok) {
                     setSettings(a.body.settings);
-                    setDrafts(Object.fromEntries(a.body.settings.map((s) => [s.key, typeof s.value === 'string' ? s.value : ''])));
+                    setDrafts(Object.fromEntries(a.body.settings.map((s) => [s.key, draftOf(s)])));
                 }
             })
             .catch(() => {
@@ -35,7 +37,11 @@ export function OwnerSettings({ token }: { token: string }) {
     const save = async (key: string) => {
         setMessage(null);
         try {
-            const a = await postJson<{ message?: string; value?: unknown }>('/api/back-office/settings', { key, value: drafts[key] ?? '' }, token);
+            const setting = settings?.find((s) => s.key === key);
+            const draft = (drafts[key] ?? '').trim();
+            // Money is typed in whole naira and kept in kobo.
+            const value = setting?.kind === 'money' ? (/^\d+$/.test(draft) ? Number.parseInt(draft, 10) * 100 : draft) : draft;
+            const a = await postJson<{ message?: string; value?: unknown }>('/api/back-office/settings', { key, value }, token);
             if (a.ok) {
                 setSettings((list) => list?.map((s) => (s.key === key ? { ...s, value: a.body.value } : s)) ?? null);
                 setMessage({ tone: 'ok', text: 'Saved.' });
@@ -62,14 +68,16 @@ export function OwnerSettings({ token }: { token: string }) {
                     {s.help !== null && <p className="text-text-secondary">{s.help}</p>}
                     {s.locked ? (
                         <p className="text-lg">
-                            {typeof s.value === 'string' && s.value !== '' ? s.value : 'Not set'}{' '}
+                            {shown(s)}{' '}
                             <span className="text-text-secondary">· set by HAQ support; ask them to change it</span>
                         </p>
                     ) : (
                         <div className="flex flex-wrap items-center gap-3">
+                            {s.kind === 'money' && <span className="text-2xl">₦</span>}
                             <input
                                 id={`setting-${s.key}`}
-                                type={s.key === 'shifts.closing_time' ? 'time' : 'text'}
+                                type={s.kind === 'time' ? 'time' : 'text'}
+                                inputMode={s.kind === 'money' ? 'numeric' : undefined}
                                 value={drafts[s.key] ?? ''}
                                 className="min-h-touch rounded-xl border-2 border-border bg-background px-4 text-lg"
                                 onChange={(e) => {
@@ -97,4 +105,14 @@ export function OwnerSettings({ token }: { token: string }) {
                 ))}
         </section>
     );
+}
+
+function draftOf(s: Setting): string {
+    if (s.kind === 'money') return typeof s.value === 'number' ? String(Math.floor(s.value / 100)) : '';
+    return typeof s.value === 'string' ? s.value : '';
+}
+
+function shown(s: Setting): string {
+    if (s.kind === 'money') return typeof s.value === 'number' ? naira(s.value) : 'Not set';
+    return typeof s.value === 'string' && s.value !== '' ? s.value : 'Not set';
 }

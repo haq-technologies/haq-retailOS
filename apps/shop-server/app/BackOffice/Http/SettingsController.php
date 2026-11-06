@@ -26,13 +26,18 @@ final class SettingsController
     {
         $this->owner($request);
 
-        return response()->json(['settings' => array_values(array_map(fn (Definition $d) => [
+        // In the order the owner reads them: by name.
+        $owned = array_filter($registry->all(), fn (Definition $d) => $d->ownerFacing);
+        usort($owned, fn (Definition $a, Definition $b) => strcmp($a->label, $b->label));
+
+        return response()->json(['settings' => array_map(fn (Definition $d) => [
             'key' => $d->key,
             'label' => $d->label,
             'help' => $d->help,
+            'kind' => $d->ownerKind,
             'value' => $settings->get($d->key),
             'locked' => $settings->isLocked($d->key),
-        ], array_filter($registry->all(), fn (Definition $d) => $d->ownerFacing)))]);
+        ], $owned)]);
     }
 
     public function update(Request $request, Registry $registry, Settings $settings): JsonResponse
@@ -50,7 +55,13 @@ final class SettingsController
         } catch (SettingLocked) {
             return response()->json(['message' => 'HAQ support has locked this setting. Ask them to change it.'], 423);
         } catch (InvalidSettingValue) {
-            return response()->json(['message' => 'That value is not right for this setting. A time is written like 21:30.'], 422);
+            $hint = match ($registry->get($key)->ownerKind) {
+                'time' => ' A time is written like 21:30.',
+                'money' => ' Type an amount in naira, such as 5000.',
+                default => '',
+            };
+
+            return response()->json(['message' => 'That value is not right for this setting.'.$hint], 422);
         }
 
         return response()->json(['key' => $key, 'value' => $settings->get($key)]);

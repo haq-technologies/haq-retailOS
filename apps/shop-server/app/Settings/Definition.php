@@ -27,5 +27,7 @@ final readonly class Definition
         // Shown to the owner in the back office's Shop settings, where they change it unless HAQ has locked it (D37).
         public bool $ownerFacing = false,
         public ?string $help = null,
+        // How Shop settings asks for it: time (HH:MM), money (whole naira, stored as kobo) or text.
+        public string $ownerKind = 'text',
     ) {}
 }
