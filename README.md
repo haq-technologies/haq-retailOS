@@ -31,7 +31,7 @@ A point-of-sale system for phone-accessory shops in Nigeria, by HAQ Technology. 
 
 ## How we work
 
-- One GitHub repository, public for now (D10), developed trunk-based: short-lived branches, and merges only through pull requests with green CI, plus one review once the developers join. Nobody pushes directly to main.
+- One GitHub repository, public for now (D10), developed trunk-based: short-lived branches, and merges only through pull requests with green CI. Nobody pushes directly to main.
 - The JSON seed is the only master for catalogue data. Never hand-edit the generated workbook or appendix; change the build script and rerun it (see CLAUDE.md).
 - Every decision goes into docs/decisions.md first, then into the spec.
 

@@ -39,7 +39,7 @@ Draft for the shop owner to re-confirm, built on 5 November 2026 from v1 (locked
 
 ## C3. Category templates
 
-Printed names follow each category's name order; blank parts are skipped and No brand never prints. Drill order is the order of the tap-through tiles (proposed until the cashier timing test at G1).
+Printed names follow each category's name order; blank parts are skipped and No brand never prints. Drill order is the order of the tap-through tiles (proposed until speed data from the shadow pilot confirms it).
 
 | Category | Parent | Category word | Facets, in drill order | Name order | Example printed name |
 | --- | --- | --- | --- | --- | --- |
@@ -266,7 +266,7 @@ The counter offers these unbranded shapes in search and on the tiles; an item is
 | C13 | Mouse and Keyboard gained a Connectivity facet | Wired, Wireless or Bluetooth, printed before the word: "Wireless Mouse". |
 | F4 | Cases print as "Pouch", with the pouch type before the word | "iPhone 11 Silicone Pouch". The category is now "Phone pouches and covers"; "case", "phone case" and "cover" are search words. Screen protectors follow the same order ("Tecno Spark 20 Tempered Glass Screen Protector"); confirm with the owner. |
 | F5 | "earpods" became a search word for Earbuds |  |
-| R1 | Each category has a drill order for the tap-through tiles | Proposed defaults; the cashier timing test at G1 confirms them. |
+| R1 | Each category has a drill order for the tap-through tiles | Proposed defaults; speed data from the shadow pilot confirms them (D12). |
 | R2 | The 127 stored generated lines became 5 generator rules | The same 127 shapes are offered at the counter and an item is created on its first sale, so there is no prune review at setup. |
 
 ## C10. Still open
@@ -275,4 +275,4 @@ The counter offers these unbranded shapes in search and on the tiles; an item is
 - The 16 brands marked "To confirm on the shelf walk", and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO.
 - Oraimo "Watch" prints as "Oraimo Watch Smartwatch"; rename it if the owner prefers.
 - Phone models are a first draft: add, rename or remove against the shelf and supplier lists.
-- Drill orders are proposals until the cashier timing test at G1.
+- Drill orders are proposals until speed data from the shadow pilot confirms them (D12).

@@ -1,8 +1,8 @@
 # HAQ Retail OS Spec v1.5
 
-HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026.
+HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026; signed off by the product owner on 6 November 2026 [D13].
 
-**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D11, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
+**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D15, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
 
 **How to read it.** A tag such as [F3] marks text that exists because of finding F3 of the engineering teardown (Appendix A). A tag such as [S4], [R3], [C1] or [D2] marks text set by the v1.4 review; Appendix E lists every such change, and docs/decisions.md records where each came from. [Q5] or [FU6] points to an answer in that log; FU1 to FU10 are the review's follow-up questions, not teardown findings.
 
@@ -91,7 +91,7 @@ Laravel with Inertia and React. The active catalogue is cached in the browser wi
 ## Docker and GitHub delivery
 - Compose stack per branch: app (PHP-FPM), web (Nginx), db (PostgreSQL), scheduler and queue workers (the print queue among them), backup (pgBackRest). The migration job is a separate one-shot container that alone holds the owner database role. [F3]
 - Pinned versions for every image and framework, a named volume for the database, and no bind mounts in production, so every shop behaves the same and rebuilds are reproducible. Code sits in a thin image layer above a pinned base, so a routine update downloads a few MB, and servers ship pre-imaged with every image loaded. [S18]
-- Code lives in one GitHub repository, developed trunk-based: short-lived branches, a protected main, and a merge only with green CI and, once the developers join, one review. The repository is public until the owner makes it private, so nothing secret or personal is ever committed. [D6, D10] GitHub Actions runs the full test suite against a real PostgreSQL on every pull request. Images are built once on merge and pushed to GitHub Container Registry (GHCR), pinned by digest. A release is a semantic-version tag plus a release manifest that lists the image digests, the compose file and the migrations. Signing is not done by CI: the release signing key lives on an offline hardware token, and a person signs the manifest. Config bundles and licences are signed by the same offline process or by a derived key you can revoke. [F17, D1]
+- Code lives in one GitHub repository, developed trunk-based: short-lived branches, a protected main, and a merge only with green CI. One person builds the product, so no review is required. The repository is public until the owner makes it private, so nothing secret or personal is ever committed. [D6, D10, D15] GitHub Actions runs the full test suite against a real PostgreSQL on every pull request. Images are built once on merge and pushed to GitHub Container Registry (GHCR), pinned by digest. A release is a semantic-version tag plus a release manifest that lists the image digests, the compose file and the migrations. Signing is not done by CI: the release signing key lives on an offline hardware token, and a person signs the manifest. Config bundles and licences are signed by the same offline process or by a derived key you can revoke. [F17, D1]
 - Two embedded public keys (current and next) let you rotate the signing key while shops are offline. A revocation list travels in config bundles. [F17]
 - Release channels: stable, beta, pinned. An update goes to a beta shop first, then the fleet. The pilot shop is the beta channel and takes a weekly release. [D2]
 - Updates and rollback. Updates are pulled, never pushed: the updater on the shop server checks the signed release manifest, pulls the images from GHCR by digest with a read-only token of its own, and only then backs up, migrates and runs the health check. A shop with no internet connects a phone hotspot for the update; a MiFi is optional. [D2, D3, S18] A backup always precedes an update. Migrations follow expand-then-contract, so the previous image still works against the new schema. A failed post-update health check rolls back the code only. The database snapshot is restored only if the migration itself failed before trading resumed. After trading has resumed, the fix is a new release rolled forward, so no sale made since the update is ever discarded. [F16]
@@ -229,7 +229,7 @@ Every printed name is built by one routine in this order: Brand, Model or connec
 
 | Phase | What happens | Time |
 |---|---|---|
-| 0. Prepare | Starter catalogue and shop profile file generated before the visit. In the pilot, where the console is not built yet, you generate the profile with a command-line tool. [F25] | Before the visit |
+| 0. Prepare | Starter catalogue and shop profile file generated before the visit. In the pilot, where the console is not built yet, you generate the profile with a command-line tool; the profile carries the receipt text. [F25, D14] | Before the visit |
 | 1. Install | Your team installs the Docker bundle, applies the profile, creates users, ticks categories and brands, connects printer, drawer and scanner, prints a test receipt, and runs the power-cut drill | About 2 hours |
 | 2. Learn while selling | Items and barcodes are learned from real sales | Weeks 1 to 2 |
 | 3. Cost queue | The owner prices items sold without cost, sorted by revenue, with bulk apply | From day 2 |
@@ -282,7 +282,7 @@ Colour is a quick-pick note on the sale line, configurable per shop. It prints o
   - Same key, different payload: rejected with a plain message (“This sale changed. Review it and finish again”), and nothing is created.
   - Deadlock retry: only database work is retried. Printing, events and notifications run after commit, never inside the retried closure.
 - Print and pending print. The print job is committed with the sale. The receipt prints when the agent acknowledges it. If power is lost after commit but before printing, the sale exists, the receipt is marked unprinted, and the counter offers “Print pending receipt T01-E1-000123” on restart. [F5]
-- The receipt prints with full descriptive names, colour notes, receipt number, cashier and payment methods. A reprint reuses the original number, is stamped DUPLICATE and is logged. Every sale gets a printed receipt, and the receipt number also prints as a Code 128 barcode that the scanner reads for returns, reprints and disputes. [S9, Q14]
+- The receipt prints with full descriptive names, colour notes, receipt number, cashier and payment methods. A reprint reuses the original number, is stamped DUPLICATE and is logged. Every sale gets a printed receipt, and the receipt number also prints as a Code 128 barcode that the scanner reads for returns, reprints and disputes. [S9, Q14] The header (shop name, address and phone) and the footer (returns wording) come from the receipt-text setting, which only the sysadmin changes; a branch can override its address and phone. [D14]
 - Hold and resume: one key parks a sale with an optional label. Parked sales are visible to every counter in the branch. Open parked sales must be resumed or discarded at shift close. A discard needs a reason. A discard above the configured value needs a manager PIN. Every discard is counted per cashier on the owner dashboard. [F12]
 - Drawer. On a counter with a drawer, every opening is recorded in cash_events: a sale opens it through the print job, a manual “No sale” opening needs a one-tap reason, and a key opening after a failed kick is logged as Opened with key. A counter with no drawer has no No sale button. [F12, S21]
 - Cashier switching and the cache. The browser catalogue updates from the delta feed. A cashier switch changes the acting-user token and clears nothing else. [F25]
@@ -373,7 +373,7 @@ After any restore or server replacement, the system starts a new epoch, and the 
 ## Console (a separate admin app, only you and your team)
 - Shop profile: owner, branches, tier, installed version, last sync, last backup.
 - Feature flags: credit, stock tracking, track colour in stock, store-credit vouchers, PIN mode, cashier item creation, return window, below-cost alerts, price floor, tax line, transfer-confirmation tick, strict price-approval mode, catalogue contribution, manager sees cost, standby kit, manager may enter cost [FU6], cash drawer per counter [S21], price fill fallback (last price or median) [S4], idle lock minutes [S6], shared drawer [S11]. [F22]
-- Policies: variance threshold, paid-out and discard approval limits, price floor percentage and the below-range confirm count per shift, alias activation count, credit defaults, receipt text, colours list, business day and timezone, and the closing time used by the forgotten-shift rule. [F11, F13, S12]
+- Policies: variance threshold, paid-out and discard approval limits, price floor percentage and the below-range confirm count per shift, alias activation count, credit defaults, receipt text (the header and footer, with a branch override for the address and phone [D14]), colours list, business day and timezone, and the closing time used by the forgotten-shift rule. [F11, F13, S12]
 - Lock control: per setting, you decide whether the owner may edit it.
 - Delivery: a signed config bundle, applied at install and pushed automatically when internet is available. Every change is versioned and audited.
 - Updates are pulled by the shop server from GitHub whenever a connection is present; config pushes are allowed with owner consent recorded in the contract. Every update and push is audited. [D2]
@@ -621,13 +621,13 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
   - Swap recorded for v1.2: the minimal print agent with drawer kick and drawer log enters the pilot slice. Weekly and monthly report views and the top-items report leave the pilot slice for the MVP. The advanced print agent features stay in Pro. [F12] Superseded in v1.5: printing goes from the server to network printers, so there is no agent. [R3]
 - Scripted migrations and seeders, so a rebuild is fast. Migrations follow expand-then-contract. [F16]
 - Concurrency, crash and restore tests run on a real PostgreSQL in CI and are never replaced by rolled-back test transactions. [F6]
-- One GitHub monorepo, public until the owner makes it private, trunk-based: short-lived branches, a protected main, and green CI to merge, with one review once the developers join. [D1, D6, D10]
+- One GitHub monorepo, public until the owner makes it private, trunk-based: short-lived branches, a protected main, and green CI to merge, with no review while one person builds it. [D1, D6, D10, D15]
 - The spec is Markdown in Git, and the JSON seed is the only master for catalogue data; its workbook and appendix are generated. Every decision is recorded in docs/decisions.md. [R8, Q9]
 ## Work that must finish before the first shop goes live
 
 | Area | Deliverable |
 |---|---|
-| Wireframes and speed test | The five v1.4 screens predate the catalogue and are redrawn touch-first on a new canvas, adding the price-floor prompt, pending print, lost window, Pending transfers and the idle lock. Two real cashiers are timed on a prototype at gate G1. Returns, shift close and the console are drawn in the MVP phase. [Q10] |
+| Wireframes and speed test | The five v1.4 screens predate the catalogue and are redrawn touch-first on a new canvas, adding the price-floor prompt, pending print, lost window, Pending transfers and the idle lock. There is no clickable prototype: the product owner signs off the wireframes at gate G1, and the speed instrumentation times real cashiers on the counter from the shadow pilot. Returns, shift close and the console are drawn in the MVP phase. [Q10, D12] |
 | Release policy | GitHub Actions CI on every pull request with a real PostgreSQL; images on GHCR; a release manifest signed offline with a hardware token; a staging box in the office with 5,000 test items; the pilot shop as the beta channel with a weekly release; automatic code rollback on a failed health check. [D1, D2] |
 | Hardware specification | Server with SSDs that have power-loss protection. UPS covering server, switch and router; one counter and its printer on the UPS or the inverter. Network thermal printers; cash drawers optional. Fixed IP and local name. Local certificate authority and renewal steps. Optional standby device. The tested list lives in docs/operations/hardware.md. [F24, S7, R3, S21] |
 | Support model | Remote access when online. A send-diagnostics bundle. A runbook for printer, PC start, wrong-date and restore problems. A pre-imaged spare PC with a licence transfer procedure. |
@@ -664,7 +664,7 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
 | Say-it-aloud test of HAQ with five shop owners (does it sound like “hack”) | You | Proceed with HAQ unless owners object |
 | Where head office and cloud backups are hosted, and data residency | You, with the lawyer | Not needed for the pilot; decide before the MVP [Q7] |
 | Brands shown first for six categories | You, at the shelf walk | The full brand list until assigned [C8] |
-| Tile (drill) order per category | Cashier timing at G1 | The v1.1 proposal [R1] |
+| Tile (drill) order per category | Speed data from the shadow pilot | The v1.1 proposal [R1, D12] |
 
 # 19. Decisions recorded
 
@@ -796,7 +796,7 @@ The starter catalogue is data, so its appendix is generated from the seed and ke
 | Appendix C | New. The full locked starter catalogue. |
 
 # Appendix E. What changed in v1.5
-Every change below comes from the v1.4 review of 5 November 2026; docs/decisions.md records the source of each.
+Every change below comes from the v1.4 review of 5 November 2026 or a decision after it; docs/decisions.md records the source of each.
 
 | Area | Change | Tags |
 |---|---|---|
@@ -816,5 +816,7 @@ Every change below comes from the v1.4 review of 5 November 2026; docs/decisions
 | Acceptance (section 14) | 47 pilot checks: A12, A13 and B12 are new, and the wording of others follows the changes above | S1, S2, S12 |
 | Design (section 15) | Apple's system colours as fixed tokens, the Inter typeface, and responsive layouts from phone to large monitor | D4, D5 |
 | Counter (sections 6 and 7) | One tap adds an item with a set price; otherwise a price pad confirms the pre-filled price. Optional facets have a Skip tile, and tiles show a price only on the last step. Retail or Wholesale covers the whole sale from the top bar. A colour row opens on a new line for categories that ask for colour. A POS payment needs nothing typed | D7, D8, D9, D11 |
-| Repository (section 4) | Public until the owner makes it private; nothing secret or personal is committed | D10 |
+| Repository (section 4) | Public until the owner makes it private; nothing secret or personal is committed; green CI to merge, with no review while one person builds it | D10, D15 |
+| Receipts (sections 7 and 11) | The header and footer are a shop setting that only the sysadmin changes, with a branch override for the address and phone | D14 |
+| Delivery (section 16) | No clickable prototype: gate G1 is the product owner's sign-off of the wireframes, and real cashiers are first timed on the counter in the shadow pilot | D12 |
 | Not adopted | An owner phone summary and read-only cloud view in Core | S13 |

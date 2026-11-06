@@ -8,7 +8,7 @@ HAQ Retail OS, by HAQ Technology: a point-of-sale system for phone-accessory sho
 
 ## Where we are
 
-Phase 0 (decide and discover), as of 5 November 2026. There is no application code yet. [PLAN.md](PLAN.md) has the phases, gates, status, Phase 0 checklist and open items.
+Phase 0 (decide and discover), as of 6 November 2026. Spec v1.5 is signed off (D13), and there is no application code yet. [PLAN.md](PLAN.md) has the phases, gates, status, Phase 0 checklist and open items.
 
 ## Sources of truth
 
@@ -35,6 +35,7 @@ tools/catalogue/   scripts that build and verify the catalogue
 
 ## How to work with the user
 
+- The product owner builds this alone, working with Claude (D15). There is no other developer, designer or field lead, so never plan or assign work to one.
 - Ask, do not assume. Shop practice, prices and what a catalogue entry means come from the user or the shop owner, so ask.
 - When there is a better way than the spec, recommend it with its tradeoffs. Never change the design silently.
 - Build for the people who use it: cashiers in a busy queue on a touchscreen, owners who are often away, a small support team.
@@ -90,7 +91,7 @@ Apple's system colours with fixed roles, the Inter typeface, and responsive layo
 ## Git
 
 - Remote: https://github.com/haq-technologies/haq-retailOS. It stays public until the owner makes it private (D10), so every push publishes. Commit with the GitHub noreply email set in this repository's git config, never a personal address, and check each diff for secrets, shop data and personal data before pushing.
-- Branch from main and keep branches short-lived. Merge only through a pull request with green CI; never push directly to main. Until the developers join, no approval is required, because GitHub does not let an author approve their own pull request; after that, one review is required (D6). GitHub enforces this with the "Protect main" ruleset: a pull request, the docs check green and up to date, squash merges only, no force-push or deletion, and no bypass.
+- Branch from main and keep branches short-lived. Merge only through a pull request with green CI; never push directly to main. No approval is required, because one person builds this (D15) and GitHub does not let an author approve their own pull request. GitHub enforces this with the "Protect main" ruleset: a pull request, the docs check green and up to date, squash merges only, no force-push or deletion, and no bypass.
 - End every commit message with the co-author line for Claude.
 
 ## Environment notes (5 November 2026)

@@ -5510,7 +5510,7 @@
     {
       "ref": "R1",
       "change": "Each category has a drill order for the tap-through tiles",
-      "detail": "Proposed defaults; the cashier timing test at G1 confirms them."
+      "detail": "Proposed defaults; speed data from the shadow pilot confirms them (D12)."
     },
     {
       "ref": "R2",
@@ -5523,6 +5523,6 @@
     "The 16 brands marked \"To confirm on the shelf walk\", and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO.",
     "Oraimo \"Watch\" prints as \"Oraimo Watch Smartwatch\"; rename it if the owner prefers.",
     "Phone models are a first draft: add, rename or remove against the shelf and supplier lists.",
-    "Drill orders are proposals until the cashier timing test at G1."
+    "Drill orders are proposals until speed data from the shadow pilot confirms them (D12)."
   ]
 }
