@@ -4,7 +4,7 @@ What to buy for the bench test now, and what each pilot-shop device must do. The
 
 ## Bench kit (Phase 0)
 
-Buy one of each, so Developer B and the field lead can prove printing, the drawer, scanning, the kiosk and power behaviour before anything is built on them.
+Buy one of each, so the bench test can prove printing, the drawer, scanning, the kiosk and power behaviour before anything is built on them.
 
 | Device | Must have | Why |
 |---|---|---|

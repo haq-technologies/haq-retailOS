@@ -1,6 +1,6 @@
 # Shop visit checklist (Phase 0)
 
-For the field lead's first visit to the pilot shop. Allow half a day, including a busy period. Afterwards the results go into PLAN.md (open items) and docs/decisions.md.
+For the first visit to the pilot shop. Allow half a day, including a busy period. Afterwards the results go into PLAN.md (open items) and docs/decisions.md.
 
 ## Bring
 
