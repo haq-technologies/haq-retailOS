@@ -8,7 +8,7 @@ HAQ Retail OS, by HAQ Technology: a point-of-sale system for phone-accessory sho
 
 ## Where we are
 
-Phase 0 (decide and discover), as of 6 November 2026. Spec v1.5 is signed off (D13), and there is no application code yet. [PLAN.md](PLAN.md) has the phases, gates, status, Phase 0 checklist and open items.
+Phase 1 (wireframes), as of 6 November 2026: gate G0 is passed, and there is no application code yet. [PLAN.md](PLAN.md) has the phases, gates, status, Phase 0 checklist and open items.
 
 ## Sources of truth
 
@@ -94,6 +94,6 @@ Apple's system colours with fixed roles, the Inter typeface, and responsive layo
 - Branch from main and keep branches short-lived. Merge only through a pull request with green CI; never push directly to main. No approval is required, because one person builds this (D15) and GitHub does not let an author approve their own pull request. GitHub enforces this with the "Protect main" ruleset: a pull request, the docs check green and up to date, squash merges only, no force-push or deletion, and no bypass.
 - End every commit message with the co-author line for Claude.
 
-## Environment notes (5 November 2026)
+## Environment notes (6 November 2026)
 
-This Mac has git, Node and the GitHub CLI (gh 2.103.3, installed 5 November 2026). Docker, PHP, Composer and PostgreSQL are not installed, and neither are openpyxl or LibreOffice, which is why the catalogue tools use only the Python standard library.
+This Mac is the development, staging and test machine; there is no office mini-PC (D16). It has git, Node and the GitHub CLI (gh 2.103.3, installed 5 November 2026). Docker, PHP, Composer and PostgreSQL are not installed, and neither are openpyxl or LibreOffice, which is why the catalogue tools use only the Python standard library.
