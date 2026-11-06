@@ -146,7 +146,7 @@ Phase 3, the counter and sale core, started on 6 November 2026 at the product ow
 - [x] The counter client: one Inertia page with the catalogue in IndexedDB, search (MiniSearch 7.2) in a Web Worker, the tiles with Skip and generated shapes, the price pad and its checks with manager approval, the colour row, Retail or Wholesale, cash, transfer, POS and split payments, Finish with its idempotency key, After Pay with reprint and Opened with key, hold and resume, Awaiting transfer, pending print, scanner detection and barcode learning, new items, No sale, opening the shift, the idle lock that keeps the sale, Reconnecting, the seven-day counter journal, the sale timings and a service worker for the app shell (Claude, 6 November 2026, D34)
 - [x] Backups with pgBackRest 2.60: WAL to the second disk, a weekly full and daily incrementals with catch-up, the weekly test restore verified by the scheduler (row counts and every audit chain), the key and epochs kept beside the backups, `shop:after-restore`, and deploy/restore.sh, rehearsed on staging (Claude, 6 November 2026, D35; docs/operations/restore-drill.md)
 - [x] Playwright 1.65 tests in CI: the counter in Chromium against a fresh test shop in retail_e2e, on every pull request; `apps/shop-server/e2e/run.sh` runs them on this computer (Claude, 6 November 2026)
-- [ ] The release manifest, offline signing and the updater (Claude; the product owner holds the signing key)
+- [x] The release manifest, offline signing and the updater: images by digest and the Compose file by hash, signed with an offline Ed25519 key; `update.sh` checks, pulls, backs up, switches, health-checks and rolls back the code only; a signing dry run in CI; rehearsed on staging (Claude, 6 November 2026, D36; docs/operations/releases.md). The product owner makes the real key
 - [ ] Gate G3: the dress rehearsal on the pilot hardware (product owner, Claude)
 
 ## Before Phase 3
@@ -208,6 +208,7 @@ Assumptions:
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
 | The pilot shop's closing time, for the forgotten-shift rule: a shift still open four hours later closes as unclosed (S12) | Shop owner | Install (week 13) | None set: no shift closes by itself. It goes in the shop profile as shifts.closing_time |
+| The release signing key: run tools/release/new-key.sh on the offline signing computer and commit release-public.pem (D36) | Product owner | Before the G3 install (week 12) | None: servers refuse every update until it exists |
 | The pilot shop's discard limit: the most a cashier may discard of their own parked sale without a manager (F12) | Shop owner | Install (week 13) | ₦0: every cashier discard needs a manager (D33). It goes in the shop profile as parked.discard_limit_kobo |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
 | Bundles or packs (phone plus case, wholesale carton) | Product owner | MVP | Not supported in the pilot |
@@ -246,3 +247,4 @@ Assumptions:
 | 6 November 2026 | Held sales and Awaiting transfer on the server (D33) |
 | 6 November 2026 | The counter client and the browser tests in CI (D34) |
 | 6 November 2026 | Backups, the weekly test restore and the restore script (D35) |
+| 6 November 2026 | The release manifest, offline signing and the updater (D36) |

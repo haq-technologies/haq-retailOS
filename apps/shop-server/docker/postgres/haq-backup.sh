@@ -52,16 +52,18 @@ write_status() {
         > "$STATUS/backup.json.tmp" && mv "$STATUS/backup.json.tmp" "$STATUS/backup.json"
 }
 
-backup() { # $1: full or incr
+backup() { # $1: full or incr. Returns non-zero if it failed, so the updater stops.
     log "starting a $1 backup"
     if pgbackrest --stanza=$STANZA --type="$1" backup; then
         log "the $1 backup finished"
         rm -f "$STATUS/backup-failed.json"
-    else
-        log "the $1 backup FAILED"
-        echo "{\"failed_at\": $(date +%s), \"type\": \"$1\"}" > "$STATUS/backup-failed.json"
+        write_status
+        return 0
     fi
+    log "the $1 backup FAILED"
+    echo "{\"failed_at\": $(date +%s), \"type\": \"$1\"}" > "$STATUS/backup-failed.json"
     write_status
+    return 1
 }
 
 in_window() {
@@ -133,11 +135,11 @@ loop() {
         any=$(last_stop any)
         verified=$(cat "$STATUS/last-verified-restore" 2>/dev/null || echo 0)
         if [ "$full" -eq 0 ]; then
-            backup full
+            backup full || true
         elif [ $((now - full)) -ge $((7 * 86400 - 3600)) ] && { in_window || idle; }; then
-            backup full
+            backup full || true
         elif [ $((now - any)) -ge $((86400 - 3600)) ] && { in_window || idle; }; then
-            backup incr
+            backup incr || true
         elif [ $((now - verified)) -ge $((7 * 86400)) ] && { in_window || idle; }; then
             test_restore
         fi

@@ -95,7 +95,7 @@ docker compose exec backup haq-backup.sh test-restore    # the test restore now 
 docker compose exec scheduler php artisan backups:status
 ```
 
-A shop's restore is `deploy/restore.sh`; docs/operations/restore-drill.md walks through it.
+A shop's restore is `deploy/restore.sh`; docs/operations/restore-drill.md walks through it. Updates come as signed releases through `deploy/update.sh` (docs/operations/releases.md).
 
 ## Printing
 
