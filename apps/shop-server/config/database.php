@@ -37,7 +37,7 @@ return [
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'retail'),
-            'username' => env('DB_USERNAME', 'retail'),
+            'username' => env('DB_USERNAME', 'retail_app'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
@@ -47,6 +47,39 @@ return [
             'timezone' => 'UTC',
         ],
 
+        // The owner role, which owns the tables. Only the one-shot migration job holds its password, so
+        // the running app can never change the schema, the grants or the triggers (spec section 4).
+        'pgsql_owner' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_OWNER_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '5432'),
+            'database' => env('DB_DATABASE', 'retail'),
+            'username' => env('DB_OWNER_USERNAME', 'retail_owner'),
+            'password' => env('DB_OWNER_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'timezone' => 'UTC',
+        ],
+
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Database Roles
+    |--------------------------------------------------------------------------
+    |
+    | The roles the mutability matrix grants to (spec section 4). The app role
+    | runs the shop; the reporting role reads only cost-safe views.
+    |
+    */
+
+    'roles' => [
+        'app' => env('DB_APP_ROLE', 'retail_app'),
+        'reporting' => env('DB_REPORTING_ROLE', 'retail_reporting'),
     ],
 
     /*

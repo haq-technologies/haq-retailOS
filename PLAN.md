@@ -29,7 +29,7 @@ Done:
 - The shop visit is done, with no changes to catalogue v1.1, and the hardware list is locked (D17), so gate G0 is passed (6 November 2026).
 - Wireframes signed off by the product owner, so gate G1 is passed (D19). The printed daily summary carries no profit or cost amounts (D18).
 
-Next: the rest of the Phase 2 checklist below, starting with the database roles, grants and triggers.
+Next: the rest of the Phase 2 checklist below.
 
 ## Team
 
@@ -119,7 +119,7 @@ Then, by week 8:
 
 - [x] Docker Compose for development, with the shop server's skeleton in apps/shop-server/: Laravel, Inertia, React in TypeScript and the colour tokens, PostgreSQL for sessions, jobs and the cache, and CI for PHP, the frontend and the image (Claude, 6 November 2026, D20 to D22)
 - [ ] The Docker stack, with images pushed to GHCR and staging on the product owner's computer (Claude)
-- [ ] Database roles, grants and triggers generated from the mutability matrix, and the one-shot migration job (Claude)
+- [x] Database roles, grants and triggers generated from the mutability matrix, and the one-shot migration job, with the nightly grant check and the code laid out as a modular monolith (Claude, 6 November 2026, D23)
 - [ ] Identity: name tiles, PINs, acting-user tokens, bound approvals and the idle lock (Claude)
 - [ ] Audit chains, roots and the spool (Claude)
 - [ ] Settings and the profile tool, including the receipt text (Claude, D14)
@@ -207,3 +207,4 @@ Assumptions:
 | 6 November 2026 | Wireframes signed off, so G1 passes and Phases 0 and 1 are closed and locked (D19); the printed daily summary carries no profit or cost amounts (D18); a Phase 2 checklist |
 | 6 November 2026 | Docker runs on the product owner's computer through Colima |
 | 6 November 2026 | Phase 2 starts: the shop server's skeleton and development stack in apps/shop-server/, and CI for it (D20 to D22) |
+| 6 November 2026 | The modular monolith (D23); the three database roles, with grants and triggers from the mutability matrix |
