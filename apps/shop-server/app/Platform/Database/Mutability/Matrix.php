@@ -83,8 +83,8 @@ final readonly class Matrix
 
             // A closed shift never changes [F3]
             Rule::mutableWhileOpen('shifts', 'status', ['closed', 'auto_closed']),
-            // The lock condition is set when parked sales are designed in Phase 3
-            Rule::mutableWhileOpen('parked_sales'),
+            // A parked sale that was resumed, discarded or finished never changes again [F12, S2]
+            Rule::mutableWhileOpen('parked_sales', 'status', ['resumed', 'discarded', 'completed']),
 
             Rule::mutableColumns('receipt_counters', ['last_no']),
             Rule::mutableColumns('print_jobs', ['status', 'attempts']),

@@ -16,7 +16,7 @@ class AuditServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(Spool::class, fn () => new Spool(storage_path('app/audit/spool.jsonl')));
+        $this->app->singleton(Spool::class, fn () => new Spool(config()->string('audit.spool')));
         $this->app->singleton(AuditLog::class);
     }
 

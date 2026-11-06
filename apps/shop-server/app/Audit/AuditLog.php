@@ -42,8 +42,9 @@ final class AuditLog
     }
 
     /**
-     * Records a failed attempt after its transaction has rolled back. Never throws for a busy chain or
-     * an unreachable database: the entry is spooled instead. Returns the entry's ID, or null if spooled.
+     * Records a failed attempt after its transaction has rolled back. Never throws: a busy chain, an
+     * unreachable database or anything else sends the entry to the spool instead, so logging a failure
+     * can never hide the failure or block the counter. Returns the entry's ID, or null if spooled.
      */
     public function recordFailure(AuditEntry $entry): ?string
     {
@@ -57,9 +58,9 @@ final class AuditLog
 
                 return $this->write($db, $entry, false);
             });
-        } catch (QueryException $e) {
-            if (! $this->isBusyOrUnreachable($e)) {
-                throw $e;
+        } catch (\Throwable $e) {
+            if (! $e instanceof QueryException || ! $this->isBusyOrUnreachable($e)) {
+                report($e);
             }
             $this->spool->append($entry);
 

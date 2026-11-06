@@ -8,6 +8,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Symfony\Component\Process\Exception\ProcessSignaledException;
 use Symfony\Component\Process\Process;
 use Tests\Support\TestDatabase;
 
@@ -33,9 +34,10 @@ final class Harness
      * Starts one process per scenario, releases them together and waits for all of them.
      *
      * @param  list<array{0: class-string<Scenario>, 1?: array<string, mixed>}>  $workers
+     * @param  bool  $allowKilled  For crash tests: a worker killed on purpose returns ['killed' => true].
      * @return list<array<string, mixed>> Each worker's result, in the order given.
      */
-    public static function run(array $workers, int $timeoutSeconds = 60): array
+    public static function run(array $workers, int $timeoutSeconds = 60, bool $allowKilled = false): array
     {
         $barrier = DB::connection();
         $barrier->select('SELECT pg_advisory_lock(?)', [self::BARRIER]);
@@ -60,7 +62,18 @@ final class Harness
 
         $results = [];
         foreach ($processes as $i => $process) {
-            $process->wait();
+            try {
+                $process->wait();
+            } catch (ProcessSignaledException $e) {
+                if (! $allowKilled) {
+                    throw $e;
+                }
+            }
+            if ($allowKilled && $process->hasBeenSignaled()) {
+                $results[] = ['killed' => true, 'signal' => $process->getTermSignal()];
+
+                continue;
+            }
             if (! $process->isSuccessful()) {
                 throw new RuntimeException("Worker {$i} failed ({$process->getExitCode()}):\n".$process->getErrorOutput().$process->getOutput());
             }
@@ -121,6 +134,8 @@ final class Harness
             'DB_PASSWORD' => (string) $db['password'],
             'DB_OWNER_USERNAME' => (string) $owner['username'],
             'DB_OWNER_PASSWORD' => (string) $owner['password'],
+            'AUDIT_SPOOL' => config()->string('audit.spool'),
+            'BRANCH_KEY_DIR' => config()->string('organisation.key_dir'),
         ];
     }
 }

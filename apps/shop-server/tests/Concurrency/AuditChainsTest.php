@@ -20,7 +20,7 @@ use Tests\Support\Shop;
 
 beforeEach(function () {
     Harness::freshDatabase();
-    @unlink(storage_path('app/audit/spool.jsonl'));
+    @unlink(config()->string('audit.spool'));
 });
 
 it('keeps every chain gapless and valid while eight workers append at once', function () {

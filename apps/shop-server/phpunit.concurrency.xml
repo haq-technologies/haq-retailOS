@@ -38,6 +38,10 @@
         <server name="DB_URL" value="" force="true"/>
         <server name="APP_ENV" value="testing" force="true"/>
         <env name="DB_URL" value="" force="true"/>
+        <env name="AUDIT_SPOOL" value="storage/framework/testing/concurrency-spool.jsonl" force="true"/>
+        <server name="AUDIT_SPOOL" value="storage/framework/testing/concurrency-spool.jsonl" force="true"/>
+        <env name="BRANCH_KEY_DIR" value="storage/framework/testing/concurrency-keys" force="true"/>
+        <server name="BRANCH_KEY_DIR" value="storage/framework/testing/concurrency-keys" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
