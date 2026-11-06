@@ -8,7 +8,7 @@ HAQ Retail OS, by HAQ Technology: a point-of-sale system for phone-accessory sho
 
 ## Where we are
 
-Phases 0 and 1 are closed and locked (gates G0 and G1 passed on 6 November 2026, D19). Phase 2, the foundation, starts only when the product owner says so, once Docker runs on this Mac. There is no application code yet. [PLAN.md](PLAN.md) has the phases, gates, status, Phase 0 checklist and open items.
+Phases 0 and 1 are closed and locked (gates G0 and G1 passed on 6 November 2026, D19). Phase 2, the foundation, started on 6 November 2026: the shop server's skeleton and development stack are in apps/shop-server/ (D20 to D22). [PLAN.md](PLAN.md) has the phases, gates, status, the Phase 2 checklist and open items.
 
 ## Sources of truth
 
@@ -31,6 +31,9 @@ docs/catalogue/    starter catalogue v1.1: seed (master), review workbook, Appen
 docs/operations/   hardware list and shop-visit checklist
 docs/archive/      superseded originals: spec v1.4 (.docx), locked catalogue v1. Read-only
 tools/catalogue/   scripts that build and verify the catalogue
+tools/docs/        the Markdown checker
+apps/shop-server/  the shop server: Laravel, Inertia and React (its README has the commands)
+compose.yaml       the development stack for the shop server
 ```
 
 ## How to work with the user
@@ -52,13 +55,13 @@ tools/catalogue/   scripts that build and verify the catalogue
 - Sales and their records are append-only, enforced by database roles, grants and triggers generated from the mutability matrix (section 5).
 - Receipt numbers (T01-E1-000123) never repeat; a restore's epoch is one more than the highest known anywhere (section 4).
 - Cost never leaves the server for roles that may not see it: API Resources only, never Eloquent models passed to Inertia; sensitive audit values go in a separate stream (sections 2 and 10).
-- Every table has ULID primary keys, and every sales row carries branch_id and terminal_id (section 4).
+- Every application table has a ULID primary key, and every sales row carries branch_id and terminal_id (section 4). Only Laravel's own queue, cache and session tables keep Laravel's keys (D21).
 - There is no Redis: sessions, jobs and cache live in PostgreSQL (section 4).
 - Concurrency, crash and restore tests run as multi-process tests on a real PostgreSQL; RefreshDatabase and DatabaseTransactions never count for them (section 14).
 
-## Stack (planned)
+## Stack
 
-Laravel, PostgreSQL, Inertia and React (the counter is a local-first client inside one Inertia page), Docker Compose, pgBackRest, MiniSearch, ESC/POS to network printers, Pest, Vitest and Playwright. Code goes in one GitHub monorepo (public until the owner makes it private, D10), developed trunk-based, with GitHub Actions CI on every pull request and images on GHCR. Releases are signed offline by a person; shop servers pull them against the signed manifest.
+Pinned in D20: PHP 8.5, Laravel 13, PostgreSQL 18, Inertia 3, React 19 in TypeScript, Vite 8 and Tailwind CSS 4 (the spec's colour tokens are its only palette). Planned around it: the counter as a local-first client inside one Inertia page, Docker Compose, pgBackRest, MiniSearch, ESC/POS to network printers, Pest, Vitest and Playwright. Code goes in one GitHub monorepo (public until the owner makes it private, D10), developed trunk-based, with GitHub Actions CI on every pull request and images on GHCR. Releases are signed offline by a person; shop servers pull them against the signed manifest.
 
 ## Commands
 
@@ -75,7 +78,20 @@ python3 -I tools/catalogue/verify_v11.py docs/archive/starter-catalogue-v1.json 
 python3 -I tools/docs/check_markdown.py
 ```
 
-CI (.github/workflows/ci.yml) runs all three on every pull request. It rebuilds the catalogue and fails if the committed files differ, so after changing the build script, rerun the build and commit its outputs. Application commands will be added here once the code exists.
+CI (.github/workflows/ci.yml) runs all three on every pull request. It rebuilds the catalogue and fails if the committed files differ, so after changing the build script, rerun the build and commit its outputs.
+
+The shop server runs only in Docker; PHP, Composer and Node are never run on the Mac itself. Its commands are in [apps/shop-server/README.md](apps/shop-server/README.md). The everyday ones, from the repository root:
+
+```
+apps/shop-server/docker/dev-setup.sh       # first time: build, install, migrate, start
+docker compose up -d                       # start the stack; http://localhost:8080
+docker compose exec app composer lint      # Pint
+docker compose exec app composer analyse   # Larastan, level 9
+docker compose exec app composer test      # Pest, against the retail_test database
+docker compose exec vite npm run lint      # ESLint (also: npm run types, npm test)
+```
+
+CI also runs these on every pull request, with PostgreSQL 18, and builds the PHP image.
 
 ## Design
 

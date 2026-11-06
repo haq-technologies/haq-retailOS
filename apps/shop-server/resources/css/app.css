@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@source '../../storage/framework/views/*.php';
+
+@layer base {
+    html {
+        background-color: var(--color-background);
+        color: var(--color-text);
+        font-family: var(--font-sans);
+        /* Tabular numerals, so prices line up (spec section 15). */
+        font-variant-numeric: tabular-nums;
+    }
+
+    body {
+        font-size: 16px;
+    }
+
+    :focus-visible {
+        outline: 3px solid var(--color-action);
+        outline-offset: 2px;
+    }
+
+    /* No animation on the counter, and reduced motion respected everywhere (spec section 15). */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+    }
+}

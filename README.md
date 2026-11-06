@@ -2,7 +2,7 @@
 
 A point-of-sale system for phone-accessory shops in Nigeria, by HAQ Technology. A small server in each shop runs everything on the shop's own network, so selling never depends on the internet. Every receipt names the product properly, profit stays honest while cost prices are still being filled in, and every sale survives power cuts and tampering. The tiers are Core and Pro.
 
-**Status:** Phase 0 (decide and discover), as of 5 November 2026. There is no application code yet.
+**Status:** Phase 2, the foundation, as of 6 November 2026. Phases 0 and 1 are closed, and the shop server's skeleton runs in Docker.
 
 ## Start here
 
@@ -22,6 +22,8 @@ A point-of-sale system for phone-accessory shops in Nigeria, by HAQ Technology. 
 | [docs/operations/](docs/operations/) | The hardware list and the shop-visit checklist |
 | [docs/archive/](docs/archive/) | Superseded originals: spec v1.4 and the locked catalogue v1. Read-only |
 | [tools/catalogue/](tools/catalogue/) | Scripts that build and verify the catalogue |
+| [apps/shop-server/](apps/shop-server/) | The shop server: Laravel, Inertia and React, with its own README |
+| [compose.yaml](compose.yaml) | The development stack for the shop server |
 
 ## Links
 

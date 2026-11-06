@@ -1,0 +1,13 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+# Application code at level 9. Pest tests are left out: their closures are bound to the test case at
+# run time, which static analysis cannot follow. Running them is their check.
+parameters:
+    level: 9
+    paths:
+        - app
+        - bootstrap/app.php
+        - config
+        - database
+        - routes

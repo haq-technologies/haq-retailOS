@@ -2,7 +2,7 @@
 
 HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026; signed off by the product owner on 6 November 2026 [D13].
 
-**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D19, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
+**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D22, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
 
 **How to read it.** A tag such as [F3] marks text that exists because of finding F3 of the engineering teardown (Appendix A). A tag such as [S4], [R3], [C1] or [D2] marks text set by the v1.4 review; Appendix E lists every such change, and docs/decisions.md records where each came from. [Q5] or [FU6] points to an answer in that log; FU1 to FU10 are the review's follow-up questions, not teardown findings.
 
@@ -83,7 +83,7 @@ Every feature and every engineering practice in this spec must serve at least on
 - Cash drawer. Optional per counter: each counter is set to drawer or no drawer in its install profile, changeable from the console. A fitted drawer plugs into the printer and opens with the sale's print job, so the server logs every opening. Without a drawer, cash sales still record the amount tendered and the change, and cash still reconciles at close; there is no opening log and no No sale button. If a fitted drawer does not open, the sale still completes, and the cashier opens it with the key and taps Opened with key, which is logged. [F12, S21]
 - No Redis. Sessions, jobs and cache live in PostgreSQL, so each shop has one service fewer to install, monitor and fail.
 ## Frontend
-Laravel with Inertia and React. The active catalogue is cached in the browser with client-side fuzzy search. The server finalises every sale, and the browser never decides a total. The back office is ordinary Inertia pages. The counter is one Inertia page that boots a self-contained client: a state store, the catalogue in IndexedDB, search in a Web Worker and a service worker for the app shell, talking to a small JSON API, so a server restart shows Reconnecting with the cart intact. [R4]
+Laravel with Inertia and React, written in TypeScript and styled with Tailwind CSS, whose only colours are the tokens in section 15. The shop server's code lives in apps/shop-server/, with its versions pinned. [D20] The active catalogue is cached in the browser with client-side fuzzy search. The server finalises every sale, and the browser never decides a total. The back office is ordinary Inertia pages. The counter is one Inertia page that boots a self-contained client: a state store, the catalogue in IndexedDB, search in a Web Worker and a service worker for the app shell, talking to a small JSON API, so a server restart shows Reconnecting with the cart intact. [R4]
 - Local state first. Adding lines, search, price edits, hold and totals preview run entirely in the browser. Only Finish, item creation and the search fallback call the server. The 100 ms budget applies to what the cashier sees, not to a server round trip. [F25]
 - Catalogue delta feed. The server stamps every catalogue change with a monotonic catalogue_seq. Each counter polls for changes since its last catalogue_seq every 2 seconds, which also serves as its server-reachable heartbeat [R5], so counter B does not create a duplicate of an item counter A made a moment ago. Item creation also runs a server-side similar-item check against the latest data. [F25]
 - Counter journal. Each counter keeps, for seven days, a local summary of every sale it finalised (receipt number, time, total, lines). It is used only for restore recovery (section 9) and never as a source of truth. [F1]
@@ -98,7 +98,7 @@ Laravel with Inertia and React. The active catalogue is cached in the browser wi
 - Version skew. A branch and head office are compatible within two minor versions. Every bundle carries its schema version, and a shop that was offline for months upgrades through each intermediate migration in order. [F16]
 - Secrets arrive in the config bundle encrypted to that shop’s own key, never in a bundle shared across shops. Nothing sensitive lives in the repository. [F17]
 ## Data, keys and sync
-- ULID primary keys on every table, with branch_id and terminal_id on every sales row, so branch data merges without collisions.
+- ULID primary keys on every application table, with branch_id and terminal_id on every sales row, so branch data merges without collisions. Laravel's own queue, cache and session tables keep Laravel's keys, because they hold no business records and never sync. [D21]
 - Receipt numbers have the form T01-E1-000123: terminal, epoch, then a gapless counter. The counter is allocated inside the sale transaction from a locked row, so a failed sale leaves no gap. The epoch increases on every restore, server replacement or reinstall and is recorded as an event signed with the branch's own key (tamper-evident, not proof against root). [S19] The new epoch is one more than the highest found anywhere: the restored database, an epoch file in the backup repository, every counter journal and head office; trading resumes only when each enrolled counter has reported or support overrides. [S14] After a restore the counter also jumps forward by a safety margin of 1,000. A receipt number therefore can never repeat, even if the last minutes of sales were lost. [F1]
 - Bundle dedupe keys on the sale ULID plus a content hash, never on the receipt number. A bundle whose ULID matches but hash differs, or whose receipt tuple (branch, terminal, epoch, number) matches a different ULID, goes to a conflicts queue for review. It is never silently dropped. [F1]
 - Money is stored as integer kobo. Times are stored in UTC. The business day is assigned when a shift opens and every sale in that shift belongs to it, so a shift that runs past midnight is not split. Daily, weekly and monthly profit cut on that business day (default timezone Africa/Lagos). [F15]
@@ -709,7 +709,8 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
 | Counters | Windows touchscreens running Chrome in kiosk mode; keyboard and mouse as fallbacks [Q5] |
 | Receipts | Printed for every sale, with the receipt number as a Code 128 barcode [Q14, S9] |
 | Sync | One-way in the MVP; two-way straight after [R7, FU7] |
-| Code and CI | One GitHub monorepo, public until the owner makes it private, trunk-based; GitHub Actions CI on every pull request with a real PostgreSQL; images on GHCR [D1, D10] |
+| Code and CI | One GitHub monorepo, public until the owner makes it private, trunk-based; GitHub Actions CI on every pull request with a real PostgreSQL; images on GHCR [D1, D10, D22] |
+| Shop server stack | apps/shop-server/: PHP 8.5, Laravel 13, PostgreSQL 18, Inertia 3, React 19 in TypeScript, Vite 8 and Tailwind CSS 4, with pinned versions [D20] |
 | Spec and records | Markdown in Git; the JSON seed is the catalogue master; decisions in docs/decisions.md [R8, Q9] |
 | Owner remote view | Not in Core for now [S13] |
 
@@ -818,4 +819,5 @@ Every change below comes from the v1.4 review of 5 November 2026 or a decision a
 | Hardware (section 16) | The hardware list is locked | D17 |
 | Delivery (section 16) | No clickable prototype: gate G1 is the product owner's sign-off of the wireframes, and real cashiers are first timed on the counter in the shadow pilot. The product owner's computer is the staging and test machine, with no office mini-PC. The wireframes are signed off | D12, D16, D19 |
 | Reports (section 12) | The printed daily summary carries no profit or cost amounts | D18 |
+| Build (sections 4 and 19) | The shop server in apps/shop-server/ with pinned versions, TypeScript and Tailwind CSS; Laravel's own tables keep their keys; application code in the public repository | D20, D21, D22 |
 | Not adopted | An owner phone summary and read-only cloud view in Core | S13 |
