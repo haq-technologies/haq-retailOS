@@ -119,9 +119,12 @@ services:
       - db-data:/var/lib/postgresql:ro
       - pg-socket:/var/run/postgresql
       - ${BACKUP_DIR:-backup-repo}:/backup
+    # Never back up halfway through a migration: new tables would be in the copy without their grants.
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # One-shot, only for deploy/restore.sh (profile restore): pgBackRest writes the latest backup and every

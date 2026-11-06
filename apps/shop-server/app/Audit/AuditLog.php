@@ -11,6 +11,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Connection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 /**
  * Writes the audit trail (spec section 10) [F4, F10, S19].
@@ -70,6 +71,12 @@ final class AuditLog
 
     private function write(Connection $db, AuditEntry $entry, bool $spooled): string
     {
+        // subject_id is a ULID column, char(26): anything shorter would come back padded with spaces and
+        // no longer match its hash, so the chain would look tampered with. Refuse it here instead.
+        if ($entry->subjectId !== null && preg_match('/^[0-9a-z]{26}$/i', $entry->subjectId) !== 1) {
+            throw new InvalidArgumentException("An audit subject must be a ULID, not \"{$entry->subjectId}\".");
+        }
+
         $terminal = $entry->terminalId === null ? null : Terminal::on($db->getName())->findOrFail($entry->terminalId);
         $branchId = $terminal !== null
             ? $terminal->branch_id

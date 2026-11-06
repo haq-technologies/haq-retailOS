@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Audit\Verifier;
 use App\Organisation\BranchKey;
 use App\Sales\Finish;
 use Illuminate\Support\Facades\DB;
@@ -74,6 +75,8 @@ it('verifies a test restore the backup service made ready: row counts and every 
     $result = json_decode((string) file_get_contents($this->dir.'/verified-20261108-010000F.json'), true);
     expect($result['ok'])->toBeTrue()->and($result['counts'])->toHaveKeys(['sales', 'audit_log', 'epochs']);
     expect(DB::table('audit_log')->where('action', 'backup.restore_verified')->count())->toBe(1);
+    // Its audit entry verifies like every other (a label is not a ULID, so it is a value, not the subject).
+    expect(app(Verifier::class)->problems())->toBe([]);
 
     // Once verified, the same copy is not checked again.
     $this->artisan('backups:tick')->doesntExpectOutputToContain('verified')->assertSuccessful();
@@ -87,6 +90,7 @@ it('records a test restore it cannot check as failed, for the owner to see', fun
     $result = json_decode((string) file_get_contents($this->dir.'/verified-20261108-010000F.json'), true);
     expect($result['ok'])->toBeFalse()->and($result['problems'][0])->toContain('could not be checked');
     expect(DB::table('audit_log')->where('action', 'backup.restore_failed')->count())->toBe(1);
+    expect(app(Verifier::class)->problems())->toBe([]);
 });
 
 it('does nothing on a machine without the backup service', function () {

@@ -129,3 +129,10 @@ it('ingests the spool in order onto the branch chain, marked as spooled', functi
     expect($spool->count())->toBe(0);
     expect(app(Verifier::class)->problems())->toBe([]);
 });
+
+it('refuses an audit subject that is not a ULID, which would come back padded and break its hash', function () {
+    Shop::create();
+    expect(fn () => app(AuditLog::class)->record(new AuditEntry(action: 'test.subject', subjectType: 'backup', subjectId: '20261106-215828F')))
+        ->toThrow(InvalidArgumentException::class, 'must be a ULID');
+    expect(DB::table('audit_log')->where('action', 'test.subject')->count())->toBe(0);
+});
