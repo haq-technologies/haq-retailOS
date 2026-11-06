@@ -76,9 +76,12 @@ python3 -I tools/catalogue/verify_v11.py docs/archive/starter-catalogue-v1.json 
 
 # Check every Markdown file: table columns and relative links
 python3 -I tools/docs/check_markdown.py
+
+# The release signing dry run (a throwaway key; the updater's own checks)
+tools/release/dry-run.sh
 ```
 
-CI (.github/workflows/ci.yml) runs all three on every pull request. It rebuilds the catalogue and fails if the committed files differ, so after changing the build script, rerun the build and commit its outputs.
+CI (.github/workflows/ci.yml) runs all four on every pull request. It rebuilds the catalogue and fails if the committed files differ, so after changing the build script, rerun the build and commit its outputs.
 
 The shop server runs only in Docker; PHP, Composer and Node are never run on the Mac itself. Its commands are in [apps/shop-server/README.md](apps/shop-server/README.md). The everyday ones, from the repository root:
 

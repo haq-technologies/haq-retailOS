@@ -26,7 +26,7 @@ as_app() { compose exec -T -e PGPASSWORD="$(env_value RETAIL_APP_PASSWORD)" db p
 echo "Checking the shop server in $dir"
 
 # 1. Every service runs, and every one-shot job finished cleanly.
-for service in db app queue scheduler web; do
+for service in db backup app queue scheduler web; do
     if [ "$(compose ps --status running -q "$service" | wc -l)" -ge 1 ]; then pass "$service is running"; else fail "$service is not running"; fi
 done
 for job in roles migrate certificate; do

@@ -47,6 +47,9 @@ jobs:
       - name: Check Markdown tables and links
         run: python3 -I tools/docs/check_markdown.py
 
+      - name: Release signing dry run (a throwaway key; the updater's own checks)
+        run: tools/release/dry-run.sh
+
   shop-server-php:
     name: shop-server PHP
     runs-on: ubuntu-24.04

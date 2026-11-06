@@ -29,3 +29,6 @@ apps/shop-server/deploy/secrets/
 !.env.example
 *.pem
 *.key
+
+# Release folders made by tools/release/make-manifest.sh: published as GitHub releases, never committed.
+/release/
