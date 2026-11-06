@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Notice } from '@/components/notice';
+import { OwnerSettings } from '@/components/owner-settings';
 import { roleLabel, SignInPanel, type SignedIn, type Tile } from '@/components/sign-in-panel';
 
 interface Props {
@@ -90,6 +91,8 @@ export default function SignIn({ terminal, tiles, idleLockMinutes }: Props) {
                         </button>
                     </section>
                 )}
+
+                {session?.user.role === 'owner' && <OwnerSettings token={session.token} />}
             </main>
         </>
     );

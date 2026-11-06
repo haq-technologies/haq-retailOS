@@ -32,3 +32,6 @@ apps/shop-server/deploy/secrets/
 
 # Release folders made by tools/release/make-manifest.sh: published as GitHub releases, never committed.
 /release/
+
+# The release signing key never enters the repository (D36); only release-public.pem is committed.
+release-private.pem

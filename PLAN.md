@@ -209,7 +209,7 @@ Assumptions:
 | Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
-| The pilot shop's closing time, for the forgotten-shift rule: a shift still open four hours later closes as unclosed (S12) | Shop owner | Install (week 13) | None set: no shift closes by itself. It goes in the shop profile as shifts.closing_time |
+| The pilot shop's closing time, for the forgotten-shift rule: a shift still open four hours later closes as unclosed (S12) | Shop owner, in Shop settings on a back-office device (D37) | Install (week 13) | None set: no shift closes by itself |
 | The release signing key: run tools/release/new-key.sh on the offline signing computer and commit release-public.pem (D36) | Product owner | Before the G3 install (week 12) | None: servers refuse every update until it exists |
 | The pilot shop's discard limit: the most a cashier may discard of their own parked sale without a manager (F12) | Shop owner | Install (week 13) | ₦0: every cashier discard needs a manager (D33). It goes in the shop profile as parked.discard_limit_kobo |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
@@ -251,3 +251,4 @@ Assumptions:
 | 6 November 2026 | Backups, the weekly test restore and the restore script (D35) |
 | 6 November 2026 | The release manifest, offline signing and the updater (D36) |
 | 6 November 2026 | The G3 tooling: scripted sales, the rehearsal check and the procedure; Phase 3 built, G3 waits for the pilot hardware |
+| 6 November 2026 | The owner sets the closing time in Shop settings (D37) |
