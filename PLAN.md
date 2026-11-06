@@ -140,7 +140,7 @@ Phase 3, the counter and sale core, started on 6 November 2026 at the product ow
 
 - [x] Finish, with idempotency and a payload hash, gapless receipt numbers per terminal and epoch, signed epochs, payments, a pending print job, timings and the audit entry in one transaction; minimal shifts per drawer that set the business day and close themselves four hours after closing time; the multi-process crash and concurrency tests (Claude, 6 November 2026)
 - [x] Prices: set prices, the last price or median pre-fill, the usual range with sibling inheritance, the floor and its bound manager approval, the confirm count per shift and the retype check, all enforced again at Finish (Claude, 6 November 2026, D30)
-- [ ] Server printing: ESC/POS receipts with the Code 128 receipt number, pending print, DUPLICATE reprints, the drawer kick and the drawer log (Claude)
+- [x] Server printing: ESC/POS receipts to port 9100 laid out as the receipt wireframe, with the Code 128 receipt number; pending print and retry; DUPLICATE reprints, logged; the drawer kick with cash sales, No sale and Opened with key, all logged; printer status; a stand-in printer for development and staging (Claude, 6 November 2026, D31)
 - [ ] The counter's API: catalogue polling, new items with their guardrails, barcode learning and aliases (Claude)
 - [ ] The counter client: the local-first page, search, tiles, price pad, colour row, payments, hold and resume, Awaiting transfer, the counter journal and the speed timings (Claude)
 - [ ] Backups with pgBackRest, and the weekly test restore (Claude)
@@ -239,3 +239,4 @@ Assumptions:
 | 6 November 2026 | Gate G2 passed and Phase 2 closed (D27); the identity timings accepted (D28); back-office devices (D29); staging pulls from GHCR |
 | 6 November 2026 | Phase 3 starts at the product owner's go: the sale core (Finish, receipt numbers, epochs, minimal shifts) |
 | 6 November 2026 | Prices: pre-fill, the usual range, the floor and the price checks (D30) |
+| 6 November 2026 | Server printing, pending print, reprints and the drawer log (D31) |

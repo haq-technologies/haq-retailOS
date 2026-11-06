@@ -18,7 +18,7 @@ final readonly class Profile
     public const SCHEMA_VERSION = 1;
 
     /**
-     * @param  list<array{code: string, name: string, drawer: bool, kind: string}>  $terminals
+     * @param  list<array{code: string, name: string, drawer: bool, kind: string, printer_host: ?string, printer_port: ?int}>  $terminals
      * @param  array<string, array{value: mixed, locked: ?bool}>  $settings
      */
     public function __construct(
@@ -58,6 +58,9 @@ final readonly class Profile
             'terminals.*.name' => ['required', 'string', 'max:60'],
             'terminals.*.drawer' => ['required', 'boolean'],
             'terminals.*.kind' => ['sometimes', 'in:counter,back_office'],
+            'terminals.*.printer' => ['sometimes', 'nullable', 'array'],
+            'terminals.*.printer.host' => ['required_with:terminals.*.printer', 'string', 'max:64', 'regex:/^[A-Za-z0-9.-]+$/'],
+            'terminals.*.printer.port' => ['sometimes', 'integer', 'min:1', 'max:65535'],
             'receipt' => ['required', 'array'],
             'receipt.shop_name' => ['required'],
             'settings' => ['sometimes', 'array'],
@@ -108,12 +111,15 @@ final readonly class Profile
             throw new InvalidProfile(array_map(fn (string $key) => "The profile sets {$key}, which is not a setting this version knows.", $unknown));
         }
 
-        /** @var array{shop: array{name: string}, branch: array{code: string, name: string}, terminals: list<array{code: string, name: string, drawer: bool, kind?: string}>} $data */
+        /** @var array{shop: array{name: string}, branch: array{code: string, name: string}, terminals: list<array{code: string, name: string, drawer: bool, kind?: string, printer?: array{host: string, port?: int}|null}>} $data */
         return new self(
             shopName: $data['shop']['name'],
             branchCode: $data['branch']['code'],
             branchName: $data['branch']['name'],
-            terminals: array_map(fn (array $t) => ['code' => $t['code'], 'name' => $t['name'], 'drawer' => (bool) $t['drawer'], 'kind' => $t['kind'] ?? 'counter'], $data['terminals']),
+            terminals: array_map(fn (array $t) => [
+                'code' => $t['code'], 'name' => $t['name'], 'drawer' => (bool) $t['drawer'], 'kind' => $t['kind'] ?? 'counter',
+                'printer_host' => $t['printer']['host'] ?? null, 'printer_port' => isset($t['printer']) ? (int) ($t['printer']['port'] ?? 9100) : null,
+            ], $data['terminals']),
             settings: $settings,
         );
     }

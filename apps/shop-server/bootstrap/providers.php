@@ -7,6 +7,7 @@ use App\Catalogue\CatalogueServiceProvider;
 use App\Identity\IdentityServiceProvider;
 use App\Organisation\OrganisationServiceProvider;
 use App\Platform\PlatformServiceProvider;
+use App\Printing\PrintingServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Sales\SalesServiceProvider;
 use App\Settings\SettingsServiceProvider;
@@ -23,4 +24,5 @@ return [
     CatalogueServiceProvider::class,
     ShiftsServiceProvider::class,
     SalesServiceProvider::class,
+    PrintingServiceProvider::class,
 ];

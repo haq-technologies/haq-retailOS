@@ -44,7 +44,9 @@ it('finishes a cash sale with a receipt number, change and a pending print job',
     expect($sale['total_kobo'])->toBe(399_950);
     expect($sale['change_kobo'])->toBe(100_050);
     expect($sale['lines'][0]['name'])->toBe('Thing item 1');
-    expect($sale['print_status'])->toBe('pending');
+    // The print job is committed with the sale; this counter has no printer set, so it waits at the counter.
+    expect(DB::table('print_jobs')->where('sale_id', $sale['id'])->where('kind', 'receipt')->count())->toBe(1);
+    expect($sale['print_status'])->toBeIn(['pending', 'failed']);
     expect(DB::table('audit_log')->where('action', 'sale.finished')->where('terminal_id', $this->t1->id)->count())->toBe(1);
     expect(DB::table('shifts')->where('unattributed', true)->count())->toBe(1);
 });

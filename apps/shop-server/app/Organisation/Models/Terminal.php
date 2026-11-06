@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $code
  * @property string $name
  * @property string $kind counter or back_office
+ * @property string|null $printer_host
+ * @property int|null $printer_port
  * @property CarbonImmutable|null $enrolled_at
  * @property CarbonImmutable|null $deactivated_at
  */
