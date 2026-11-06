@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property string $id
  * @property string $category_id
- * @property list<array{key: string, label: string, type: string, list?: string}> $facets
+ * @property list<array{key: string, label: string, type: string, list?: string, allow_typed?: bool, default?: string, group_by?: string}> $facets
  * @property list<string> $drill_order
  * @property list<string> $name_order
  * @property array{combine: list<string>, blank_allowed: list<string>, exclude: array<string, list<string>>}|null $generator

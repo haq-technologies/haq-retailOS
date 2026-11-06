@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $brand_id
  * @property string|null $brand_text
  * @property string|null $free_text
+ * @property string|null $typed_category_word
  * @property string $item_code
  * @property string $display_name
  * @property string $search_text

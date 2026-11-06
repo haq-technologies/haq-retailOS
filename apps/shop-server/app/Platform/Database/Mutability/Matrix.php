@@ -45,8 +45,8 @@ final readonly class Matrix
             'cost_entries', 'cost_resolutions', 'item_prices',
             // Shifts, cash and counter events
             'shift_events', 'cash_events', 'paid_outs', 'parked_sale_events', 'sale_timings',
-            // Catalogue history: an undo is a new row
-            'merge_events',
+            // Catalogue history: an undo is a new row; the counters' feed of committed changes
+            'merge_events', 'catalogue_changes',
             // Histories: each change adds a row
             'credit_limit_history', 'settings_history',
             // Audit and numbering

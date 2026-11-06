@@ -93,6 +93,21 @@ final readonly class Shifts
         return $closed;
     }
 
+    /**
+     * The counter's open shift, if any.
+     *
+     * @return object{id: string, business_day: string, opening_float_kobo: ?int, unattributed: bool, opened_at: string}|null
+     */
+    public function current(Terminal $terminal): ?object
+    {
+        /** @var object{id: string, business_day: string, opening_float_kobo: ?int, unattributed: bool, opened_at: string}|null $shift */
+        $shift = DB::table('shifts')->join('drawers', 'drawers.id', '=', 'shifts.drawer_id')
+            ->where('drawers.terminal_id', $terminal->id)->where('shifts.status', 'open')
+            ->first(['shifts.id', 'shifts.business_day', 'shifts.opening_float_kobo', 'shifts.unattributed', 'shifts.opened_at']);
+
+        return $shift;
+    }
+
     /** A counter's drawer row, fitted or not; a counter with no fitted drawer still has one [F19, S21]. */
     private function drawerFor(Terminal $terminal): string
     {
