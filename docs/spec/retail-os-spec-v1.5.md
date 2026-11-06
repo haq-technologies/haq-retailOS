@@ -2,7 +2,7 @@
 
 HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026; signed off by the product owner on 6 November 2026 [D13].
 
-**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D23, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
+**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D24, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
 
 **How to read it.** A tag such as [F3] marks text that exists because of finding F3 of the engineering teardown (Appendix A). A tag such as [S4], [R3], [C1] or [D2] marks text set by the v1.4 review; Appendix E lists every such change, and docs/decisions.md records where each came from. [Q5] or [FU6] points to an answer in that log; FU1 to FU10 are the review's follow-up questions, not teardown findings.
 
@@ -66,7 +66,7 @@ Every feature and every engineering practice in this spec must serve at least on
 | Feature flags, policies, licence | No | No | No | Only unlocked settings | Yes |
 
 ## Identity and approvals
-- Cashier identity is a console setting. Mode A (default) is a name tile followed by a PIN of 4 to 6 digits, with no logout; after 3 minutes idle (a console setting, 0 turns it off) the counter returns to the name tiles, keeps the cart, and the PIN resumes it [S6]. Because the tile identifies the person first, PINs need not be unique and a collision never leaks. Mode B is one login per PC, and the console warns that per-cashier reports and audit are then less reliable. [F8]
+- Cashier identity is a console setting. Mode A (default) is a name tile followed by a PIN of 4 to 6 digits (exactly 6 for a manager or owner, whose one PIN also approves [D24]), with no logout; after 3 minutes idle (a console setting, 0 turns it off) the counter returns to the name tiles, keeps the cart, and the PIN resumes it [S6]. Because the tile identifies the person first, PINs need not be unique and a collision never leaks. Mode B is one login per PC, and the console warns that per-cashier reports and audit are then less reliable. [F8]
 - Acting-user token. The terminal login identifies the device only. Each PIN entry mints a short-lived signed token naming the acting user, bound to that terminal, and every request carries it. Policies, audit rows and cost redaction resolve the actor from the token, never from the shared session. A request already in flight during a PIN switch keeps the token it was sent with. [F9]
 - Manager approvals use a 6-digit PIN entered at the same screen after tapping the manager’s name tile. The approval is single-use and bound to the specific action (for example this return line or this price). The server binds it to the cart line, item and price when it is granted; the 60-second limit covers only grant to bind, and the approval then holds while the cart is open or parked. Changing that line voids it. It does not change the cashier's session. [S3] It is stored in an approvals record with the approver, terminal and action. [F9]
 - Throttling: five wrong PINs lock that user for a cooldown period. Separately, each terminal backs off exponentially after 10 wrong PINs in 10 minutes across all users, so guessing across names is also slowed. Lockouts and backoffs appear on the owner dashboard. PINs are stored with Argon2id. [F8]
@@ -156,6 +156,7 @@ Local interactions respond in under 100 ms. Search under 100 ms from the browser
 | returns | original_line_id, qty, reason_code, approved_by, refund_type (cash, store_credit, exchange), disposition (restock, defective_writeoff, supplier_claim). Cumulative returned qty may never exceed sold qty. [F7] |
 | voucher_entries | voucher_code, delta_kobo, ref (return or sale). A store-credit voucher is a printed code with an append-only balance ledger. It needs no customer record. [F7] |
 | approvals | action, subject_id (the client line ID for a price), item_id, price_kobo, approver_id, terminal_id, token_hash, issued_at, bound_at. Column-restricted: only bound_at may be set, once, from NULL. [F9, S3, S15] |
+| sign_in_attempts | user_id, terminal_id, kind (sign_in, approval), succeeded, attempted_at. Append-only. Lockouts and terminal backoff are read from it, and it feeds the owner dashboard. [F8] |
 | drawers | id, branch_id, terminal_id, label, fitted (true or false). A shift belongs to a drawer; a counter with no fitted drawer still has one for cash accountability. [F19, S21] |
 | shifts | drawer_id, opened_by, business_day, opening_float, status. Not updatable once closed (trigger). [F3, F19] |
 | shift_events | shift_id, type (open, handover_count, close_count, auto_close [S12]), cashier_id, counted_cash, expected_cash, variance. Append-only. [F19] |
@@ -184,7 +185,7 @@ Local interactions respond in under 100 ms. Search under 100 ms from the browser
 |---|---|---|
 | sales, sale_lines, payments, payment_allocations, returns, voucher_entries | Append-only | Corrections are new reversing or resolving rows |
 | cost_entries, cost_resolutions, item_prices | Append-only | The latest row wins |
-| shift_events, cash_events, paid_outs, parked_sale_events, sale_timings | Append-only | |
+| shift_events, cash_events, paid_outs, parked_sale_events, sale_timings, sign_in_attempts | Append-only | |
 | merge_events | Append-only | An undo is a new row |
 | credit_limit_history, settings_history | Append-only | Each change adds a row |
 | audit_log, audit_sensitive, audit_roots, epochs | Append-only | |

@@ -6,11 +6,11 @@ namespace App\Audit;
 
 use App\Organisation\Models\Branch;
 use App\Organisation\Models\Terminal;
+use App\Platform\Ulid;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Connection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Writes the audit trail (spec section 10) [F4, F10, S19].
@@ -104,7 +104,7 @@ final class AuditLog
         ];
         $row['hash'] = Hasher::hash($row);
 
-        $id = (string) Str::ulid();
+        $id = Ulid::generate();
         $db->table('audit_log')->insert([
             'id' => $id,
             ...$row,
@@ -114,7 +114,7 @@ final class AuditLog
 
         if ($sensitiveHash !== null) {
             $db->table('audit_sensitive')->insert([
-                'id' => (string) Str::ulid(),
+                'id' => Ulid::generate(),
                 'audit_id' => $id,
                 'before' => $entry->sensitiveBefore === null ? null : Hasher::canonical($entry->sensitiveBefore),
                 'after' => $entry->sensitiveAfter === null ? null : Hasher::canonical($entry->sensitiveAfter),

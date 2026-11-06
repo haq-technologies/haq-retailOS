@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use Inertia\Testing\AssertableInertia;
 
-it('renders the home page through Inertia with the version and the database', function () {
-    $this->get('/')
+it('renders the server page through Inertia with the version and the database', function () {
+    $this->get('/server')
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->component('home')
@@ -16,4 +16,8 @@ it('renders the home page through Inertia with the version and the database', fu
 
 it('answers the health check', function () {
     $this->get('/up')->assertOk();
+});
+
+it('sends a counter from the root to its name tiles', function () {
+    $this->get('/')->assertRedirect('/sign-in');
 });

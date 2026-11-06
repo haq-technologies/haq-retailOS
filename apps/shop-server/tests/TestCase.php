@@ -25,6 +25,9 @@ abstract class TestCase extends BaseTestCase
 
         // PHP tests never need the built frontend; the frontend has its own tests (Vitest).
         $this->withoutVite();
+
+        // A browser's same-origin fetch sends cookies (such as the counter's device cookie) with JSON requests.
+        $this->withCredentials();
     }
 
     /**
