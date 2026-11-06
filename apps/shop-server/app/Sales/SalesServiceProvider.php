@@ -25,6 +25,10 @@ class SalesServiceProvider extends ServiceProvider
             $registry->define(new Definition('pricing.below_range_confirms', 'Below-range confirms per shift before a manager is needed', 3, ['required', 'integer', 'min:0', 'max:50'], lockedByDefault: true, source: 'S5'));
             $registry->define(new Definition('pricing.retype_multiple', 'Retype a price above this many times the usual', 3, ['required', 'integer', 'min:2', 'max:20'], lockedByDefault: true, source: 'S5'));
 
+            // A cashier discards their own parked sale up to this amount; above it, a manager approves [F12].
+            // Until the owner sets it, every cashier discard needs a manager (D33).
+            $registry->define(new Definition('parked.discard_limit_kobo', 'Parked-sale discard limit for a cashier (kobo)', 0, ['required', 'integer', 'min:0'], lockedByDefault: true, source: 'F12'));
+
             return $registry;
         });
     }
