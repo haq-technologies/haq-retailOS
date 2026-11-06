@@ -20,6 +20,7 @@ const MODULES = [
     'Printing' => ['Platform', 'Organisation', 'Audit', 'Settings', 'Identity', 'Catalogue', 'Sales', 'Shifts'],
     'Counter' => ['Platform', 'Organisation', 'Audit', 'Settings', 'Identity', 'Catalogue', 'Cost', 'Shifts', 'Sales', 'Printing'],
     'Backups' => ['Platform', 'Organisation', 'Audit', 'Settings', 'Sales'],
+    'BackOffice' => ['Platform', 'Organisation', 'Audit', 'Settings', 'Identity'],
 ];
 
 foreach (MODULES as $module => $allowed) {

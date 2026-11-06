@@ -7,8 +7,9 @@
 #   sudo deploy/install.sh --profile shop.profile.json --name haq-server.local --ip 192.168.1.10 --backup-dir /mnt/backup
 #
 # Options: --dir (default /opt/haq-retail-os), --tag (image tag, default main), --http-port, --https-port,
-# --project (Compose project name), --backup-dir (the second internal disk's folder for backups). If the images are private, set GHCR_USER and GHCR_TOKEN (a token that
-# can only read packages) and the script signs in to GHCR first.
+# --project (Compose project name), --backup-dir (the second internal disk's folder for backups). If the
+# images are private, set GHCR_USER and GHCR_TOKEN (a classic token with only read:packages) on the first
+# run; they are kept in secrets/ for later runs and for the updater.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -104,11 +105,20 @@ fi
 
 compose() { docker compose --project-name "$project" --project-directory "$dir" -f "$dir/compose.yaml" --env-file "$dir/.env" "$@"; }
 
+# The shop's own read-only GHCR token lives in secrets/, readable by root only, where the updater finds it
+# too. Given once as GHCR_USER and GHCR_TOKEN, it is kept there; Docker is signed out after each pull, so
+# the token is never left in Docker's own settings.
 if [ -n "${GHCR_TOKEN:-}" ]; then
-    echo "$GHCR_TOKEN" | docker login ghcr.io -u "${GHCR_USER:?Set GHCR_USER too}" --password-stdin
+    printf '%s' "${GHCR_USER:?Set GHCR_USER too}" > "$dir/secrets/ghcr_user"
+    printf '%s' "$GHCR_TOKEN" > "$dir/secrets/ghcr_token"
+    chmod 600 "$dir/secrets/ghcr_user" "$dir/secrets/ghcr_token"
 fi
 if [ "${SKIP_PULL:-0}" != "1" ]; then
+    if [ -f "$dir/secrets/ghcr_token" ]; then
+        docker login ghcr.io -u "$(cat "$dir/secrets/ghcr_user")" --password-stdin < "$dir/secrets/ghcr_token" >/dev/null
+    fi
     compose pull
+    if [ -f "$dir/secrets/ghcr_token" ]; then docker logout ghcr.io >/dev/null; fi
 fi
 compose up -d --wait
 

@@ -2,7 +2,7 @@
 
 HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026; signed off by the product owner on 6 November 2026 [D13].
 
-**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D36, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
+**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D37, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
 
 **How to read it.** A tag such as [F3] marks text that exists because of finding F3 of the engineering teardown (Appendix A). A tag such as [S4], [R3], [C1] or [D2] marks text set by the v1.4 review; Appendix E lists every such change, and docs/decisions.md records where each came from. [Q5] or [FU6] points to an answer in that log; FU1 to FU10 are the review's follow-up questions, not teardown findings.
 
@@ -354,7 +354,7 @@ Discounts, promotions and tax are computed per line in kobo and rounded half awa
 - Drawer handover: when the drawer holder changes (or at a manager-set interval), the outgoing holder does a blind count, then sees the variance for their own segment. The incoming holder starts from that counted amount. A PIN switch alone does not trigger a count. Handover counts are shift_events. [F19, S11]
 - Expected cash = float + cash sales + cash debt collections + top-ups + cash received as fees on cash-out services − cash refunds − paid-outs − drops to the safe − cash handed out on cash-out services. A cash-out service (customer pays by transfer or POS, cashier hands over cash) is recorded in cash_events so the electronic receipt and the cash outflow match. [F19]
 - Close: a blind count. The cashier counts first and then sees the variance.
-- Forgotten close: a shift still open 4 hours after the shop's closing time (a setting) closes as unclosed, not counted, and is flagged; the next sale opens a new shift on the new business day. [S12]
+- Forgotten close: a shift still open 4 hours after the shop's closing time (a setting the owner changes in Shop settings on a back-office device) closes as unclosed, not counted, and is flagged; the next sale opens a new shift on the new business day. [S12, D37]
 - Transfers and POS payments are totalled by method. Transfers can be matched to an imported bank statement (section 7). POS payments are not verified against a bank.
 - A variance above your threshold, at any handover or at close, goes on the owner’s flag list. Closing prints a Z-report per drawer, with each drawer holder's segment [S11] and the audit root hash, and a closed shift is locked by a trigger.
 ## Paid-outs, drops and top-ups
@@ -377,7 +377,7 @@ After any restore or server replacement, the system starts a new epoch, and the 
 ## Console (a separate admin app, only you and your team)
 - Shop profile: owner, branches, tier, installed version, last sync, last backup.
 - Feature flags: credit, stock tracking, track colour in stock, store-credit vouchers, PIN mode, cashier item creation, return window, below-cost alerts, price floor, tax line, transfer-confirmation tick, strict price-approval mode, catalogue contribution, manager sees cost, standby kit, manager may enter cost [FU6], cash drawer per counter [S21], price fill fallback (last price or median) [S4], idle lock minutes [S6], shared drawer [S11]. [F22]
-- Policies: variance threshold, paid-out and discard approval limits, price floor percentage and the below-range confirm count per shift, alias activation count, credit defaults, receipt text (the header and footer, with a branch override for the address and phone [D14]), colours list, business day and timezone, and the closing time used by the forgotten-shift rule. [F11, F13, S12]
+- Policies: variance threshold, paid-out and discard approval limits, price floor percentage and the below-range confirm count per shift, alias activation count, credit defaults, receipt text (the header and footer, with a branch override for the address and phone [D14]), colours list, business day and timezone, and the closing time used by the forgotten-shift rule, which the owner may change by default. [F11, F13, S12, D37]
 - Lock control: per setting, you decide whether the owner may edit it.
 - Delivery: a signed config bundle, applied at install and pushed automatically when internet is available. Every change is versioned and audited.
 - Updates are pulled by the shop server from GitHub whenever a connection is present; config pushes are allowed with owner consent recorded in the contract. Every update and push is audited. [D2]

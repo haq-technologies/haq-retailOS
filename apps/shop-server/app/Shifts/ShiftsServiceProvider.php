@@ -18,10 +18,11 @@ class ShiftsServiceProvider extends ServiceProvider
     {
         $this->app->extend(Registry::class, function (Registry $registry): Registry {
             // The shop's closing time (HH:MM, in the business timezone): a shift still open four hours
-            // later closes as unclosed [S12]. The shop owner gives it at install; until then nothing
-            // closes by itself.
-            $registry->define(new Definition('shifts.closing_time', 'Closing time (HH:MM)', null,
-                ['nullable', 'string', 'regex:/^([01][0-9]|2[0-3]):[0-5][0-9]$/'], lockedByDefault: true, source: 'S12'));
+            // later closes as unclosed [S12]. The owner sets it in Shop settings (D37); until then
+            // nothing closes by itself.
+            $registry->define(new Definition('shifts.closing_time', 'Closing time', null,
+                ['nullable', 'string', 'regex:/^([01][0-9]|2[0-3]):[0-5][0-9]$/'], lockedByDefault: false, source: 'S12, D37',
+                ownerFacing: true, help: 'A shift still open 4 hours after closing time closes by itself, marked as not counted. Leave it empty to turn this off.'));
 
             return $registry;
         });
