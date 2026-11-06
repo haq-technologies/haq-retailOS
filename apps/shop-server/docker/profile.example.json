@@ -11,12 +11,20 @@
         {
             "code": "T01",
             "name": "Counter 1",
-            "drawer": true
+            "drawer": true,
+            "kind": "counter"
         },
         {
             "code": "T02",
             "name": "Counter 2",
-            "drawer": false
+            "drawer": false,
+            "kind": "counter"
+        },
+        {
+            "code": "D01",
+            "name": "Owner's phone",
+            "drawer": false,
+            "kind": "back_office"
         }
     ],
     "receipt": {

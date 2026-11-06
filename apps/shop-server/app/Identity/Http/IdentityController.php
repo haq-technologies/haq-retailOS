@@ -49,7 +49,7 @@ final class IdentityController
         $terminal = $this->terminal($request);
 
         return Page::render('identity/sign-in', [
-            'terminal' => ['code' => $terminal->code, 'name' => $terminal->name],
+            'terminal' => ['code' => $terminal->code, 'name' => $terminal->name, 'canSell' => $terminal->canSell()],
             'tiles' => User::query()->active()->whereNotNull('pin_hash')->orderBy('name')->get()
                 ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'role' => $u->role->value, 'pinLength' => $u->role->pinLength()])
                 ->all(),

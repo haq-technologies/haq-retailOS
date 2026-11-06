@@ -2,7 +2,7 @@
 
 The HAQ Retail OS server that runs in each branch, on the shop's own network: Laravel 13 and PostgreSQL 18, with the counter and the back office in React through Inertia. The spec is [docs/spec/retail-os-spec-v1.5.md](../../docs/spec/retail-os-spec-v1.5.md), and the build order is in [PLAN.md](../../PLAN.md).
 
-**Status:** Phase 2, the foundation, is built, and gate G2's criteria are met. The counter and selling come in Phase 3.
+**Status:** Phase 2, the foundation, is closed (gate G2 passed, D27). The counter and selling come in Phase 3.
 
 ## Run it on the development computer
 
@@ -46,6 +46,8 @@ docker compose exec app php artisan shop:enrol-terminal T01                # a o
 ```
 
 A cashier's or storekeeper's PIN is 4 to 6 digits; a manager's or owner's is 6, because it also approves (D24).
+
+The owner's phone or laptop reaches the back office as a back-office device (D29): list it in the profile with a code such as D01 and `"kind": "back_office"` (or use `shop:make-profile --back-office=1`), then enrol it like a counter. It signs in the same way and never sells.
 
 ## Install a shop's server
 

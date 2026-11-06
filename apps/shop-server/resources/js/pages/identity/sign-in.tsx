@@ -12,7 +12,7 @@ interface Tile {
 }
 
 interface Props {
-    terminal: { code: string; name: string };
+    terminal: { code: string; name: string; canSell: boolean };
     tiles: Tile[];
     idleLockMinutes: number;
 }
@@ -138,7 +138,11 @@ export default function SignIn({ terminal, tiles, idleLockMinutes }: Props) {
                         <p className="text-2xl">
                             {session.user.name} <span className="text-text-secondary">· {roleLabel(session.user.role)}</span>
                         </p>
-                        <p className="text-lg text-text-secondary">The counter arrives in Phase 3. There is nothing to sell yet.</p>
+                        <p className="text-lg text-text-secondary">
+                            {terminal.canSell
+                                ? 'The counter arrives in Phase 3. There is nothing to sell yet.'
+                                : 'This device is for the back office. It cannot sell.'}
+                        </p>
                         <button
                             type="button"
                             className="min-h-touch self-start rounded-xl border-2 border-action px-6 text-lg font-semibold text-action-text"

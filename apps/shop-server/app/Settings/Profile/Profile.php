@@ -18,7 +18,7 @@ final readonly class Profile
     public const SCHEMA_VERSION = 1;
 
     /**
-     * @param  list<array{code: string, name: string, drawer: bool}>  $terminals
+     * @param  list<array{code: string, name: string, drawer: bool, kind: string}>  $terminals
      * @param  array<string, array{value: mixed, locked: ?bool}>  $settings
      */
     public function __construct(
@@ -54,18 +54,39 @@ final readonly class Profile
             'branch.code' => ['required', 'string', 'regex:/^[A-Z0-9]{2,8}$/'],
             'branch.name' => ['required', 'string', 'max:120'],
             'terminals' => ['required', 'array', 'min:1', 'max:20'],
-            'terminals.*.code' => ['required', 'string', 'regex:/^T[0-9]{2}$/', 'distinct'],
+            'terminals.*.code' => ['required', 'string', 'regex:/^[TD][0-9]{2}$/', 'distinct'],
             'terminals.*.name' => ['required', 'string', 'max:60'],
             'terminals.*.drawer' => ['required', 'boolean'],
+            'terminals.*.kind' => ['sometimes', 'in:counter,back_office'],
             'receipt' => ['required', 'array'],
             'receipt.shop_name' => ['required'],
             'settings' => ['sometimes', 'array'],
         ], [
             'branch.code.regex' => 'The branch code must be 2 to 8 capital letters or digits, such as B01.',
-            'terminals.*.code.regex' => 'Each terminal code must be T and two digits, such as T01: it starts every receipt number.',
+            'terminals.*.code.regex' => 'Each counter\'s code must be T and two digits, such as T01 (it starts every receipt number); a back-office device\'s is D and two digits, such as D01.',
         ]);
         if ($validator->fails()) {
             throw new InvalidProfile(array_values($validator->errors()->all()));
+        }
+
+        // A counter is T01 and may have a drawer; a back-office device is D01, has no drawer and never sells (D29).
+        $deviceErrors = [];
+        /** @var list<array{code: string, drawer: bool, kind?: string}> $listed */
+        $listed = $data['terminals'];
+        foreach ($listed as $terminal) {
+            $kind = $terminal['kind'] ?? 'counter';
+            if ($kind === 'counter' && ! str_starts_with($terminal['code'], 'T')) {
+                $deviceErrors[] = "{$terminal['code']} is a counter, so its code starts with T, such as T01.";
+            }
+            if ($kind === 'back_office' && ! str_starts_with($terminal['code'], 'D')) {
+                $deviceErrors[] = "{$terminal['code']} is a back-office device, so its code starts with D, such as D01.";
+            }
+            if ($kind === 'back_office' && (bool) $terminal['drawer']) {
+                $deviceErrors[] = "{$terminal['code']} is a back-office device, so it has no cash drawer.";
+            }
+        }
+        if ($deviceErrors !== []) {
+            throw new InvalidProfile($deviceErrors);
         }
 
         $settings = [];
@@ -87,12 +108,12 @@ final readonly class Profile
             throw new InvalidProfile(array_map(fn (string $key) => "The profile sets {$key}, which is not a setting this version knows.", $unknown));
         }
 
-        /** @var array{shop: array{name: string}, branch: array{code: string, name: string}, terminals: list<array{code: string, name: string, drawer: bool}>} $data */
+        /** @var array{shop: array{name: string}, branch: array{code: string, name: string}, terminals: list<array{code: string, name: string, drawer: bool, kind?: string}>} $data */
         return new self(
             shopName: $data['shop']['name'],
             branchCode: $data['branch']['code'],
             branchName: $data['branch']['name'],
-            terminals: array_map(fn (array $t) => ['code' => $t['code'], 'name' => $t['name'], 'drawer' => (bool) $t['drawer']], $data['terminals']),
+            terminals: array_map(fn (array $t) => ['code' => $t['code'], 'name' => $t['name'], 'drawer' => (bool) $t['drawer'], 'kind' => $t['kind'] ?? 'counter'], $data['terminals']),
             settings: $settings,
         );
     }
@@ -100,7 +121,7 @@ final readonly class Profile
     /**
      * The JSON document a new profile starts as.
      *
-     * @param  list<array{code: string, name: string, drawer: bool}>  $terminals
+     * @param  list<array{code: string, name: string, drawer: bool, kind?: string}>  $terminals
      * @param  array<string, mixed>  $receipt
      * @param  array<string, mixed>  $settings
      * @return array<string, mixed>

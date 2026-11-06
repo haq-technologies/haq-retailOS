@@ -63,6 +63,6 @@ it('stops the old PC when a counter is enrolled again', function () {
 });
 
 it('prints a one-time code for the installer', function () {
-    $this->artisan('shop:enrol-terminal', ['code' => 'T01'])->expectsOutputToContain('open /enrol in Chrome')->assertSuccessful();
+    $this->artisan('shop:enrol-terminal', ['code' => 'T01'])->expectsOutputToContain('open /enrol in the browser')->assertSuccessful();
     $this->artisan('shop:enrol-terminal', ['code' => 'T09'])->assertFailed();
 });
