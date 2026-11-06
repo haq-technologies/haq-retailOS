@@ -152,6 +152,98 @@ jobs:
       - name: Build
         run: npm run build
 
+  shop-server-browser:
+    name: shop-server browser
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/shop-server
+    services:
+      postgres:
+        image: postgres:18.6-trixie
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres-ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      DB_DATABASE: retail_e2e
+      DB_USERNAME: retail_app
+      DB_PASSWORD: app-ci
+      DB_OWNER_USERNAME: retail_owner
+      DB_OWNER_PASSWORD: owner-ci
+      # The built assets, never a Vite dev server.
+      VITE_HOT_FILE: /tmp/no-hot-file
+      APP_URL: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create the three database roles and the browser-test database
+        working-directory: .
+        env:
+          PGHOST: 127.0.0.1
+          PGPASSWORD: postgres-ci
+          POSTGRES_USER: postgres
+          RETAIL_OWNER_PASSWORD: owner-ci
+          RETAIL_APP_PASSWORD: app-ci
+          RETAIL_REPORTING_PASSWORD: reporting-ci
+          RETAIL_DATABASES: retail_e2e
+        run: apps/shop-server/docker/postgres/init/01-roles.sh
+
+      - uses: shivammathur/setup-php@2.40.0
+        with:
+          php-version: "8.5"
+          extensions: pdo_pgsql, intl, pcntl, bcmath
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ hashFiles('apps/shop-server/composer.lock') }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26.13.0"
+          cache: npm
+          cache-dependency-path: apps/shop-server/package-lock.json
+
+      - name: Install and build
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          cp .env.example .env
+          php artisan key:generate
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+
+      - name: Start a fresh test shop (retail_e2e) with the print queue and a stand-in printer
+        run: |
+          nohup sh e2e/serve.sh > storage/logs/e2e-server.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8000/up >/dev/null 2>&1 && exit 0
+            sleep 2
+          done
+          cat storage/logs/e2e-server.log
+          exit 1
+
+      - name: Playwright, the counter in Chromium
+        env:
+          BASE_URL: http://localhost:8000
+        run: npx playwright test -c e2e/playwright.config.ts
+
+      - name: The test server's log, on failure
+        if: failure()
+        run: tail -n 200 storage/logs/e2e-server.log storage/logs/e2e-queue.log storage/logs/laravel.log || true
+
   shop-server-image:
     name: shop-server image ${{ matrix.target }}
     runs-on: ubuntu-24.04
@@ -188,7 +280,7 @@ jobs:
   publish-images:
     name: publish images to GHCR
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [docs, shop-server-php, shop-server-js, shop-server-image]
+    needs: [docs, shop-server-php, shop-server-js, shop-server-browser, shop-server-image]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:

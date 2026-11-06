@@ -91,6 +91,7 @@ docker compose run --rm migrate            # migrate as the owner role, then app
 docker compose run --rm test               # Pest: architecture and feature tests, against retail_test
 docker compose run --rm test test:concurrency   # the multi-process suite, against retail_concurrency
 docker compose exec vite npm run lint      # ESLint (also: npm run types, npm test)
+apps/shop-server/e2e/run.sh                # Playwright: the counter in Chromium, against a fresh test shop in retail_e2e
 ```
 
 CI also runs these on every pull request, with PostgreSQL 18, and builds every image (dev, app, web, db); on each merge to main it publishes app, web and db to GHCR. `apps/shop-server/deploy/staging.sh` installs the latest images on this Mac at https://localhost:8443, as a shop would (D16, D26).

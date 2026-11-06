@@ -23,7 +23,7 @@ if [ -n "${POSTGRES_PASSWORD_FILE:-}" ] && [ -z "${PGPASSWORD:-}" ]; then
     export PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")"
 fi
 : "${RETAIL_OWNER_PASSWORD:?}" "${RETAIL_APP_PASSWORD:?}" "${RETAIL_REPORTING_PASSWORD:?}"
-databases="${RETAIL_DATABASES:-retail retail_test retail_concurrency}"
+databases="${RETAIL_DATABASES:-retail retail_test retail_concurrency retail_e2e}"
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres \
     -v owner_password="$RETAIL_OWNER_PASSWORD" \

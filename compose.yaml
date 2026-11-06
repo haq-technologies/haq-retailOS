@@ -74,6 +74,39 @@ services:
       <<: *owner-env
       DB_DATABASE: retail_test
 
+  # Browser tests (Playwright, spec section 14): `docker compose run --rm e2e` builds a fresh shop in the
+  # retail_e2e database, serves it with the built assets (run `docker compose exec vite npm run build`
+  # first), and drives the counter in Chromium. Never the development database.
+  e2e-server:
+    <<: *php
+    profiles: [e2e]
+    restart: "no"
+    environment:
+      <<: *owner-env
+      DB_DATABASE: retail_e2e
+      VITE_HOT_FILE: /tmp/no-hot-file
+      APP_URL: http://e2e-server:8000
+    command: ["sh", "e2e/serve.sh"]
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8000/up') === false ? 1 : 0);"]
+      interval: 2s
+      timeout: 5s
+      retries: 90
+
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.65.0-noble
+    profiles: [e2e]
+    restart: "no"
+    working_dir: /app
+    volumes:
+      - ./apps/shop-server:/app
+    environment:
+      BASE_URL: http://e2e-server:8000
+    depends_on:
+      e2e-server:
+        condition: service_healthy
+    command: ["npx", "playwright", "test", "-c", "e2e/playwright.config.ts"]
+
   # A stand-in receipt printer until the pilot's printer arrives: it writes each receipt as text to
   # apps/shop-server/storage/logs/fake-printer.log. The example profile points the counters at it.
   printer:

@@ -65,7 +65,7 @@ final class ParkedController
         try {
             return $action();
         } catch (ApprovalNeeded $e) {
-            return response()->json(['message' => $e->getMessage(), 'approval' => ['action' => $e->action->value, 'subject_id' => $e->subjectId]], 403);
+            return response()->json(['message' => $e->getMessage(), 'approval' => $e->toArray()], 403);
         } catch (SaleRefused $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }

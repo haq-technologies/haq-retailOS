@@ -6,7 +6,9 @@ namespace App\Sales\Http;
 
 use App\Identity\Models\User;
 use App\Organisation\Models\Terminal;
+use App\Sales\ApprovalNeeded;
 use App\Sales\Finish;
+use App\Sales\PriceNeedsCheck;
 use App\Sales\SaleChanged;
 use App\Sales\SaleRefused;
 use App\Sales\SaleRequest;
@@ -30,6 +32,10 @@ final class SaleController
             $sale = $finish->finish($terminal, $cashier, SaleRequest::fromArray($body));
         } catch (SaleChanged $e) {
             return response()->json(['message' => $e->getMessage()], 409);
+        } catch (ApprovalNeeded $e) {
+            return response()->json(['message' => $e->getMessage(), 'approval' => $e->toArray()], 422);
+        } catch (PriceNeedsCheck $e) {
+            return response()->json(['message' => $e->getMessage(), 'check' => ['client_line_id' => $e->clientLineId, 'kind' => $e->check]], 422);
         } catch (SaleRefused $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }

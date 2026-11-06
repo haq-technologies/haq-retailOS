@@ -73,7 +73,7 @@ COPY --from=assets --chown=www-data:www-data /app/public/build /app/public/build
 COPY docs/catalogue/starter-catalogue-v1.1.json /catalogue/starter-catalogue-v1.1.json
 
 RUN set -eux; \
-    rm -rf /app/tests /app/docker/postgres /app/node_modules /app/.env /app/public/hot; \
+    rm -rf /app/tests /app/e2e /app/docker/postgres /app/node_modules /app/.env /app/public/hot; \
     mkdir -p /app/storage/app /app/storage/framework/cache/data /app/storage/framework/sessions /app/storage/framework/views /app/storage/logs /tls; \
     chown -R www-data:www-data /app/storage /app/bootstrap/cache /tls
 

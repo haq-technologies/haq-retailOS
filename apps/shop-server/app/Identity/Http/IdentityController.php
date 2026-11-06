@@ -39,7 +39,8 @@ final class IdentityController
             return back()->withErrors(['code' => 'That code is not valid, or it has expired. Ask HAQ support for a new one.']);
         }
 
-        return redirect()->route('identity.tiles')->withCookie(cookie(
+        // Home: the counter page on a counter (spec section 4).
+        return redirect('/')->withCookie(cookie(
             Enrolment::COOKIE, $cookie, minutes: 60 * 24 * 365 * 10, secure: $request->isSecure(), httpOnly: true, sameSite: 'strict',
         ));
     }
