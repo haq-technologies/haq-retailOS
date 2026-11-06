@@ -17,6 +17,9 @@ return [
 
     'name' => env('APP_NAME', 'HAQ Retail OS'),
 
+    // Only for the browser tests: a hot file that does not exist, so pages use the built assets.
+    'vite_hot_file' => env('VITE_HOT_FILE'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Version

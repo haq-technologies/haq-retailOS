@@ -10,10 +10,13 @@ use App\Catalogue\NewItems;
 use App\Counter\Feed;
 use App\Identity\Models\User;
 use App\Organisation\Models\Terminal;
+use App\Platform\Http\Page;
+use App\Settings\Settings;
 use App\Shifts\Shifts;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Response;
 use LogicException;
 
 /**
@@ -33,6 +36,53 @@ final class CounterController
         $after = $request->query('after');
 
         return response()->json($feed->changes(is_numeric($after) ? max(0, (int) $after) : 0));
+    }
+
+    public function shapes(Feed $feed): JsonResponse
+    {
+        return response()->json(['shapes' => $feed->shapes()]);
+    }
+
+    /** The first sale of a generated shape creates its item [R2]. */
+    public function sellShape(Request $request, Feed $feed): JsonResponse
+    {
+        $data = $request->validate(['category_id' => ['required', 'string', 'size:26'], 'facets' => ['required', 'array'], 'facets.*' => ['string', 'size:26']]);
+        /** @var array<string, string> $facets */
+        $facets = $data['facets'];
+        $item = $feed->itemForShape((string) $data['category_id'], $facets);
+        if ($item === null) {
+            return response()->json(['message' => 'That is not one of this category\'s items.'], 422);
+        }
+
+        return response()->json([
+            'item' => DB::table('items')->where('id', $item->id)->first(['id', 'category_id', 'brand_id', 'item_code', 'display_name', 'search_text', 'status']),
+            'facets' => DB::table('item_facets')->where('item_id', $item->id)->get(['id', 'item_id', 'facet_key', 'picklist_value_id', 'text_value']),
+            'prices' => $feed->prices([$item->id]),
+        ]);
+    }
+
+    /**
+     * The counter page: one Inertia page that boots the local-first client (spec section 4) [R4].
+     */
+    public function page(Request $request, Settings $settings): Response
+    {
+        $terminal = $this->terminal($request);
+        $colours = DB::table('picklist_values')->where('list', 'colours')->where('status', 'active')->orderBy('position')->orderBy('name')->pluck('name')->all();
+
+        return Page::render('counter/index', [
+            'terminal' => ['code' => $terminal->code, 'name' => $terminal->name, 'canSell' => $terminal->canSell()],
+            'tiles' => User::query()->active()->whereNotNull('pin_hash')->orderBy('name')->get()
+                ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'role' => $u->role->value, 'pinLength' => $u->role->pinLength()])
+                ->all(),
+            'idleLockMinutes' => $settings->get('identity.idle_lock_minutes'),
+            'settings' => [
+                'transferAlertTick' => $settings->get('payments.transfer_alert_tick') !== false,
+                'floorPercent' => $settings->get('pricing.floor_percent'),
+                'retypeMultiple' => $settings->get('pricing.retype_multiple'),
+                'colours' => $colours,
+                'cashierItemCreation' => $settings->get('catalogue.cashier_item_creation') === 'request_only' ? 'request_only' : 'on',
+            ],
+        ]);
     }
 
     public function prices(Request $request, Feed $feed): JsonResponse

@@ -49,7 +49,7 @@ it('enrols a counter with a code that works once', function () {
     $enrolment = app(Enrolment::class);
     $code = $enrolment->issueCode($t1);
 
-    $this->post('/enrol', ['code' => $code])->assertRedirect('/sign-in')->assertCookie(Enrolment::COOKIE);
+    $this->post('/enrol', ['code' => $code])->assertRedirect('/')->assertCookie(Enrolment::COOKIE);
     $this->post('/enrol', ['code' => $code])->assertSessionHasErrors('code');
 });
 

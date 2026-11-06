@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace App\Counter;
 
+use App\Catalogue\Items;
+use App\Catalogue\Models\Category;
+use App\Catalogue\Models\CategoryTemplate;
 use App\Catalogue\Models\Item;
+use App\Catalogue\Shapes;
 use App\Sales\Pricing;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -32,7 +37,7 @@ final readonly class Feed
 
     private const JSON = ['aliases', 'facets', 'drill_order', 'name_order', 'shown_first_in', 'categories'];
 
-    public function __construct(private Pricing $pricing) {}
+    public function __construct(private Pricing $pricing, private Items $items) {}
 
     /** The seq every committed change up to now has. */
     public static function seqNow(): int
@@ -120,22 +125,84 @@ final readonly class Feed
     }
 
     /**
-     * Price pre-fill and usual range for each item, retail and wholesale (spec section 7) [S4]. No cost.
+     * Price pre-fill and usual range for each item, retail and wholesale (spec section 7) [S4], and its
+     * sales in the last 30 days, which search ranks by [S10]. No cost.
      *
      * @param  list<string>  $itemIds
-     * @return list<array{item_id: string, retail: array<string, mixed>, wholesale: array<string, mixed>}>
+     * @return list<array{item_id: string, retail: array<string, mixed>, wholesale: array<string, mixed>, sold_30d: int}>
      */
     public function prices(array $itemIds): array
     {
         if ($itemIds === []) {
             return [];
         }
+        $since = CarbonImmutable::now()->subDays(30)->format('Y-m-d H:i:s.uP');
+        /** @var array<string, int|string> $sold */
+        $sold = DB::table('sale_lines')->join('sales', 'sales.id', '=', 'sale_lines.sale_id')
+            ->whereIn('sale_lines.item_id', $itemIds)->where('sales.recorded_at', '>=', $since)
+            ->groupBy('sale_lines.item_id')->selectRaw('sale_lines.item_id, sum(sale_lines.qty) AS sold')->pluck('sold', 'item_id')->all();
         $out = [];
         foreach (Item::query()->whereIn('id', $itemIds)->orderBy('id')->get() as $item) {
-            $out[] = ['item_id' => $item->id, 'retail' => $this->pricing->info($item, 'retail'), 'wholesale' => $this->pricing->info($item, 'wholesale')];
+            $out[] = [
+                'item_id' => $item->id, 'retail' => $this->pricing->info($item, 'retail'), 'wholesale' => $this->pricing->info($item, 'wholesale'),
+                'sold_30d' => (int) ($sold[$item->id] ?? 0),
+            ];
         }
 
         return $out;
+    }
+
+    /**
+     * The generated shapes (spec section 6) [R2]: combinations a category's generator offers, searchable and
+     * on the tiles before anyone has sold them. Selling one creates its item.
+     *
+     * @return list<array{id: string, category_id: string, facets: array<string, string>, display_name: string}>
+     */
+    public function shapes(): array
+    {
+        $out = [];
+        foreach (CategoryTemplate::query()->whereNotNull('generator')->orderBy('category_id')->get() as $template) {
+            $category = Category::query()->find($template->category_id);
+            if ($category === null || ! $category->sellable) {
+                continue;
+            }
+            foreach (Shapes::for($template) as $shape) {
+                $facets = array_filter($shape, fn (?string $v) => $v !== null);
+                ksort($facets);
+                $out[] = [
+                    'id' => 'shape:'.$category->id.':'.implode(',', array_map(fn (string $k, string $v) => "{$k}={$v}", array_keys($facets), $facets)),
+                    'category_id' => $category->id,
+                    'facets' => $facets,
+                    'display_name' => $this->items->previewName($category, $facets, null, null, null),
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Creates the item for a generated shape on its first sale, or finds it.
+     *
+     * @param  array<string, string>  $facets
+     */
+    public function itemForShape(string $categoryId, array $facets): ?Item
+    {
+        $template = CategoryTemplate::query()->where('category_id', $categoryId)->first();
+        $category = Category::query()->find($categoryId);
+        if ($template === null || $category === null) {
+            return null;
+        }
+        ksort($facets);
+        foreach (Shapes::for($template) as $shape) {
+            $wanted = array_filter($shape, fn (?string $v) => $v !== null);
+            ksort($wanted);
+            if ($wanted === $facets) {
+                return $this->items->findOrCreate($category, $facets, source: 'generated');
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -65,11 +65,11 @@ class PriceRules
                     $flags['outside'] = 'above';
                     if ($price > $range['high'] * $retypeMultiple) {
                         if (! $line['retyped']) {
-                            throw new SaleRefused("{$item->display_name} at ".Money::naira($price).' is more than three times the usual price. Retype the price to make sure.');
+                            throw new PriceNeedsCheck("{$item->display_name} at ".Money::naira($price).' is more than three times the usual price. Retype the price to make sure.', $line['client_line_id'], 'retype');
                         }
                         $flags['retyped'] = true;
                     } elseif (! $line['confirmed_outside_range']) {
-                        throw new SaleRefused("{$usual}. Confirm ".Money::naira($price)." for {$item->display_name}.");
+                        throw new PriceNeedsCheck("{$usual}. Confirm ".Money::naira($price)." for {$item->display_name}.", $line['client_line_id'], 'confirm');
                     }
                     $flags['confirmed'] = true;
                 } elseif ($price < $range['low']) {
@@ -83,7 +83,7 @@ class PriceRules
                         $approvalId = $this->bind($terminal, $line, ApprovalAction::BelowRangeConfirmLimit,
                             'That is more prices below the usual range than one shift allows. A manager must approve this one.');
                     } elseif (! $line['confirmed_outside_range']) {
-                        throw new SaleRefused("{$usual}. Sell {$item->display_name} at ".Money::naira($price).'?');
+                        throw new PriceNeedsCheck("{$usual}. Sell {$item->display_name} at ".Money::naira($price).'?', $line['client_line_id'], 'confirm');
                     } else {
                         $flags['confirmed'] = true;
                         $confirmsUsed++;
@@ -103,7 +103,7 @@ class PriceRules
     private function bind(Terminal $terminal, array $line, ApprovalAction $action, string $needed): string
     {
         if ($line['approval_token'] === null) {
-            throw new SaleRefused($needed);
+            throw new ApprovalNeeded($needed, $action, $line['client_line_id'], $line['item_id'], $line['unit_price_kobo']);
         }
         try {
             return $this->approvals->bind($terminal, $line['approval_token'], $action, $line['client_line_id'], $line['item_id'], $line['unit_price_kobo']);

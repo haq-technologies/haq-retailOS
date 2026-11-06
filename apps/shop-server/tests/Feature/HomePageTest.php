@@ -19,5 +19,5 @@ it('answers the health check', function () {
 });
 
 it('sends a counter from the root to its name tiles', function () {
-    $this->get('/')->assertRedirect('/sign-in');
+    $this->get('/')->assertRedirect('/counter');
 });

@@ -74,6 +74,17 @@ apps/shop-server/deploy/staging.sh           # the latest images from main, at h
 apps/shop-server/deploy/staging.sh --local   # images built here: docker build ... --target app|web|db -t retail-os/retail-os-<target>:local
 ```
 
+## The counter
+
+Open `/counter` on an enrolled counter (home goes there). It signs in with the name tiles, keeps its own copy of the catalogue in the browser, and sells from it: the tiles, search, the scanner, the price pad, Pay, held sales and Awaiting transfer. Pay is F8, Hold F4 and New item F2 (D34).
+
+The browser tests drive it in Chromium against a fresh test shop in the `retail_e2e` database, never the development one. From the repository root:
+
+```
+apps/shop-server/e2e/run.sh                 # all of them
+apps/shop-server/e2e/run.sh -g "holds"      # the ones whose name matches
+```
+
 ## Printing
 
 The server prints receipts to each counter's network printer on port 9100 (spec section 4); the profile gives each counter's printer. Until the pilot's printer arrives, the development stack runs a stand-in printer that writes each receipt as text to `storage/logs/fake-printer.log`, and staging runs one too. A shop never does.
