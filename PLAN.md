@@ -17,7 +17,7 @@ The pilot succeeds when (spec section 14):
 
 ## Status
 
-Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, started and finished on 6 November 2026, well ahead of its weeks 3 to 8, and G2's criteria are met (see the Phase 2 checklist). The gate waits for the product owner's pace check (D15), which decides whether G5 moves or an item moves to the MVP. Phase 3 starts when the product owner says so.
+Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, starts when the product owner says so.
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
@@ -30,7 +30,9 @@ Done:
 - Wireframes signed off by the product owner, so gate G1 is passed (D19). The printed daily summary carries no profit or cost amounts (D18).
 - Phase 2, the foundation (D20 to D26): the shop server in apps/shop-server/ as a modular monolith; the three database roles with grants and triggers from the mutability matrix; audit chains, roots and the spool; settings and the shop profile tool; identity with name tiles, PINs, acting-user tokens and bound approvals; the catalogue with the one name routine and the seeder; the multi-process test harness in CI; a shop's Docker stack with images on GHCR, the installer and staging. G2's criteria are met.
 
-Next: the product owner's pace check at G2, then Phase 3 at the product owner's go.
+- Gate G2 passed on 6 November 2026 (D27); the identity timings accepted (D28); back-office devices for the owner's phone or laptop (D29).
+
+Next: Phase 3 at the product owner's go.
 
 ## Team
 
@@ -111,7 +113,7 @@ Choices and their tradeoffs (runners, registry, environments, housekeeping) are 
 
 ## Phase 2 checklist
 
-Phase 2 started on 6 November 2026, at the product owner's go. Before it started:
+Closed on 6 November 2026, when the product owner passed gate G2 (D27). Phase 2 started the same day, at the product owner's go. Before it started:
 
 - [x] Docker running on the product owner's computer, through Colima (Claude, 6 November 2026)
 - [x] Enough free space on that computer for Docker and the Ubuntu virtual machine used at G2: with the development stack, staging and the virtual machine all in place, 33 GB were still free on 6 November 2026 (product owner)
@@ -119,14 +121,14 @@ Phase 2 started on 6 November 2026, at the product owner's go. Before it started
 Then, by week 8:
 
 - [x] Docker Compose for development, with the shop server's skeleton in apps/shop-server/: Laravel, Inertia, React in TypeScript and the colour tokens, PostgreSQL for sessions, jobs and the cache, and CI for PHP, the frontend and the image (Claude, 6 November 2026, D20 to D22)
-- [x] The Docker stack, with images pushed to GHCR and staging on the product owner's computer (Claude, 6 November 2026, D26). CI publishes app, web and db to GHCR on each merge to main. Staging runs at https://localhost:8443 from images built here; pulling them from GHCR needs a read-only token (open items)
+- [x] The Docker stack, with images pushed to GHCR and staging on the product owner's computer (Claude, 6 November 2026, D26). CI publishes app, web and db to GHCR on each merge to main, and staging at https://localhost:8443 pulls them from GHCR and passes every install check
 - [x] Database roles, grants and triggers generated from the mutability matrix, and the one-shot migration job, with the nightly grant check and the code laid out as a modular monolith (Claude, 6 November 2026, D23)
 - [x] Identity: name tiles, PINs, acting-user tokens, bound approvals and the idle lock, with counter enrolment, lockouts and terminal backoff (Claude, 6 November 2026, D24)
 - [x] Audit chains, roots and the spool, with the shop, branches and terminals they hang on (Claude, 6 November 2026)
 - [x] Settings and the profile tool, including the receipt text: `shop:make-profile` before the visit, `shop:apply-profile` at install, idempotent (Claude, 6 November 2026, D14)
 - [x] The catalogue model, the name routine and the seeder for catalogue v1.1: every seed example prints exactly, the generators offer 127 shapes, and a second load changes nothing (Claude, 6 November 2026, D25)
 - [x] The multi-process PostgreSQL test harness in CI: worker processes released together, committed transactions, its own database (Claude, 6 November 2026)
-- [x] Gate G2's criteria (Claude, 6 November 2026), waiting for the product owner's pace check:
+- [x] Gate G2, passed by the product owner on 6 November 2026 (D27), on this evidence (Claude):
   - A clean Ubuntu virtual machine installs from a profile: Ubuntu 24.04.5 LTS in Lima on the product owner's computer (D16), with Docker 29.1.3 from Ubuntu's packages. deploy/install.sh installed from the example profile in 14 seconds, with the images built from main at d4aebba (the GHCR packages are private; see open items). A second run changed nothing.
   - The seed loads twice with no change: 34 categories, 568 pick-list values, 74 brands, 29 models and 28 templates, unchanged by the second load.
   - Append-only holds against a deliberately widened grant: with UPDATE, DELETE and TRUNCATE granted on the audit tables, the triggers refused all three; the nightly grant check reported the grant; rerunning the migration job put it back; the audit trail verified.
@@ -186,12 +188,10 @@ Assumptions:
 | Barcode scan result (20 items) | Product owner, from the shop visit | Install (week 13) | Assume 40% scannable |
 | Busy-day sales volume | Product owner, from the notebook | Install (week 13) | Measured in the shadow weeks |
 | Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | When the product owner chooses; application code is public from Phase 2 (D22) | Public (D10) |
-| A read-only GHCR token for pulling the shop images: the packages are private. For staging on this computer, `gh auth refresh -s read:packages` is enough; each shop server gets its own token for the updater | Product owner | Staging from GHCR: any time; the G3 install pulls from GHCR (week 12) | Staging runs images built on this computer |
+| A read-only GHCR token for each shop server's updater: the image packages are private. Staging on this computer already pulls from GHCR | Product owner, Claude | The G3 install pulls from GHCR (week 12) | Made with the updater in Phase 3 |
 | Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
-| Identity timings the spec leaves open: the lockout cooldown after five wrong PINs, how long a manager or owner stays signed in at a counter when idle, and the terminal backoff curve | Product owner | Install (week 13) | Proposed: a 15-minute cooldown; 2 minutes idle for a manager or owner (a cashier's idle lock stays at 3); a 1-second wait after the tenth wrong PIN in 10 minutes, doubling each time, at most 5 minutes. All three are locked settings |
-| How the owner's phone or laptop reaches the back office on the shop's network | Product owner | Phase 4 (owner features) | Enrolled like a counter, but unable to sell |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
 | Bundles or packs (phone plus case, wholesale carton) | Product owner | MVP | Not supported in the pilot |
 | Warranty claims | Product owner | MVP | Returns with the supplier_claim disposition |
@@ -221,3 +221,4 @@ Assumptions:
 | 6 November 2026 | Identity: name tiles and PINs, acting-user tokens, approvals, enrolment (D24) |
 | 6 November 2026 | The catalogue model, the name routine and the starter-catalogue seeder (D25) |
 | 6 November 2026 | A shop's Docker stack, images on GHCR, the installer and staging (D26); Phase 2's work is done and G2's criteria are met on a clean Ubuntu virtual machine |
+| 6 November 2026 | Gate G2 passed and Phase 2 closed (D27); the identity timings accepted (D28); back-office devices (D29); staging pulls from GHCR |

@@ -2,7 +2,7 @@
 
 HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026; signed off by the product owner on 6 November 2026 [D13].
 
-**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D26, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
+**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D29, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
 
 **How to read it.** A tag such as [F3] marks text that exists because of finding F3 of the engineering teardown (Appendix A). A tag such as [S4], [R3], [C1] or [D2] marks text set by the v1.4 review; Appendix E lists every such change, and docs/decisions.md records where each came from. [Q5] or [FU6] points to an answer in that log; FU1 to FU10 are the review's follow-up questions, not teardown findings.
 
@@ -69,9 +69,10 @@ Every feature and every engineering practice in this spec must serve at least on
 - Cashier identity is a console setting. Mode A (default) is a name tile followed by a PIN of 4 to 6 digits (exactly 6 for a manager or owner, whose one PIN also approves [D24]), with no logout; after 3 minutes idle (a console setting, 0 turns it off) the counter returns to the name tiles, keeps the cart, and the PIN resumes it [S6]. Because the tile identifies the person first, PINs need not be unique and a collision never leaks. Mode B is one login per PC, and the console warns that per-cashier reports and audit are then less reliable. [F8]
 - Acting-user token. The terminal login identifies the device only. Each PIN entry mints a short-lived signed token naming the acting user, bound to that terminal, and every request carries it. Policies, audit rows and cost redaction resolve the actor from the token, never from the shared session. A request already in flight during a PIN switch keeps the token it was sent with. [F9]
 - Manager approvals use a 6-digit PIN entered at the same screen after tapping the manager’s name tile. The approval is single-use and bound to the specific action (for example this return line or this price). The server binds it to the cart line, item and price when it is granted; the 60-second limit covers only grant to bind, and the approval then holds while the cart is open or parked. Changing that line voids it. It does not change the cashier's session. [S3] It is stored in an approvals record with the approver, terminal and action. [F9]
-- Throttling: five wrong PINs lock that user for a cooldown period. Separately, each terminal backs off exponentially after 10 wrong PINs in 10 minutes across all users, so guessing across names is also slowed. Lockouts and backoffs appear on the owner dashboard. PINs are stored with Argon2id. [F8]
+- Throttling: five wrong PINs lock that user for a cooldown period (15 minutes). Separately, each terminal backs off exponentially after 10 wrong PINs in 10 minutes across all users (1 second, doubling, at most 5 minutes), so guessing across names is also slowed. [D28] Lockouts and backoffs appear on the owner dashboard. PINs are stored with Argon2id. [F8]
 - Approval flagging: an approval by a manager who is not signed in at that branch that day is flagged for the owner. Signed in means the manager entered a PIN at any counter of the branch since the business day opened. [F8, S3]
-- Elevated sessions (a manager signed in at a counter) expire back to the cashier after an idle limit you set.
+- Elevated sessions (a manager signed in at a counter) expire back to the cashier after an idle limit you set (2 minutes by default). [D28]
+- Back-office devices. The owner's or a manager's phone or laptop on the shop's network is enrolled like a counter, with a code such as D01 instead of T01, and signs in with the same name tile and PIN. It opens the back office, has no cash drawer and never sells: Finish refuses a sale from it. [D29]
 - Users are deactivated, never deleted, and the last active owner cannot be deactivated. Deactivation is a high-priority record that propagates with the next sync and can also be applied locally at any branch at once (see section 4). [F18]
 # 4. Architecture and deployment
 ## Runtime shape
@@ -174,7 +175,7 @@ Local interactions respond in under 100 ms. Search under 100 ms from the browser
 | sync_conflicts | bundle_id, kind, record ids, status. Never dropped silently. [F1, F18] |
 | settings and settings_history | scope (platform, shop, branch), key, value, locked_by_sysadmin. Each change adds a history row. [F3] |
 | licenses | shop_id, branch_id, tier, valid_until, hardware_fingerprint, signature. [F17] |
-| users, branches, terminals, tenants | Users are deactivated, never deleted. |
+| users, branches, terminals, tenants | Users are deactivated, never deleted. A terminal is a counter (T01) or a back-office device (D01) that cannot sell; its code and kind never change once written. [D29] |
 
 - Sale lines are never updated. A line keeps cost_snapshot_kobo as NULL if no cost was known at the time of sale.
 - Effective cost of a line = its cost_snapshot_kobo if present, otherwise its latest cost_resolutions row, otherwise NULL. A database view exposes this together with its source (at_sale, backfill_estimate, owner_batch), so reports never need to know about the split. [F14]

@@ -38,8 +38,8 @@ class IdentityServiceProvider extends ServiceProvider
     }
 
     /**
-     * Identity's settings. The spec sets the attempt counts and the bind limit; the lockout cooldown and
-     * the elevated-session limit are proposals until the product owner confirms them (PLAN.md, open items).
+     * Identity's settings. The spec sets the attempt counts and the bind limit; the product owner accepted
+     * the lockout cooldown, the elevated-session limit and the backoff curve (D28).
      *
      * @return list<Definition>
      */
@@ -50,9 +50,9 @@ class IdentityServiceProvider extends ServiceProvider
         return [
             new Definition('identity.pin_mode', 'Cashier identity', 'tile_pin', ['required', 'in:tile_pin'], lockedByDefault: true, source: 'spec section 3, mode A; mode B comes with the console'),
             new Definition('identity.idle_lock_minutes', 'Idle lock (minutes; 0 turns it off)', 3, $minutes, lockedByDefault: true, source: 'S6'),
-            new Definition('identity.elevated_idle_minutes', 'Manager or owner idle limit (minutes)', 2, ['required', 'integer', 'min:1', 'max:60'], lockedByDefault: true, source: 'spec section 3; proposed default'),
+            new Definition('identity.elevated_idle_minutes', 'Manager or owner idle limit (minutes)', 2, ['required', 'integer', 'min:1', 'max:60'], lockedByDefault: true, source: 'spec section 3; D28'),
             new Definition('identity.lockout_attempts', 'Wrong PINs before a lockout', 5, ['required', 'integer', 'min:3', 'max:10'], lockedByDefault: true, source: 'spec section 3'),
-            new Definition('identity.lockout_minutes', 'Lockout cooldown (minutes)', 15, ['required', 'integer', 'min:1', 'max:240'], lockedByDefault: true, source: 'spec section 3; proposed default'),
+            new Definition('identity.lockout_minutes', 'Lockout cooldown (minutes)', 15, ['required', 'integer', 'min:1', 'max:240'], lockedByDefault: true, source: 'spec section 3; D28'),
             new Definition('identity.terminal_backoff_failures', 'Wrong PINs on one counter before backoff', 10, ['required', 'integer', 'min:5', 'max:50'], lockedByDefault: true, source: 'spec section 3'),
             new Definition('identity.terminal_backoff_window_minutes', 'Backoff window (minutes)', 10, ['required', 'integer', 'min:1', 'max:60'], lockedByDefault: true, source: 'spec section 3'),
             new Definition('identity.approval_bind_seconds', 'Seconds to bind an approval', 60, ['required', 'integer', 'min:10', 'max:300'], lockedByDefault: true, source: 'S3'),

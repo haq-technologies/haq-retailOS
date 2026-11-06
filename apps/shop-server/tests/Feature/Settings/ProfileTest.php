@@ -43,8 +43,8 @@ it('makes a profile that the installer accepts', function () {
     $profile = json_decode((string) file_get_contents($this->path), true);
     expect($profile['schema_version'])->toBe(1);
     expect($profile['terminals'])->toBe([
-        ['code' => 'T01', 'name' => 'Counter 1', 'drawer' => true],
-        ['code' => 'T02', 'name' => 'Counter 2', 'drawer' => false],
+        ['code' => 'T01', 'name' => 'Counter 1', 'drawer' => true, 'kind' => 'counter'],
+        ['code' => 'T02', 'name' => 'Counter 2', 'drawer' => false, 'kind' => 'counter'],
     ]);
     expect($profile['receipt']['shop_name'])->toBe('Example Accessories');
 });
@@ -123,7 +123,7 @@ it('explains every problem in an invalid profile and applies none of it', functi
         $this->fail('The profile should not be valid.');
     } catch (InvalidProfile $e) {
         expect($e->errors)->toContain('The branch code must be 2 to 8 capital letters or digits, such as B01.');
-        expect($e->errors)->toContain('Each terminal code must be T and two digits, such as T01: it starts every receipt number.');
+        expect($e->errors)->toContain("Each counter's code must be T and two digits, such as T01 (it starts every receipt number); a back-office device's is D and two digits, such as D01.");
     }
 });
 

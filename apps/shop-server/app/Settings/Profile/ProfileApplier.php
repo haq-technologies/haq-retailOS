@@ -58,13 +58,19 @@ final readonly class ProfileApplier
             foreach ($profile->terminals as $wanted) {
                 $terminal = Terminal::query()->where('branch_id', $branch->id)->where('code', $wanted['code'])->first();
                 if ($terminal === null) {
-                    $terminal = Terminal::query()->create(['branch_id' => $branch->id, 'code' => $wanted['code'], 'name' => $wanted['name']]);
-                    $changes[] = "Added the terminal {$wanted['code']} ({$wanted['name']}).";
+                    $terminal = Terminal::query()->create(['branch_id' => $branch->id, 'code' => $wanted['code'], 'name' => $wanted['name'], 'kind' => $wanted['kind']]);
+                    $changes[] = $wanted['kind'] === Terminal::BACK_OFFICE
+                        ? "Added the back-office device {$wanted['code']} ({$wanted['name']}); it cannot sell."
+                        : "Added the terminal {$wanted['code']} ({$wanted['name']}).";
                 } elseif ($terminal->name !== $wanted['name']) {
                     $changes[] = "Renamed the terminal {$wanted['code']} to {$wanted['name']}.";
                     $terminal->update(['name' => $wanted['name']]);
                 }
 
+                // Only a counter has a drawer row; a back-office device never takes cash (D29).
+                if (! $terminal->canSell()) {
+                    continue;
+                }
                 $drawer = DB::table('drawers')->where('terminal_id', $terminal->id)->first();
                 if ($drawer === null) {
                     DB::table('drawers')->insert([

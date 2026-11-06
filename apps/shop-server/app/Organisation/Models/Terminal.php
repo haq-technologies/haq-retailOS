@@ -10,8 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * A counter PC. Its code (T01) starts every receipt number it issues, and it has its own audit chain.
+ * A counter PC (code T01), whose code starts every receipt number it issues, or a back-office device
+ * (code D01), such as the owner's phone, which signs in the same way but never sells (D29). Each has
+ * its own audit chain.
  *
+ * @property string $kind counter or back_office
  * @property string $id
  * @property string $branch_id
  * @property string $code
@@ -27,6 +30,16 @@ class Terminal extends Model
     protected function casts(): array
     {
         return ['deactivated_at' => 'immutable_datetime'];
+    }
+
+    public const COUNTER = 'counter';
+
+    public const BACK_OFFICE = 'back_office';
+
+    /** Only a counter sells; Finish refuses a sale from a back-office device (D29). */
+    public function canSell(): bool
+    {
+        return $this->kind === self::COUNTER;
     }
 
     /**

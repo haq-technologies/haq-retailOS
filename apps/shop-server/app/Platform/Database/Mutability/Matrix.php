@@ -61,7 +61,7 @@ final readonly class Matrix
             // Catalogue: every change is audited
             'category_templates', 'item_facets', 'barcodes', 'barcode_ignore', 'aliases',
             // Organisation and configuration
-            'tenants', 'branches', 'terminals', 'drawers', 'customers', 'settings', 'licenses',
+            'tenants', 'branches', 'drawers', 'customers', 'settings', 'licenses',
             'sync_conflicts',
         ];
 
@@ -75,6 +75,8 @@ final readonly class Matrix
             Rule::mutable('picklist_values', fixed: ['seed_id']),
             Rule::mutable('brands', fixed: ['seed_id']),
             Rule::mutable('product_models', fixed: ['seed_id']),
+            // A terminal's code starts its receipt numbers, so it and the kind never change (D29).
+            Rule::mutable('terminals', fixed: ['code', 'kind']),
 
             // Only bound_at may be set, once, from NULL [S3]
             Rule::setOnce('approvals', ['bound_at']),

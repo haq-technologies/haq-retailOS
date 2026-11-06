@@ -26,6 +26,7 @@ class MakeProfileCommand extends Command
         {--branch-name= : The branch name}
         {--terminals=1 : How many counters}
         {--drawers= : Which counters have a cash drawer, such as T01,T02 (default: none)}
+        {--back-office=0 : How many back-office devices, such as a phone or laptop for the owner (D01, D02; they cannot sell)}
         {--receipt-name= : The shop name as the receipt prints it (default: the shop name)}
         {--address= : The address on the receipt}
         {--phone= : The phone number on the receipt}
@@ -52,7 +53,11 @@ class MakeProfileCommand extends Command
             if ($this->option('drawers') === null && $this->input->isInteractive()) {
                 $hasDrawer = confirm("Does counter {$code} have a cash drawer?", default: false);
             }
-            $terminals[] = ['code' => $code, 'name' => "Counter {$i}", 'drawer' => $hasDrawer];
+            $terminals[] = ['code' => $code, 'name' => "Counter {$i}", 'drawer' => $hasDrawer, 'kind' => 'counter'];
+        }
+        $devices = max(0, min(20, (int) $this->option('back-office')));
+        for ($i = 1; $i <= $devices; $i++) {
+            $terminals[] = ['code' => sprintf('D%02d', $i), 'name' => "Back office {$i}", 'drawer' => false, 'kind' => 'back_office'];
         }
 
         $document = Profile::document(

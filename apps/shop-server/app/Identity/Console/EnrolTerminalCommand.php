@@ -16,7 +16,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 #[AsCommand(name: 'shop:enrol-terminal')]
 class EnrolTerminalCommand extends Command
 {
-    protected $signature = 'shop:enrol-terminal {code : The terminal code, such as T01}';
+    protected $signature = 'shop:enrol-terminal {code : The terminal code: a counter such as T01, or a back-office device such as D01}';
 
     protected $description = 'Make a one-time code that enrols a counter PC as a terminal';
 
@@ -30,7 +30,7 @@ class EnrolTerminalCommand extends Command
         }
 
         $code = $enrolment->issueCode($terminal);
-        $this->components->info("On {$terminal->code}, open /enrol in Chrome and type {$code}. The code works once, for 15 minutes.");
+        $this->components->info("On {$terminal->code} ({$terminal->name}), open /enrol in the browser and type {$code}. The code works once, for 15 minutes.");
         $this->line($code);
 
         return self::SUCCESS;
