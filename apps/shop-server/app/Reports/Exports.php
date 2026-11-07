@@ -46,7 +46,7 @@ final class Exports
                 DB::raw("(SELECT p.price_kobo FROM item_prices p WHERE p.item_id = i.id AND p.customer_type = 'wholesale' ORDER BY p.effective_from DESC, p.id DESC LIMIT 1) AS wholesale"),
                 DB::raw("(SELECT string_agg(bc.code, ' ' ORDER BY bc.code) FROM barcodes bc WHERE bc.item_id = i.id AND bc.status <> 'disabled') AS codes"),
                 DB::raw("(SELECT coalesce(sum(l.qty), 0) FROM sale_lines l JOIN sales s ON s.id = l.sale_id WHERE l.item_id = i.id AND s.kind IN ('sale', 'back_entry')) AS sold"),
-                DB::raw('(SELECT ce.unit_cost_kobo FROM cost_entries ce WHERE ce.item_id = i.id AND ce.effective_from <= clock_timestamp() ORDER BY ce.effective_from DESC LIMIT 1) AS cost')])
+                DB::raw('(SELECT ce.unit_cost_kobo FROM cost_entries ce WHERE ce.item_id = i.id AND ce.effective_from <= clock_timestamp() AND ce.undoes_id IS NULL AND NOT EXISTS (SELECT 1 FROM cost_entries x WHERE x.undoes_id = ce.id) ORDER BY ce.effective_from DESC, ce.id DESC LIMIT 1) AS cost')])
             ->cursor();
 
         foreach ($rows as $r) {
@@ -81,7 +81,7 @@ final class Exports
             SELECT s.business_day, s.recorded_at, s.receipt_number, t.name AS counter, u.name AS cashier, s.customer_type,
                    i.item_code, l.name_snapshot, CASE WHEN r.root_id <> l.item_id THEN ri.display_name END AS counts_under,
                    l.qty, l.unit_price_kobo, l.line_total_kobo, l.flags, l.cost_snapshot_kobo,
-                   (SELECT c.unit_cost_kobo FROM cost_resolutions c WHERE c.sale_line_id = l.id ORDER BY c.created_at DESC LIMIT 1) AS estimate,
+                   (SELECT c.unit_cost_kobo FROM cost_resolutions c WHERE c.sale_line_id = l.id ORDER BY c.created_at DESC, c.id DESC LIMIT 1) AS estimate,
                    (SELECT string_agg(DISTINCT p.method, ' + ') FROM payments p WHERE p.sale_id = s.id) AS paid_by
             FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN terminals t ON t.id = s.terminal_id JOIN users u ON u.id = s.cashier_id
             JOIN items i ON i.id = l.item_id JOIN item_roots r ON r.item_id = l.item_id JOIN items ri ON ri.id = r.root_id

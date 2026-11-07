@@ -7,6 +7,7 @@ namespace App\BackOffice\Http;
 use App\Catalogue\Models\Item;
 use App\Cost\Backfill;
 use App\Cost\Costs;
+use App\Cost\Undo;
 use App\Reports\NeedsCost;
 use App\Sales\Pricing;
 use Carbon\CarbonImmutable;
@@ -35,17 +36,47 @@ final class CostController
     {
         $this->allowed($request, 'costs');
         $usual = $pricing->info($item, 'retail');
-        /** @var list<object{unit_cost_kobo: int|string, effective_from: string, name: ?string}> $history */
+        /** @var list<object{unit_cost_kobo: int|string|null, effective_from: string, name: ?string, undoes_id: ?string}> $history */
         $history = DB::table('cost_entries as c')->leftJoin('users as u', 'u.id', '=', 'c.entered_by')->where('c.item_id', $item->id)
-            ->orderByDesc('c.effective_from')->limit(10)->get(['c.unit_cost_kobo', 'c.effective_from', 'u.name'])->all();
+            ->orderByDesc('c.effective_from')->orderByDesc('c.id')->limit(10)->get(['c.unit_cost_kobo', 'c.effective_from', 'u.name', 'c.undoes_id'])->all();
 
         return response()->json([
             'item_id' => $item->id,
             'name' => $item->display_name,
             'usual_price_kobo' => $usual['prefill'],
             'current_cost_kobo' => Costs::current($item->id),
-            'history' => array_map(fn (object $h) => ['unit_cost_kobo' => (int) $h->unit_cost_kobo, 'effective_from' => $h->effective_from, 'by' => $h->name], $history),
+            'history' => array_map(fn (object $h) => ['unit_cost_kobo' => $h->unit_cost_kobo === null ? null : (int) $h->unit_cost_kobo,
+                'effective_from' => $h->effective_from, 'by' => $h->name, 'undo' => $h->undoes_id !== null], $history),
         ]);
+    }
+
+    /** Costs entered in the last 30 days, each with whether it can still be undone (D48). */
+    public function recent(Request $request): JsonResponse
+    {
+        $this->allowed($request, 'costs');
+
+        return response()->json(['entries' => Undo::recent()]);
+    }
+
+    /** What undoing a cost would do, before anything is written (spec section 2) [D48]. */
+    public function undoPreview(Request $request, string $entry, Undo $undo): JsonResponse
+    {
+        $this->allowed($request, 'costs');
+        try {
+            return response()->json($undo->preview(strtolower($entry)));
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function undo(Request $request, string $entry, Undo $undo): JsonResponse
+    {
+        $actor = $this->allowed($request, 'costs');
+        try {
+            return response()->json($undo->apply(strtolower($entry), $actor));
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 
     public function preview(Request $request, Backfill $backfill): JsonResponse

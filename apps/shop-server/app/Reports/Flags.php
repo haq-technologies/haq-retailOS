@@ -166,6 +166,8 @@ final readonly class Flags
             FROM cost_resolutions r JOIN sale_lines l ON l.id = r.sale_line_id JOIN sales s ON s.id = l.sale_id
             JOIN items i ON i.id = r.item_id JOIN users u ON u.id = s.cashier_id JOIN terminals t ON t.id = s.terminal_id
             WHERE s.kind IN ('sale', 'back_entry') AND l.unit_price_kobo < r.unit_cost_kobo AND r.created_at >= ? AND r.created_at < ?
+              -- An undone cost raised no real loss; an undo only puts back what was there (D48).
+              AND r.source <> 'undo' AND NOT EXISTS (SELECT 1 FROM cost_entries x WHERE x.undoes_id = r.cost_entry_id)
             GROUP BY r.cost_entry_id
             SQL, [$p->fromSql(), $p->toSql()]);
 

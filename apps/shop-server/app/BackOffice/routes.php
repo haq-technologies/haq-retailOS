@@ -28,6 +28,9 @@ Route::middleware(['web', EnrolledTerminal::class, ActingUser::class])->prefix('
     Route::get('/costs/items/{item}', [CostController::class, 'item']);
     Route::post('/costs/preview', [CostController::class, 'preview']);
     Route::post('/costs', [CostController::class, 'save']);
+    Route::get('/costs/recent', [CostController::class, 'recent']);
+    Route::get('/costs/entries/{entry}/undo', [CostController::class, 'undoPreview'])->where('entry', '[0-9A-Za-z]{26}');
+    Route::post('/costs/entries/{entry}/undo', [CostController::class, 'undo'])->where('entry', '[0-9A-Za-z]{26}');
     Route::get('/flags', [FlagsController::class, 'index']);
     Route::get('/flags.csv', [FlagsController::class, 'csv']);
     Route::post('/flags/seen', [FlagsController::class, 'seen']);

@@ -33,7 +33,7 @@ final class SalesController
         $lines = DB::table('sale_lines as l')->leftJoin('approvals as a', 'a.id', '=', 'l.approval_id')->leftJoin('users as m', 'm.id', '=', 'a.approver_id')
             ->where('l.sale_id', $sale)->orderBy('l.line_no')
             ->get(['l.id', 'l.name_snapshot', 'l.colour_note', 'l.qty', 'l.unit_price_kobo', 'l.line_total_kobo', 'l.cost_snapshot_kobo', 'l.price_source', 'l.flags', 'm.name as approver',
-                DB::raw('(SELECT r.unit_cost_kobo FROM cost_resolutions r WHERE r.sale_line_id = l.id ORDER BY r.created_at DESC LIMIT 1) AS estimate')])->all();
+                DB::raw('(SELECT r.unit_cost_kobo FROM cost_resolutions r WHERE r.sale_line_id = l.id ORDER BY r.created_at DESC, r.id DESC LIMIT 1) AS estimate')])->all();
         /** @var list<object{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string, alert_seen: ?bool}> $payments */
         $payments = DB::table('payments')->where('sale_id', $sale)->orderBy('id')->get(['method', 'amount_kobo', 'tendered_kobo', 'change_kobo', 'reference', 'alert_seen'])->all();
 
