@@ -2,7 +2,7 @@
 
 The HAQ Retail OS server that runs in each branch, on the shop's own network: Laravel 13 and PostgreSQL 18, with the counter and the back office in React through Inertia. The spec is [docs/spec/retail-os-spec-v1.5.md](../../docs/spec/retail-os-spec-v1.5.md), and the build order is in [PLAN.md](../../PLAN.md).
 
-**Status:** Phases 2 and 3 are built (the foundation, then the counter and sale core); gate G3 waits for the pilot hardware. Phase 4's owner features are built, recovery included; the shadow pilot and the hardening wait for G3 (PLAN.md).
+**Status:** Phases 2 and 3 are built (the foundation, then the counter and sale core); gate G3 waits for the pilot hardware. Phase 4's owner features are built, recovery included; the shadow pilot and the hardening that needs the shop's hardware wait for G3 (PLAN.md).
 
 ## Run it on the development computer
 
@@ -150,4 +150,4 @@ Other commands run the same way: `docker compose exec app php artisan …`, `doc
 - Queued jobs dispatch only after the transaction commits, so a rolled-back sale never prints. A test checks the setting.
 - Every PHP file declares strict types (Pint enforces it), so a value such as a kobo amount is never coerced silently.
 - On a shop server, commands that wipe the database refuse to run.
-- Pages receive explicit arrays or API Resources, never Eloquent models, so cost never reaches a role that may not see it. Pages render only through `App\Platform\Http\Page`, which refuses a model, and an architecture test stops any other use of Inertia.
+- Pages receive explicit arrays or API Resources, never Eloquent models, so cost never reaches a role that may not see it. The cost-leak scanner (`tests/Feature/CostLeakTest.php`, check C4) calls every GET route as a cashier and as a manager and fails if a planted cost appears anywhere; a new route it cannot call fails it until it learns the route. Pages render only through `App\Platform\Http\Page`, which refuses a model, and an architecture test stops any other use of Inertia.
