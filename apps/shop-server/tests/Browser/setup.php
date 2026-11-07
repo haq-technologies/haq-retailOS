@@ -44,9 +44,10 @@ DB::table('terminals')->where('kind', 'counter')->update(['printer_host' => '127
 
 app(Users::class)->add('Amina', Role::Cashier, '1357');
 app(Users::class)->add('Kemi', Role::Manager, '246810');
+app(Users::class)->add('Halima', Role::Owner, '135790');
 
 $codes = [];
-foreach (Terminal::query()->where('kind', 'counter')->orderBy('code')->get() as $terminal) {
+foreach (Terminal::query()->orderBy('code')->get() as $terminal) {
     $codes[$terminal->code] = app(Enrolment::class)->issueCode($terminal);
 }
 

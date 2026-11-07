@@ -142,6 +142,12 @@ test('parks a slow transfer as Awaiting transfer, and the other counter finishes
 test('learns a new barcode from the scanner and adds the item at once the next time', async ({ browser }) => {
     const page = await counter(browser, 'T01');
     const code = `69${String(Date.now()).slice(-11)}`;
+    // Listen for the feed from the scan on, so the learned link cannot arrive unseen.
+    const delivered = page.waitForResponse(async (r) => {
+        if (!r.url().includes('/api/counter/catalogue/changes')) return false;
+        const body = (await r.json()) as { rows: { barcodes?: { code: string }[] } };
+        return body.rows.barcodes?.some((b) => b.code === code) === true;
+    });
     await scan(page, code);
     await expect(page.getByRole('status').filter({ hasText: `New code ${code}` })).toBeVisible();
     await addCable(page, '3000');
@@ -149,11 +155,7 @@ test('learns a new barcode from the scanner and adds the item at once the next t
     await expect(sale.getByText('Type-C to Lightning Cable 1m')).toBeVisible();
 
     // The link reaches this counter's copy through the feed within a poll or two.
-    await page.waitForResponse(async (r) => {
-        if (!r.url().includes('/api/counter/catalogue/changes')) return false;
-        const body = (await r.json()) as { rows: { barcodes?: { code: string }[] } };
-        return body.rows.barcodes?.some((b) => b.code === code) === true;
-    });
+    await delivered;
     await scan(page, code);
     await expect(page.getByRole('dialog', { name: 'Price' })).toBeVisible();
 });

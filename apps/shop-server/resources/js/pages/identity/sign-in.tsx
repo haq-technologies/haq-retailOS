@@ -1,7 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Notice } from '@/components/notice';
-import { OwnerSettings } from '@/components/owner-settings';
 import { roleLabel, SignInPanel, type SignedIn, type Tile } from '@/components/sign-in-panel';
 
 interface Props {
@@ -77,7 +76,9 @@ export default function SignIn({ terminal, tiles, idleLockMinutes }: Props) {
                                     Open the counter
                                 </a>
                             ) : (
-                                'This device is for the back office. It cannot sell.'
+                                <a className="font-semibold text-action-text underline" href="/back-office">
+                                    Open the back office
+                                </a>
                             )}
                         </p>
                         <button
@@ -92,7 +93,6 @@ export default function SignIn({ terminal, tiles, idleLockMinutes }: Props) {
                     </section>
                 )}
 
-                {session?.user.role === 'owner' && <OwnerSettings token={session.token} />}
             </main>
         </>
     );

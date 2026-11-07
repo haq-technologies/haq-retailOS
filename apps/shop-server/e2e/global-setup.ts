@@ -17,7 +17,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
         await page.goto('/enrol');
         await page.getByLabel('Code').fill(code);
         await page.getByRole('button', { name: 'Enrol counter' }).click();
-        await page.waitForURL('**/counter');
+        // A counter opens the counter; a back-office device the back office.
+        await page.waitForURL(/\/(counter|back-office)$/);
         await context.storageState({ path: join(here, '.auth', `${terminal}.json`) });
         await context.close();
     }
