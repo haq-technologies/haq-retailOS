@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Reboot recovery (spec section 4) [D46]: nginx shows this while PHP or the database is still starting,
+     and it opens the page that was asked for by itself once the server answers. No assets, no cookies. -->
+<meta http-equiv="refresh" content="20">
+<title>Starting, please wait</title>
+<style>
+:root { color-scheme: light; }
+body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #ffffff; color: #000000; font-family: Inter, "Segoe UI", system-ui, sans-serif; }
+main { box-sizing: border-box; max-width: 36rem; padding: 32px 16px; display: flex; flex-direction: column; gap: 16px; }
+p { margin: 0; font-size: 20px; line-height: 1.45; }
+h1 { margin: 0; font-size: 32px; font-weight: 700; }
+.brand { font-size: 18px; font-weight: 700; }
+.note { font-size: 18px; color: #6c6c70; }
+.dots { display: inline-flex; gap: 8px; }
+.dots span { width: 12px; height: 12px; border-radius: 6px; background: #007aff; }
+@media (prefers-reduced-motion: no-preference) {
+  .dots span { animation: pulse 1.2s infinite ease-in-out; }
+  .dots span:nth-child(2) { animation-delay: .2s; }
+  .dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes pulse { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+}
+</style>
+</head>
+<body>
+<main>
+  <span class="brand">HAQ Retail OS</span>
+  <h1 role="status">Starting, please wait</h1>
+  <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
+  <p>The shop server is starting, after a power cut or an update. This page opens the counter by itself as soon as it is ready, usually within three minutes. There is no need to touch anything.</p>
+  <p class="note">A sale that was open on a counter is kept. If this page is still here after ten minutes, check that the server is switched on, then call HAQ support.</p>
+</main>
+<script>
+(function () {
+  var tries = 0;
+  function later() { tries += 1; setTimeout(check, Math.min(10000, 2000 + tries * 500)); }
+  function check() {
+    fetch('/up', { cache: 'no-store', credentials: 'same-origin' })
+      .then(function (r) { if (r.ok) { location.reload(); } else { later(); } })
+      .catch(later);
+  }
+  setTimeout(check, 2000);
+})();
+</script>
+</body>
+</html>

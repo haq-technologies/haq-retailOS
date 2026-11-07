@@ -145,6 +145,13 @@ it('starts a new epoch when the journal is ahead of a server nobody marked as re
     expect($answer)->toMatchArray(['missing' => 2, 'epoch' => 2, 'raised_to' => 2]);
     expect(($this->sell)($this->t1)['receipt_number'])->toBe('T01-E2-001001');
 
+    // No restore was recorded, yet Lost sales shows them, and stays in the menu once both are re-entered.
+    ($this->back)()->getJson('/api/back-office/badges')->assertJsonPath('recovery', 2)->assertJsonPath('recovery_shown', true);
+    foreach (DB::table('lost_sales')->pluck('id') as $lost) {
+        ($this->back)()->postJson("/api/back-office/recovery/lost/{$lost}/re-enter")->assertCreated();
+    }
+    ($this->back)()->getJson('/api/back-office/badges')->assertJsonPath('recovery', 0)->assertJsonPath('recovery_shown', true);
+
     // A reinstalled server with no epochs at all starts above the journal too (its sales here were pruned).
     $t3 = Terminal::query()->create(['branch_id' => $this->t1->branch_id, 'code' => 'T03', 'name' => 'Counter 3']);
     expect(app(Journal::class)->report($t3, ['highest' => ['3' => 1010]]))->toBe(['send' => [['epoch' => 3, 'after' => 0]]]);

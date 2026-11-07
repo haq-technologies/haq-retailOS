@@ -34,6 +34,15 @@ for job in roles migrate certificate; do
     if [ "$status" = "exited 0" ]; then pass "the $job job finished cleanly"; else fail "the $job job did not finish cleanly ($status)"; fi
 done
 
+# Reboot recovery (D46): every long-running service restarts by itself, and Docker starts with the server.
+norestart=""
+for id in $(compose ps --status running -q); do
+    policy="$(docker inspect "$id" --format '{{.Name}} {{.HostConfig.RestartPolicy.Name}}')"
+    case "$policy" in *" unless-stopped"|*" always") ;; *) norestart="$norestart ${policy%% *}" ;; esac
+done
+if [ -z "$norestart" ]; then pass "every running service restarts by itself"; else fail "these services do not restart by themselves:$norestart"; fi
+if ! command -v systemctl >/dev/null || systemctl is-enabled docker.service >/dev/null 2>&1; then pass "Docker starts with the server"; else fail "Docker does not start with the server (systemctl enable docker)"; fi
+
 # 2. No running container holds the owner's password (check D).
 owner_password="$(cat "$dir/secrets/owner_password")"
 leaked=0

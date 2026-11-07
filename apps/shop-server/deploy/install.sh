@@ -49,6 +49,11 @@ if [ ! -f "$profile" ]; then
     exit 2
 fi
 command -v docker >/dev/null || { echo "Docker is not installed." >&2; exit 1; }
+# Reboot recovery (spec section 4) [D46]: Docker starts with the server, and every long-running service
+# has a restart policy, so a power cut needs no one to start anything.
+if command -v systemctl >/dev/null && systemctl list-unit-files docker.service >/dev/null 2>&1; then
+    systemctl enable docker.service containerd.service >/dev/null 2>&1 || echo "WARNING: Docker could not be set to start with the server." >&2
+fi
 
 secret() { head -c 32 /dev/urandom | base64 | tr -d '/+=\n' | head -c 40; }
 
