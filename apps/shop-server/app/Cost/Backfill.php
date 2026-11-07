@@ -108,7 +108,7 @@ final readonly class Backfill
         $row = DB::selectOne(<<<'SQL'
             SELECT coalesce(sum(CASE WHEN l.cost_snapshot_kobo IS NOT NULL OR EXISTS (SELECT 1 FROM cost_resolutions r WHERE r.sale_line_id = l.id) THEN l.line_total_kobo END), 0) AS covered,
                    coalesce(sum(l.line_total_kobo), 0) AS total
-            FROM sale_lines l JOIN sales s ON s.id = l.sale_id WHERE s.kind = 'sale'
+            FROM sale_lines l JOIN sales s ON s.id = l.sale_id WHERE s.kind IN ('sale', 'back_entry')
             SQL);
 
         return [(int) $row->covered, (int) $row->total];
@@ -135,7 +135,7 @@ final readonly class Backfill
             SELECT l.id, r.root_id AS item_id, i.display_name AS name, l.qty, l.unit_price_kobo, l.line_total_kobo, s.recorded_at, s.receipt_number, u.name AS cashier
             FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN item_roots r ON r.item_id = l.item_id JOIN items i ON i.id = r.root_id
             JOIN users u ON u.id = s.cashier_id
-            WHERE r.root_id IN ({$in}) AND s.kind = 'sale' AND l.cost_snapshot_kobo IS NULL
+            WHERE r.root_id IN ({$in}) AND s.kind IN ('sale', 'back_entry') AND l.cost_snapshot_kobo IS NULL
               AND NOT EXISTS (SELECT 1 FROM cost_resolutions c WHERE c.sale_line_id = l.id) {$since}
             ORDER BY s.recorded_at, l.id
             SQL, $bindings);

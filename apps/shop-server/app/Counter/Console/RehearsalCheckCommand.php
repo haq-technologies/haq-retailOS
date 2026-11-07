@@ -53,7 +53,8 @@ final class RehearsalCheckCommand extends Command
         /** @var array<string, int|string> $raw */
         $raw = DB::table('print_jobs')->where('kind', 'receipt')->selectRaw('status, count(*) AS n')->groupBy('status')->pluck('n', 'status')->all();
         $jobs = array_map(fn (int|string $n) => (int) $n, $raw);
-        $sales = DB::table('sales')->count();
+        // A back entry prints nothing: the customer already holds the receipt (spec section 9) [F1].
+        $sales = DB::table('sales')->where('kind', 'sale')->count();
         $check(array_sum($jobs) === $sales, "every sale has its receipt job ({$sales} sales; printed ".($jobs['printed'] ?? 0).', pending '.($jobs['pending'] ?? 0).', failed '.($jobs['failed'] ?? 0).')');
         /** @var list<string> $waiting */
         $waiting = DB::table('print_jobs as j')->join('sales as s', 's.id', '=', 'j.sale_id')->whereIn('j.status', ['pending', 'failed'])->pluck('s.receipt_number')->all();

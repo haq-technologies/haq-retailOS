@@ -57,11 +57,11 @@ final readonly class DailySummary
     public static function sales(string $day): array
     {
         /** @var object{n: int|string, total: int|string} $sales */
-        $sales = DB::selectOne("SELECT count(*) AS n, coalesce(sum(total_kobo), 0) AS total FROM sales WHERE kind = 'sale' AND business_day = ?", [$day]);
+        $sales = DB::selectOne("SELECT count(*) AS n, coalesce(sum(total_kobo), 0) AS total FROM sales WHERE kind IN ('sale', 'back_entry') AND business_day = ?", [$day]);
         /** @var list<object{method: string, n: int|string, amount: int|string}> $methods */
         $methods = DB::select(<<<'SQL'
             SELECT p.method, count(DISTINCT p.sale_id) AS n, sum(p.amount_kobo) AS amount
-            FROM payments p JOIN sales s ON s.id = p.sale_id WHERE s.kind = 'sale' AND s.business_day = ?
+            FROM payments p JOIN sales s ON s.id = p.sale_id WHERE s.kind IN ('sale', 'back_entry') AND s.business_day = ?
             GROUP BY p.method
             SQL, [$day]);
         $byMethod = [];

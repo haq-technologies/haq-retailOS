@@ -39,6 +39,18 @@ final readonly class Feed
 
     public function __construct(private Pricing $pricing, private Items $items) {}
 
+    /**
+     * The feed's generation: the newest restore, or "install" before any. A restore takes the change log
+     * back to the backup, so a counter holding another generation (or a seq past the log's end) throws its
+     * copy away and starts again from a snapshot (spec section 4) [F1].
+     */
+    public static function generation(): string
+    {
+        $id = DB::table('restores')->orderByDesc('at')->value('id');
+
+        return is_string($id) ? $id : 'install';
+    }
+
     /** The seq every committed change up to now has. */
     public static function seqNow(): int
     {
@@ -51,7 +63,7 @@ final readonly class Feed
      * One page of the snapshot: every table in turn, by id. The first page fixes the seq the counter polls
      * from afterwards; changes made while it pages arrive again as changes, which is harmless.
      *
-     * @return array{seq: int, rows: array<string, list<array<string, mixed>>>, prices: list<array<string, mixed>>, next: ?string}
+     * @return array{seq: int, generation: string, rows: array<string, list<array<string, mixed>>>, prices: list<array<string, mixed>>, next: ?string}
      */
     public function snapshot(?string $cursor, int $limit = 2000): array
     {
@@ -79,20 +91,26 @@ final readonly class Feed
                 $last = $lastRow === false || ! is_string($lastRow['id'] ?? null) ? false : $lastRow['id'];
             }
             if ($remaining <= 0 && $last !== false) {
-                return ['seq' => $seq, 'rows' => $rows, 'prices' => $prices, 'next' => $this->encodeCursor($seq, $name, $last)];
+                return ['seq' => $seq, 'generation' => self::generation(), 'rows' => $rows, 'prices' => $prices, 'next' => $this->encodeCursor($seq, $name, $last)];
             }
         }
 
-        return ['seq' => $seq, 'rows' => $rows, 'prices' => $prices, 'next' => null];
+        return ['seq' => $seq, 'generation' => self::generation(), 'rows' => $rows, 'prices' => $prices, 'next' => null];
     }
 
     /**
-     * The committed changes after $after, at most $limit of them, newest state of each row.
+     * The committed changes after $after, at most $limit of them, newest state of each row. A counter of
+     * another generation, or one past the end of the log, is told to start again from a snapshot.
      *
-     * @return array{seq: int, more: bool, rows: array<string, list<array<string, mixed>>>, removed: array<string, list<string>>, prices: list<array<string, mixed>>}
+     * @return array{seq: int, generation: string, reset: bool, more: bool, rows: array<string, list<array<string, mixed>>>, removed: array<string, list<string>>, prices: list<array<string, mixed>>}
      */
-    public function changes(int $after, int $limit = 1000): array
+    public function changes(int $after, int $limit = 1000, ?string $generation = null): array
     {
+        $now = self::generation();
+        if (($generation !== null && $generation !== $now) || $after > self::seqNow()) {
+            return ['seq' => 0, 'generation' => $now, 'reset' => true, 'more' => false, 'rows' => [], 'removed' => [], 'prices' => []];
+        }
+
         $changes = DB::table('catalogue_changes')->where('seq', '>', $after)->orderBy('seq')->limit($limit + 1)->get(['seq', 'table_name', 'row_id']);
         $more = $changes->count() > $limit;
         $changes = $changes->take($limit);
@@ -121,7 +139,7 @@ final readonly class Feed
         }
         $priced = array_values(array_unique([...array_keys($byTable['item_prices'] ?? []), ...array_keys($byTable['sale_lines'] ?? [])]));
 
-        return ['seq' => $seq, 'more' => $more, 'rows' => $rows, 'removed' => $removed, 'prices' => $this->prices($priced)];
+        return ['seq' => $seq, 'generation' => $now, 'reset' => false, 'more' => $more, 'rows' => $rows, 'removed' => $removed, 'prices' => $this->prices($priced)];
     }
 
     /**

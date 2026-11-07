@@ -32,14 +32,14 @@ final class NeedsCost
             WITH RECURSIVE {$roots}
             SELECT i.id AS item_id, i.display_name AS name, count(*) AS sales, sum(l.line_total_kobo) AS revenue_kobo, min(s.recorded_at) AS first_at
             FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN item_roots ir ON ir.item_id = l.item_id JOIN items i ON i.id = ir.root_id
-            WHERE s.kind = 'sale' AND l.cost_snapshot_kobo IS NULL
+            WHERE s.kind IN ('sale', 'back_entry') AND l.cost_snapshot_kobo IS NULL
               AND NOT EXISTS (SELECT 1 FROM cost_resolutions r WHERE r.sale_line_id = l.id) {$filter}
             GROUP BY i.id, i.display_name
             ORDER BY revenue_kobo DESC, name
             SQL, $bindings);
 
         $items = array_map(fn (object $r) => ['item_id' => $r->item_id, 'name' => $r->name, 'sales' => (int) $r->sales, 'revenue_kobo' => (int) $r->revenue_kobo, 'first_at' => $r->first_at], $rows);
-        $since = DB::table('sales')->where('kind', 'sale')->min('recorded_at');
+        $since = DB::table('sales')->whereIn('kind', ['sale', 'back_entry'])->min('recorded_at');
 
         return [
             'items' => array_slice($items, 0, $limit),

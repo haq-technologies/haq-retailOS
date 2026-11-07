@@ -5,6 +5,7 @@ import type { SignedIn, Tile as Person } from '@/components/sign-in-panel';
 import { addLine, emptyCart, removeLine, restoreLine, setColour, setCustomerType, setPrice, setQty, totalKobo, type AddedBy, type Cart, type CartLine, type Payment } from '../cart';
 import type { Catalogue } from '../catalogue';
 import { addToJournal } from '../db';
+import { journalEntry, reportJournal } from '../recovery';
 import { drill, type DrillState, type Tile } from '../drill';
 import { naira } from '../money';
 import { isReceiptNumber, ScanDetector } from '../scanner';
@@ -450,14 +451,10 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
         }
     };
 
+    const report = useCallback(() => reportJournal(terminal.code), [terminal.code]);
+
     const finished = (sale: SaleSummary) => {
-        void addToJournal({
-            receipt_number: sale.receipt_number,
-            at: sale.recorded_at,
-            total_kobo: sale.total_kobo,
-            lines: sale.lines.map((l) => ({ name: l.name, qty: l.qty, unit_price_kobo: l.unit_price_kobo })),
-            payments: sale.payments.map((p) => ({ method: p.method, amount_kobo: p.amount_kobo })),
-        }).catch(() => undefined);
+        void addToJournal(journalEntry(sale)).catch(() => undefined);
         update((c) => emptyCart(c.customerType));
         setAfterSale(sale);
         setView('after');
@@ -613,6 +610,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                             onBack={() => {
                                 setView('sale');
                             }}
+                            reportJournal={report}
                         />
                     )}
 

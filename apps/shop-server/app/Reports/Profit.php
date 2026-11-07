@@ -18,7 +18,7 @@ final class Profit
      */
     public static function buckets(?string $fromDay = null, ?string $toDay = null): array
     {
-        $where = "s.kind = 'sale'";
+        $where = "s.kind IN ('sale', 'back_entry')";
         $bindings = [];
         if ($fromDay !== null) {
             $where .= ' AND s.business_day >= ?';

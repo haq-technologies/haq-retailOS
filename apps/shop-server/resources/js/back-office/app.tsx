@@ -6,6 +6,7 @@ import { useCounterApi } from '@/counter/use-api';
 import { Dashboard } from './dashboard';
 import { Flags } from './flags';
 import { CatalogueHealth } from './health';
+import { LostWindow } from './lost-window';
 import { NeedsCost } from './needs-cost';
 import { Prices } from './prices';
 import { Review } from './review';
@@ -17,9 +18,18 @@ import type { Can, Me } from './types';
  * sections on the left (at the bottom on a phone), and the section itself. Each person sees only the
  * sections their role may open. The address keeps the section, so Back works.
  */
-type Section = 'dashboard' | 'costs' | 'prices' | 'review' | 'catalogue' | 'flags' | 'summary' | 'settings';
+type Section = 'dashboard' | 'costs' | 'prices' | 'review' | 'catalogue' | 'flags' | 'summary' | 'recovery' | 'settings';
 
-const sections: { id: Section; label: string; allowed: (c: Can) => boolean; icon: string }[] = [
+interface Badges {
+    costs: number;
+    flags: number;
+    review: number;
+    prices: number;
+    recovery: number;
+    recovery_shown: boolean;
+}
+
+const sections: { id: Section; label: string; allowed: (c: Can, b: Badges) => boolean; icon: string }[] = [
     { id: 'dashboard', label: 'Dashboard', allowed: (c) => c.dashboard, icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z' },
     { id: 'costs', label: 'Needs cost', allowed: (c) => c.costs, icon: 'M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z' },
     { id: 'prices', label: 'Prices', allowed: (c) => c.prices, icon: 'M8 18V6l8 12V6M5 10.5h14M5 13.5h14' },
@@ -27,6 +37,8 @@ const sections: { id: Section; label: string; allowed: (c: Can) => boolean; icon
     { id: 'catalogue', label: 'Catalogue health', allowed: (c) => c.catalogue, icon: 'M3 12h4l3-7 4 14 3-7h4' },
     { id: 'flags', label: 'Flags', allowed: (c) => c.flags, icon: 'M5 21V4h12l-2.5 4.5L17 13H5' },
     { id: 'summary', label: 'Daily summary', allowed: (c) => c.summary, icon: 'M6 3h8l5 5v13H6zM14 3v5h5M9 13h7M9 17h7' },
+    // After a restore, and while a lost sale waits (D44).
+    { id: 'recovery', label: 'Lost sales', allowed: (c, b) => c.recovery && b.recovery_shown, icon: 'M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 8v4l3 2' },
     { id: 'settings', label: 'Shop settings', allowed: (c) => c.settings, icon: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 12h2M18 12h2M12 4v2M12 18v2' },
 ];
 
@@ -45,7 +57,7 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
     const api = useCounterApi(session.token, setToken);
     const [me, setMe] = useState<Me | null>(null);
     const [section, setSection] = useState<string>(fromHash());
-    const [badge, setBadge] = useState<{ costs: number; flags: number; review: number; prices: number }>({ costs: 0, flags: 0, review: 0, prices: 0 });
+    const [badge, setBadge] = useState<Badges>({ costs: 0, flags: 0, review: 0, prices: 0, recovery: 0, recovery_shown: false });
 
     useEffect(() => {
         void api.get<Me>('/api/back-office/me').then((a) => {
@@ -55,7 +67,7 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
 
     const refreshBadges = useCallback(() => {
         void api
-            .get<{ costs: number; flags: number; review: number; prices: number }>('/api/back-office/badges')
+            .get<Badges>('/api/back-office/badges')
             .then((a) => {
                 if (a.ok) setBadge(a.body);
             })
@@ -79,9 +91,9 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
 
     if (me === null) return <p className="p-6 text-lg text-text-secondary">Loading the back office…</p>;
 
-    const open = sections.filter((s) => s.allowed(me.can));
+    const open = sections.filter((s) => s.allowed(me.can, badge));
     const current: Section | undefined = open.find((s) => s.id === section)?.id ?? open[0]?.id;
-    const count = (id: Section) => (id === 'costs' || id === 'flags' || id === 'review' || id === 'prices' ? badge[id] : 0);
+    const count = (id: Section) => (id === 'costs' || id === 'flags' || id === 'review' || id === 'prices' || id === 'recovery' ? badge[id] : 0);
 
     const nav = (
         <>
@@ -136,6 +148,7 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
                     {current === 'catalogue' && <CatalogueHealth api={api} can={me.can} go={go} />}
                     {current === 'flags' && <Flags api={api} onChanged={refreshBadges} />}
                     {current === 'summary' && <DailySummary api={api} go={go} />}
+                    {current === 'recovery' && <LostWindow api={api} onChanged={refreshBadges} />}
                     {current === 'settings' && (
                         <div className="flex max-w-2xl flex-col gap-4">
                             <h1 className="text-3xl font-bold">Shop settings</h1>

@@ -83,6 +83,15 @@ export class Catalogue {
         for (const p of prices) this.prices.set(p.item_id, p);
     }
 
+    /** Forgets everything, before a fresh snapshot after the server was restored (D44). */
+    clear(): void {
+        for (const map of [this.categories, this.templates, this.picklist, this.brands, this.models, this.items, this.facets, this.barcodes, this.aliases, this.prices, this.facetIndex, this.templateIndex]) {
+            map.clear();
+        }
+        this.shapes = [];
+        this.seq = 0;
+    }
+
     /** Items a cashier can sell: not merged into another, not archived. */
     sellable(item: ItemRow): boolean {
         return item.status !== 'merged' && item.status !== 'archived';

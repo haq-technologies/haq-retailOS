@@ -31,7 +31,7 @@ final readonly class CatalogueHealth
     {
         [$covered, $total] = Backfill::coverage();
         $buckets = Profit::buckets();
-        $first = DB::table('sales')->where('kind', 'sale')->min('recorded_at');
+        $first = DB::table('sales')->whereIn('kind', ['sale', 'back_entry'])->min('recorded_at');
         $since = is_string($first) ? CarbonImmutable::parse($first)->setTimezone($zone)->startOfDay() : null;
 
         // How many of the top Needs-cost items would pass the goal, entered in revenue order.
@@ -53,7 +53,7 @@ final readonly class CatalogueHealth
         /** @var object{sold: int|string, with_code: int|string} $codes */
         $codes = DB::selectOne(<<<SQL
             WITH RECURSIVE {$roots},
-            sold AS (SELECT DISTINCT r.root_id FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN item_roots r ON r.item_id = l.item_id WHERE s.kind = 'sale')
+            sold AS (SELECT DISTINCT r.root_id FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN item_roots r ON r.item_id = l.item_id WHERE s.kind IN ('sale', 'back_entry'))
             SELECT count(*) AS sold,
                    count(*) FILTER (WHERE EXISTS (SELECT 1 FROM barcodes b JOIN item_roots br ON br.item_id = b.item_id WHERE br.root_id = sold.root_id AND b.status <> 'disabled')) AS with_code
             FROM sold
@@ -93,7 +93,7 @@ final readonly class CatalogueHealth
                    count(*) FILTER (WHERE coalesce(t.lines->>(l.line_no - 1), '') NOT IN ('tile', 'search')) AS other
             FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN item_roots r ON r.item_id = l.item_id JOIN items i ON i.id = r.root_id
             LEFT JOIN sale_timings t ON t.sale_id = s.id
-            WHERE s.kind = 'sale' AND NOT EXISTS (
+            WHERE s.kind IN ('sale', 'back_entry') AND NOT EXISTS (
                 SELECT 1 FROM barcodes b JOIN item_roots br ON br.item_id = b.item_id WHERE br.root_id = r.root_id AND b.status <> 'disabled'
             )
             GROUP BY r.root_id, i.display_name

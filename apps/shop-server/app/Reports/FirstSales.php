@@ -28,7 +28,7 @@ final class FirstSales
             SELECT r.root_id AS item_id, i.display_name AS name, i.status, s.customer_type, l.unit_price_kobo AS price, l.qty, u.name AS cashier, s.recorded_at AS at
             FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN item_roots r ON r.item_id = l.item_id JOIN items i ON i.id = r.root_id
             JOIN users u ON u.id = s.cashier_id
-            WHERE s.kind = 'sale' AND s.business_day = ? AND l.flags->>'first_sale' = 'true'
+            WHERE s.kind IN ('sale', 'back_entry') AND s.business_day = ? AND l.flags->>'first_sale' = 'true'
             ORDER BY s.recorded_at
             SQL, [$day]);
 

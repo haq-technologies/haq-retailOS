@@ -8,6 +8,7 @@ use App\Identity\Models\User;
 use App\Organisation\Models\Terminal;
 use App\Sales\ApprovalNeeded;
 use App\Sales\Finish;
+use App\Sales\JournalNeeded;
 use App\Sales\PriceNeedsCheck;
 use App\Sales\SaleChanged;
 use App\Sales\SaleRefused;
@@ -32,6 +33,8 @@ final class SaleController
             $sale = $finish->finish($terminal, $cashier, SaleRequest::fromArray($body));
         } catch (SaleChanged $e) {
             return response()->json(['message' => $e->getMessage()], 409);
+        } catch (JournalNeeded $e) {
+            return response()->json(['message' => $e->getMessage(), 'journal_needed' => true], 409);
         } catch (ApprovalNeeded $e) {
             return response()->json(['message' => $e->getMessage(), 'approval' => $e->toArray()], 422);
         } catch (PriceNeedsCheck $e) {

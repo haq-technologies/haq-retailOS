@@ -51,6 +51,9 @@ final readonly class Matrix
             'credit_limit_history', 'settings_history', 'flag_marks',
             // Audit and numbering
             'audit_log', 'audit_sensitive', 'audit_roots', 'epochs',
+            // Restore recovery: restores, the counters' journal reports, the sales they found missing and
+            // the back entries that re-entered them [F1, S14]
+            'restores', 'journal_reports', 'lost_sales', 'back_entries',
             // Stock, once stock tracking is on (Pro)
             'stock_movements',
             // Every PIN entry, right or wrong: lockouts, backoff and the owner dashboard [F8]

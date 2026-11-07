@@ -6,9 +6,10 @@ export interface SaleSummary {
     recorded_at: string;
     customer_type: string;
     cashier: string;
+    cashier_id: string;
     total_kobo: number;
     change_kobo: number;
-    lines: { client_line_id: string; name: string; colour: string | null; qty: number; unit_price_kobo: number; line_total_kobo: number }[];
+    lines: { client_line_id: string; item_id: string; name: string; colour: string | null; qty: number; unit_price_kobo: number; line_total_kobo: number }[];
     payments: { method: string; amount_kobo: number; tendered_kobo: number | null; change_kobo: number | null; reference: string | null }[];
     print_status: string | null;
     retried: boolean;
@@ -17,6 +18,8 @@ export interface SaleSummary {
 export interface FinishAnswer {
     sale?: SaleSummary;
     message?: string;
+    /** The server was restored: the counter reports its journal, then finishes again. */
+    journal_needed?: boolean;
     check?: { client_line_id: string; kind: 'confirm' | 'retype' };
     approval?: { action: string; subject_id: string; item_id: string | null; price_kobo: number | null };
 }

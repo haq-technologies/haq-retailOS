@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\DB;
  * again when a later cost entry turns earlier sales into losses; prices below the floor or outside the
  * usual range; transfers with no reference or waiting over 30 minutes; discarded parked sales; drawer
  * openings with no sale or with the key; shifts that closed by themselves; approvals by a manager who had
- * not signed in; and lockouts after wrong PINs.
+ * not signed in; lockouts after wrong PINs; and sales re-entered after a restore, which are back-dated
+ * (spec section 9) [F1].
  *
  * Each flag is read from the append-only record that raised it, so a flag can never be lost or deleted.
  * Marking one as seen adds a row to flag_marks; the flag stays listed, with who saw it. Cost amounts are
@@ -39,6 +40,7 @@ final readonly class Flags
         'auto_closed' => 'Shift closed by itself',
         'approval_away' => 'Approved while not signed in',
         'locked_out' => 'Locked out',
+        'back_entry' => 'Re-entered after a restore',
     ];
 
     /** What goes to the dashboard's Needs your attention until someone marks it as seen. */
@@ -77,6 +79,7 @@ final readonly class Flags
                 'auto_closed' => $this->autoClosed($period),
                 'approval_away' => $this->approvalAway($period),
                 'locked_out' => $this->lockedOut($period),
+                'back_entry' => $this->backEntries($period),
                 default => [],
             };
             array_push($rows, ...$found);
@@ -120,6 +123,7 @@ final readonly class Flags
             'no_sale', 'key_open' => ['cash_events', 'id'],
             'auto_closed' => ['shifts', 'id'],
             'approval_away' => ['approvals', 'id'],
+            'back_entry' => ['back_entries', 'id'],
             default => ['audit_log', 'id'],
         };
 
@@ -136,7 +140,7 @@ final readonly class Flags
             SELECT l.id, l.name_snapshot AS name, l.qty, l.unit_price_kobo AS price, l.cost_snapshot_kobo AS cost, s.id AS sale_id,
                    s.receipt_number, s.recorded_at AS at, u.id AS cashier_id, u.name AS cashier, t.name AS terminal
             FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN users u ON u.id = s.cashier_id JOIN terminals t ON t.id = s.terminal_id
-            WHERE s.kind = 'sale' AND l.cost_snapshot_kobo IS NOT NULL AND l.unit_price_kobo < l.cost_snapshot_kobo
+            WHERE s.kind IN ('sale', 'back_entry') AND l.cost_snapshot_kobo IS NOT NULL AND l.unit_price_kobo < l.cost_snapshot_kobo
               AND s.recorded_at >= ? AND s.recorded_at < ?
             SQL, [$p->fromSql(), $p->toSql()]);
 
@@ -161,7 +165,7 @@ final readonly class Flags
                    json_agg(s.id ORDER BY s.recorded_at)::text AS sale_ids, sum(l.line_total_kobo) AS revenue
             FROM cost_resolutions r JOIN sale_lines l ON l.id = r.sale_line_id JOIN sales s ON s.id = l.sale_id
             JOIN items i ON i.id = r.item_id JOIN users u ON u.id = s.cashier_id JOIN terminals t ON t.id = s.terminal_id
-            WHERE s.kind = 'sale' AND l.unit_price_kobo < r.unit_cost_kobo AND r.created_at >= ? AND r.created_at < ?
+            WHERE s.kind IN ('sale', 'back_entry') AND l.unit_price_kobo < r.unit_cost_kobo AND r.created_at >= ? AND r.created_at < ?
             GROUP BY r.cost_entry_id
             SQL, [$p->fromSql(), $p->toSql()]);
 
@@ -225,7 +229,7 @@ final readonly class Flags
                    t.name AS terminal, m.name AS approver
             FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN users u ON u.id = s.cashier_id JOIN terminals t ON t.id = s.terminal_id
             LEFT JOIN approvals a ON a.id = l.approval_id LEFT JOIN users m ON m.id = a.approver_id
-            WHERE s.kind = 'sale' AND {$where} AND s.recorded_at >= ? AND s.recorded_at < ?
+            WHERE s.kind IN ('sale', 'back_entry') AND {$where} AND s.recorded_at >= ? AND s.recorded_at < ?
             SQL, [$p->fromSql(), $p->toSql()]);
     }
 
@@ -239,7 +243,7 @@ final readonly class Flags
             SELECT pm.id, pm.amount_kobo AS amount, pm.alert_seen, s.id AS sale_id, s.receipt_number, s.recorded_at AS at,
                    u.id AS cashier_id, u.name AS cashier, t.name AS terminal
             FROM payments pm JOIN sales s ON s.id = pm.sale_id JOIN users u ON u.id = s.cashier_id JOIN terminals t ON t.id = s.terminal_id
-            WHERE s.kind = 'sale' AND pm.method = 'transfer' AND coalesce(btrim(pm.reference), '') = ''
+            WHERE s.kind IN ('sale', 'back_entry') AND pm.method = 'transfer' AND coalesce(btrim(pm.reference), '') = ''
               AND s.recorded_at >= ? AND s.recorded_at < ?
             SQL, [$p->fromSql(), $p->toSql()]);
 
@@ -357,6 +361,28 @@ final readonly class Flags
         return array_map(fn (object $r) => $this->row('auto_closed', $r->id, $r->at, 'Shift closed by itself, not counted',
             "The shift of {$this->date($r->business_day)} on {$r->drawer} was still open 4 hours after closing time",
             who: $r->opener, cashierId: $r->opener_id, terminal: $r->terminal), $rows);
+    }
+
+    /**
+     * A sale lost to a restore and re-entered from a counter's journal, under its original receipt number
+     * and time (spec section 9) [F1]. Listed when it was re-entered, since that is when it reached the books.
+     *
+     * @return list<Flag>
+     */
+    private function backEntries(Period $p): array
+    {
+        /** @var list<object{id: string, at: string, sold_at: string, sale_id: string, receipt_number: string, total: int, cashier_id: string, cashier: string, terminal: string, by: string}> $rows */
+        $rows = DB::select(<<<'SQL'
+            SELECT b.id, b.entered_at AS at, b.sold_at, s.id AS sale_id, s.receipt_number, s.total_kobo AS total,
+                   u.id AS cashier_id, u.name AS cashier, t.name AS terminal, m.name AS by
+            FROM back_entries b JOIN sales s ON s.id = b.sale_id JOIN users u ON u.id = s.cashier_id
+            JOIN terminals t ON t.id = s.terminal_id JOIN users m ON m.id = b.entered_by
+            WHERE b.entered_at >= ? AND b.entered_at < ?
+            SQL, [$p->fromSql(), $p->toSql()]);
+
+        return array_map(fn (object $r) => $this->row('back_entry', $r->id, $r->at, "{$r->receipt_number} re-entered after the restore",
+            "Sold {$this->date($r->sold_at)} at {$this->time(CarbonImmutable::parse($r->sold_at))} for ".Money::naira((int) $r->total)." · re-entered by {$r->by}",
+            who: $r->cashier, cashierId: $r->cashier_id, approver: $r->by, terminal: $r->terminal, saleIds: [$r->sale_id], receipt: $r->receipt_number, amount: (int) $r->total), $rows);
     }
 
     /**

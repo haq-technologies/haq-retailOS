@@ -59,6 +59,19 @@ final readonly class Shifts
     }
 
     /**
+     * The shift a back entry belongs to (spec section 9) [F1]: the drawer's newest shift on the sale's
+     * business day, open or not, which a restore usually keeps; otherwise the drawer's open shift, as for
+     * any sale. The back entry carries its own business day either way. Call inside a transaction.
+     */
+    public function forBackEntry(Terminal $terminal, string $businessDay, ?string $actorId): string
+    {
+        $drawerId = $this->drawerFor($terminal);
+        $id = DB::table('shifts')->where('drawer_id', $drawerId)->where('business_day', $businessDay)->orderByDesc('opened_at')->value('id');
+
+        return is_string($id) ? $id : $this->openFor($terminal, $actorId)->id;
+    }
+
+    /**
      * Closes every shift still open four hours after the shop's closing time, as unclosed and not
      * counted [S12]. With no closing time set, nothing closes by itself. Returns how many closed.
      */

@@ -9,7 +9,9 @@ use App\Audit\AuditLog;
 use App\Backups\Status;
 use App\Organisation\BranchKey;
 use App\Organisation\Models\Terminal;
+use App\Platform\Ulid;
 use App\Sales\Epochs;
+use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +20,9 @@ use Illuminate\Support\Facades\DB;
  * counter starts a new epoch, one more than the highest known in the restored database or in the epoch
  * file on the backup disk, and its receipt numbers start after 1,000, so no receipt number can repeat.
  * The branch key comes back from the backup disk if this machine has none, so the epochs stay signed by
- * the same key.
+ * the same key. The restore is recorded: each counter then reports its journal before it sells again, the
+ * lost-window screen lists what the journals hold and the restored data lacks, and every counter takes a
+ * fresh copy of the catalogue.
  */
 final class AfterRestoreCommand extends Command
 {
@@ -48,6 +52,11 @@ final class AfterRestoreCommand extends Command
                 $highest = max(is_numeric($inDatabase) ? (int) $inDatabase : 0, (int) ($known[$terminal->code] ?? 0));
                 $started[$terminal->code] = $epochs->begin($terminal, $highest + 1, $reason, afterNumber: 1000);
             }
+            $newest = DB::table('sales')->max('recorded_at');
+            DB::table('restores')->insert([
+                'id' => Ulid::generate(), 'reason' => $reason, 'epochs' => json_encode((object) $started, JSON_THROW_ON_ERROR),
+                'restored_to' => is_string($newest) ? $newest : null, 'at' => CarbonImmutable::now()->format('Y-m-d H:i:s.uP'),
+            ]);
         });
 
         $audit->record(new AuditEntry(action: 'backup.epochs_started', subjectType: 'branch', after: ['reason' => $reason, 'epochs' => $started]));
@@ -58,7 +67,7 @@ final class AfterRestoreCommand extends Command
         foreach ($started as $code => $epoch) {
             $this->line("{$code} now numbers receipts {$code}-E{$epoch}-001001 onwards.");
         }
-        $this->components->warn('Before trading resumes, check each counter has reconnected; sales on its journal that the restored copy lacks are re-entered as back entries (spec section 9).');
+        $this->components->warn('Each counter reports its journal when it reconnects, before it sells again. A manager then re-enters the sales the journals hold and this copy lacks, on the Lost sales screen of the back office (spec section 9).');
 
         return self::SUCCESS;
     }

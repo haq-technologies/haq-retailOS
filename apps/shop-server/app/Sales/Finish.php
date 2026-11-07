@@ -43,6 +43,7 @@ final class Finish
         private readonly Settings $settings,
         private readonly AuditLog $audit,
         private readonly PriceRules $prices,
+        private readonly Journal $journal,
     ) {}
 
     /**
@@ -60,6 +61,11 @@ final class Finish
             $existing = $this->existing($terminal, $request->idempotencyKey);
             if ($existing !== null) {
                 return $this->retried($existing, $hash);
+            }
+            // After a restore, a counter reports its journal before it sells again, so its new epoch is
+            // above anything its journal shows (spec section 4) [S14].
+            if ($this->journal->needed($terminal)) {
+                throw new JournalNeeded;
             }
 
             $this->checkPayments($request);
@@ -164,7 +170,7 @@ final class Finish
             }
 
             return $this->retried($existing, $hash);
-        } catch (SaleChanged $e) {
+        } catch (SaleChanged|JournalNeeded $e) {
             throw $e;
         } catch (SaleRefused $e) {
             $this->logFailure($terminal, $cashier, $request, 'refused', $e->getMessage());

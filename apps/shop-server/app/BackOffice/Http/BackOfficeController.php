@@ -15,6 +15,7 @@ use App\Reports\FirstSales;
 use App\Reports\Flags;
 use App\Reports\NeedsCost;
 use App\Reports\Period;
+use App\Sales\LostWindow;
 use App\Settings\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -66,6 +67,9 @@ final class BackOfficeController
             'flags' => $attention,
             'review' => $can['review'] ? $review->total() : 0,
             'prices' => $firstSales,
+            'recovery' => $can['recovery'] ? LostWindow::waiting() : 0,
+            // The lost-window screen joins the menu after a restore, and while a lost sale waits.
+            'recovery_shown' => $can['recovery'] && LostWindow::shown(),
         ]);
     }
 

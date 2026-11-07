@@ -25,15 +25,15 @@ final readonly class CashierDay
         $limit = $this->settings->get('pricing.below_range_confirms');
         $limit = is_int($limit) ? $limit : 3;
 
-        $sales = $this->byPerson("SELECT cashier_id AS id, count(*) AS n FROM sales WHERE kind = 'sale' AND business_day = ? GROUP BY cashier_id", [$day]);
+        $sales = $this->byPerson("SELECT cashier_id AS id, count(*) AS n FROM sales WHERE kind IN ('sale', 'back_entry') AND business_day = ? GROUP BY cashier_id", [$day]);
         $belowRange = $this->byPerson(<<<'SQL'
             SELECT s.cashier_id AS id, count(*) AS n FROM sale_lines l JOIN sales s ON s.id = l.sale_id
-            WHERE s.kind = 'sale' AND s.business_day = ? AND l.flags->>'outside' = 'below' AND l.approval_id IS NULL GROUP BY s.cashier_id
+            WHERE s.kind IN ('sale', 'back_entry') AND s.business_day = ? AND l.flags->>'outside' = 'below' AND l.approval_id IS NULL GROUP BY s.cashier_id
             SQL, [$day]);
         // The confirms used in each person's open shift, as the counter counts them (PriceRules).
         $inOpenShift = $this->byPerson(<<<'SQL'
             SELECT s.cashier_id AS id, count(*) AS n FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN shifts sh ON sh.id = s.shift_id
-            WHERE s.kind = 'sale' AND sh.status = 'open' AND l.flags->>'outside' = 'below' AND l.approval_id IS NULL GROUP BY s.cashier_id
+            WHERE s.kind IN ('sale', 'back_entry') AND sh.status = 'open' AND l.flags->>'outside' = 'below' AND l.approval_id IS NULL GROUP BY s.cashier_id
             SQL, []);
         $discarded = $this->byPerson("SELECT actor_id AS id, count(*) AS n FROM parked_sale_events WHERE type = 'discarded' AND at >= ? AND at < ? AND actor_id IS NOT NULL GROUP BY actor_id",
             [$span->fromSql(), $span->toSql()]);
@@ -41,7 +41,7 @@ final readonly class CashierDay
             [$span->fromSql(), $span->toSql()]);
         $noReference = $this->byPerson(<<<'SQL'
             SELECT s.cashier_id AS id, count(*) AS n FROM payments pm JOIN sales s ON s.id = pm.sale_id
-            WHERE s.kind = 'sale' AND s.business_day = ? AND pm.method = 'transfer' AND coalesce(btrim(pm.reference), '') = '' GROUP BY s.cashier_id
+            WHERE s.kind IN ('sale', 'back_entry') AND s.business_day = ? AND pm.method = 'transfer' AND coalesce(btrim(pm.reference), '') = '' GROUP BY s.cashier_id
             SQL, [$day]);
         $noSale = $this->byPerson("SELECT actor_id AS id, count(*) AS n FROM cash_events WHERE type = 'no_sale_open' AND at >= ? AND at < ? AND actor_id IS NOT NULL GROUP BY actor_id",
             [$span->fromSql(), $span->toSql()]);

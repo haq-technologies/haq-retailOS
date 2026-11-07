@@ -6,6 +6,7 @@ namespace App\Reports;
 
 use App\Catalogue\ReviewQueue;
 use App\Cost\Backfill;
+use App\Sales\LostWindow;
 use App\Settings\Settings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,24 @@ final readonly class Dashboard
     }
 
     /**
+     * What the shop must put right, read live and gone once it is: sales to re-enter after a restore
+     * (spec section 9). Unlike flags, these are never marked as seen.
+     *
+     * @return list<array{kind: string, title: string, detail: string, open: ?string}>
+     */
+    public function alerts(): array
+    {
+        $alerts = [];
+        $lost = LostWindow::waiting();
+        if ($lost > 0) {
+            $alerts[] = ['kind' => 'lost_sales', 'title' => $lost === 1 ? '1 sale to re-enter after the restore' : "{$lost} sales to re-enter after the restore",
+                'detail' => 'A counter journal holds sales the restored data lacks; customers may hold receipts for them.', 'open' => 'recovery'];
+        }
+
+        return $alerts;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function forDay(string $day, bool $withCost = false): array
@@ -59,6 +78,7 @@ final readonly class Dashboard
             'profit' => Profit::buckets($day, $day),
             'coverage_percent' => $total === 0 ? 0 : intdiv($covered * 100, $total),
             'attention' => ['total' => count($attention), 'flags' => array_slice($attention, 0, 5)],
+            'alerts' => $this->alerts(),
             'cashiers' => $this->cashiers->forDay($day),
             'todo' => [
                 'needs_cost' => NeedsCost::queue(limit: 0)['total_items'],
