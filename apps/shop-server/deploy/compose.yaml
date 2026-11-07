@@ -102,9 +102,12 @@ services:
       <<: *app-env
       BACKUP_STATUS_DIR: /backup/status
       BACKUP_RESTORE_HOST: backup
+      # The health page shows when the HTTPS certificate expires (spec section 4) [F24].
+      HEALTH_CERTIFICATE: /etc/haq/tls/server.crt
     volumes:
       - storage:/app/storage
       - ${BACKUP_DIR:-backup-repo}:/backup
+      - tls:/etc/haq/tls:ro
 
   # Backups (spec section 9) [S16, F24]: pgBackRest beside PostgreSQL. A weekly full and daily
   # incrementals with catch-up, retention of four weeks, and the weekly test restore that the scheduler

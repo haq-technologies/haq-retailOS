@@ -60,8 +60,8 @@ test('reports a sale the server lacks from the counter journal, and the owner re
     await back.getByRole('button', { name: /^Halima/ }).click();
     await back.keyboard.type('135790', { delay: 60 });
     await back.getByRole('button', { name: 'Sign in' }).click();
-    await expect(back.getByRole('button', { name: 'Open' })).toBeVisible();
-    await expect(back.getByText('1 sale to re-enter after the restore')).toBeVisible();
+    const alert = back.getByRole('listitem').filter({ hasText: '1 sale to re-enter after the restore' });
+    await expect(alert.getByRole('button', { name: 'Open' })).toBeVisible();
 
     await back.getByRole('link', { name: /Lost sales/ }).first().click();
     await expect(back.getByRole('heading', { name: 'Sales to re-enter after the restore' })).toBeVisible();

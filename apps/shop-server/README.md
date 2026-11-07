@@ -57,7 +57,7 @@ A shop's server runs the images CI publishes to GHCR on every merge to main (D26
 sudo apps/shop-server/deploy/install.sh --profile shop.profile.json --name haq-server.local --ip 192.168.1.10
 ```
 
-It makes every secret on the server, pulls the images, starts the stack (the roles, migration and certificate jobs run first and exit), applies the profile and loads the starter catalogue. It is safe to run again. If the images are private, set `GHCR_USER` and `GHCR_TOKEN` (a read-only token) first.
+It makes every secret on the server, pulls the images, starts the stack (the roles, migration and certificate jobs run first and exit), applies the profile and loads the starter catalogue. It also adds smartmontools and a systemd timer, haq-host-health, that writes the server's own report (SSD health and its time source) for the health page every 15 minutes (`deploy/host-health.sh`, D45). It is safe to run again. If the images are private, set `GHCR_USER` and `GHCR_TOKEN` (a read-only token) first.
 
 Then check the install (gate G2; spec section 14, checks D and E):
 
@@ -87,7 +87,7 @@ apps/shop-server/e2e/run.sh -g "holds"      # the ones whose name matches
 
 ## The back office
 
-Open `/back-office` on a back-office device (the owner's phone or laptop, enrolled with a code such as D01) or from a counter. It signs in with the same name tiles, and each person sees only what their role may open (spec section 3): the dashboard with profit in three parts and Needs your attention, Needs cost with the backfill, Prices (first sales and set prices), Review (typed brands and words, new items, barcodes, duplicates with merge and undo), Catalogue health, Flags, the Daily summary (on screen, printed on a counter's printer, and the sales exports), Lost sales after a restore (D44) and Shop settings. Cost and profit reach only those who may see cost, in the API and in every export. The browser tests in `e2e/owner.spec.ts` drive it.
+Open `/back-office` on a back-office device (the owner's phone or laptop, enrolled with a code such as D01) or from a counter. It signs in with the same name tiles, and each person sees only what their role may open (spec section 3): the dashboard with profit in three parts and Needs your attention, Needs cost with the backfill, Prices (first sales and set prices), Review (typed brands and words, new items, barcodes, duplicates with merge and undo), Catalogue health, Flags, the Daily summary (on screen, printed on a counter's printer, and the sales exports), Lost sales after a restore (D44), Server health for the owner (D45) and Shop settings. Cost and profit reach only those who may see cost, in the API and in every export. The browser tests in `e2e/owner.spec.ts` drive it.
 
 ## Backups
 
@@ -97,7 +97,10 @@ pgBackRest archives WAL to the backup volume (in a shop, the second internal dis
 docker compose exec backup haq-backup.sh full            # a full backup now
 docker compose exec backup haq-backup.sh test-restore    # the test restore now (the scheduler verifies it)
 docker compose exec scheduler php artisan backups:status
+docker compose exec scheduler php artisan health:check   # what Server health shows (the scheduler runs it every minute)
 ```
+
+Server health in the back office (the owner's, D45) shows the WAL copy, the last backup and test restore, the disks and SSDs, the certificate, the clock, the version, the grant check and the audit chains, with a Back up now button; the owner's dashboard repeats its warnings. The nightly grant and audit checks run in the night window or at the next quiet moment if the server was off (catch-up), as the backups do. A clock before this version was made, or one that jumped back, stamps sales as unverified until the owner confirms the time there.
 
 A shop's restore is `deploy/restore.sh`; docs/operations/restore-drill.md walks through it. After a restore each counter reports its journal (its last seven days of sales) before it sells again, and a manager re-enters the sales the restored copy lacks on Lost sales in the back office, under their original receipt numbers (D44). Updates come as signed releases through `deploy/update.sh` (docs/operations/releases.md).
 

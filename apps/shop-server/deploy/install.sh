@@ -96,7 +96,7 @@ fi
 # The updater, the restore and the install check live with the stack, so updates need no checkout; and the
 # release public key, so the updater can check a release's signature (spec section 4).
 mkdir -p "$dir/bin"
-cp "$here/update.sh" "$here/restore.sh" "$here/check-install.sh" "$dir/bin/"
+cp "$here/update.sh" "$here/restore.sh" "$here/check-install.sh" "$here/host-health.sh" "$dir/bin/"
 if [ -f "$here/release-public.pem" ]; then
     cp "$here/release-public.pem" "$dir/release-public.pem"
 else
@@ -127,6 +127,40 @@ compose exec -T app sh -c 'cat > /tmp/shop.profile.json' < "$profile"
 compose exec -T app sh -c 'php artisan shop:apply-profile /tmp/shop.profile.json; status=$?; rm -f /tmp/shop.profile.json; exit $status'
 compose exec -T app php artisan catalogue:seed
 compose exec -T app php artisan db:mutability --check
+
+# The host's own report for the health page: SSD health from smartctl and the time source, every 15
+# minutes, into the backup disk's status folder (spec section 4) [F24, D45].
+if [ -n "$backup_dir" ]; then
+    status_dir="$backup_dir/status"
+else
+    status_dir="$(docker volume inspect -f '{{ .Mountpoint }}' "${project}_backup-repo" 2>/dev/null || true)/status"
+fi
+if ! command -v smartctl >/dev/null && command -v apt-get >/dev/null; then
+    apt-get install -y -qq smartmontools >/dev/null 2>&1 || echo "WARNING: smartmontools did not install, so the health page cannot show SSD health. Install it when the server is online." >&2
+fi
+if command -v systemctl >/dev/null && [ -d /etc/systemd/system ] && [ "$status_dir" != "/status" ]; then
+    cat > /etc/systemd/system/haq-host-health.service <<UNIT
+[Unit]
+Description=HAQ Retail OS: the server's SSD and clock report for the health page
+
+[Service]
+Type=oneshot
+ExecStart=$dir/bin/host-health.sh $status_dir
+UNIT
+    cat > /etc/systemd/system/haq-host-health.timer <<UNIT
+[Unit]
+Description=HAQ Retail OS: the server's SSD and clock report, every 15 minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=15min
+
+[Install]
+WantedBy=timers.target
+UNIT
+    systemctl daemon-reload
+    systemctl enable --now haq-host-health.timer >/dev/null 2>&1 || echo "WARNING: the host health timer did not start." >&2
+fi
 
 run="docker compose --project-name $project -f $dir/compose.yaml --env-file $dir/.env"
 cat <<DONE

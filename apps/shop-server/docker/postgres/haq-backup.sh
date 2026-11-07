@@ -14,6 +14,9 @@
 # and writes /backup/status/restore.json. The app's scheduler (php artisan backups:tick) then counts the
 # rows and verifies every audit chain on it and writes verified-<label>.json; this loop then stops the
 # temporary server and removes its files.
+#
+# Back up now: the owner asks on the health page, the scheduler writes status/backup-now.json, and this
+# loop, which looks every 15 seconds, takes a backup and notes the request it answered in backup-now-done.
 set -u
 
 STANZA=shop
@@ -126,10 +129,24 @@ test_restore() {
     return 0
 }
 
+# A Back up now not yet answered (the file is the scheduler's, so the answer goes in a file of our own).
+asked() {
+    [ -f "$STATUS/backup-now.json" ] || return 1
+    [ "$(jq -r '.requested_at // empty' "$STATUS/backup-now.json" 2>/dev/null)" != "$(cat "$STATUS/backup-now-done" 2>/dev/null)" ]
+}
+
+answer() {
+    requested=$(jq -r '.requested_at // empty' "$STATUS/backup-now.json" 2>/dev/null)
+    log "a backup asked for on the health page ($requested)"
+    backup incr || true
+    echo "$requested" > "$STATUS/backup-now-done"
+}
+
 loop() {
     until prepare; do log "waiting for the repository"; sleep 30; done
     write_status
     while true; do
+        if asked; then answer; fi
         now=$(date +%s)
         full=$(last_stop full)
         any=$(last_stop any)
@@ -143,7 +160,11 @@ loop() {
         elif [ $((now - verified)) -ge $((7 * 86400)) ] && { in_window || idle; }; then
             test_restore
         fi
-        sleep 300
+        waited=0
+        while [ "$waited" -lt 300 ] && ! asked; do
+            sleep 15
+            waited=$((waited + 15))
+        done
     done
 }
 

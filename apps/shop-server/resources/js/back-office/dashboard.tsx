@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { WarningIcon } from '@/components/icons';
+import { CheckIcon, WarningIcon } from '@/components/icons';
 import { Notice } from '@/components/notice';
 import type { CounterApi } from '@/counter/use-api';
 import { clock, longDay, naira, plural, when } from './format';
@@ -170,13 +170,13 @@ export function Dashboard({ api, can, go, onChanged }: { api: CounterApi; can: C
             {data.alerts.length > 0 && (
                 <ul aria-label="Put these right" className="flex flex-col gap-2">
                     {data.alerts.map((a) => (
-                        <li key={a.kind} className="flex flex-col gap-3 rounded-2xl border-2 border-warning p-4 medium:flex-row medium:items-center">
+                        <li key={`${a.kind}:${a.title}`} className="flex flex-col gap-3 rounded-2xl border-2 border-warning p-4 medium:flex-row medium:items-center">
                             <WarningIcon className="hidden h-7 w-7 shrink-0 text-warning-text medium:block" />
                             <span className="flex min-w-0 flex-1 flex-col gap-1">
                                 <span className="text-lg font-bold">{a.title}</span>
                                 <span>{a.detail}</span>
                             </span>
-                            {a.open !== null && (
+                            {a.open !== null && (a.open !== 'server' || can.health) && (
                                 <button
                                     type="button"
                                     className="min-h-touch self-start rounded-xl bg-action px-6 text-lg font-bold text-white medium:self-center"
@@ -268,6 +268,13 @@ export function Dashboard({ api, can, go, onChanged }: { api: CounterApi; can: C
             </section>
 
             {data.cashiers.length > 0 && <CashiersToday rows={data.cashiers} />}
+
+            {data.system !== null && (
+                <p className="flex items-center gap-2 text-base text-text-secondary">
+                    <CheckIcon className="h-5 w-5 shrink-0 text-text" />
+                    {data.system}
+                </p>
+            )}
 
             {viewing !== null && (
                 <SaleSheet

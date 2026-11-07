@@ -8,6 +8,7 @@ use App\Backups\BackupsServiceProvider;
 use App\Catalogue\CatalogueServiceProvider;
 use App\Cost\CostServiceProvider;
 use App\Counter\CounterServiceProvider;
+use App\Health\HealthServiceProvider;
 use App\Identity\IdentityServiceProvider;
 use App\Organisation\OrganisationServiceProvider;
 use App\Platform\PlatformServiceProvider;
@@ -33,6 +34,7 @@ return [
     PrintingServiceProvider::class,
     CounterServiceProvider::class,
     BackupsServiceProvider::class,
+    HealthServiceProvider::class,
     ReportsServiceProvider::class,
     BackOfficeServiceProvider::class,
 ];

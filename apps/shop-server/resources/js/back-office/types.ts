@@ -44,6 +44,8 @@ export interface DashboardData {
     attention: { total: number; flags: Flag[] };
     /** Read live and gone once put right: sales to re-enter after a restore, and the server's health warnings. */
     alerts: { kind: string; title: string; detail: string; open: string | null }[];
+    /** "System checks passed at 06:00: …" when every server check passes. */
+    system: string | null;
     cashiers: CashierRow[];
     todo: { needs_cost: number; flags_week: number; review: number; first_sales: number };
 }
