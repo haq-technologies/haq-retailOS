@@ -2,7 +2,7 @@
 
 The HAQ Retail OS server that runs in each branch, on the shop's own network: Laravel 13 and PostgreSQL 18, with the counter and the back office in React through Inertia. The spec is [docs/spec/retail-os-spec-v1.5.md](../../docs/spec/retail-os-spec-v1.5.md), and the build order is in [PLAN.md](../../PLAN.md).
 
-**Status:** Phases 2 and 3 are built (the foundation, then the counter and sale core); gate G3 waits for the pilot hardware. Phase 4's owner features are built in the back office, and recovery is being built (PLAN.md).
+**Status:** Phases 2 and 3 are built (the foundation, then the counter and sale core); gate G3 waits for the pilot hardware. Phase 4's owner features are built, recovery included; the shadow pilot and the hardening wait for G3 (PLAN.md).
 
 ## Run it on the development computer
 
@@ -128,7 +128,7 @@ Other commands run the same way: `docker compose exec app php artisan …`, `doc
 
 | Path | What it is |
 |---|---|
-| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation` holds the shop, its branches and terminals; `Audit` the hash chains, roots and spool; `Settings` the settings, their history and the shop profile tool; `Identity` name tiles and PINs, acting-user tokens, approvals and counter enrolment; `Catalogue` the categories, pick-lists, brands, models, items, the one name routine, new items made at the counter and what the counter learns (barcodes, aliases); `Cost` cost entries; `Shifts` shifts per drawer; `Sales` Finish, receipt numbers, epochs and prices; `Printing` receipts, the printers and the drawer log; `Counter` the counter's catalogue feed and API; `Backups` backup status and the after-restore epochs; `Reports` the dashboard, profit in three buckets, Needs cost, flags, first-sale prices, catalogue health, the daily summary and the CSV exports; `BackOffice` the back office's API and who may open what. `Http/` and `Providers/` are Laravel's glue |
+| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation` holds the shop, its branches and terminals; `Audit` the hash chains, roots and spool; `Settings` the settings, their history and the shop profile tool; `Identity` name tiles and PINs, acting-user tokens, approvals and counter enrolment; `Catalogue` the categories, pick-lists, brands, models, items, the one name routine, new items made at the counter and what the counter learns (barcodes, aliases); `Cost` cost entries; `Shifts` shifts per drawer; `Sales` Finish, receipt numbers, epochs, prices, and the counter journal's report, lost sales and back entries after a restore; `Printing` receipts, the printers and the drawer log; `Counter` the counter's catalogue feed and API; `Backups` backup status and the after-restore epochs; `Health` the server's health page, the clock check and catch-up of the nightly checks; `Reports` the dashboard, profit in three buckets, Needs cost, flags, first-sale prices, catalogue health, the daily summary and the CSV exports; `BackOffice` the back office's API and who may open what. `Http/` and `Providers/` are Laravel's glue |
 | `config/` | Every setting. Laravel's defaults are not merged in, so Redis and the other unused drivers stay out |
 | `database/migrations/` | The schema. Every application table has a ULID key (D21) |
 | `resources/js/` | The React side: `app.tsx` boots Inertia, `pages/` holds the pages |

@@ -1,6 +1,7 @@
 /*
  * The counter's service worker (spec section 4) [R4]: the app shell, so a reload while the shop server
- * restarts still opens the counter, which then shows Reconnecting with its sale intact. Built assets carry
+ * restarts still opens the counter, which then shows Reconnecting with its sale intact, also while nginx
+ * answers with its "Starting, please wait" page (D46). Built assets carry
  * a content hash, so they are kept as they are; the counter page is fetched fresh whenever the server
  * answers. API calls are never cached.
  */
@@ -39,11 +40,19 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // While the server starts (no answer, or 502 to 504 with the starting page), the counter opens from its
+    // cached shell and shows Reconnecting with its sale kept; with no shell yet, the starting page shows.
     if (request.mode === 'navigate' && url.pathname === '/counter') {
         event.respondWith(
             fetch(request)
                 .then(async (response) => {
-                    if (response.ok) (await caches.open(SHELL)).put('/counter', response.clone());
+                    if (response.ok) {
+                        (await caches.open(SHELL)).put('/counter', response.clone());
+                        return response;
+                    }
+                    if (response.status >= 502 && response.status <= 504) {
+                        return (await (await caches.open(SHELL)).match('/counter')) ?? response;
+                    }
                     return response;
                 })
                 .catch(async () => (await (await caches.open(SHELL)).match('/counter')) ?? Response.error()),

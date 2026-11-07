@@ -23,12 +23,16 @@ final class LostWindow
         return DB::table('lost_sales')->whereNotExists(fn ($q) => $q->from('back_entries')->whereColumn('back_entries.lost_sale_id', 'lost_sales.id'))->count();
     }
 
-    /** Whether the screen belongs in the menu: a recent restore, or a lost sale still to re-enter. */
+    /**
+     * Whether the screen belongs in the menu: a recent restore, a lost sale still to re-enter, or one
+     * re-entered recently, which the screen still lists (so it never vanishes as the last one is done).
+     */
     public static function shown(): bool
     {
         $since = CarbonImmutable::now()->subDays(self::SHOWN_DAYS)->format('Y-m-d H:i:s.uP');
 
-        return self::waiting() > 0 || DB::table('restores')->where('at', '>=', $since)->exists();
+        return self::waiting() > 0 || DB::table('restores')->where('at', '>=', $since)->exists()
+            || DB::table('back_entries')->where('entered_at', '>=', $since)->exists();
     }
 
     /**

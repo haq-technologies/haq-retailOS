@@ -22,7 +22,7 @@ Add a cashier and a manager (`shop:add-user`), and enrol both counters (`shop:en
 
 ## 2. The counters by hand (touch, keys, scanner, printer)
 
-- [ ] Chrome in kiosk mode opens the counter on start-up, and a hard reboot comes back to it.
+- [ ] Chrome in kiosk mode opens the counter on start-up, and a hard reboot comes back to it (each counter set up as in docs/operations/start-up.md).
 - [ ] Touch: the tiles, the price pad, Pay, the colour row and the dialogs work with a finger alone.
 - [ ] Keys: F8 opens Pay, F4 holds, F2 opens New item, and the scanner's Enter never pays (D34).
 - [ ] The scanner: an unknown barcode is learned; the next scan of it adds the item at once.
