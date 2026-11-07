@@ -32,7 +32,7 @@ final class Profit
         $r = DB::selectOne(<<<SQL
             WITH lines AS (
                 SELECT l.line_total_kobo AS revenue, l.qty, l.cost_snapshot_kobo AS snap,
-                       (SELECT r.unit_cost_kobo FROM cost_resolutions r WHERE r.sale_line_id = l.id ORDER BY r.created_at DESC LIMIT 1) AS est
+                       (SELECT r.unit_cost_kobo FROM cost_resolutions r WHERE r.sale_line_id = l.id ORDER BY r.created_at DESC, r.id DESC LIMIT 1) AS est
                 FROM sale_lines l JOIN sales s ON s.id = l.sale_id
                 WHERE {$where}
             )

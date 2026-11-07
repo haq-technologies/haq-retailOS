@@ -9,7 +9,7 @@ Last updated: 7 November 2026.
 Run the pilot shop on HAQ Retail OS and reach the owner's go-live decision (gate G5) about 22 weeks after kickoff. Then ship the MVP that makes the product sellable, with the first paid shop around month 9.
 
 The pilot succeeds when (spec section 14):
-- all 47 pilot acceptance checks pass and are written down;
+- all 46 pilot acceptance checks pass and are written down (check D6 moved to the MVP with returns, D49);
 - on at least 10 of 14 measured days, the app's totals per payment method match the notebook after differences are traced;
 - every receipt number is used once, and no sale is lost to a crash or power cut;
 - a trained cashier rings a 3-item sale in under 30 seconds on typical days;
@@ -34,7 +34,7 @@ Done:
 - Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the G3 tooling. See the Phase 3 checklist below.
 - Phase 4's owner features, started before G3 at the product owner's go (D39), all five built on 7 November 2026 (D40 to D46): the back office with the owner's dashboard and cost entry with backfill; flags and Needs your attention; the review queues with merge and undo; first-sale prices, catalogue health, the daily summary on screen and printed, and the CSV exports; and recovery: restore epochs end to end with the lost window, server health with catch-up and the server clock, and reboot recovery. See the Phase 4 section below.
 
-Next: the product owner's answers to the open questions in the Phase 4 section, and a look at D40 to D47. Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening wait for G3 (D39).
+Next: the hardening work that needs no hardware (D50), starting with the cost-leak scanner; the product owner's answers to the two open questions in the Phase 4 section. Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening wait for G3 (D39).
 
 ## Team
 
@@ -55,7 +55,7 @@ Weeks count from kickoff. A gate ends a phase only when its criteria are met.
 | 1. Wireframes | 2–4 | Touch-first, responsive wireframes on a new canvas: the counter, then the owner's back office. No clickable prototype and no cashier timing before the build (D12) | **G1:** the product owner signs off the wireframes, and the counter interaction model is frozen. Passed on 6 November 2026 |
 | 2. Foundation | 3–8 | Docker stack; database roles, grants and triggers generated from the mutability matrix; the one-shot migration job; identity (name tiles, PINs, acting-user tokens, bound approvals, idle lock); audit chains, roots and spool; settings and the profile tool; catalogue model, name routine and seeder; the multi-process PostgreSQL harness in CI; images pushed to GHCR; staging on the product owner's computer (D16) | **G2:** a clean Ubuntu virtual machine installs from a profile (D16); the seed loads twice with no change; append-only holds against a deliberately widened grant |
 | 3. Counter and sale core | 6–12 | Counter client; Finish with idempotency, receipt counters, epochs, payments and print jobs; server printing with pending print and the drawer log where a drawer is fitted; Awaiting transfer; catalogue polling; counter journal; speed instrumentation; backups with a test restore; Playwright tests in CI; the release manifest and the updater | **G3 (week 12):** a dress rehearsal on the pilot hardware, installed by pulling from GHCR: 300 scripted sales on two counters, power pulled mid-sale and mid-print, and a restore onto the spare box. Touch, the kiosk keys and the UPS are first tested here (D16) |
-| 4. Shadow pilot, owner features, hardening | 13–20 | Install at the shop in week 13; one counter beside the notebook at agreed hours in weeks 13–18; a weekly release; the Needs-cost queue, backfill preview, three profit buckets, alerts, printed daily summary, review queues with merge and undo, catalogue health, CSV export, restore epochs end to end, the lost-window screen, health page, reboot recovery and catch-up scheduling. In weeks 17–20: the 47 checks automated, the cost-leak scanner, a soak test, and an install rehearsal in under 2 hours | **G4 (week 20):** all 47 checks pass and are written down |
+| 4. Shadow pilot, owner features, hardening | 13–20 | Install at the shop in week 13; one counter beside the notebook at agreed hours in weeks 13–18; a weekly release; the Needs-cost queue, backfill preview, three profit buckets, alerts, printed daily summary, review queues with merge and undo, catalogue health, CSV export, restore epochs end to end, the lost-window screen, health page, reboot recovery and catch-up scheduling. In weeks 17–20: the 46 checks automated, the cost-leak scanner, a soak test, and an install rehearsal in under 2 hours; the parts that need no hardware start before G3 (D50) | **G4 (week 20):** all 46 checks pass and are written down |
 | 5. Measured pilot and decision | 21–22 | Every counter beside the notebook for 14 trading days, measured against the success thresholds | **G5 (week 22):** the owner decides to continue or stop; on continue, the app becomes the record and the notebook stops a week later |
 
 ## Timeline
@@ -68,7 +68,7 @@ Week                           1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17
 3 Counter and sale core        .  .  .  .  . ## ## ## ## ## ## ##  .  .  .  .  .  .  .  .  .  .  G3
 4 Shadow pilot, one counter    .  .  .  .  .  .  .  .  .  .  .  . ## ## ## ## ## ##  .  .  .  .
 4 Owner features, weekly       .  .  .  .  .  .  .  .  .  .  .  . ## ## ## ## ## ## ##  .  .  .
-4 Hardening, 47 checks         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . ## ## ## ##  .  .  G4
+4 Hardening, 46 checks         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . ## ## ## ##  .  .  G4
 5 Measured pilot, 14 days      .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . ## ##  G5
 CI/CD pipeline set-up         ## ## ## ## ## ## ## ## ## ## ## ##  .  .  .  .  .  .  .  .  .  .
 Weekly releases from GitHub    .  .  .  .  .  .  .  .  .  .  .  . ## ## ## ## ## ## ## ## ## ##
@@ -165,17 +165,14 @@ Phase 4's owner features started on 7 November 2026, before gate G3, at the prod
   - [x] Server health: the backup, WAL, test restore, disk, SSD, certificate, clock, version, grants and audit checks, with Back up now, for the owner until the console exists; their warnings on the dashboard; catch-up of missed nightly checks at the next quiet moment; the server clock's unverified mode, which the owner confirms (D45)
   - [x] Reboot recovery: the "starting, please wait" page, a 503 while the database starts, restart policies and Docker at boot checked at install, the counter opening from its saved copy, and the server and counter PC start-up steps (D46; docs/operations/start-up.md)
 
-- [x] Review of the owner features against the spec and the 47 pilot checks (Claude, 7 November 2026). Two pilot items no phase item covered are built: reading the audit log (check D5) and the counter's speed (check A1) (D47). The rest are open questions below.
+- [x] Review of the owner features against the spec and the pilot checks (Claude, 7 November 2026). Two pilot items no phase item covered are built: reading the audit log (check D5) and the counter's speed (check A1) (D47). The rest are open questions below.
+
+Answered on 7 November 2026: undoing a cost is built (D48); check D6 moves to the MVP checks (D49); the hardening work that needs no hardware starts now (D50); the corrected-time view waits for the MVP (D51).
 
 Open questions for the product owner from Phase 4:
 
-1. How many items a cashier creates in a day counts as "high" on the dashboard. Spec section 6 says a high rate is flagged but sets no number; the count shows without a mark until then.
-2. A look at D40 to D47, which Claude proposed and recorded.
-3. Undoing a cost backfill. Spec section 2 says every cost backfill is reversible, but D40 gives no undo, and a line with an estimate is never offered again, so a mistyped cost leaves its estimates wrong. Proposal: an Undo on a cost entry, as new rows, puts back each line's earlier estimate (or none) and the item's earlier cost for later sales.
-4. The off-site copy with its 2-of-3 key shares (spec sections 4 and 13; check E1, "restoring needs both key halves") is not built; the restore drill puts the encrypted flash drives in the MVP. Build it for the pilot, or move it to the MVP under the swap rule, with check E1 changed to match.
-5. Check D6 (two simultaneous returns of one line) is one of the 47 pilot checks, but returns are in the MVP (spec section 13). Proposal: move D6 to the MVP checks.
-6. The hardening work that needs no hardware (a cost-leak scanner over every response and export, the upgrade-path test from two versions back, and automating the 47 checks): start it before G3, or keep it after G3 as D39 says.
-7. The corrected-time view of a wrong clock (spec section 4) waits for the MVP with the licence (D45): confirm.
+1. How many items a cashier creates in a day counts as "high" on the dashboard. Spec section 6 sets no number. Claude recommends 10 a day, a setting the owner can change; until answered the count shows without a mark.
+2. The off-site copy with its 2-of-3 key shares (spec sections 4 and 13; check E1) is not built. Claude recommends building it in Phase 4, before G4: two encrypted flash drives swapped weekly, one always away from the shop, and the backup key in three shares (the product owner, the shop owner, and a sealed copy at the bank). It waits for the product owner's yes.
 
 ## Before Phase 3
 
@@ -288,3 +285,4 @@ Assumptions:
 | 7 November 2026 | Server health, its dashboard warnings, catch-up of the nightly checks and the server clock (D45) |
 | 7 November 2026 | Reboot recovery: the starting page, restart policies and the start-up steps (D46) |
 | 7 November 2026 | Review of Phase 4's owner features: the audit log to read and the counter's speed (D47), and the open questions it raised |
+| 7 November 2026 | The product owner's answers: undoing a cost (D48), check D6 to the MVP (D49), hardware-free hardening starts now (D50), the corrected-time view in the MVP (D51) |

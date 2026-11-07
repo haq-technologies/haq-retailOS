@@ -3,6 +3,7 @@ import { WarningIcon } from '@/components/icons';
 import { Notice } from '@/components/notice';
 import type { CounterApi } from '@/counter/use-api';
 import { naira, plural, shortDate } from './format';
+import { RecentCosts } from './recent-costs';
 
 /**
  * Needs cost (spec section 8) [F14] (wireframes NeedsCost and NeedsCostBulk): items with sales that have
@@ -29,7 +30,7 @@ interface ItemDetail {
     name: string;
     usual_price_kobo: number | null;
     current_cost_kobo: number | null;
-    history: { unit_cost_kobo: number; effective_from: string; by: string | null }[];
+    history: { unit_cost_kobo: number | null; effective_from: string; by: string | null; undo: boolean }[];
 }
 
 interface Preview {
@@ -58,6 +59,7 @@ export function NeedsCost({ api, onChanged }: { api: CounterApi; onChanged: () =
     const [preview, setPreview] = useState<Preview | null>(null);
     const [message, setMessage] = useState<{ tone: 'error' | 'ok'; text: string } | null>(null);
     const [busy, setBusy] = useState(false);
+    const [costsVersion, setCostsVersion] = useState(0);
 
     const load = useCallback(() => {
         void api
@@ -118,6 +120,7 @@ export function NeedsCost({ api, onChanged }: { api: CounterApi; onChanged: () =
             const a = await api.post<{ entries?: number; resolved?: number; message?: string }>('/api/back-office/costs', body());
             if (a.ok) {
                 setMessage({ tone: 'ok', text: `Saved. ${plural(a.body.resolved ?? 0, 'earlier sale now has', 'earlier sales now have')} an estimated cost.` });
+                setCostsVersion((v) => v + 1);
                 setSelected([]);
                 setDigits('');
                 setPreview(null);
@@ -372,6 +375,16 @@ export function NeedsCost({ api, onChanged }: { api: CounterApi; onChanged: () =
                     </section>
                 )}
             </div>
+
+            <RecentCosts
+                api={api}
+                version={costsVersion}
+                onUndone={(text) => {
+                    setMessage({ tone: 'ok', text });
+                    load();
+                    onChanged();
+                }}
+            />
         </div>
     );
 }

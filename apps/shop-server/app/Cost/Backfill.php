@@ -81,7 +81,7 @@ final readonly class Backfill
                     'effective_from' => $effective->format('Y-m-d H:i:s.uP'), 'entered_by' => $actor->id]);
                 $lines = $this->lines([$itemId], $basis, $from);
                 foreach ($lines as $l) {
-                    DB::table('cost_resolutions')->insert([
+                    Costs::resolve([
                         'id' => Ulid::generate(), 'sale_line_id' => $l->id, 'item_id' => $itemId, 'unit_cost_kobo' => $unitCostKobo,
                         'source' => $source, 'basis' => $basis, 'cost_entry_id' => $entryId, 'resolved_by' => $actor->id,
                         'created_at' => $now->format('Y-m-d H:i:s.uP'),
@@ -106,7 +106,7 @@ final readonly class Backfill
     {
         /** @var object{covered: int|string|null, total: int|string|null} $row */
         $row = DB::selectOne(<<<'SQL'
-            SELECT coalesce(sum(CASE WHEN l.cost_snapshot_kobo IS NOT NULL OR EXISTS (SELECT 1 FROM cost_resolutions r WHERE r.sale_line_id = l.id) THEN l.line_total_kobo END), 0) AS covered,
+            SELECT coalesce(sum(CASE WHEN l.cost_snapshot_kobo IS NOT NULL OR (SELECT r.unit_cost_kobo FROM cost_resolutions r WHERE r.sale_line_id = l.id ORDER BY r.created_at DESC, r.id DESC LIMIT 1) IS NOT NULL THEN l.line_total_kobo END), 0) AS covered,
                    coalesce(sum(l.line_total_kobo), 0) AS total
             FROM sale_lines l JOIN sales s ON s.id = l.sale_id WHERE s.kind IN ('sale', 'back_entry')
             SQL);
@@ -136,7 +136,7 @@ final readonly class Backfill
             FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN item_roots r ON r.item_id = l.item_id JOIN items i ON i.id = r.root_id
             JOIN users u ON u.id = s.cashier_id
             WHERE r.root_id IN ({$in}) AND s.kind IN ('sale', 'back_entry') AND l.cost_snapshot_kobo IS NULL
-              AND NOT EXISTS (SELECT 1 FROM cost_resolutions c WHERE c.sale_line_id = l.id) {$since}
+              AND (SELECT c.unit_cost_kobo FROM cost_resolutions c WHERE c.sale_line_id = l.id ORDER BY c.created_at DESC, c.id DESC LIMIT 1) IS NULL {$since}
             ORDER BY s.recorded_at, l.id
             SQL, $bindings);
 
