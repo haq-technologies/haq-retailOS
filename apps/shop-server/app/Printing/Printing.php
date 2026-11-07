@@ -154,9 +154,12 @@ final readonly class Printing
     }
 
     /**
+     * The receipt text: the shop's header and footer, the currency mark and the timezone (D14, D31). The
+     * daily summary slip prints the same header.
+     *
      * @return array{shop_name: ?string, address: ?string, phone: ?string, footer: ?string, currency: string, timezone: string}
      */
-    private function text(): array
+    public function text(): array
     {
         $string = fn (string $key): ?string => is_string($v = $this->settings->get($key)) ? $v : null;
 

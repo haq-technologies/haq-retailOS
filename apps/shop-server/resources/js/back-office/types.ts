@@ -42,7 +42,7 @@ export interface DashboardData {
     coverage_percent: number;
     attention: { total: number; flags: Flag[] };
     cashiers: CashierRow[];
-    todo: { needs_cost: number; flags_week: number; review: number };
+    todo: { needs_cost: number; flags_week: number; review: number; first_sales: number };
 }
 
 /** One flag (spec section 8). cost_kobo is there only for those who may see cost. */

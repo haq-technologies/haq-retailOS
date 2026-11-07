@@ -38,19 +38,7 @@ final readonly class Dashboard
      */
     public function forDay(string $day, bool $withCost = false): array
     {
-        /** @var object{n: int|string, total: int|string} $sales */
-        $sales = DB::selectOne("SELECT count(*) AS n, coalesce(sum(total_kobo), 0) AS total FROM sales WHERE kind = 'sale' AND business_day = ?", [$day]);
-        /** @var list<object{method: string, n: int|string, amount: int|string}> $methods */
-        $methods = DB::select(<<<'SQL'
-            SELECT p.method, count(DISTINCT p.sale_id) AS n, sum(p.amount_kobo) AS amount
-            FROM payments p JOIN sales s ON s.id = p.sale_id WHERE s.kind = 'sale' AND s.business_day = ?
-            GROUP BY p.method
-            SQL, [$day]);
-        $byMethod = [];
-        foreach (['cash', 'transfer', 'pos'] as $m) {
-            $found = array_values(array_filter($methods, fn (object $r) => $r->method === $m))[0] ?? null;
-            $byMethod[] = ['method' => $m, 'sales' => (int) ($found->n ?? 0), 'amount_kobo' => (int) ($found->amount ?? 0)];
-        }
+        $sales = DailySummary::sales($day);
         /** @var object{n: int|string, amount: int|string} $waiting */
         $waiting = DB::selectOne("SELECT count(*) AS n, coalesce(sum(amount_kobo), 0) AS amount FROM parked_sales WHERE kind = 'awaiting_transfer' AND status = 'open'");
         $opened = DB::table('shifts')->where('business_day', $day)->min('opened_at');
@@ -66,7 +54,7 @@ final readonly class Dashboard
             'day' => $day,
             'opened_at' => is_string($opened) ? $opened : null,
             'counters_selling' => $counters,
-            'sales' => ['count' => (int) $sales->n, 'total_kobo' => (int) $sales->total, 'by_method' => $byMethod],
+            'sales' => $sales,
             'transfers_waiting' => ['count' => (int) $waiting->n, 'amount_kobo' => (int) $waiting->amount],
             'profit' => Profit::buckets($day, $day),
             'coverage_percent' => $total === 0 ? 0 : intdiv($covered * 100, $total),
@@ -76,6 +64,7 @@ final readonly class Dashboard
                 'needs_cost' => NeedsCost::queue(limit: 0)['total_items'],
                 'flags_week' => count($this->flags->list(Period::named('week', $this->flags->zone()), false)),
                 'review' => $this->review->total(),
+                'first_sales' => count(array_filter(FirstSales::forDay($day, Period::day($day, $this->flags->zone())), fn (array $g) => $g['set'] === null)),
             ],
         ];
     }

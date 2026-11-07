@@ -400,10 +400,11 @@ After any restore or server replacement, the system starts a new epoch, and the 
 - Contributions land in a staging queue your team curates. Nothing publishes automatically.
 # 12. Reports
 ## Pilot slice
-- Daily summary, with sales, the three profit buckets and the percentage in each, by payment method, and the audit root hash. [F14] The printed slip carries no profit or cost amounts; the owner sees profit on screen. [D18]
+- Daily summary, with sales, the three profit buckets and the percentage in each, by payment method, and the audit root hash. [F14] The printed slip carries no profit or cost amounts; the owner sees profit on screen. [D18] Printing it makes a fresh root, and the slip prints its first 32 hex digits as the audit code. [D43]
 - Below-cost, price-anomaly and cashier-behaviour flag list (below-range confirms, discards, no-sale openings, transfers without reference).
 - Catalogue health: percentage of revenue with cost, items pending review, brands and product words waiting for approval, unconfirmed barcode links, barcode coverage. [v1.3]
 - CSV export of items and sales, opening cleanly in Excel. Exports never contain cost for roles that cannot see it. [F10]
+- First-sale prices: one tap makes a typed price the set price, and Undo puts back the one before, or none. [S4, D43]
 ## MVP
 - Weekly and monthly views, and top items by revenue. These move here from the pilot (see the swap in section 16). [F12]
 - Per-cashier sales and variance, including handover variances. Shift (Z) reports per drawer.

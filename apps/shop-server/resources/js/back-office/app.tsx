@@ -5,8 +5,11 @@ import { roleLabel, type SignedIn } from '@/components/sign-in-panel';
 import { useCounterApi } from '@/counter/use-api';
 import { Dashboard } from './dashboard';
 import { Flags } from './flags';
+import { CatalogueHealth } from './health';
 import { NeedsCost } from './needs-cost';
+import { Prices } from './prices';
 import { Review } from './review';
+import { DailySummary } from './summary';
 import type { Can, Me } from './types';
 
 /**
@@ -14,13 +17,16 @@ import type { Can, Me } from './types';
  * sections on the left (at the bottom on a phone), and the section itself. Each person sees only the
  * sections their role may open. The address keeps the section, so Back works.
  */
-type Section = 'dashboard' | 'costs' | 'review' | 'flags' | 'settings';
+type Section = 'dashboard' | 'costs' | 'prices' | 'review' | 'catalogue' | 'flags' | 'summary' | 'settings';
 
 const sections: { id: Section; label: string; allowed: (c: Can) => boolean; icon: string }[] = [
     { id: 'dashboard', label: 'Dashboard', allowed: (c) => c.dashboard, icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z' },
     { id: 'costs', label: 'Needs cost', allowed: (c) => c.costs, icon: 'M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z' },
+    { id: 'prices', label: 'Prices', allowed: (c) => c.prices, icon: 'M8 18V6l8 12V6M5 10.5h14M5 13.5h14' },
     { id: 'review', label: 'Review', allowed: (c) => c.review, icon: 'M10 6h10M10 12h10M10 18h10M4 6l1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17' },
+    { id: 'catalogue', label: 'Catalogue health', allowed: (c) => c.catalogue, icon: 'M3 12h4l3-7 4 14 3-7h4' },
     { id: 'flags', label: 'Flags', allowed: (c) => c.flags, icon: 'M5 21V4h12l-2.5 4.5L17 13H5' },
+    { id: 'summary', label: 'Daily summary', allowed: (c) => c.summary, icon: 'M6 3h8l5 5v13H6zM14 3v5h5M9 13h7M9 17h7' },
     { id: 'settings', label: 'Shop settings', allowed: (c) => c.settings, icon: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 12h2M18 12h2M12 4v2M12 18v2' },
 ];
 
@@ -39,7 +45,7 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
     const api = useCounterApi(session.token, setToken);
     const [me, setMe] = useState<Me | null>(null);
     const [section, setSection] = useState<string>(fromHash());
-    const [badge, setBadge] = useState<{ costs: number; flags: number; review: number }>({ costs: 0, flags: 0, review: 0 });
+    const [badge, setBadge] = useState<{ costs: number; flags: number; review: number; prices: number }>({ costs: 0, flags: 0, review: 0, prices: 0 });
 
     useEffect(() => {
         void api.get<Me>('/api/back-office/me').then((a) => {
@@ -49,7 +55,7 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
 
     const refreshBadges = useCallback(() => {
         void api
-            .get<{ costs: number; flags: number; review: number }>('/api/back-office/badges')
+            .get<{ costs: number; flags: number; review: number; prices: number }>('/api/back-office/badges')
             .then((a) => {
                 if (a.ok) setBadge(a.body);
             })
@@ -75,7 +81,7 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
 
     const open = sections.filter((s) => s.allowed(me.can));
     const current: Section | undefined = open.find((s) => s.id === section)?.id ?? open[0]?.id;
-    const count = (id: Section) => (id === 'costs' ? badge.costs : id === 'flags' ? badge.flags : id === 'review' ? badge.review : 0);
+    const count = (id: Section) => (id === 'costs' || id === 'flags' || id === 'review' || id === 'prices' ? badge[id] : 0);
 
     const nav = (
         <>
@@ -125,8 +131,11 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
                     {open.length === 0 && <p className="text-lg">There is nothing in the back office for your role.</p>}
                     {current === 'dashboard' && <Dashboard api={api} can={me.can} go={go} onChanged={refreshBadges} />}
                     {current === 'costs' && <NeedsCost api={api} onChanged={refreshBadges} />}
+                    {current === 'prices' && <Prices api={api} onChanged={refreshBadges} />}
                     {current === 'review' && <Review api={api} can={me.can} onChanged={refreshBadges} />}
+                    {current === 'catalogue' && <CatalogueHealth api={api} can={me.can} go={go} />}
                     {current === 'flags' && <Flags api={api} onChanged={refreshBadges} />}
+                    {current === 'summary' && <DailySummary api={api} go={go} />}
                     {current === 'settings' && (
                         <div className="flex max-w-2xl flex-col gap-4">
                             <h1 className="text-3xl font-bold">Shop settings</h1>

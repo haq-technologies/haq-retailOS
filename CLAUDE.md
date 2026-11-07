@@ -8,7 +8,7 @@ HAQ Retail OS, by HAQ Technology: a point-of-sale system for phone-accessory sho
 
 ## Where we are
 
-Phases 0 and 1 are closed and locked (gates G0 and G1 passed on 6 November 2026, D19). Phase 2, the foundation, was built on 6 November 2026 (D20 to D29), and the product owner passed gate G2 (D27), so Phase 2 is closed. Phase 3, the counter and sale core, was built on 6 November 2026 (D30 to D36); its gate G3, the dress rehearsal on the pilot hardware (docs/operations/g3-dress-rehearsal.md), waits for the pilot hardware (the release signing key and the pilot server's GHCR token are ready). Phase 4 starts only when the product owner says so. [PLAN.md](PLAN.md) has the phases, gates, status, the checklists and open items.
+Phases 0 and 1 are closed and locked (gates G0 and G1 passed on 6 November 2026, D19). Phase 2, the foundation, was built on 6 November 2026 (D20 to D29), and the product owner passed gate G2 (D27), so Phase 2 is closed. Phase 3, the counter and sale core, was built on 6 November 2026 (D30 to D36); its gate G3, the dress rehearsal on the pilot hardware (docs/operations/g3-dress-rehearsal.md), waits for the pilot hardware (the release signing key and the pilot server's GHCR token are ready). Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39). Four of the five are built (D40 to D43): the back office and cost, flags and alerts, the review queues, and prices and reports. The fifth, recovery, starts only when the product owner says so; the shadow pilot and the hardening wait for G3. [PLAN.md](PLAN.md) has the phases, gates, status, the checklists and open items.
 
 ## Sources of truth
 
@@ -102,7 +102,7 @@ CI also runs these on every pull request, with PostgreSQL 18, and builds every i
 
 ## Code structure (D23)
 
-The shop server is a modular monolith. Each module is a namespace under app/ (Platform, Organisation, Audit, Settings, Identity, Catalogue, Cost, Shifts, Sales, Printing, Counter and Backups, and later Reports and Sync) and owns its models, actions, policies, controllers and API Resources. A module uses only the modules beneath it, as listed in tests/Arch/ArchitectureTest.php; add a module there before writing it. Pages render only through App\Platform\Http\Page. Migrations stay in database/migrations, and every new table gets its rule in the mutability matrix (app/Platform/Database/Mutability/Matrix.php) or the migration fails.
+The shop server is a modular monolith. Each module is a namespace under app/ (Platform, Organisation, Audit, Settings, Identity, Catalogue, Cost, Shifts, Sales, Printing, Counter, Backups, Reports and BackOffice, and later Sync) and owns its models, actions, policies, controllers and API Resources. A module uses only the modules beneath it, as listed in tests/Arch/ArchitectureTest.php; add a module there before writing it. Pages render only through App\Platform\Http\Page. Migrations stay in database/migrations, and every new table gets its rule in the mutability matrix (app/Platform/Database/Mutability/Matrix.php) or the migration fails.
 
 ## Design
 

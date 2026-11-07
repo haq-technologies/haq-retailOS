@@ -56,13 +56,20 @@ export function Dashboard({ api, can, go, onChanged }: { api: CounterApi; can: C
 
     return (
         <div className="flex flex-col gap-6">
-            <header className="flex flex-col gap-1">
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <p className="text-lg text-text-secondary">
-                    {longDay(data.day)}
-                    {data.opened_at !== null && ` · business day opened ${clock(data.opened_at)}`}
-                    {data.counters_selling > 0 && ` · ${plural(data.counters_selling, 'counter', 'counters')} selling`}
-                </p>
+            <header className="flex flex-wrap items-end gap-4">
+                <div className="flex flex-1 flex-col gap-1">
+                    <h1 className="text-3xl font-bold">Dashboard</h1>
+                    <p className="text-lg text-text-secondary">
+                        {longDay(data.day)}
+                        {data.opened_at !== null && ` · business day opened ${clock(data.opened_at)}`}
+                        {data.counters_selling > 0 && ` · ${plural(data.counters_selling, 'counter', 'counters')} selling`}
+                    </p>
+                </div>
+                {can.summary && (
+                    <button type="button" className="min-h-touch rounded-xl border-2 border-border px-5 text-lg font-semibold text-action-text" onClick={() => { go('summary'); }}>
+                        Print daily summary
+                    </button>
+                )}
             </header>
 
             <div className="grid gap-4 large:grid-cols-2">
@@ -210,6 +217,12 @@ export function Dashboard({ api, can, go, onChanged }: { api: CounterApi; can: C
                             <span className="text-text-secondary">Items sold with no cost, highest revenue first</span>
                         </button>
                     )}
+                    {can.prices && (
+                        <button type="button" className="flex min-h-[88px] flex-col items-start justify-center rounded-2xl border-2 border-border p-4 text-left" onClick={() => { go('prices'); }}>
+                            <span className="text-lg font-semibold">First-sale prices · {data.todo.first_sales}</span>
+                            <span className="text-text-secondary">Sold today with nothing to compare</span>
+                        </button>
+                    )}
                     {can.review && (
                         <button type="button" className="flex min-h-[88px] flex-col items-start justify-center rounded-2xl border-2 border-border p-4 text-left" onClick={() => { go('review'); }}>
                             <span className="text-lg font-semibold">Review · {data.todo.review}</span>
@@ -222,10 +235,10 @@ export function Dashboard({ api, can, go, onChanged }: { api: CounterApi; can: C
                             <span className="text-text-secondary">Flagged this week, newest first</span>
                         </button>
                     )}
-                    <div className="flex min-h-[88px] flex-col items-start justify-center rounded-2xl border-2 border-border p-4">
+                    <button type="button" disabled={!can.catalogue} className="flex min-h-[88px] flex-col items-start justify-center rounded-2xl border-2 border-border p-4 text-left" onClick={() => { go('catalogue'); }}>
                         <span className="text-lg font-semibold">Catalogue health · {data.coverage_percent}%</span>
-                        <span className="text-text-secondary">of revenue has a cost, since trading began</span>
-                    </div>
+                        <span className="text-text-secondary">of revenue has a cost; goal 80%</span>
+                    </button>
                 </div>
             </section>
 
