@@ -11,7 +11,7 @@ interface Setting {
     key: string;
     label: string;
     help: string | null;
-    kind: 'time' | 'money' | 'text';
+    kind: 'time' | 'money' | 'number' | 'text';
     value: unknown;
     locked: boolean;
 }
@@ -40,7 +40,8 @@ export function OwnerSettings({ token }: { token: string }) {
             const setting = settings?.find((s) => s.key === key);
             const draft = (drafts[key] ?? '').trim();
             // Money is typed in whole naira and kept in kobo.
-            const value = setting?.kind === 'money' ? (/^\d+$/.test(draft) ? Number.parseInt(draft, 10) * 100 : draft) : draft;
+            const whole = /^\d+$/.test(draft);
+            const value = setting?.kind === 'money' ? (whole ? Number.parseInt(draft, 10) * 100 : draft) : setting?.kind === 'number' && whole ? Number.parseInt(draft, 10) : draft;
             const a = await postJson<{ message?: string; value?: unknown }>('/api/back-office/settings', { key, value }, token);
             if (a.ok) {
                 setSettings((list) => list?.map((s) => (s.key === key ? { ...s, value: a.body.value } : s)) ?? null);
@@ -77,7 +78,7 @@ export function OwnerSettings({ token }: { token: string }) {
                             <input
                                 id={`setting-${s.key}`}
                                 type={s.kind === 'time' ? 'time' : 'text'}
-                                inputMode={s.kind === 'money' ? 'numeric' : undefined}
+                                inputMode={s.kind === 'money' || s.kind === 'number' ? 'numeric' : undefined}
                                 value={drafts[s.key] ?? ''}
                                 className="min-h-touch rounded-xl border-2 border-border bg-background px-4 text-lg"
                                 onChange={(e) => {
@@ -109,10 +110,12 @@ export function OwnerSettings({ token }: { token: string }) {
 
 function draftOf(s: Setting): string {
     if (s.kind === 'money') return typeof s.value === 'number' ? String(Math.floor(s.value / 100)) : '';
+    if (s.kind === 'number') return typeof s.value === 'number' ? String(s.value) : '';
     return typeof s.value === 'string' ? s.value : '';
 }
 
 function shown(s: Setting): string {
     if (s.kind === 'money') return typeof s.value === 'number' ? naira(s.value) : 'Not set';
+    if (s.kind === 'number') return typeof s.value === 'number' ? String(s.value) : 'Not set';
     return typeof s.value === 'string' && s.value !== '' ? s.value : 'Not set';
 }

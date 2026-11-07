@@ -34,7 +34,7 @@ Done:
 - Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the G3 tooling. See the Phase 3 checklist below.
 - Phase 4's owner features, started before G3 at the product owner's go (D39), all five built on 7 November 2026 (D40 to D46): the back office with the owner's dashboard and cost entry with backfill; flags and Needs your attention; the review queues with merge and undo; first-sale prices, catalogue health, the daily summary on screen and printed, and the CSV exports; and recovery: restore epochs end to end with the lost window, server health with catch-up and the server clock, and reboot recovery. See the Phase 4 section below.
 
-Next: the rest of the hardening that needs no hardware (D50): the upgrade-path test, then automating the checks; and the product owner's answers to the two open questions in the Phase 4 section. Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening that needs the shop's hardware wait for G3 (D39, D50).
+Next: the rest of the hardening that needs no hardware (D50): the upgrade-path test, then automating the checks; and the off-site copy with its 2-of-3 key shares (D53). Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening that needs the shop's hardware wait for G3 (D39, D50).
 
 ## Team
 
@@ -176,10 +176,7 @@ Phase 4's owner features started on 7 November 2026, before gate G3, at the prod
 
 Answered on 7 November 2026: undoing a cost is built (D48); check D6 moves to the MVP checks (D49); the hardening work that needs no hardware starts now (D50); the corrected-time view waits for the MVP (D51).
 
-Open questions for the product owner from Phase 4:
-
-1. How many items a cashier creates in a day counts as "high" on the dashboard. Spec section 6 sets no number. Claude recommends 10 a day, a setting the owner can change; until answered the count shows without a mark.
-2. The off-site copy with its 2-of-3 key shares (spec sections 4 and 13; check E1) is not built. Claude recommends building it in Phase 4, before G4: two encrypted flash drives swapped weekly, one always away from the shop, and the backup key in three shares (the product owner, the shop owner, and a sealed copy at the bank). It waits for the product owner's yes.
+Also answered: a cashier's item creation counts as high at 10 a day, which the owner changes in Shop settings (D52); and the off-site copy with its key shares is built in Phase 4, before G4, as Claude recommended (D53).
 
 ## Before Phase 3
 
@@ -294,3 +291,4 @@ Assumptions:
 | 7 November 2026 | Review of Phase 4's owner features: the audit log to read and the counter's speed (D47), and the open questions it raised |
 | 7 November 2026 | The product owner's answers: undoing a cost (D48), check D6 to the MVP (D49), hardware-free hardening starts now (D50), the corrected-time view in the MVP (D51) |
 | 7 November 2026 | Hardening: the cost-leak scanner (check C4) |
+| 7 November 2026 | High item creation at 10 a day, an owner setting (D52); the off-site copy to build before G4 (D53) |

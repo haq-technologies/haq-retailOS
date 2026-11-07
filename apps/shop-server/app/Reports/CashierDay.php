@@ -17,13 +17,15 @@ final readonly class CashierDay
     public function __construct(private Settings $settings, private Flags $flags) {}
 
     /**
-     * @return list<array{id: string, name: string, role: string, sales: int, below_range: int, below_range_limit: int, needs_manager: bool, discarded: int, items_created: int, no_reference: int, no_sale: int, key_open: int, transfers_waited: int}>
+     * @return list<array{id: string, name: string, role: string, sales: int, below_range: int, below_range_limit: int, needs_manager: bool, discarded: int, items_created: int, items_created_high: bool, no_reference: int, no_sale: int, key_open: int, transfers_waited: int}>
      */
     public function forDay(string $day): array
     {
         $span = Period::day($day, $this->flags->zone());
         $limit = $this->settings->get('pricing.below_range_confirms');
         $limit = is_int($limit) ? $limit : 3;
+        $high = $this->settings->get('flags.items_created_high');
+        $high = is_int($high) ? $high : 10;
 
         $sales = $this->byPerson("SELECT cashier_id AS id, count(*) AS n FROM sales WHERE kind IN ('sale', 'back_entry') AND business_day = ? GROUP BY cashier_id", [$day]);
         $belowRange = $this->byPerson(<<<'SQL'
@@ -67,6 +69,8 @@ final readonly class CashierDay
             'below_range' => $belowRange[$u->id] ?? 0, 'below_range_limit' => $limit,
             'needs_manager' => ($inOpenShift[$u->id] ?? 0) >= $limit,
             'discarded' => $discarded[$u->id] ?? 0, 'items_created' => $created[$u->id] ?? 0,
+            // At or above the owner's number, the day's item creation is marked high (spec section 6) [F11, D52].
+            'items_created_high' => ($created[$u->id] ?? 0) >= $high,
             'no_reference' => $noReference[$u->id] ?? 0, 'no_sale' => $noSale[$u->id] ?? 0, 'key_open' => $keyOpen[$u->id] ?? 0,
             'transfers_waited' => $waited[$u->id] ?? 0,
         ], $people);
