@@ -95,17 +95,19 @@ COPY --from=assets /app/public /app/public
 # --- A shop's PostgreSQL, with the script the one-shot `roles` job runs to create the three roles -------
 FROM ${POSTGRES_IMAGE} AS db
 
-# pgBackRest from the PostgreSQL project's own packages, pinned (spec section 9) [S16, R6], and jq for the
-# backup loop. /backup is the second disk; a new volume takes its owner from here.
+# pgBackRest from the PostgreSQL project's own packages, pinned (spec section 9) [S16, R6], jq for the
+# backup loop, and age and ssss for the encrypted off-site copy and its 2-of-3 key shares [S17, D53].
+# /backup is the second disk; a new volume takes its owner from here.
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends pgbackrest=2.60.0-1.pgdg13+1 jq; \
+    apt-get install -y --no-install-recommends pgbackrest=2.60.0-1.pgdg13+1 jq age=1.2.1-1+b5 ssss=0.5-5; \
     rm -rf /var/lib/apt/lists/*; \
     mkdir -p /backup /etc/pgbackrest; \
     chown postgres:postgres /backup
 
 COPY --chmod=755 apps/shop-server/docker/postgres/init/01-roles.sh /usr/local/bin/haq-roles.sh
 COPY --chmod=755 apps/shop-server/docker/postgres/haq-backup.sh /usr/local/bin/haq-backup.sh
+COPY --chmod=755 apps/shop-server/docker/postgres/haq-offsite.sh /usr/local/bin/haq-offsite.sh
 COPY --chmod=644 apps/shop-server/docker/postgres/pgbackrest.conf /etc/pgbackrest/pgbackrest.conf
 
 # WAL goes to the backup disk continuously; a quiet shop still archives at least every 15 minutes, the

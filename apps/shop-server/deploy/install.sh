@@ -101,7 +101,7 @@ fi
 # The updater, the restore and the install check live with the stack, so updates need no checkout; and the
 # release public key, so the updater can check a release's signature (spec section 4).
 mkdir -p "$dir/bin"
-cp "$here/update.sh" "$here/restore.sh" "$here/check-install.sh" "$here/host-health.sh" "$dir/bin/"
+cp "$here/update.sh" "$here/restore.sh" "$here/check-install.sh" "$here/host-health.sh" "$here/offsite.sh" "$dir/bin/"
 if [ -f "$here/release-public.pem" ]; then
     cp "$here/release-public.pem" "$dir/release-public.pem"
 else
@@ -167,6 +167,26 @@ UNIT
     systemctl enable --now haq-host-health.timer >/dev/null 2>&1 || echo "WARNING: the host health timer did not start." >&2
 fi
 
+# The off-site copy (spec section 4) [S16, S17, D53]: plugging in a flash drive labelled HAQ-OFFSITE-A or
+# HAQ-OFFSITE-B starts the haq-offsite@ service, which writes an encrypted copy of every backup onto it.
+if command -v systemctl >/dev/null && [ -d /etc/udev/rules.d ]; then
+    cat > /etc/systemd/system/haq-offsite@.service <<UNIT
+[Unit]
+Description=HAQ Retail OS: the off-site copy onto the flash drive %I
+
+[Service]
+Type=oneshot
+Environment=HAQ_DIR=$dir HAQ_PROJECT=$project
+ExecStart=$dir/bin/offsite.sh copy /dev/%I
+TimeoutStartSec=3h
+UNIT
+    cat > /etc/udev/rules.d/99-haq-offsite.rules <<'RULE'
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="HAQ-OFFSITE-[AB]", TAG+="systemd", ENV{SYSTEMD_WANTS}+="haq-offsite@%k.service"
+RULE
+    systemctl daemon-reload
+    udevadm control --reload 2>/dev/null || true
+fi
+
 run="docker compose --project-name $project -f $dir/compose.yaml --env-file $dir/.env"
 cat <<DONE
 
@@ -178,4 +198,6 @@ Next:
        sudo $run exec app php artisan shop:add-user "Name" --role=cashier
   3. Enrol each counter, then open https://$name/enrol on it and type the code:
        sudo $run exec app php artisan shop:enrol-terminal T01
+  4. Make the off-site key once, and hand out its three shares (docs/operations/offsite-copy.md):
+       sudo $dir/bin/offsite.sh key
 DONE

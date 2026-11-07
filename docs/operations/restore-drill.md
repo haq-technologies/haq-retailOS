@@ -47,6 +47,21 @@ How a shop's server is restored from its backup disk, on the same box or on the 
 - The last receipt before the failure is in the restored copy, or is re-entered from Lost sales.
 - Every counter shows as reported on Lost sales, and `php artisan shop:rehearsal-check` finds every counter's numbers gapless in each epoch.
 
+## Restoring from a flash drive
+
+When the server and its backup disk are both lost (theft, fire), the newest off-site drive brings the shop back (D53; docs/operations/offsite-copy.md). It needs two of the three key shares.
+
+1. Install the spare as in step 2 above, with an empty folder for `--backup-dir`.
+2. Plug in the newest off-site drive and find its device (`lsblk -f` shows the HAQ-OFFSITE label, for example /dev/sdb1).
+3. Restore from it:
+
+   ```
+   sudo apps/shop-server/deploy/restore.sh --from-drive /dev/sdb1
+   ```
+
+   It asks for two shares, each on its own line, unpacks the newest copy onto the backup folder (setting aside the empty backups the spare made at install), then restores exactly as from a backup disk.
+4. Carry on from step 4 above. Sales made after that drive's copy are recovered from the counters' journals on Lost sales (D44).
+
 ## A reinstall with no backup
 
 If the server is reinstalled with nothing to restore, run `php artisan shop:after-restore --reason=reinstall` before the counters sell. Each counter's journal then moves its epoch past its last sales when it reports, so no receipt number repeats; its last seven days of sales appear on Lost sales.
