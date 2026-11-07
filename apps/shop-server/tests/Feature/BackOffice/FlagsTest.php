@@ -16,7 +16,9 @@ use App\Reports\Csv;
 use App\Sales\Finish;
 use App\Sales\Parked;
 use App\Sales\Pricing;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\Support\Counter;
 use Tests\Support\People;
 
@@ -95,7 +97,7 @@ it('flags prices below the floor and outside the usual range, and approvals by a
     app(Pricing::class)->set($this->a, 'retail', 300_000, $this->owner);
     flagSale($this->a, 250_000, ['confirmed_outside_range' => true]);
     flagSale($this->a, 1_000_000, ['retyped' => true]);
-    $line = (string) Illuminate\Support\Str::uuid();
+    $line = (string) Str::uuid();
     $approval = app(Approvals::class)->grant($this->t1, $this->cashier->id, $this->manager->id, '246810', ApprovalAction::PriceBelowFloor, $line, $this->a->id, 100_000);
     flagSale($this->a, 100_000, ['client_line_id' => $line, 'approval_token' => $approval['token']]);
 
@@ -164,7 +166,7 @@ it('marks a flag as seen without deleting it, and the mark itself can never be r
     expect(DB::table('audit_log')->where('action', 'flag.seen')->count())->toBe(1);
 
     ($this->owns)()->postJson('/api/back-office/flags/seen', ['keys' => ['below_cost:'.Ulid::generate()]])->assertStatus(422);
-    expect(fn () => DB::table('flag_marks')->delete())->toThrow(Illuminate\Database\QueryException::class);
+    expect(fn () => DB::table('flag_marks')->delete())->toThrow(QueryException::class);
 });
 
 it('exports flags as a CSV that opens in Excel, with cost only for the owner and no formula ever run', function () {
