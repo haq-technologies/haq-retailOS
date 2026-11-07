@@ -4,7 +4,11 @@
 # at the backup disk (moved over, or copied with rsync). The restore drill in
 # docs/operations/restore-drill.md walks through it.
 #
-#   sudo deploy/restore.sh [--dir /opt/haq-retail-os] [--project haq-retail-os]
+#   sudo deploy/restore.sh [--dir /opt/haq-retail-os] [--project haq-retail-os] [--from-drive /dev/sdb1]
+#
+# With --from-drive, the backups come first from an off-site flash drive (the server and its backup disk
+# were lost): it asks for two of the three key shares and unpacks the newest copy onto this machine's
+# backup disk, with the branch key and the epochs (D53). Then the restore runs as from the backup disk.
 #
 # 1. Stops everything, then pgBackRest restores the latest backup and replays every archived WAL segment.
 # 2. Starts PostgreSQL and waits for recovery to finish.
@@ -16,10 +20,12 @@ set -euo pipefail
 
 dir=/opt/haq-retail-os
 project=haq-retail-os
+from_drive=
 while [ $# -gt 0 ]; do
     case "$1" in
         --dir) dir="$2"; shift 2 ;;
         --project) project="$2"; shift 2 ;;
+        --from-drive) from_drive="$2"; shift 2 ;;
         *) echo "Unknown option $1" >&2; exit 2 ;;
     esac
 done
@@ -30,6 +36,10 @@ started=$(date +%s)
 
 echo "1. Stopping the stack and restoring the latest backup"
 compose stop
+if [ -n "$from_drive" ]; then
+    echo "   First, the backups from the off-site drive $from_drive (two key shares needed)"
+    HAQ_DIR="$dir" HAQ_PROJECT="$project" "$(dirname "$0")/offsite.sh" unpack "$from_drive"
+fi
 compose --profile restore run --rm --no-deps restore
 
 echo "2. Starting PostgreSQL and waiting for recovery"

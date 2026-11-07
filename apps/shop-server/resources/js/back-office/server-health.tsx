@@ -37,6 +37,7 @@ interface View {
     certificate: { expires_at: string; subject: string | null } | null;
     host: { written_at: string | null; disks: { device: string; model: string | null; passed: boolean | null; life_left: number | null }[]; smartctl: boolean; time_synced: boolean | null } | null;
     wal: { archived_at: string | null; failed_at: string | null; count: number } | null;
+    offsite: { key_made_at: string | null; drives: Record<string, { copied_at: string | null; bytes: number | null; failed_at: string | null; reason: string | null; ok: boolean }> } | null;
     database_bytes: number;
     version: string;
     clock: { state: string; reason: string | null; since: string | null; server_time: string; confirmed_at: string | null; confirmed_by: string | null };
@@ -120,6 +121,11 @@ export function ServerHealth({ api }: { api: CounterApi }) {
     const restore = b?.restore ?? null;
     const unverified = view.clock.state === 'unverified';
     const ssds = view.host?.disks ?? [];
+    // The drive copied last is at the shop or on its way out; the other is away (D53).
+    const copied = Object.entries(view.offsite?.drives ?? {})
+        .filter(([, d]) => d.copied_at !== null)
+        .sort(([, a], [, b]) => (a.copied_at ?? '').localeCompare(b.copied_at ?? ''));
+    const lastDrive = copied.at(-1);
 
     return (
         <div className="flex flex-col gap-5">
@@ -168,6 +174,18 @@ export function ServerHealth({ api }: { api: CounterApi }) {
                     value={b?.last_verified_restore == null ? 'None verified yet' : `${when(b.last_verified_restore)} · every audit chain verified`}
                     note={b === null ? 'No backup disk' : has('restore') ? (restore?.verified === false ? 'Failed' : 'Overdue') : 'OK · runs every week'}
                     warning={has('restore') || b === null}
+                />
+                <Card
+                    title="Off-site copy"
+                    value={
+                        view.offsite === null || view.offsite.key_made_at === null
+                            ? 'Not set up'
+                            : lastDrive === undefined
+                              ? 'No drive copied yet'
+                              : `Flash drive ${lastDrive[0]}, copied ${when(lastDrive[1].copied_at ?? '')}`
+                    }
+                    note={has('offsite') ? 'Needs attention' : `OK · drive ${lastDrive?.[0] === 'A' ? 'B' : 'A'} is away from the shop`}
+                    warning={has('offsite') || view.offsite?.key_made_at == null}
                 />
                 <Card
                     title="Free disk"

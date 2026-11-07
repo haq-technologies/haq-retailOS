@@ -51,6 +51,7 @@ final class Snapshot
             ],
             'certificate' => self::certificate(config()->string('health.certificate')),
             'host' => $status->enabled() ? self::host($status->read('host.json')) : null,
+            'offsite' => $status->enabled() ? self::offsite($status) : null,
         ];
     }
 
@@ -103,6 +104,33 @@ final class Snapshot
             'last_verified_restore' => $lastGood > 0 ? self::iso($lastGood) : null,
             'backup_now' => self::asked($status),
         ];
+    }
+
+    /**
+     * The off-site copy (D53): whether its key is made, and each flash drive's last copy or failure.
+     *
+     * @return array{key_made_at: ?string, drives: array<string, array{copied_at: ?string, bytes: ?int, failed_at: ?string, reason: ?string, ok: bool}>}
+     */
+    private static function offsite(Status $status): array
+    {
+        $key = $status->read('offsite/key.json');
+        $file = $status->read('offsite.json');
+        $drives = [];
+        foreach (is_array($file['drives'] ?? null) ? $file['drives'] : [] as $name => $d) {
+            if (! is_array($d) || ! in_array($name, ['A', 'B'], true)) {
+                continue;
+            }
+            $drives[$name] = [
+                'copied_at' => is_int($d['copied_at'] ?? null) ? self::iso($d['copied_at']) : null,
+                'bytes' => is_int($d['bytes'] ?? null) ? $d['bytes'] : null,
+                'failed_at' => is_int($d['failed_at'] ?? null) ? self::iso($d['failed_at']) : null,
+                'reason' => is_string($d['reason'] ?? null) ? $d['reason'] : null,
+                'ok' => ($d['ok'] ?? false) === true,
+            ];
+        }
+        ksort($drives);
+
+        return ['key_made_at' => is_int($key['made_at'] ?? null) ? self::iso($key['made_at']) : null, 'drives' => $drives];
     }
 
     /** A Back up now the backup service has not answered yet. */

@@ -56,6 +56,9 @@ beforeEach(function () {
         file_put_contents($this->dir.'/host.json', json_encode(['written_at' => $now, 'smartctl' => true, 'time_synced' => false,
             'disks' => [['device' => '/dev/nvme0', 'model' => 'Example SSD', 'passed' => true, 'life_left' => 98]]]));
         healthCertificate($this->dir.'/server.crt', days: 700);
+        mkdir($this->dir.'/offsite');
+        file_put_contents($this->dir.'/offsite/key.json', json_encode(['made_at' => $now - 30 * 86400, 'fingerprint' => 'abc']));
+        file_put_contents($this->dir.'/offsite.json', json_encode(['drives' => ['A' => ['copied_at' => $now - 2 * 86400, 'ok' => true, 'bytes' => 1000, 'file' => 'x.tar.age']]]));
         Cache::forever(MutabilityCommand::HEALTH_KEY, ['checked_at' => now()->subHours(3)->toIso8601String(), 'problems' => []]);
         Cache::forever(VerifyCommand::HEALTH_KEY, ['checked_at' => now()->subHours(3)->toIso8601String(), 'problems' => []]);
         Cache::forever(Clock::HIGH_WATER, now()->toIso8601String());
@@ -66,9 +69,10 @@ beforeEach(function () {
 
 afterEach(function () {
     CarbonImmutable::setTestNow();
-    foreach (glob($this->dir.'/*') ?: [] as $f) {
+    foreach (glob($this->dir.'/{,*/}*', GLOB_BRACE) ?: [] as $f) {
         is_file($f) && unlink($f);
     }
+    @rmdir($this->dir.'/offsite');
     @rmdir($this->dir);
 });
 
@@ -210,4 +214,24 @@ it('runs a missed nightly check at the next quiet moment (check E4)', function (
     CarbonImmutable::setTestNow('2026-11-08 01:30:00'); // 02:30 in Lagos
     ($this->sell)();
     expect($catchUp->quiet())->toBeTrue()->and($catchUp->due(MutabilityCommand::HEALTH_KEY))->toBeTrue();
+});
+
+it('warns when the off-site copy is not set up, overdue or failing (D53)', function () {
+    ($this->healthy)();
+    $this->artisan('health:check')->assertSuccessful();
+    ($this->as)()->getJson('/api/back-office/health')->assertJsonPath('offsite.drives.A.ok', true);
+    expect(collect(app(Health::class)->warnings())->where('kind', 'offsite'))->toBeEmpty();
+
+    $now = time();
+    file_put_contents($this->dir.'/offsite.json', json_encode(['drives' => [
+        'A' => ['copied_at' => $now - 10 * 86400, 'ok' => true],
+        'B' => ['copied_at' => $now - 20 * 86400, 'failed_at' => $now - 3600, 'ok' => false, 'reason' => 'drive full'],
+    ]]));
+    $this->artisan('health:check')->assertSuccessful();
+    $titles = collect(app(Health::class)->warnings())->where('kind', 'offsite')->pluck('title')->all();
+    expect($titles)->toBe(['No flash drive has had a copy for 10 days', 'The last copy to drive B failed']);
+
+    unlink($this->dir.'/offsite/key.json');
+    $this->artisan('health:check')->assertSuccessful();
+    expect(collect(app(Health::class)->warnings())->where('kind', 'offsite')->pluck('title')->all())->toBe(['The off-site copy is not set up']);
 });

@@ -34,7 +34,7 @@ Done:
 - Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the G3 tooling. See the Phase 3 checklist below.
 - Phase 4's owner features, started before G3 at the product owner's go (D39), all five built on 7 November 2026 (D40 to D46): the back office with the owner's dashboard and cost entry with backfill; flags and Needs your attention; the review queues with merge and undo; first-sale prices, catalogue health, the daily summary on screen and printed, and the CSV exports; and recovery: restore epochs end to end with the lost window, server health with catch-up and the server clock, and reboot recovery. See the Phase 4 section below.
 
-Next: the rest of the hardening that needs no hardware (D50): the upgrade-path test, then automating the checks; and the off-site copy with its 2-of-3 key shares (D53). Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening that needs the shop's hardware wait for G3 (D39, D50).
+Next: the product owner tries the software on this computer (README.md, "Try it"); then the rest of the hardening that needs no hardware (D50): the upgrade-path test, then automating the checks that need no hardware. Everything else in Phase 4 needs the pilot hardware. Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening that needs the shop's hardware wait for G3 (D39, D50).
 
 ## Team
 
@@ -170,6 +170,7 @@ Phase 4's owner features started on 7 November 2026, before gate G3, at the prod
 ## Phase 4 hardening (the parts that need no hardware start before G3, D50)
 
 - [x] The cost-leak scanner (check C4): a test calls every GET route as a cashier and as a manager, at a counter and a back-office device, and fails if a planted cost appears in any answer, page or CSV export; it fails too on a route it cannot call, so a new route is never skipped (Claude, 7 November 2026)
+- [x] The off-site copy with its 2-of-3 key shares (check E1; D53): two labelled flash drives copied by themselves when plugged in, encrypted to a key the server cannot use, its health on the health page, restoring from a drive, and a self-test in CI (Claude, 7 November 2026; docs/operations/offsite-copy.md)
 - [ ] The upgrade-path test: a shop two minor versions behind upgrades through each migration in order (check E5)
 - [ ] Automating the checks that need no hardware, each written down against its check
 - [ ] After G3, on the pilot hardware: the soak test, the install rehearsal in under 2 hours, and the checks that need the shop's hardware
@@ -292,3 +293,4 @@ Assumptions:
 | 7 November 2026 | The product owner's answers: undoing a cost (D48), check D6 to the MVP (D49), hardware-free hardening starts now (D50), the corrected-time view in the MVP (D51) |
 | 7 November 2026 | Hardening: the cost-leak scanner (check C4) |
 | 7 November 2026 | High item creation at 10 a day, an owner setting (D52); the off-site copy to build before G4 (D53) |
+| 7 November 2026 | Hardening: the off-site copy with its key shares (D53) |

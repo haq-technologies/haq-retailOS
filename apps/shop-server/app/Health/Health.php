@@ -37,6 +37,7 @@ final readonly class Health
             'disks' => $snapshot['disks'] ?? null,
             'certificate' => $snapshot['certificate'] ?? null,
             'host' => $snapshot['host'] ?? null,
+            'offsite' => $snapshot['offsite'] ?? null,
             'wal' => self::wal(),
             'database_bytes' => self::databaseBytes(),
             'version' => config()->string('app.version'),
@@ -111,6 +112,28 @@ final readonly class Health
             $good = $backups['last_verified_restore'] === null ? null : CarbonImmutable::parse($backups['last_verified_restore']);
             if ($backups['count'] > 0 && $good !== null && $good->lessThan($now->subDays(config()->integer('health.restore_warn_days')))) {
                 $warn('restore', 'No test restore for '.(int) $good->diffInDays($now, true).' days', 'It runs each week at a quiet moment. Leave the server on at night.');
+            }
+        }
+
+        // The off-site copy (D53): set up, copied within the week the drives are swapped, and not failing.
+        /** @var array{key_made_at: ?string, drives: array<string, array{copied_at: ?string, failed_at: ?string, reason: ?string, ok: bool}>}|null $offsite */
+        $offsite = is_array($snapshot['offsite'] ?? null) ? $snapshot['offsite'] : null;
+        if ($backups !== null && $offsite !== null) {
+            if ($offsite['key_made_at'] === null) {
+                $warn('offsite', 'The off-site copy is not set up', 'Its key has not been made, so no flash drive holds a copy away from the shop. Call HAQ support.');
+            } else {
+                $copies = array_filter(array_map(fn (array $d) => $d['copied_at'], $offsite['drives']));
+                $latest = $copies === [] ? null : CarbonImmutable::parse(max($copies));
+                $since = $latest ?? CarbonImmutable::parse($offsite['key_made_at']);
+                if ($since->lessThan($now->subDays(8))) {
+                    $warn('offsite', $latest === null ? 'No flash drive has a copy yet' : 'No flash drive has had a copy for '.(int) $latest->diffInDays($now, true).' days',
+                        'Plug in the off-site drive that is at the shop: it copies by itself. Then take it away and bring the other one back next week.');
+                }
+                foreach ($offsite['drives'] as $name => $d) {
+                    if ($d['failed_at'] !== null && ($d['copied_at'] === null || $d['failed_at'] > $d['copied_at'])) {
+                        $warn('offsite', "The last copy to drive {$name} failed", 'Reason: '.($d['reason'] ?? 'not known').'. Plug it in again; if it fails again, use the other drive and call HAQ support.');
+                    }
+                }
             }
         }
 

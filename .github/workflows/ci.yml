@@ -277,6 +277,13 @@ jobs:
           push: false
           cache-from: type=gha,scope=${{ matrix.target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.target }}
+          load: ${{ matrix.target == 'db' }}
+          tags: retail-os-${{ matrix.target }}:ci
+
+      # The off-site copy's whole round trip in the db image: key, encrypted copy, two shares open it (D53).
+      - name: Off-site copy self-test
+        if: matrix.target == 'db'
+        run: docker run --rm --user postgres retail-os-db:ci haq-offsite.sh selftest
 
   # On every merge to main: build each shop image once and push it to GHCR, tagged main and with the commit
   # (spec section 4) [D1, D2]. Staging on the product owner's computer and the G3 install pull these.
