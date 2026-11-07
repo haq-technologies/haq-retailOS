@@ -52,7 +52,7 @@ final class BackOfficeController
     {
         $actor = $this->allowed($request, 'dashboard');
         $day = $request->query('day');
-        $data = $dashboard->forDay(is_string($day) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) === 1 ? $day : $dashboard->today());
+        $data = $dashboard->forDay(is_string($day) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) === 1 ? $day : $dashboard->today(), $access->allows($actor, 'profit'));
 
         // Profit amounts reveal cost: only for those who may see it (spec section 3) [F10].
         if (! $access->allows($actor, 'profit')) {

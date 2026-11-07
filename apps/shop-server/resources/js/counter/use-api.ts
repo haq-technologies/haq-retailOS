@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { getJson, postJson, type ApiResult } from '@/lib/api';
+import { download, getJson, postJson, type ApiResult } from '@/lib/api';
 
 /**
  * The counter's calls as the signed-in person. A renewed acting-user token from the server replaces the
@@ -9,6 +9,8 @@ import { getJson, postJson, type ApiResult } from '@/lib/api';
 export interface CounterApi {
     get: <T>(url: string) => Promise<ApiResult<T>>;
     post: <T>(url: string, body: unknown, timeoutMs?: number) => Promise<ApiResult<T>>;
+    /** Saves a file from the server, such as a CSV export. False when the server refused it. */
+    download: (url: string, filename: string) => Promise<boolean>;
 }
 
 export function useCounterApi(token: string, onToken: (token: string) => void): CounterApi {
@@ -30,6 +32,7 @@ export function useCounterApi(token: string, onToken: (token: string) => void): 
         return {
             get: async <T,>(url: string) => renew(await getJson<T>(url, current.current)),
             post: async <T,>(url: string, body: unknown, timeoutMs?: number) => renew(await postJson<T>(url, body, current.current, timeoutMs)),
+            download: async (url: string, filename: string) => renew({ ...(await download(url, filename, current.current)), body: null }).ok,
         };
     }, []);
 }

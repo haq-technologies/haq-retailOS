@@ -22,3 +22,13 @@ export function clock(iso: string | null): string {
 export function plural(n: number, one: string, many: string): string {
     return `${String(n)} ${n === 1 ? one : many}`;
 }
+
+/** "Today 12:20", "Yesterday 18:12" or "4 Nov 13:10", in the device's time (the shop's). */
+export function when(iso: string, now: Date = new Date()): string {
+    const at = new Date(iso);
+    const day = (d: Date) => d.toLocaleDateString('en-CA');
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const prefix = day(at) === day(now) ? 'Today' : day(at) === day(yesterday) ? 'Yesterday' : shortDate(iso);
+    return `${prefix} ${clock(iso)}`;
+}

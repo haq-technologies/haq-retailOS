@@ -13,6 +13,7 @@ use App\Organisation\OrganisationServiceProvider;
 use App\Platform\PlatformServiceProvider;
 use App\Printing\PrintingServiceProvider;
 use App\Providers\AppServiceProvider;
+use App\Reports\ReportsServiceProvider;
 use App\Sales\SalesServiceProvider;
 use App\Settings\SettingsServiceProvider;
 use App\Shifts\ShiftsServiceProvider;
@@ -32,5 +33,6 @@ return [
     PrintingServiceProvider::class,
     CounterServiceProvider::class,
     BackupsServiceProvider::class,
+    ReportsServiceProvider::class,
     BackOfficeServiceProvider::class,
 ];

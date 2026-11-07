@@ -60,3 +60,38 @@ test('shows a manager the day without profit, and no Needs cost', async ({ brows
     await expect(page.getByText('Count estimated profit')).toHaveCount(0);
     await expect(page.getByRole('link', { name: /Needs cost/ })).toHaveCount(0);
 });
+
+test('puts a lockout in Needs your attention, then the owner marks it as seen and exports the flags', async ({ browser }) => {
+    // Five wrong PINs for Amina on counter T02 lock her out (spec section 3) [F8]; nothing later in this file signs her in.
+    const context = await browser.newContext({ storageState: join(here, '.auth', 'T02.json') });
+    open.push(context);
+    const counter = await context.newPage();
+    await counter.goto('/counter');
+    await counter.getByRole('button', { name: /^Amina/ }).click();
+    for (let i = 0; i < 5; i++) {
+        await counter.keyboard.type('9999', { delay: 40 });
+        const answered = counter.waitForResponse('**/api/identity/pin');
+        await counter.getByRole('button', { name: 'Sign in' }).click();
+        await answered;
+    }
+
+    const page = await backOffice(browser, 'Halima', '135790');
+    const attention = page.getByRole('region', { name: /Needs your attention/ });
+    await expect(attention.getByText('Amina was locked out after wrong PINs')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Cashiers today' })).toBeVisible();
+    await page.screenshot({ path: 'e2e/results/screens/dashboard-attention.png', fullPage: true });
+    await attention.getByRole('button', { name: 'Mark as seen' }).first().click();
+    await expect(page.getByText('Amina was locked out after wrong PINs')).toHaveCount(0);
+
+    await page.getByRole('link', { name: /^Flags/ }).first().click();
+    await expect(page.getByRole('heading', { name: 'Flags' })).toBeVisible();
+    const flags = page.getByRole('list', { name: 'Flags' });
+    await expect(flags.getByText('Amina was locked out after wrong PINs')).toBeVisible();
+    await expect(flags.getByText(/Seen by Halima/).first()).toBeVisible();
+    await page.screenshot({ path: 'e2e/results/screens/flags.png', fullPage: true });
+
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export to CSV' }).click();
+    const file = await download;
+    expect(file.suggestedFilename()).toBe('flags-week.csv');
+});

@@ -327,6 +327,7 @@ When the owner enters a cost for an item with NULL lines, the system shows a pre
 - A shift auto-closed as unclosed, not counted. [S12]
 - Returns without receipt, and manager approvals used or used while not signed in.
 - A backup older than 48 hours, an unverified clock, a certificate close to expiry, a grant-drift or chain verification failure. [F3, F15, F24]
+- Each flag is read from the record that raised it, so it can never be lost or deleted. Marking a flag as seen keeps it on the list with who saw it. [D41]
 # 9. Returns, voids, credit, shifts and downtime
 ## Returns and exchanges
 - A return is a reversing record linked to the original receipt line. The sale is never edited.

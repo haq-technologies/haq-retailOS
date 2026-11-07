@@ -47,8 +47,8 @@ final readonly class Matrix
             'shift_events', 'cash_events', 'paid_outs', 'parked_sale_events', 'sale_timings',
             // Catalogue history: an undo is a new row; the counters' feed of committed changes
             'merge_events', 'catalogue_changes',
-            // Histories: each change adds a row
-            'credit_limit_history', 'settings_history',
+            // Histories: each change adds a row; a flag marked as seen is never deleted
+            'credit_limit_history', 'settings_history', 'flag_marks',
             // Audit and numbering
             'audit_log', 'audit_sensitive', 'audit_roots', 'epochs',
             // Stock, once stock tracking is on (Pro)

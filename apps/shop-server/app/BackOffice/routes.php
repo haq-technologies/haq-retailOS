@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\BackOffice\Http\BackOfficeController;
 use App\BackOffice\Http\CostController;
+use App\BackOffice\Http\FlagsController;
+use App\BackOffice\Http\SalesController;
 use App\BackOffice\Http\SettingsController;
 use App\Identity\Http\ActingUser;
 use App\Identity\Http\EnrolledTerminal;
@@ -18,6 +20,10 @@ Route::middleware(['web', EnrolledTerminal::class, ActingUser::class])->prefix('
     Route::get('/costs/items/{item}', [CostController::class, 'item']);
     Route::post('/costs/preview', [CostController::class, 'preview']);
     Route::post('/costs', [CostController::class, 'save']);
+    Route::get('/flags', [FlagsController::class, 'index']);
+    Route::get('/flags.csv', [FlagsController::class, 'csv']);
+    Route::post('/flags/seen', [FlagsController::class, 'seen']);
+    Route::get('/sales/{sale}', [SalesController::class, 'show']);
     Route::get('/settings', [SettingsController::class, 'index']);
     Route::post('/settings', [SettingsController::class, 'update']);
 });
