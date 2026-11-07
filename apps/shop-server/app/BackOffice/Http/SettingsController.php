@@ -58,6 +58,7 @@ final class SettingsController
             $hint = match ($registry->get($key)->ownerKind) {
                 'time' => ' A time is written like 21:30.',
                 'money' => ' Type an amount in naira, such as 5000.',
+                'number' => ' Type a whole number, such as 10.',
                 default => '',
             };
 

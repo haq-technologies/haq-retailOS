@@ -325,7 +325,11 @@ function CashiersToday({ rows }: { rows: CashierRow[] }) {
                                     {r.needs_manager && <span className="block text-base text-warning-text">the next needs a manager</span>}
                                 </td>
                                 <td className="p-3 text-right">{r.discarded}</td>
-                                <td className="p-3 text-right">{r.items_created}</td>
+                                <td className={`p-3 text-right ${r.items_created_high ? 'font-semibold text-warning-text' : ''}`}>
+                                    {r.items_created_high && <WarningIcon className="mr-1 inline h-5 w-5 align-text-bottom" />}
+                                    {r.items_created}
+                                    {r.items_created_high ? ', high' : ''}
+                                </td>
                                 <td className="p-3 text-right">{r.no_reference}</td>
                                 <td className="p-3 text-right">{r.transfers_waited}</td>
                                 <td className="p-3 text-right">{r.no_sale}</td>

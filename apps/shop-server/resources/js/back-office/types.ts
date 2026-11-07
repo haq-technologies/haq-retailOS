@@ -82,6 +82,7 @@ export interface CashierRow {
     needs_manager: boolean;
     discarded: number;
     items_created: number;
+    items_created_high: boolean;
     no_reference: number;
     no_sale: number;
     key_open: number;
