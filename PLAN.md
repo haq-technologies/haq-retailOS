@@ -34,7 +34,7 @@ Done:
 - Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the G3 tooling. See the Phase 3 checklist below.
 - Phase 4's owner features, started before G3 at the product owner's go (D39), all five built on 7 November 2026 (D40 to D46): the back office with the owner's dashboard and cost entry with backfill; flags and Needs your attention; the review queues with merge and undo; first-sale prices, catalogue health, the daily summary on screen and printed, and the CSV exports; and recovery: restore epochs end to end with the lost window, server health with catch-up and the server clock, and reboot recovery. See the Phase 4 section below.
 
-Next: the hardening work that needs no hardware (D50), starting with the cost-leak scanner; the product owner's answers to the two open questions in the Phase 4 section. Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening wait for G3 (D39).
+Next: the rest of the hardening that needs no hardware (D50): the upgrade-path test, then automating the checks; and the product owner's answers to the two open questions in the Phase 4 section. Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening that needs the shop's hardware wait for G3 (D39, D50).
 
 ## Team
 
@@ -154,7 +154,7 @@ Phase 3, the counter and sale core, started on 6 November 2026 at the product ow
 
 ## Phase 4 owner features (started early, D39)
 
-Phase 4's owner features started on 7 November 2026, before gate G3, at the product owner's go; the shadow pilot and the hardening wait for G3. In order:
+Phase 4's owner features started on 7 November 2026, before gate G3, at the product owner's go; the shadow pilot and the hardening that needs the shop's hardware wait for G3 (D50). In order:
 
 - [x] The back office and cost: the back-office app (dashboard, navigation, Shop settings), the three profit buckets, the Needs-cost queue with the backfill preview and bulk apply, and who sees cost (Claude, 7 November 2026; D40)
 - [x] Flags and alerts: the flag list (mark as seen, never deleted), the dashboard's Needs your attention, CSV export of flags (Claude, 7 November 2026; D41)
@@ -166,6 +166,13 @@ Phase 4's owner features started on 7 November 2026, before gate G3, at the prod
   - [x] Reboot recovery: the "starting, please wait" page, a 503 while the database starts, restart policies and Docker at boot checked at install, the counter opening from its saved copy, and the server and counter PC start-up steps (D46; docs/operations/start-up.md)
 
 - [x] Review of the owner features against the spec and the pilot checks (Claude, 7 November 2026). Two pilot items no phase item covered are built: reading the audit log (check D5) and the counter's speed (check A1) (D47). The rest are open questions below.
+
+## Phase 4 hardening (the parts that need no hardware start before G3, D50)
+
+- [x] The cost-leak scanner (check C4): a test calls every GET route as a cashier and as a manager, at a counter and a back-office device, and fails if a planted cost appears in any answer, page or CSV export; it fails too on a route it cannot call, so a new route is never skipped (Claude, 7 November 2026)
+- [ ] The upgrade-path test: a shop two minor versions behind upgrades through each migration in order (check E5)
+- [ ] Automating the checks that need no hardware, each written down against its check
+- [ ] After G3, on the pilot hardware: the soak test, the install rehearsal in under 2 hours, and the checks that need the shop's hardware
 
 Answered on 7 November 2026: undoing a cost is built (D48); check D6 moves to the MVP checks (D49); the hardening work that needs no hardware starts now (D50); the corrected-time view waits for the MVP (D51).
 
@@ -286,3 +293,4 @@ Assumptions:
 | 7 November 2026 | Reboot recovery: the starting page, restart policies and the start-up steps (D46) |
 | 7 November 2026 | Review of Phase 4's owner features: the audit log to read and the counter's speed (D47), and the open questions it raised |
 | 7 November 2026 | The product owner's answers: undoing a cost (D48), check D6 to the MVP (D49), hardware-free hardening starts now (D50), the corrected-time view in the MVP (D51) |
+| 7 November 2026 | Hardening: the cost-leak scanner (check C4) |
