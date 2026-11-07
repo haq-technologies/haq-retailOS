@@ -19,6 +19,9 @@ export default defineConfig({
         trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
         hasTouch: true,
+        // The shop's devices run on Nigerian time, as the server's reports do.
+        timezoneId: 'Africa/Lagos',
+        locale: 'en-GB',
     },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1366, height: 768 }, hasTouch: true } }],
 });

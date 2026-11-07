@@ -64,3 +64,29 @@ export function postJson<T>(url: string, body: unknown, token?: string, timeoutM
 export function getJson<T>(url: string, token?: string, timeoutMs = 10_000): Promise<ApiResult<T>> {
     return request<T>('GET', url, undefined, token, timeoutMs);
 }
+
+/** A file from the server (a CSV export), fetched with the acting-user token and saved by the browser. */
+export async function download(url: string, filename: string, token?: string): Promise<{ ok: boolean; status: number; renewedToken: string | null }> {
+    const headers: Record<string, string> = { Accept: 'text/csv, application/json' };
+    if (token !== undefined) {
+        headers[ACTING_TOKEN_HEADER] = token;
+    }
+    let response: Response;
+    try {
+        response = await fetch(url, { headers, credentials: 'same-origin' });
+    } catch {
+        throw new Unreachable('The server did not answer.');
+    }
+    if (response.ok) {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(await response.blob());
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => {
+            URL.revokeObjectURL(link.href);
+        }, 10_000);
+    }
+    return { ok: response.ok, status: response.status, renewedToken: response.headers.get(ACTING_TOKEN_HEADER) };
+}

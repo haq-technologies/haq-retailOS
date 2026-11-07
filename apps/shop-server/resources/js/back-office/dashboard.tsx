@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { WarningIcon } from '@/components/icons';
 import { Notice } from '@/components/notice';
 import type { CounterApi } from '@/counter/use-api';
-import { clock, longDay, naira, plural } from './format';
+import { clock, longDay, naira, plural, when } from './format';
 import { BucketKey, ProfitBar } from './profit-bar';
-import type { Can, DashboardData } from './types';
+import { SaleSheet } from './sale-sheet';
+import type { Can, CashierRow, DashboardData } from './types';
 
 /**
  * The owner's dashboard (wireframes BackDashboard and BackDashboardPhone): sales today by payment method,
@@ -11,30 +13,40 @@ import type { Can, DashboardData } from './types';
  */
 const methodName: Record<string, string> = { cash: 'Cash', transfer: 'Transfer', pos: 'POS' };
 
-export function Dashboard({ api, can, go }: { api: CounterApi; can: Can; go: (section: string) => void }) {
+export function Dashboard({ api, can, go, onChanged }: { api: CounterApi; can: Can; go: (section: string) => void; onChanged: () => void }) {
     const [data, setData] = useState<DashboardData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [withEstimated, setWithEstimated] = useState(true);
+    const [viewing, setViewing] = useState<string[] | null>(null);
+
+    const load = useCallback(() => {
+        void api
+            .get<DashboardData>('/api/back-office/dashboard')
+            .then((a) => {
+                if (a.ok) setData(a.body);
+            })
+            .catch(() => {
+                setError('The dashboard could not load. Check the connection.');
+            });
+    }, [api]);
 
     useEffect(() => {
-        let live = true;
-        const load = () => {
-            void api
-                .get<DashboardData>('/api/back-office/dashboard')
-                .then((a) => {
-                    if (live && a.ok) setData(a.body);
-                })
-                .catch(() => {
-                    if (live) setError('The dashboard could not load. Check the connection.');
-                });
-        };
         load();
         const timer = window.setInterval(load, 30_000);
         return () => {
-            live = false;
             window.clearInterval(timer);
         };
-    }, [api]);
+    }, [load]);
+
+    const markSeen = async (key: string) => {
+        try {
+            await api.post('/api/back-office/flags/seen', { keys: [key] });
+        } catch {
+            setError('The device cannot reach the shop server. Try again.');
+        }
+        load();
+        onChanged();
+    };
 
     if (data === null) return error === null ? <p className="text-text-secondary">Loading…</p> : <Notice tone="error">{error}</Notice>;
 
@@ -148,6 +160,45 @@ export function Dashboard({ api, can, go }: { api: CounterApi; can: Can; go: (se
                 </section>
             </div>
 
+            {can.flags && data.attention.total > 0 && (
+                <section aria-labelledby="attention-h" className="flex flex-col gap-2">
+                    <div className="flex items-baseline justify-between gap-2">
+                        <h2 id="attention-h" className="text-xl font-bold">
+                            Needs your attention · {data.attention.total}
+                        </h2>
+                        <a href="#/flags" className="min-h-touch content-center text-lg font-semibold text-action-text">
+                            All flags
+                        </a>
+                    </div>
+                    <ul className="flex flex-col rounded-2xl border-2 border-border">
+                        {data.attention.flags.map((f) => (
+                            <li key={f.key} className="flex flex-col gap-3 border-b border-border p-4 last:border-b-0 medium:flex-row medium:items-center">
+                                <WarningIcon className="hidden h-6 w-6 shrink-0 text-warning-text medium:block" />
+                                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                                    <span className="text-lg font-semibold">{f.title}</span>
+                                    <span className="text-text-secondary">
+                                        {f.detail}
+                                        {f.who !== null && ` · ${f.who}`}
+                                        {f.approver !== null && `, approved by ${f.approver}`}
+                                        {f.terminal !== null && `, ${f.terminal}`} · {when(f.at)}
+                                    </span>
+                                </span>
+                                <span className="flex flex-wrap gap-2">
+                                    {f.sale_ids.length > 0 && (
+                                        <button type="button" className="min-h-touch rounded-xl border-2 border-border px-4 text-lg font-semibold text-action-text" onClick={() => { setViewing(f.sale_ids); }}>
+                                            {f.sale_ids.length > 1 ? 'View sales' : 'View sale'}
+                                        </button>
+                                    )}
+                                    <button type="button" className="min-h-touch rounded-xl border-2 border-border px-4 text-lg font-semibold text-action-text" onClick={() => void markSeen(f.key)}>
+                                        Mark as seen
+                                    </button>
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
+
             <section aria-labelledby="todo-h" className="flex flex-col gap-2">
                 <h2 id="todo-h" className="text-xl font-bold">
                     To do
@@ -159,12 +210,80 @@ export function Dashboard({ api, can, go }: { api: CounterApi; can: Can; go: (se
                             <span className="text-text-secondary">Items sold with no cost, highest revenue first</span>
                         </button>
                     )}
+                    {can.flags && (
+                        <button type="button" className="flex min-h-[88px] flex-col items-start justify-center rounded-2xl border-2 border-border p-4 text-left" onClick={() => { go('flags'); }}>
+                            <span className="text-lg font-semibold">Flags · {data.todo.flags_week}</span>
+                            <span className="text-text-secondary">Flagged this week, newest first</span>
+                        </button>
+                    )}
                     <div className="flex min-h-[88px] flex-col items-start justify-center rounded-2xl border-2 border-border p-4">
                         <span className="text-lg font-semibold">Catalogue health · {data.coverage_percent}%</span>
                         <span className="text-text-secondary">of revenue has a cost, since trading began</span>
                     </div>
                 </div>
             </section>
+
+            {data.cashiers.length > 0 && <CashiersToday rows={data.cashiers} />}
+
+            {viewing !== null && (
+                <SaleSheet
+                    api={api}
+                    saleIds={viewing}
+                    onClose={() => {
+                        setViewing(null);
+                    }}
+                />
+            )}
         </div>
+    );
+}
+
+const roleName: Record<string, string> = { cashier: 'Cashier', manager: 'Manager', owner: 'Owner', storekeeper: 'Storekeeper' };
+
+/** Each person's day at the counter (spec section 8) [F11, F12, S2, S21]. */
+function CashiersToday({ rows }: { rows: CashierRow[] }) {
+    return (
+        <section aria-labelledby="cashiers-h" className="flex flex-col gap-2">
+            <h2 id="cashiers-h" className="text-xl font-bold">
+                Cashiers today
+            </h2>
+            <div className="overflow-x-auto rounded-2xl border-2 border-border">
+                <table className="w-full min-w-[900px] text-left text-lg tabular-nums">
+                    <thead className="text-base text-text-secondary">
+                        <tr className="border-b border-border">
+                            <th scope="col" className="p-3 font-semibold">Cashier</th>
+                            <th scope="col" className="p-3 text-right font-semibold">Sales</th>
+                            <th scope="col" className="p-3 text-right font-semibold">Below-range confirms</th>
+                            <th scope="col" className="p-3 text-right font-semibold">Parked sales discarded</th>
+                            <th scope="col" className="p-3 text-right font-semibold">Items created</th>
+                            <th scope="col" className="p-3 text-right font-semibold">Transfers with no reference</th>
+                            <th scope="col" className="p-3 text-right font-semibold">Transfers waiting over 30 min</th>
+                            <th scope="col" className="p-3 text-right font-semibold">Drawer, no sale</th>
+                            <th scope="col" className="p-3 text-right font-semibold">Drawer opened with key</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((r) => (
+                            <tr key={r.id} className="border-b border-border last:border-b-0">
+                                <th scope="row" className="p-3 font-semibold">
+                                    {r.name} <span className="font-normal text-text-secondary">· {roleName[r.role] ?? r.role}</span>
+                                </th>
+                                <td className="p-3 text-right">{r.sales}</td>
+                                <td className="p-3 text-right">
+                                    {r.below_range} of {r.below_range_limit}
+                                    {r.needs_manager && <span className="block text-base text-warning-text">the next needs a manager</span>}
+                                </td>
+                                <td className="p-3 text-right">{r.discarded}</td>
+                                <td className="p-3 text-right">{r.items_created}</td>
+                                <td className="p-3 text-right">{r.no_reference}</td>
+                                <td className="p-3 text-right">{r.transfers_waited}</td>
+                                <td className="p-3 text-right">{r.no_sale}</td>
+                                <td className="p-3 text-right">{r.key_open}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </section>
     );
 }

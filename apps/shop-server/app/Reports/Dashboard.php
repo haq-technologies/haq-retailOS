@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class Dashboard
 {
-    public function __construct(private Settings $settings) {}
+    public function __construct(private Settings $settings, private Flags $flags, private CashierDay $cashiers) {}
 
     /**
      * The business day now: an open shift's, since a shift that runs past midnight keeps its day (spec
@@ -35,7 +35,7 @@ final readonly class Dashboard
     /**
      * @return array<string, mixed>
      */
-    public function forDay(string $day): array
+    public function forDay(string $day, bool $withCost = false): array
     {
         /** @var object{n: int|string, total: int|string} $sales */
         $sales = DB::selectOne("SELECT count(*) AS n, coalesce(sum(total_kobo), 0) AS total FROM sales WHERE kind = 'sale' AND business_day = ?", [$day]);
@@ -55,6 +55,11 @@ final readonly class Dashboard
         $opened = DB::table('shifts')->where('business_day', $day)->min('opened_at');
         $counters = DB::table('sales')->where('business_day', $day)->distinct()->count('terminal_id');
         [$covered, $total] = Backfill::coverage();
+        // Needs your attention: the week's serious flags nobody has marked as seen yet, newest first.
+        $attention = array_values(array_filter(
+            $this->flags->list(Period::named('last7', $this->flags->zone()), $withCost, Flags::ATTENTION),
+            fn (array $f) => $f['seen_at'] === null,
+        ));
 
         return [
             'day' => $day,
@@ -64,8 +69,11 @@ final readonly class Dashboard
             'transfers_waiting' => ['count' => (int) $waiting->n, 'amount_kobo' => (int) $waiting->amount],
             'profit' => Profit::buckets($day, $day),
             'coverage_percent' => $total === 0 ? 0 : intdiv($covered * 100, $total),
+            'attention' => ['total' => count($attention), 'flags' => array_slice($attention, 0, 5)],
+            'cashiers' => $this->cashiers->forDay($day),
             'todo' => [
                 'needs_cost' => NeedsCost::queue(limit: 0)['total_items'],
+                'flags_week' => count($this->flags->list(Period::named('week', $this->flags->zone()), false)),
             ],
         ];
     }
