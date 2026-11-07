@@ -6,6 +6,7 @@ use App\Audit\AuditServiceProvider;
 use App\BackOffice\BackOfficeServiceProvider;
 use App\Backups\BackupsServiceProvider;
 use App\Catalogue\CatalogueServiceProvider;
+use App\Cost\CostServiceProvider;
 use App\Counter\CounterServiceProvider;
 use App\Identity\IdentityServiceProvider;
 use App\Organisation\OrganisationServiceProvider;
@@ -25,6 +26,7 @@ return [
     SettingsServiceProvider::class,
     IdentityServiceProvider::class,
     CatalogueServiceProvider::class,
+    CostServiceProvider::class,
     ShiftsServiceProvider::class,
     SalesServiceProvider::class,
     PrintingServiceProvider::class,

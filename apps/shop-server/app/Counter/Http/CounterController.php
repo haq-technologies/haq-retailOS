@@ -14,6 +14,7 @@ use App\Platform\Http\Page;
 use App\Settings\Settings;
 use App\Shifts\Shifts;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Response;
@@ -64,9 +65,12 @@ final class CounterController
     /**
      * The counter page: one Inertia page that boots the local-first client (spec section 4) [R4].
      */
-    public function page(Request $request, Settings $settings): Response
+    public function page(Request $request, Settings $settings): Response|RedirectResponse
     {
         $terminal = $this->terminal($request);
+        if (! $terminal->canSell()) {
+            return redirect('/back-office');
+        }
         $colours = DB::table('picklist_values')->where('list', 'colours')->where('status', 'active')->orderBy('position')->orderBy('name')->pluck('name')->all();
 
         return Page::render('counter/index', [
