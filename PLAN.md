@@ -157,7 +157,7 @@ Phase 4's owner features started on 7 November 2026, before gate G3, at the prod
 
 - [x] The back office and cost: the back-office app (dashboard, navigation, Shop settings), the three profit buckets, the Needs-cost queue with the backfill preview and bulk apply, and who sees cost (Claude, 7 November 2026; D40)
 - [x] Flags and alerts: the flag list (mark as seen, never deleted), the dashboard's Needs your attention, CSV export of flags (Claude, 7 November 2026; D41)
-- [ ] Review queues: brands, phone models and product words; new items and typed lines; learned barcodes, conflicts and search words; duplicates, with merge and undo (Claude)
+- [x] Review queues: brands, phone models and product words; new items and typed lines; learned barcodes, conflicts and search words; duplicates, with merge and undo (Claude, 7 November 2026; D42)
 - [ ] Prices and reports: first-sale prices, catalogue health, CSV export of items and sales, the daily summary on screen and printed (Claude)
 - [ ] Recovery: the health page, the lost-window screen with back entry, restore epochs end to end, reboot recovery and catch-up scheduling (Claude)
 
@@ -266,3 +266,4 @@ Assumptions:
 | 7 November 2026 | Phase 4's owner features start before G3, at the product owner's go (D39) |
 | 7 November 2026 | The back office and cost: the dashboard, Needs cost with the backfill, profit in three buckets (D40) |
 | 7 November 2026 | Flags and alerts: the flag list, Needs your attention, the cashiers' day and the CSV export (D41) |
+| 7 November 2026 | Review queues: names, new items, barcodes and search words, duplicates with merge and undo (D42) |

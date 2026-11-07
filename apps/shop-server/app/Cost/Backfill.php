@@ -6,6 +6,7 @@ namespace App\Cost;
 
 use App\Audit\AuditEntry;
 use App\Audit\AuditLog;
+use App\Catalogue\Merges;
 use App\Identity\Models\User;
 use App\Platform\Ulid;
 use Carbon\CarbonImmutable;
@@ -121,17 +122,23 @@ final readonly class Backfill
      */
     private function lines(array $itemIds, string $basis, ?CarbonImmutable $from): array
     {
-        $query = DB::table('sale_lines as l')->join('sales as s', 's.id', '=', 'l.sale_id')->join('items as i', 'i.id', '=', 'l.item_id')
-            ->join('users as u', 'u.id', '=', 's.cashier_id')
-            ->whereIn('l.item_id', $itemIds)->where('s.kind', 'sale')->whereNull('l.cost_snapshot_kobo')
-            ->whereNotExists(fn ($q) => $q->from('cost_resolutions as r')->whereColumn('r.sale_line_id', 'l.id'))
-            ->orderBy('s.recorded_at');
-        if ($basis === 'from_date' && $from !== null) {
-            $query->where('s.recorded_at', '>=', $from->startOfDay()->format('Y-m-d H:i:s.uP'));
-        }
+        // Lines of items merged into a chosen item count under it, as every report does [F18].
+        $in = implode(', ', array_fill(0, count($itemIds), '?'));
+        $since = $basis === 'from_date' && $from !== null ? $from->startOfDay()->format('Y-m-d H:i:s.uP') : null;
+        $bindings = [...$itemIds, ...($since === null ? [] : [$since])];
+        $since = $since === null ? '' : 'AND s.recorded_at >= ?';
+        $roots = Merges::rootsCte();
 
         /** @var list<object{id: string, item_id: string, name: string, qty: int, unit_price_kobo: int, line_total_kobo: int, recorded_at: string, receipt_number: string, cashier: string}> $rows */
-        $rows = $query->get(['l.id', 'l.item_id', 'i.display_name as name', 'l.qty', 'l.unit_price_kobo', 'l.line_total_kobo', 's.recorded_at', 's.receipt_number', 'u.name as cashier'])->all();
+        $rows = DB::select(<<<SQL
+            WITH RECURSIVE {$roots}
+            SELECT l.id, r.root_id AS item_id, i.display_name AS name, l.qty, l.unit_price_kobo, l.line_total_kobo, s.recorded_at, s.receipt_number, u.name AS cashier
+            FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN item_roots r ON r.item_id = l.item_id JOIN items i ON i.id = r.root_id
+            JOIN users u ON u.id = s.cashier_id
+            WHERE r.root_id IN ({$in}) AND s.kind = 'sale' AND l.cost_snapshot_kobo IS NULL
+              AND NOT EXISTS (SELECT 1 FROM cost_resolutions c WHERE c.sale_line_id = l.id) {$since}
+            ORDER BY s.recorded_at, l.id
+            SQL, $bindings);
 
         return $rows;
     }
@@ -143,6 +150,9 @@ final readonly class Backfill
     {
         if ($itemIds === [] || count($itemIds) > 200) {
             throw new InvalidArgumentException('Choose between 1 and 200 items.');
+        }
+        if (DB::table('items')->whereIn('id', $itemIds)->where('status', 'merged')->exists()) {
+            throw new InvalidArgumentException('One of these items was merged into another. Enter the cost for the item it counts under.');
         }
         if ($unitCostKobo < 0 || $unitCostKobo > 100_000_000_00) {
             throw new InvalidArgumentException('That cost is not a sensible amount.');

@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace App\BackOffice\Http;
 
 use App\BackOffice\Access;
+use App\Catalogue\ReviewQueue;
 use App\Identity\Models\User;
 use App\Identity\Role;
 use App\Organisation\Models\Terminal;
 use App\Platform\Http\Page;
 use App\Reports\Dashboard;
+use App\Reports\Flags;
+use App\Reports\NeedsCost;
+use App\Reports\Period;
 use App\Settings\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,6 +50,19 @@ final class BackOfficeController
         $actor = $this->actor($request);
 
         return response()->json(['user' => ['id' => $actor->id, 'name' => $actor->name, 'role' => $actor->role->value], 'can' => $access->for($actor)]);
+    }
+
+    /** The counts on the menu, only for the sections this person may open. */
+    public function badges(Request $request, Access $access, ReviewQueue $review, Flags $flags): JsonResponse
+    {
+        $can = $access->for($this->actor($request));
+        $attention = $can['flags'] ? count(array_filter($flags->list(Period::named('last7', $flags->zone()), false, Flags::ATTENTION), fn (array $f) => $f['seen_at'] === null)) : 0;
+
+        return response()->json([
+            'costs' => $can['costs'] ? NeedsCost::queue(limit: 0)['total_items'] : 0,
+            'flags' => $attention,
+            'review' => $can['review'] ? $review->total() : 0,
+        ]);
     }
 
     public function dashboard(Request $request, Dashboard $dashboard, Access $access): JsonResponse

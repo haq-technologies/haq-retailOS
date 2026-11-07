@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 /*
  * Builds a fresh shop for the browser tests (e2e/), in the retail_e2e database only: the example profile,
- * the starter catalogue, a cashier and a manager, and a one-time enrolment code for each counter, written
- * to e2e/.state.json. The names and PINs are placeholders, as in the feature tests.
+ * the starter catalogue, a cashier, a manager and the owner, an item for Review, and a one-time enrolment
+ * code for each device, written to e2e/.state.json. The names and PINs are placeholders, as in the feature tests.
  */
 
+use App\Catalogue\Models\Category;
+use App\Catalogue\NewItems;
 use App\Identity\Enrolment;
 use App\Identity\Role;
 use App\Identity\Users;
@@ -42,9 +44,13 @@ $run('catalogue:seed');
 // The counters print to the stand-in printer beside the test server.
 DB::table('terminals')->where('kind', 'counter')->update(['printer_host' => '127.0.0.1', 'printer_port' => 9100]);
 
-app(Users::class)->add('Amina', Role::Cashier, '1357');
+$amina = app(Users::class)->add('Amina', Role::Cashier, '1357');
 app(Users::class)->add('Kemi', Role::Manager, '246810');
 app(Users::class)->add('Halima', Role::Owner, '135790');
+
+// Something for Review: an item a cashier added at the counter, with its brand typed slightly wrong.
+app(NewItems::class)->create(['category_id' => Category::query()->where('code', 'earbuds')->value('id'), 'brand_text' => 'Oriamo',
+    'facets' => ['model' => 'FreePods 3C'], 'confirm_new' => true], $amina);
 
 $codes = [];
 foreach (Terminal::query()->orderBy('code')->get() as $terminal) {

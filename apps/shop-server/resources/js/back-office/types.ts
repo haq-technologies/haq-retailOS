@@ -4,6 +4,9 @@ export interface Can {
     costs: boolean;
     prices: boolean;
     review: boolean;
+    names: boolean;
+    categories: boolean;
+    promote: boolean;
     flags: boolean;
     summary: boolean;
     catalogue: boolean;
@@ -39,7 +42,7 @@ export interface DashboardData {
     coverage_percent: number;
     attention: { total: number; flags: Flag[] };
     cashiers: CashierRow[];
-    todo: { needs_cost: number; flags_week: number };
+    todo: { needs_cost: number; flags_week: number; review: number };
 }
 
 /** One flag (spec section 8). cost_kobo is there only for those who may see cost. */

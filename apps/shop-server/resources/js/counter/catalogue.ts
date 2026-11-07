@@ -88,19 +88,46 @@ export class Catalogue {
         return item.status !== 'merged' && item.status !== 'archived';
     }
 
-    /** The barcode's candidates, at most 5, most recently chosen first (spec section 6). */
+    /** The item an item now counts under: itself, or the end of its merge pointers [F18]. */
+    root(itemId: string): string {
+        let id = itemId;
+        for (let hops = 0; hops < 20; hops++) {
+            const item = this.items.get(id);
+            const next = item?.status === 'merged' ? item.merged_into_id : null;
+            if (next === null || next === undefined) return id;
+            id = next;
+        }
+        return id;
+    }
+
+    /**
+     * The barcode's candidates, at most 5, most recently chosen first (spec section 6). A merged item's code
+     * adds the item it now counts under.
+     */
     barcodeCandidates(code: string): BarcodeRow[] {
+        const seen = new Set<string>();
         return [...this.barcodes.values()]
+            .filter((b) => b.code === code && b.status !== 'disabled')
+            .sort((a, b) => (b.last_chosen_at ?? '').localeCompare(a.last_chosen_at ?? ''))
+            .map((b) => ({ ...b, item_id: this.root(b.item_id) }))
             .filter((b) => {
                 const item = this.items.get(b.item_id);
-                return b.code === code && b.status !== 'disabled' && item !== undefined && this.sellable(item);
+                if (item === undefined || !this.sellable(item) || seen.has(b.item_id)) return false;
+                seen.add(b.item_id);
+                return true;
             })
-            .sort((a, b) => (b.last_chosen_at ?? '').localeCompare(a.last_chosen_at ?? ''))
             .slice(0, 5);
     }
 
-    activeAliases(itemId: string): string[] {
-        return [...this.aliases.values()].filter((a) => a.item_id === itemId && a.status === 'active').map((a) => a.term);
+    /** Every item's active search words, with those of items merged into it, worked out once per rebuild. */
+    aliasesByItem(): Map<string, string[]> {
+        const byItem = new Map<string, string[]>();
+        for (const a of this.aliases.values()) {
+            if (a.status !== 'active') continue;
+            const root = this.root(a.item_id);
+            byItem.set(root, [...(byItem.get(root) ?? []), a.term]);
+        }
+        return byItem;
     }
 
     /** The price the counter fills in for an item and customer type, with where it came from [S4]. */

@@ -54,7 +54,8 @@ final readonly class Items
             DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['item:'.$key]);
             $existing = Item::query()->where('identity_key', $key)->first();
             if ($existing !== null) {
-                return $existing;
+                // A merged item is sold as the one it counts under [F18].
+                return $existing->status === 'merged' ? (Item::query()->find(Merges::rootOf($existing->id)) ?? $existing) : $existing;
             }
 
             $name = $this->name($category, $template, $brand, $brandText, $resolved, $freeText, $typedCategoryWord);
@@ -98,6 +99,66 @@ final readonly class Items
         $template = CategoryTemplate::query()->where('category_id', $category->id)->firstOrFail();
 
         return $this->name($category, $template, $brand, $brandText, $this->resolveFacets($template, $facets), $freeText, $typedCategoryWord);
+    }
+
+    /**
+     * An item's facets as findOrCreate and change take them: facet key => pick-list value ID or typed text.
+     *
+     * @return array<string, string>
+     */
+    public function facetsOf(Item $item): array
+    {
+        $facets = [];
+        foreach (ItemFacet::query()->where('item_id', $item->id)->get() as $facet) {
+            $facets[$facet->facet_key] = $facet->picklist_value_id ?? (string) $facet->text_value;
+        }
+
+        return $facets;
+    }
+
+    /**
+     * Gives an item new parts (its category, brand, facets and free text), rebuilding its name and identity
+     * key in one transaction, with one audit entry (spec section 6) [R1]. No sale line changes: a sale keeps
+     * the name it printed. If another item already has exactly these parts, nothing changes and that item
+     * (or the one it counts under) comes back, so the caller can offer to merge the two instead.
+     *
+     * @param  array<string, string>  $facets
+     */
+    public function change(Item $item, Category $category, array $facets, ?Brand $brand, ?string $brandText, ?string $freeText,
+        ?string $typedCategoryWord, string $status, ?string $actorId): ?Item
+    {
+        $template = CategoryTemplate::query()->where('category_id', $category->id)->first()
+            ?? throw new InvalidArgumentException("{$category->name} is not a sellable category.");
+        $resolved = $this->resolveFacets($template, $facets);
+        $freeText = $freeText === null || trim($freeText) === '' ? null : trim(preg_replace('/\s+/u', ' ', $freeText) ?? '');
+        $brandText = $brand !== null || $brandText === null || trim($brandText) === '' ? null : trim($brandText);
+        $key = $this->identityKey($category->id, $brand?->id, $brandText, $resolved, $freeText)
+            .($typedCategoryWord === null ? '' : '|word:'.NameBuilder::normalise($typedCategoryWord));
+
+        return DB::transaction(function () use ($item, $category, $template, $resolved, $brand, $brandText, $freeText, $typedCategoryWord, $status, $actorId, $key): ?Item {
+            DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['item:'.$key]);
+            $other = Item::query()->where('identity_key', $key)->where('id', '!=', $item->id)->first();
+            if ($other !== null) {
+                return $other->status === 'merged' ? (Item::query()->find(Merges::rootOf($other->id)) ?? $other) : $other;
+            }
+
+            $before = ['name' => $item->display_name, 'status' => $item->status, 'category_id' => $item->category_id];
+            $name = $this->name($category, $template, $brand, $brandText, $resolved, $freeText, $typedCategoryWord);
+            $item->update([
+                'category_id' => $category->id, 'brand_id' => $brand?->id, 'brand_text' => $brandText, 'free_text' => $freeText,
+                'typed_category_word' => $typedCategoryWord, 'display_name' => $name, 'search_text' => NameBuilder::normalise($name),
+                'identity_key' => $key, 'status' => $status,
+            ]);
+            ItemFacet::query()->where('item_id', $item->id)->delete();
+            foreach ($resolved as $facetKey => $value) {
+                ItemFacet::query()->create(['id' => Ulid::generate(), 'item_id' => $item->id, 'facet_key' => $facetKey,
+                    'picklist_value_id' => $value['value_id'], 'text_value' => $value['text']]);
+            }
+            $this->audit->record(new AuditEntry(action: 'catalogue.item_changed', actorId: $actorId, subjectType: 'item', subjectId: $item->id,
+                before: $before, after: ['name' => $name, 'status' => $status, 'category_id' => $category->id]));
+
+            return null;
+        });
     }
 
     /** Rebuilds an item's cached name and search text from its parts. Returns true if they changed. */

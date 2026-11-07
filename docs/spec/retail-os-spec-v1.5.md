@@ -256,7 +256,7 @@ Every printed name is built by one routine in this order: Brand, Model or connec
 - QR codes work the same way, because the scanner types the text.
 - The starter catalogue ships no barcodes. They are learned only from each shop’s own sales.
 ## Aliases
-- A search term is stored as a candidate alias when a cashier picks an item after searching it. It becomes active only after the same term has led to the same item three times (a setting). Terms shorter than 3 characters are never stored, and the owner can purge any alias. [F13]
+- A search term is stored as a candidate alias when a cashier picks an item after searching it. It becomes active only after the same term has led to the same item three times (a setting). Terms shorter than 3 characters are never stored, and the owner (or a manager or the storekeeper, who review aliases) can remove any alias; a removed alias never learns again. [F13, D42]
 ## Guardrails for cashier-created items
 - Category is required. Facets come from pickers. Only the last piece is free text.
 - Similar-item warnings appear while typing, checked against the latest catalogue delta.
@@ -267,6 +267,7 @@ Every printed name is built by one routine in this order: Brand, Model or connec
 - New phone models. A cashier may type a phone model that is not in the list for a pouch, screen protector or battery. It prints as typed, stays on that item, and joins the list when a manager or the owner approves it. [C2]
 - Products that fit no category. The category picker has a “Not in the list” option. The cashier types the product word (for example “Solar light”, at least 3 characters, and a denylist rejects words such as others, misc, item and test). The receipt prints that word as the category word, never “Others”. The item is pending review, and only the owner creates the new category and moves the item into it. [v1.3]
 - Item creation per cashier is counted and a high rate is flagged on the owner dashboard. [F11]
+- Merging items changes no sale: the merged item points at the one it now counts under, which is never itself merged, so a merge cannot make a loop. Reports, barcode lookup and search follow the pointer, and an undo restores the item. [D42]
 ## Colours
 Colour is a quick-pick note on the sale line, configurable per shop. It prints on the receipt and never creates a separate catalogue item. An optional shop setting, Track colour in stock, off by default, also records the colour as variant_key on stock movements and counts, so Pro stock and low-stock alerts can tell black from white without multiplying catalogue items. [F22] When an item from a category that asks for colour is added, its sale line opens a row of the shop's colours, most used first, then More. One tap sets the colour and closes the row. The next item or Pay closes it with no colour, and tapping the line opens it again. Colour never blocks a sale, and the owner ticks which categories ask for colour at install. [D9]
 # 7. Counter flow

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Reports;
 
+use App\Catalogue\Merges;
 use App\Catalogue\NameBuilder;
 use Illuminate\Support\Facades\DB;
 
@@ -24,10 +25,13 @@ final class NeedsCost
             $filter = 'AND i.search_text LIKE ?';
             $bindings[] = '%'.str_replace(['%', '_'], ['\%', '\_'], NameBuilder::normalise($search)).'%';
         }
+        // A merged item's sales count under the item it was merged into [F18].
+        $roots = Merges::rootsCte();
         /** @var list<object{item_id: string, name: string, sales: int|string, revenue_kobo: int|string, first_at: string}> $rows */
         $rows = DB::select(<<<SQL
+            WITH RECURSIVE {$roots}
             SELECT i.id AS item_id, i.display_name AS name, count(*) AS sales, sum(l.line_total_kobo) AS revenue_kobo, min(s.recorded_at) AS first_at
-            FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN items i ON i.id = l.item_id
+            FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN item_roots ir ON ir.item_id = l.item_id JOIN items i ON i.id = ir.root_id
             WHERE s.kind = 'sale' AND l.cost_snapshot_kobo IS NULL
               AND NOT EXISTS (SELECT 1 FROM cost_resolutions r WHERE r.sale_line_id = l.id) {$filter}
             GROUP BY i.id, i.display_name
