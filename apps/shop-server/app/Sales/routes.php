@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 use App\Identity\Http\ActingUser;
 use App\Identity\Http\EnrolledTerminal;
+use App\Sales\Http\JournalController;
 use App\Sales\Http\ParkedController;
 use App\Sales\Http\PriceController;
 use App\Sales\Http\SaleController;
 use Illuminate\Support\Facades\Route;
+
+// The counter's journal after a restore needs only the enrolled device: it reports before anyone signs in.
+Route::middleware(['web', EnrolledTerminal::class])->post('/api/counter/journal', [JournalController::class, 'report']);
 
 Route::middleware(['web', EnrolledTerminal::class, ActingUser::class])->group(function (): void {
     Route::post('/api/counter/sales', [SaleController::class, 'finish']);

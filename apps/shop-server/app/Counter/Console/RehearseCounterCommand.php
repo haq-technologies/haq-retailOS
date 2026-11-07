@@ -10,6 +10,7 @@ use App\Identity\Models\User;
 use App\Organisation\Models\Terminal;
 use App\Platform\Ulid;
 use App\Sales\Finish;
+use App\Sales\Journal;
 use App\Sales\Pricing;
 use App\Sales\SaleRefused;
 use App\Sales\SaleRequest;
@@ -29,7 +30,7 @@ final class RehearseCounterCommand extends Command
 
     protected $hidden = true;
 
-    public function handle(Finish $finish, Pricing $pricing, Feed $feed): int
+    public function handle(Finish $finish, Pricing $pricing, Feed $feed, Journal $journal): int
     {
         $terminal = Terminal::query()->where('code', (string) $this->option('counter'))->first();
         $cashier = User::query()->find((string) $this->option('cashier'));
@@ -37,6 +38,12 @@ final class RehearseCounterCommand extends Command
             $this->error('No such counter or cashier.');
 
             return self::FAILURE;
+        }
+        // A scripted counter keeps no journal: after a restore it reports an empty one, as a counter with a
+        // cleared browser would, and its epoch stands (D44).
+        if ($journal->needed($terminal)) {
+            $journal->report($terminal, ['highest' => []]);
+            $this->line("{$terminal->code}: the server was restored; reported an empty journal.");
         }
         // Seeded, so a rehearsal can be run again exactly.
         $rng = new Randomizer(new Mt19937((int) $this->option('seed')));

@@ -2,7 +2,7 @@
 
 The HAQ Retail OS server that runs in each branch, on the shop's own network: Laravel 13 and PostgreSQL 18, with the counter and the back office in React through Inertia. The spec is [docs/spec/retail-os-spec-v1.5.md](../../docs/spec/retail-os-spec-v1.5.md), and the build order is in [PLAN.md](../../PLAN.md).
 
-**Status:** Phases 2 and 3 are built (the foundation, then the counter and sale core); gate G3 waits for the pilot hardware. Phase 4's owner features are built in the back office except recovery, which is next (PLAN.md).
+**Status:** Phases 2 and 3 are built (the foundation, then the counter and sale core); gate G3 waits for the pilot hardware. Phase 4's owner features are built in the back office, and recovery is being built (PLAN.md).
 
 ## Run it on the development computer
 
@@ -87,7 +87,7 @@ apps/shop-server/e2e/run.sh -g "holds"      # the ones whose name matches
 
 ## The back office
 
-Open `/back-office` on a back-office device (the owner's phone or laptop, enrolled with a code such as D01) or from a counter. It signs in with the same name tiles, and each person sees only what their role may open (spec section 3): the dashboard with profit in three parts and Needs your attention, Needs cost with the backfill, Prices (first sales and set prices), Review (typed brands and words, new items, barcodes, duplicates with merge and undo), Catalogue health, Flags, the Daily summary (on screen, printed on a counter's printer, and the sales exports) and Shop settings. Cost and profit reach only those who may see cost, in the API and in every export. The browser tests in `e2e/owner.spec.ts` drive it.
+Open `/back-office` on a back-office device (the owner's phone or laptop, enrolled with a code such as D01) or from a counter. It signs in with the same name tiles, and each person sees only what their role may open (spec section 3): the dashboard with profit in three parts and Needs your attention, Needs cost with the backfill, Prices (first sales and set prices), Review (typed brands and words, new items, barcodes, duplicates with merge and undo), Catalogue health, Flags, the Daily summary (on screen, printed on a counter's printer, and the sales exports), Lost sales after a restore (D44) and Shop settings. Cost and profit reach only those who may see cost, in the API and in every export. The browser tests in `e2e/owner.spec.ts` drive it.
 
 ## Backups
 
@@ -99,7 +99,7 @@ docker compose exec backup haq-backup.sh test-restore    # the test restore now 
 docker compose exec scheduler php artisan backups:status
 ```
 
-A shop's restore is `deploy/restore.sh`; docs/operations/restore-drill.md walks through it. Updates come as signed releases through `deploy/update.sh` (docs/operations/releases.md).
+A shop's restore is `deploy/restore.sh`; docs/operations/restore-drill.md walks through it. After a restore each counter reports its journal (its last seven days of sales) before it sells again, and a manager re-enters the sales the restored copy lacks on Lost sales in the back office, under their original receipt numbers (D44). Updates come as signed releases through `deploy/update.sh` (docs/operations/releases.md).
 
 ## Printing
 

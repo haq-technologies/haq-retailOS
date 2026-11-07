@@ -5,6 +5,7 @@ import { SignInPanel, type SignedIn, type Tile } from '@/components/sign-in-pane
 import { emptyCart, type Cart } from '@/counter/cart';
 import { Catalogue } from '@/counter/catalogue';
 import { getMeta, pruneJournal, setMeta } from '@/counter/db';
+import { reportJournal } from '@/counter/recovery';
 import { searchDocs } from '@/counter/docs';
 import { SearchClient } from '@/counter/search-client';
 import { CatalogueSync } from '@/counter/sync';
@@ -47,6 +48,7 @@ export default function CounterPage({ terminal, tiles, idleLockMinutes, settings
     const cat = runtime.cat;
     const [catVersion, setCatVersion] = useState(0);
     const [online, setOnline] = useState(true);
+    const wasOnline = useRef(true);
     const [ready, setReady] = useState(false);
     const [cart, setCart] = useState<Cart>(emptyCart());
     const [cartLoaded, setCartLoaded] = useState(false);
@@ -72,11 +74,23 @@ export default function CounterPage({ terminal, tiles, idleLockMinutes, settings
         void s.start().then(() => {
             setReady(true);
         });
-        void pruneJournal().catch(() => undefined);
+        // The journal goes to the server at start, so after a restore this counter's epoch is raised past
+        // its last sales before it sells again (D44); it is pruned to seven days only afterwards.
+        void reportJournal(terminal.code)
+            .catch(() => false)
+            .finally(() => {
+                void pruneJournal().catch(() => undefined);
+            });
         return () => {
             runtime.disconnect();
         };
-    }, [runtime]);
+    }, [runtime, terminal.code]);
+
+    // Back from Reconnecting: the server may have been restored or reinstalled meanwhile.
+    useEffect(() => {
+        if (online && !wasOnline.current) void reportJournal(terminal.code).catch(() => false);
+        wasOnline.current = online;
+    }, [online, terminal.code]);
 
     // The sale in progress survives a reload, a lock and a server restart.
     useEffect(() => {

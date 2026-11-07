@@ -8,7 +8,8 @@ import { FEED_TABLES } from './types';
  * Keeps the counter's copy of the catalogue: from IndexedDB at once, then a paged snapshot if it has
  * none, then the changes after its seq every 2 seconds, which is also its heartbeat (spec section 4)
  * [R5, F25]. The prices and 30-day sales ride along; the generated shapes are fetched again when the
- * categories, templates or pick-lists change.
+ * categories, templates or pick-lists change. After a restore the server's feed has a new generation and
+ * its change log is back at the backup, so the counter throws its copy away and starts again (D44).
  */
 export interface SyncEvents {
     /** Items whose search entry changed; null means everything (a snapshot or a reload). */
@@ -21,6 +22,7 @@ const POLL_MS = 2000;
 export class CatalogueSync {
     private timer: number | undefined;
     private stopped = false;
+    private generation: string | null = null;
 
     constructor(
         private readonly cat: Catalogue,
@@ -58,10 +60,24 @@ export class CatalogueSync {
 
     private async poll(): Promise<void> {
         try {
-            const answer = await getJson<ChangesPage>(`/api/counter/catalogue/changes?after=${String(this.cat.seq)}`);
+            const generation = this.generation === null ? '' : `&generation=${encodeURIComponent(this.generation)}`;
+            const answer = await getJson<ChangesPage>(`/api/counter/catalogue/changes?after=${String(this.cat.seq)}${generation}`);
             if (!answer.ok) throw new Unreachable(`The feed answered ${String(answer.status)}.`);
             const page = answer.body;
             this.events.onStatus(true);
+            if (page.reset) {
+                // The server was restored: everything this copy holds may be ahead of it.
+                this.cat.clear();
+                this.cat.seq = 0;
+                await this.snapshot();
+                await this.fetchShapes();
+                this.schedule(0);
+                return;
+            }
+            if (this.generation === null) {
+                this.generation = page.generation;
+                await setMeta('generation', page.generation);
+            }
             if (page.seq !== this.cat.seq) {
                 this.cat.apply(page.rows);
                 this.cat.remove(page.removed);
@@ -87,6 +103,7 @@ export class CatalogueSync {
         try {
             const seq = await getMeta<number>('seq');
             if (seq === undefined) return;
+            this.generation = (await getMeta<string>('generation')) ?? null;
             const rows = await allRows();
             const grouped: FeedRows = {};
             const prices: ItemPrices[] = [];
@@ -127,7 +144,9 @@ export class CatalogueSync {
                 this.events.onStatus(true);
                 if (page.next === null) {
                     this.cat.seq = page.seq;
+                    this.generation = page.generation;
                     await setMeta('seq', page.seq);
+                    await setMeta('generation', page.generation);
                     this.events.onItems(null);
                     return;
                 }

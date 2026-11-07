@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Audit\Verifier;
 use App\Organisation\BranchKey;
 use App\Sales\Finish;
+use App\Sales\Journal;
+use App\Sales\JournalNeeded;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\Support\Counter;
@@ -40,6 +42,10 @@ it('starts a new signed epoch on every counter after a restore, numbering from 1
     expect($epoch)->epoch->toBe(2)->reason->toBe('restore');
     expect($epoch->signature)->not->toBe('');
 
+    // The counter reports its journal before it sells again (D44); its journal shows nothing newer.
+    expect(fn () => app(Finish::class)->finish($this->t1, $this->counter['cashier'], Counter::request(Counter::cashSale([$this->a->id => [1, 5000]]))))
+        ->toThrow(JournalNeeded::class);
+    app(Journal::class)->report($this->t1, ['highest' => ['1' => 1]]);
     $sale = app(Finish::class)->finish($this->t1, $this->counter['cashier'], Counter::request(Counter::cashSale([$this->a->id => [1, 5000]])));
     expect($sale['receipt_number'])->toBe('T01-E2-001001');
 

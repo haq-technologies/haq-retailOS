@@ -151,6 +151,8 @@ export const FEED_TABLES: FeedTable[] = [
 
 export interface SnapshotPage {
     seq: number;
+    /** The newest restore, or "install": a restore makes every counter start its copy again (D44). */
+    generation: string;
     rows: FeedRows;
     prices: ItemPrices[];
     next: string | null;
@@ -158,6 +160,9 @@ export interface SnapshotPage {
 
 export interface ChangesPage {
     seq: number;
+    generation: string;
+    /** The server was restored: throw the copy away and take a fresh snapshot. */
+    reset: boolean;
     more: boolean;
     rows: FeedRows;
     removed: Partial<Record<FeedTable, string[]>>;

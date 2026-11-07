@@ -42,9 +42,11 @@ interface Props {
     onFinished: (sale: SaleSummary) => void;
     onAwaiting: (payment: Payment, label: string) => Promise<string | null>;
     onBack: () => void;
+    /** After a restore, Finish waits for the counter's journal report (D44); true once it is in. */
+    reportJournal: () => Promise<boolean>;
 }
 
-export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFinished, onAwaiting, onBack }: Props) {
+export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFinished, onAwaiting, onBack, reportJournal }: Props) {
     const total = totalKobo(cart);
     const [method, setMethod] = useState<Method>(onlyTransfer ? 'transfer' : 'cash');
     const [cash, setCash] = useState('');
@@ -94,7 +96,11 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
             setBusy(true);
             setProblem(null);
             try {
-                const answer = await api.post<FinishAnswer>('/api/counter/sales', payload, 30_000);
+                let answer = await api.post<FinishAnswer>('/api/counter/sales', payload, 30_000);
+                // The server was restored: the journal goes first, then the same sale with the same key.
+                if (!answer.ok && answer.body.journal_needed === true && (await reportJournal())) {
+                    answer = await api.post<FinishAnswer>('/api/counter/sales', payload, 30_000);
+                }
                 if (answer.ok && answer.body.sale !== undefined) {
                     onFinished(answer.body.sale);
                     return;
@@ -114,7 +120,7 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                 setBusy(false);
             }
         },
-        [payments, busy, setCart, api, onFinished],
+        [payments, busy, setCart, api, onFinished, reportJournal],
     );
 
     const typeKey = useCallback(

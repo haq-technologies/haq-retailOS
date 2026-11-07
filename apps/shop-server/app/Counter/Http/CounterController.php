@@ -35,8 +35,9 @@ final class CounterController
     public function changes(Request $request, Feed $feed): JsonResponse
     {
         $after = $request->query('after');
+        $generation = $request->query('generation');
 
-        return response()->json($feed->changes(is_numeric($after) ? max(0, (int) $after) : 0));
+        return response()->json($feed->changes(is_numeric($after) ? max(0, (int) $after) : 0, generation: is_string($generation) && $generation !== '' ? $generation : null));
     }
 
     public function shapes(Feed $feed): JsonResponse

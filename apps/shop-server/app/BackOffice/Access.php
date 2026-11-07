@@ -18,7 +18,7 @@ final readonly class Access
     public function __construct(private CostAccess $cost) {}
 
     /**
-     * @return array{dashboard: bool, profit: bool, costs: bool, prices: bool, review: bool, names: bool, categories: bool, promote: bool, flags: bool, summary: bool, catalogue: bool, settings: bool, health: bool}
+     * @return array{dashboard: bool, profit: bool, costs: bool, prices: bool, review: bool, names: bool, categories: bool, promote: bool, flags: bool, summary: bool, catalogue: bool, settings: bool, health: bool, recovery: bool}
      */
     public function for(User $user): array
     {
@@ -43,6 +43,8 @@ final readonly class Access
             'catalogue' => $boss || $role === Role::Storekeeper,
             'settings' => $role === Role::Owner,
             'health' => $role === Role::Owner,
+            // The lost-window screen after a restore: the manager re-enters lost sales (spec section 9) [F1].
+            'recovery' => $boss,
         ];
     }
 

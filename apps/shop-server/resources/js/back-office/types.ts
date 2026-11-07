@@ -12,6 +12,7 @@ export interface Can {
     catalogue: boolean;
     settings: boolean;
     health: boolean;
+    recovery: boolean;
 }
 
 export interface Me {
@@ -41,6 +42,8 @@ export interface DashboardData {
     profit: Buckets;
     coverage_percent: number;
     attention: { total: number; flags: Flag[] };
+    /** Read live and gone once put right: sales to re-enter after a restore, and the server's health warnings. */
+    alerts: { kind: string; title: string; detail: string; open: string | null }[];
     cashiers: CashierRow[];
     todo: { needs_cost: number; flags_week: number; review: number; first_sales: number };
 }

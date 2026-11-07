@@ -8,12 +8,20 @@ import type { FeedTable } from './types';
 const NAME = 'haq-counter';
 const VERSION = 1;
 
+/**
+ * One finished sale, as the counter journal keeps it: enough to re-enter it as a back entry if a restore
+ * loses it (spec section 9) [F1]. Selling prices only; no cost reaches the counter.
+ */
 export interface JournalEntry {
     receipt_number: string;
     at: string;
+    business_day?: string;
+    cashier_id?: string;
+    cashier?: string;
+    customer_type?: string;
     total_kobo: number;
-    lines: { name: string; qty: number; unit_price_kobo: number }[];
-    payments: { method: string; amount_kobo: number }[];
+    lines: { item_id?: string; name: string; colour?: string | null; qty: number; unit_price_kobo: number }[];
+    payments: { method: string; amount_kobo: number; tendered_kobo?: number | null; reference?: string | null }[];
 }
 
 let opening: Promise<IDBDatabase | null> | null = null;
