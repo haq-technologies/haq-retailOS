@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { AuditRow, type AuditEntry } from '@/components/audit-row';
 import { Keypad } from '@/components/keypad';
 import { Notice } from '@/components/notice';
 import { Sheet } from '@/components/sheet';
 import { digitsToKobo, naira, typeDigits } from '../money';
+import type { CounterApi } from '../use-api';
 
 /** Hold: one key parks the sale, with an optional label (spec section 9) [F12]. */
 export function HoldSheet({ onHold, onClose, error }: { onHold: (label: string) => void; onClose: () => void; error: string | null }) {
@@ -142,6 +144,63 @@ export function PickerSheet({ code, options, onPick, onClose }: { code: string; 
                     </button>
                 ))}
             </div>
+        </Sheet>
+    );
+}
+
+/**
+ * My history (spec section 10; check D5) [F10, D47]: the signed-in person's own actions of the last seven
+ * days, redacted, framed as protection: it shows a mistake was not theirs. Never anyone else's.
+ */
+export function HistorySheet({ api, onClose }: { api: CounterApi; onClose: () => void }) {
+    const [entries, setEntries] = useState<AuditEntry[] | null>(null);
+    const [next, setNext] = useState<string | null>(null);
+    const [problem, setProblem] = useState<string | null>(null);
+
+    const load = useCallback(
+        (before: string | null) => {
+            void api
+                .get<{ entries: AuditEntry[]; next: string | null }>(`/api/counter/history${before === null ? '' : `?before=${encodeURIComponent(before)}`}`)
+                .then((a) => {
+                    if (!a.ok) {
+                        setProblem('Your history could not load. Try again.');
+                        return;
+                    }
+                    setEntries((old) => (before === null ? a.body.entries : [...(old ?? []), ...a.body.entries]));
+                    setNext(a.body.next);
+                })
+                .catch(() => {
+                    setProblem('The counter cannot reach the server. Try again.');
+                });
+        },
+        [api],
+    );
+
+    useEffect(() => {
+        load(null);
+    }, [load]);
+
+    return (
+        <Sheet title="My history" onClose={onClose} wide>
+            <p className="text-lg text-text-secondary">What you did in the last seven days, as the shop's records keep it. It shows when a mistake was not yours.</p>
+            {problem !== null && <Notice tone="error">{problem}</Notice>}
+            {entries !== null && entries.length === 0 && <p className="text-lg">Nothing in the last seven days.</p>}
+            <ul className="flex flex-col">
+                {(entries ?? []).map((e) => (
+                    <AuditRow key={e.id} e={e} />
+                ))}
+            </ul>
+            {next !== null && (
+                <button
+                    type="button"
+                    className="min-h-touch self-start rounded-xl border-2 border-border px-5 text-lg font-semibold text-action-text"
+                    onClick={() => {
+                        load(next);
+                    }}
+                >
+                    Show older
+                </button>
+            )}
         </Sheet>
     );
 }

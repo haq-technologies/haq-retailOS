@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Counter\Http;
 
+use App\Audit\History;
 use App\Catalogue\Learning;
 use App\Catalogue\NewItemRefused;
 use App\Catalogue\NewItems;
@@ -13,6 +14,7 @@ use App\Organisation\Models\Terminal;
 use App\Platform\Http\Page;
 use App\Settings\Settings;
 use App\Shifts\Shifts;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -162,6 +164,18 @@ final class CounterController
         DB::transaction(fn () => $shifts->openFor($terminal, $this->actor($request)->id, (int) $data['opening_float_kobo']));
 
         return response()->json(['shift' => $shifts->current($terminal)], 201);
+    }
+
+    /**
+     * The signed-in person's own actions of the last seven days, redacted (spec section 10; check D5)
+     * [F10, D47]: framed as protection, it shows a mistake was not theirs. Never anyone else's.
+     */
+    public function history(Request $request): JsonResponse
+    {
+        $before = $request->query('before');
+
+        return response()->json(History::page(actorId: $this->actor($request)->id, sensitive: false,
+            from: CarbonImmutable::now()->subDays(7), before: is_string($before) ? $before : null, limit: 30));
     }
 
     private function terminal(Request $request): Terminal

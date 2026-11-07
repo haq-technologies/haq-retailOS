@@ -15,6 +15,7 @@ use App\Reports\DailySummary;
 use App\Reports\Dashboard;
 use App\Reports\Exports;
 use App\Reports\Period;
+use App\Reports\Speed;
 use App\Settings\Settings;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -45,7 +46,9 @@ final class ReportsController
         $printers = Terminal::query()->where('kind', 'counter')->whereNotNull('printer_host')->where('printer_host', '!=', '')->orderBy('code')->get(['id', 'code', 'name'])
             ->map(fn (Terminal $t) => ['id' => $t->id, 'code' => $t->code, 'name' => $t->name])->all();
 
-        return response()->json([...$data, 'today' => $dashboard->today(), 'audit_code' => $data['root'] === null ? null : SummarySlip::code($data['root']['hash']), 'printers' => $printers]);
+        return response()->json([...$data, 'today' => $dashboard->today(), 'audit_code' => $data['root'] === null ? null : SummarySlip::code($data['root']['hash']), 'printers' => $printers,
+            // On screen only: each cashier's speed from the counter's own timing (check A1) [S8, D47].
+            'speed' => Speed::forDay($day)]);
     }
 
     public function print(Request $request, SummarySlip $slip, Dashboard $dashboard): JsonResponse

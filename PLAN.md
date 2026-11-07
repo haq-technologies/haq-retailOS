@@ -17,7 +17,7 @@ The pilot succeeds when (spec section 14):
 
 ## Status
 
-Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3, the dress rehearsal, waits for the pilot hardware; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026. Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39); all five are built and merged (D40 to D46): the fifth, recovery, at the product owner's go the same day (D44 to D46).
+Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3, the dress rehearsal, waits for the pilot hardware; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026. Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39); all five are built and merged (D40 to D46): the fifth, recovery, at the product owner's go the same day (D44 to D46). A review against the spec added the audit log to read and the counter's speed (D47).
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
@@ -34,7 +34,7 @@ Done:
 - Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the G3 tooling. See the Phase 3 checklist below.
 - Phase 4's owner features, started before G3 at the product owner's go (D39), all five built on 7 November 2026 (D40 to D46): the back office with the owner's dashboard and cost entry with backfill; flags and Needs your attention; the review queues with merge and undo; first-sale prices, catalogue health, the daily summary on screen and printed, and the CSV exports; and recovery: restore epochs end to end with the lost window, server health with catch-up and the server clock, and reboot recovery. See the Phase 4 section below.
 
-Next: the product owner's review of D40 to D46 and the open questions in the Phase 4 section. Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening wait for G3 (D39).
+Next: the product owner's answers to the open questions in the Phase 4 section, and a look at D40 to D47. Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening wait for G3 (D39).
 
 ## Team
 
@@ -165,7 +165,17 @@ Phase 4's owner features started on 7 November 2026, before gate G3, at the prod
   - [x] Server health: the backup, WAL, test restore, disk, SSD, certificate, clock, version, grants and audit checks, with Back up now, for the owner until the console exists; their warnings on the dashboard; catch-up of missed nightly checks at the next quiet moment; the server clock's unverified mode, which the owner confirms (D45)
   - [x] Reboot recovery: the "starting, please wait" page, a 503 while the database starts, restart policies and Docker at boot checked at install, the counter opening from its saved copy, and the server and counter PC start-up steps (D46; docs/operations/start-up.md)
 
-Open questions for the product owner from Phase 4 so far: how many items a cashier creates in a day counts as "high" on the dashboard (spec section 6 says a high rate is flagged but sets no number; the count shows without a mark until then); and a look at D40 to D43, which Claude proposed and recorded.
+- [x] Review of the owner features against the spec and the 47 pilot checks (Claude, 7 November 2026). Two pilot items no phase item covered are built: reading the audit log (check D5) and the counter's speed (check A1) (D47). The rest are open questions below.
+
+Open questions for the product owner from Phase 4:
+
+1. How many items a cashier creates in a day counts as "high" on the dashboard. Spec section 6 says a high rate is flagged but sets no number; the count shows without a mark until then.
+2. A look at D40 to D47, which Claude proposed and recorded.
+3. Undoing a cost backfill. Spec section 2 says every cost backfill is reversible, but D40 gives no undo, and a line with an estimate is never offered again, so a mistyped cost leaves its estimates wrong. Proposal: an Undo on a cost entry, as new rows, puts back each line's earlier estimate (or none) and the item's earlier cost for later sales.
+4. The off-site copy with its 2-of-3 key shares (spec sections 4 and 13; check E1, "restoring needs both key halves") is not built; the restore drill puts the encrypted flash drives in the MVP. Build it for the pilot, or move it to the MVP under the swap rule, with check E1 changed to match.
+5. Check D6 (two simultaneous returns of one line) is one of the 47 pilot checks, but returns are in the MVP (spec section 13). Proposal: move D6 to the MVP checks.
+6. The hardening work that needs no hardware (a cost-leak scanner over every response and export, the upgrade-path test from two versions back, and automating the 47 checks): start it before G3, or keep it after G3 as D39 says.
+7. The corrected-time view of a wrong clock (spec section 4) waits for the MVP with the licence (D45): confirm.
 
 ## Before Phase 3
 
@@ -277,3 +287,4 @@ Assumptions:
 | 7 November 2026 | Recovery starts at the product owner's go: restore epochs end to end and the lost window (D44) |
 | 7 November 2026 | Server health, its dashboard warnings, catch-up of the nightly checks and the server clock (D45) |
 | 7 November 2026 | Reboot recovery: the starting page, restart policies and the start-up steps (D46) |
+| 7 November 2026 | Review of Phase 4's owner features: the audit log to read and the counter's speed (D47), and the open questions it raised |

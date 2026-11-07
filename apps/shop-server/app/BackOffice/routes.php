@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\BackOffice\Http\AuditController;
 use App\BackOffice\Http\BackOfficeController;
 use App\BackOffice\Http\CatalogueController;
 use App\BackOffice\Http\CostController;
@@ -60,6 +61,7 @@ Route::middleware(['web', EnrolledTerminal::class, ActingUser::class])->prefix('
     Route::post('/catalogue/items/{item}', [CatalogueController::class, 'update']);
     Route::get('/catalogue/search', [CatalogueController::class, 'search']);
     Route::get('/catalogue/names/{kind}', [CatalogueController::class, 'names'])->whereIn('kind', ['brands', 'values']);
+    Route::get('/audit', [AuditController::class, 'index']);
     Route::get('/health', [HealthController::class, 'index']);
     Route::post('/health/backup', [HealthController::class, 'backup']);
     Route::post('/health/clock', [HealthController::class, 'confirmClock']);

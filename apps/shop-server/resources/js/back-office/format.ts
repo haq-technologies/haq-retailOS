@@ -38,3 +38,16 @@ export function whenInline(iso: string, now: Date = new Date()): string {
     const [day = '', time = ''] = when(iso, now).split(/ (?=\d\d:\d\d$)/);
     return day === 'Today' || day === 'Yesterday' ? `${day.toLowerCase()}, ${time}` : `on ${day}, ${time}`;
 }
+
+/** An audit entry's values in words: "Total ₦5,000 · Lines 2". Amounts in kobo show as naira. */
+export function describeValues(values: Record<string, unknown> | null): string {
+    if (values === null) return '';
+    return Object.entries(values)
+        .filter(([, v]) => v !== null && v !== '' && !(Array.isArray(v) && v.length === 0))
+        .map(([k, v]) => {
+            const label = k.replace(/_kobo$/, '').replace(/_/g, ' ');
+            const shown = k.endsWith('_kobo') && typeof v === 'number' ? naira(v) : Array.isArray(v) ? v.join(', ') : typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean' ? String(v) : JSON.stringify(v);
+            return `${label.charAt(0).toUpperCase()}${label.slice(1)} ${shown}`;
+        })
+        .join(' · ');
+}

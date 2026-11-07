@@ -13,6 +13,7 @@ export interface Can {
     settings: boolean;
     health: boolean;
     recovery: boolean;
+    audit: boolean;
 }
 
 export interface Me {

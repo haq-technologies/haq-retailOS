@@ -18,7 +18,7 @@ import { CartPanel } from './cart-panel';
 import { NewItem } from './new-item';
 import { Pay } from './pay';
 import { PricePad, type PriceChoice } from './price-pad';
-import { HoldSheet, NoSaleSheet, PickerSheet, ShiftSheet } from './small-sheets';
+import { HistorySheet, HoldSheet, NoSaleSheet, PickerSheet, ShiftSheet } from './small-sheets';
 import { newId, type ParkedEntry, type SaleSummary } from './types';
 import { WaitingSales } from './waiting';
 
@@ -61,6 +61,7 @@ type SheetState =
     | { kind: 'hold' }
     | { kind: 'no-sale' }
     | { kind: 'shift' }
+    | { kind: 'history' }
     | { kind: 'cart' };
 
 const initials = (name: string) =>
@@ -769,6 +770,15 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                                 >
                                     No sale
                                 </button>
+                                <button
+                                    type="button"
+                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
+                                    onClick={() => {
+                                        setSheet({ kind: 'history' });
+                                    }}
+                                >
+                                    My history
+                                </button>
                             </div>
                         </>
                     )}
@@ -883,6 +893,15 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                         const code = sheet.code;
                         setSheet(null);
                         void addItem(id, { addedBy: 'scan', barcode: code });
+                    }}
+                />
+            )}
+
+            {sheet?.kind === 'history' && (
+                <HistorySheet
+                    api={api}
+                    onClose={() => {
+                        setSheet(null);
                     }}
                 />
             )}

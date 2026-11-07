@@ -24,4 +24,5 @@ Route::middleware(['web', EnrolledTerminal::class, ActingUser::class])->prefix('
     Route::post('/shapes', [CounterController::class, 'sellShape']);
     Route::get('/shift', [CounterController::class, 'shift']);
     Route::post('/shift', [CounterController::class, 'openShift']);
+    Route::get('/history', [CounterController::class, 'history']);
 });

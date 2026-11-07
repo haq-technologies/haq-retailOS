@@ -2,7 +2,7 @@
 
 HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026; signed off by the product owner on 6 November 2026 [D13].
 
-**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D46, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
+**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D47, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
 
 **How to read it.** A tag such as [F3] marks text that exists because of finding F3 of the engineering teardown (Appendix A). A tag such as [S4], [R3], [C1] or [D2] marks text set by the v1.4 review; Appendix E lists every such change, and docs/decisions.md records where each came from. [Q5] or [FU6] points to an answer in that log; FU1 to FU10 are the review's follow-up questions, not teardown findings.
 
@@ -380,7 +380,7 @@ After any restore or server replacement, the system starts a new epoch, and the 
 - Failures are logged without blocking. A failed sale attempt is written after the transaction has rolled back, on a separate connection, to the branch chain, with a lock timeout of 200 ms. If the lock cannot be had in time, the entry goes to a local hash-linked spool file and is ingested later. Logging a failure therefore cannot deadlock or delay the counter. [F4]
 - Sensitive values. Cost, credit limits and similar values are stored in audit_sensitive, and the main row carries only a hash of them and a redacted description (“cost changed”). The chain commits to the full values, so verification still works. Only the owner can read the sensitive rows. A cashier’s own history and a manager’s branch history never show cost. [F10]
 - The app’s database role cannot UPDATE, DELETE or TRUNCATE audit tables, and triggers reject those statements even if a grant drifts. The UI is read-only, and even the owner cannot delete from it. [F3]
-- Cashiers can read their own history. This is framed as protection: it proves a mistake was not theirs.
+- Cashiers can read their own history. This is framed as protection: it proves a mistake was not theirs. In the pilot it is My history on the counter (the last seven days); managers and the owner read the Audit log in the back office. [D47]
 - Support access by your team requires owner consent and is itself audited.
 # 11. Sysadmin console and licensing
 ## Console (a separate admin app, only you and your team)
@@ -412,6 +412,7 @@ After any restore or server replacement, the system starts a new epoch, and the 
 - Catalogue health: percentage of revenue with cost, items pending review, brands and product words waiting for approval, unconfirmed barcode links, barcode coverage. [v1.3]
 - CSV export of items and sales, opening cleanly in Excel. Exports never contain cost for roles that cannot see it. [F10]
 - First-sale prices: one tap makes a typed price the set price, and Undo puts back the one before, or none. [S4, D43]
+- Counter speed on the daily summary screen: each cashier's sales timed, typical sale, 3-item sales under 30 seconds and one scanned item under 8 seconds, from the counter's own timing. [S8, D47]
 ## MVP
 - Weekly and monthly views, and top items by revenue. These move here from the pilot (see the swap in section 16). [F12]
 - Per-cashier sales and variance, including handover variances. Shift (Z) reports per drawer.
