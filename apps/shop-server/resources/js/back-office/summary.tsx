@@ -23,6 +23,20 @@ interface Summary {
     flags: Record<string, number>;
     audit_code: string | null;
     printers: { id: string; code: string; name: string }[];
+    speed: Speed[];
+}
+
+/** Each cashier's speed that day, from the counter's own timing (check A1) [S8, D47]. On screen only. */
+interface Speed {
+    cashier: string;
+    timed: number;
+    median_ms: number | null;
+    three_item: { count: number; median_ms: number | null; under_target: number };
+    one_scan: { count: number; median_ms: number | null; under_target: number };
+}
+
+function seconds(ms: number | null): string {
+    return ms === null ? '–' : `${String(Math.round(ms / 1000))} s`;
 }
 
 const methodName: Record<string, string> = { cash: 'Cash', transfer: 'Transfer', pos: 'POS' };
@@ -39,6 +53,7 @@ const flagName: Record<string, string> = {
     auto_closed: 'Shift closed by itself',
     approval_away: 'Approved while not signed in',
     locked_out: 'Locked out',
+    back_entry: 'Re-entered after a restore',
 };
 
 export function DailySummary({ api, go }: { api: CounterApi; go: (section: string) => void }) {
@@ -193,6 +208,39 @@ export function DailySummary({ api, go }: { api: CounterApi; go: (section: strin
                     </ul>
                 )}
             </section>
+
+            {data.speed.length > 0 && (
+                <section aria-labelledby="sum-speed" className="flex flex-col gap-2">
+                    <h2 id="sum-speed" className="text-xl font-bold">
+                        Counter speed
+                    </h2>
+                    <p className="text-text-secondary">From each counter's own timing. The pilot's goals: a 3-item sale under 30 seconds, one scanned item under 8 seconds.</p>
+                    <div className="overflow-x-auto rounded-2xl border-2 border-border">
+                        <table className="w-full min-w-[640px] text-left text-lg tabular-nums">
+                            <thead className="text-base text-text-secondary">
+                                <tr className="border-b border-border">
+                                    <th scope="col" className="p-3 font-semibold">Cashier</th>
+                                    <th scope="col" className="p-3 text-right font-semibold">Sales timed</th>
+                                    <th scope="col" className="p-3 text-right font-semibold">Typical sale</th>
+                                    <th scope="col" className="p-3 text-right font-semibold">3-item sales under 30 s</th>
+                                    <th scope="col" className="p-3 text-right font-semibold">One scan under 8 s</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.speed.map((r) => (
+                                    <tr key={r.cashier} className="border-b border-border last:border-b-0">
+                                        <td className="p-3 font-semibold">{r.cashier}</td>
+                                        <td className="p-3 text-right">{r.timed}</td>
+                                        <td className="p-3 text-right">{seconds(r.median_ms)}</td>
+                                        <td className="p-3 text-right">{r.three_item.count === 0 ? '–' : `${String(r.three_item.under_target)} of ${String(r.three_item.count)} · typical ${seconds(r.three_item.median_ms)}`}</td>
+                                        <td className="p-3 text-right">{r.one_scan.count === 0 ? '–' : `${String(r.one_scan.under_target)} of ${String(r.one_scan.count)} · typical ${seconds(r.one_scan.median_ms)}`}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            )}
 
             <section aria-labelledby="sum-print" className="flex flex-col gap-3 rounded-2xl border-2 border-border p-5">
                 <h2 id="sum-print" className="text-xl font-bold">

@@ -18,7 +18,7 @@ final readonly class Access
     public function __construct(private CostAccess $cost) {}
 
     /**
-     * @return array{dashboard: bool, profit: bool, costs: bool, prices: bool, review: bool, names: bool, categories: bool, promote: bool, flags: bool, summary: bool, catalogue: bool, settings: bool, health: bool, recovery: bool}
+     * @return array{dashboard: bool, profit: bool, costs: bool, prices: bool, review: bool, names: bool, categories: bool, promote: bool, flags: bool, summary: bool, catalogue: bool, settings: bool, health: bool, recovery: bool, audit: bool}
      */
     public function for(User $user): array
     {
@@ -47,6 +47,9 @@ final readonly class Access
             'health' => $role === Role::Owner,
             // The lost-window screen after a restore: the manager re-enters lost sales (spec section 9) [F1].
             'recovery' => $boss,
+            // Reading the audit log: a manager the branch's, redacted; the owner all, with sensitive values
+            // (spec section 3) [D47]. A cashier reads their own on the counter; a storekeeper none.
+            'audit' => $boss,
         ];
     }
 

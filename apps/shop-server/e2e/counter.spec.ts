@@ -173,3 +173,12 @@ test('shows Reconnecting when the server stops answering, and keeps the sale', a
     const sale = page.getByRole('complementary', { name: 'Sale' });
     await expect(sale.getByText('Type-C to Lightning Cable 1m')).toBeVisible();
 });
+
+test('lets a cashier read their own history on the counter', async ({ browser }) => {
+    const page = await counter(browser, 'T01');
+    await page.getByRole('button', { name: 'My history' }).click();
+    const sheet = page.getByRole('dialog', { name: 'My history' });
+    await expect(sheet.getByText('Sale finished').first()).toBeVisible();
+    await expect(sheet.getByText('Amina').first()).toBeVisible();
+    await expect(sheet.getByText('Halima')).toHaveCount(0);
+});

@@ -158,3 +158,17 @@ test('keeps server health from a manager', async ({ browser }) => {
     await expect(page.getByRole('heading', { name: 'Revenue today, by cost' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Server health' })).toHaveCount(0);
 });
+
+test('shows the owner the audit log, read-only, with the speed of each cashier on the daily summary', async ({ browser }) => {
+    const page = await backOffice(browser, 'Halima', '135790');
+    await page.getByRole('link', { name: 'Audit log' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Audit log' })).toBeVisible();
+    await expect(page.getByText('Sale finished').first()).toBeVisible();
+    await page.getByLabel('Person').selectOption({ label: 'Amina' });
+    await expect(page.getByText('Cost entered')).toHaveCount(0);
+    await page.screenshot({ path: 'e2e/results/screens/audit-log.png', fullPage: true });
+
+    await page.getByRole('link', { name: 'Daily summary' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Counter speed' })).toBeVisible();
+    await expect(page.getByRole('row', { name: /Amina/ })).toBeVisible();
+});

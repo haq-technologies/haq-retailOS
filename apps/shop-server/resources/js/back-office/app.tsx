@@ -3,6 +3,7 @@ import { DotIcon } from '@/components/icons';
 import { OwnerSettings } from '@/components/owner-settings';
 import { roleLabel, type SignedIn } from '@/components/sign-in-panel';
 import { useCounterApi } from '@/counter/use-api';
+import { AuditLog } from './audit';
 import { Dashboard } from './dashboard';
 import { Flags } from './flags';
 import { CatalogueHealth } from './health';
@@ -19,7 +20,7 @@ import type { Can, Me } from './types';
  * sections on the left (at the bottom on a phone), and the section itself. Each person sees only the
  * sections their role may open. The address keeps the section, so Back works.
  */
-type Section = 'dashboard' | 'costs' | 'prices' | 'review' | 'catalogue' | 'flags' | 'summary' | 'recovery' | 'server' | 'settings';
+type Section = 'dashboard' | 'costs' | 'prices' | 'review' | 'catalogue' | 'flags' | 'summary' | 'recovery' | 'audit' | 'server' | 'settings';
 
 interface Badges {
     costs: number;
@@ -40,6 +41,8 @@ const sections: { id: Section; label: string; allowed: (c: Can, b: Badges) => bo
     { id: 'summary', label: 'Daily summary', allowed: (c) => c.summary, icon: 'M6 3h8l5 5v13H6zM14 3v5h5M9 13h7M9 17h7' },
     // After a restore, and while a lost sale waits (D44).
     { id: 'recovery', label: 'Lost sales', allowed: (c, b) => c.recovery && b.recovery_shown, icon: 'M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 8v4l3 2' },
+    // Reading the audit log: managers the branch's, redacted; the owner all (D47).
+    { id: 'audit', label: 'Audit log', allowed: (c) => c.audit, icon: 'M5 3h11l3 3v15H5zM8 9h8M8 13h8M8 17h5' },
     // The server's health; the sysadmin's page, shown to the owner until the console exists (D45).
     { id: 'server', label: 'Server health', allowed: (c) => c.health, icon: 'M3 4h18v7H3zM3 13h18v7H3zM7 7.5h.01M7 16.5h.01' },
     { id: 'settings', label: 'Shop settings', allowed: (c) => c.settings, icon: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 12h2M18 12h2M12 4v2M12 18v2' },
@@ -153,6 +156,7 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
                     {current === 'summary' && <DailySummary api={api} go={go} />}
                     {current === 'recovery' && <LostWindow api={api} onChanged={refreshBadges} />}
                     {current === 'server' && <ServerHealth api={api} />}
+                    {current === 'audit' && <AuditLog api={api} />}
                     {current === 'settings' && (
                         <div className="flex max-w-2xl flex-col gap-4">
                             <h1 className="text-3xl font-bold">Shop settings</h1>
