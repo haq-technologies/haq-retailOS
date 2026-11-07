@@ -140,3 +140,21 @@ test('sets a first-sale price with one tap, shows catalogue health, and prints a
     await page.getByRole('button', { name: 'This day' }).click();
     expect((await download).suggestedFilename()).toMatch(/^sales-\d{4}-\d{2}-\d{2}\.csv$/);
 });
+
+test('shows the owner the server health page, with what needs putting right first', async ({ browser }) => {
+    const page = await backOffice(browser, 'Halima', '135790');
+    await page.getByRole('link', { name: 'Server health' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Server health' })).toBeVisible();
+    for (const card of ['Continuous copy (WAL)', 'Last backup', 'Last test restore', 'Free disk', 'SSD health', 'Certificate', 'Clock', 'App version', 'Database grants', 'Audit chains', 'Database size']) {
+        await expect(page.getByRole('region', { name: card })).toBeVisible();
+    }
+    // The test server has no backup disk, and the warning says so.
+    await expect(page.getByRole('alert').filter({ hasText: 'Backups are not set up on this server' })).toBeVisible();
+    await page.screenshot({ path: 'e2e/results/screens/server-health.png', fullPage: true });
+});
+
+test('keeps server health from a manager', async ({ browser }) => {
+    const page = await backOffice(browser, 'Kemi', '246810');
+    await expect(page.getByRole('heading', { name: 'Revenue today, by cost' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Server health' })).toHaveCount(0);
+});

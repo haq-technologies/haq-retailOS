@@ -42,6 +42,8 @@ final readonly class Access
             'summary' => $boss,
             'catalogue' => $boss || $role === Role::Storekeeper,
             'settings' => $role === Role::Owner,
+            // The server's health page: the sysadmin's page (spec section 4), shown to the owner until the
+            // console exists (D45). Server health only, never sales or cost.
             'health' => $role === Role::Owner,
             // The lost-window screen after a restore: the manager re-enters lost sales (spec section 9) [F1].
             'recovery' => $boss,

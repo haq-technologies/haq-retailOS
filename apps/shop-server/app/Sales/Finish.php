@@ -10,6 +10,7 @@ use App\Catalogue\Models\Item;
 use App\Cost\Costs;
 use App\Identity\Models\User;
 use App\Organisation\Models\Terminal;
+use App\Platform\Clock;
 use App\Platform\Ulid;
 use App\Sales\Events\SaleFinished;
 use App\Settings\Settings;
@@ -44,6 +45,7 @@ final class Finish
         private readonly AuditLog $audit,
         private readonly PriceRules $prices,
         private readonly Journal $journal,
+        private readonly Clock $clock,
     ) {}
 
     /**
@@ -95,7 +97,8 @@ final class Finish
                     'idempotency_key' => $request->idempotencyKey, 'payload_hash' => $hash,
                     'shift_id' => $shift->id, 'cashier_id' => $cashier->id, 'customer_type' => $request->customerType,
                     'kind' => 'sale', 'total_kobo' => $request->totalKobo(), 'business_day' => $shift->business_day,
-                    'recorded_at' => $at, 'clock_state' => 'trusted',
+                    // Stamped unverified while the server's clock may be wrong; the time is never rewritten [F15].
+                    'recorded_at' => $at, 'clock_state' => $this->clock->stamp(),
                 ]);
 
                 foreach ($request->lines as $i => $line) {

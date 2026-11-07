@@ -208,7 +208,7 @@ it('lists the lost sales for a manager, who re-enters each under its original re
     $transfer = DB::table('payments')->join('sales', 'sales.id', '=', 'payments.sale_id')->where('sales.receipt_number', 'T01-E1-000004')->first(['payments.*']);
     expect($transfer)->method->toBe('transfer')->reference->toBe('GTB 4411')->confirmed_by->toBe($this->cashier->id);
     ($this->back)()->getJson('/api/back-office/recovery')->assertJsonPath('waiting', 0)->assertJsonPath('lost.1.entered.by', 'Halima');
-    ($this->back)()->getJson('/api/back-office/dashboard')->assertJsonPath('alerts', []);
+    expect(collect(($this->back)()->getJson('/api/back-office/dashboard')->json('alerts'))->where('kind', 'lost_sales'))->toBeEmpty();
 
     // The receipt numbers on epoch 1 now run on with no gap, and the rehearsal check agrees.
     $this->artisan('shop:rehearsal-check')->expectsOutputToContain('T01 epoch 1: 4 receipts, numbers 1 to 4 with no gap')->assertSuccessful();

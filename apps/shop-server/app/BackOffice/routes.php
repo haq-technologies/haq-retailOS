@@ -6,6 +6,7 @@ use App\BackOffice\Http\BackOfficeController;
 use App\BackOffice\Http\CatalogueController;
 use App\BackOffice\Http\CostController;
 use App\BackOffice\Http\FlagsController;
+use App\BackOffice\Http\HealthController;
 use App\BackOffice\Http\PricesController;
 use App\BackOffice\Http\RecoveryController;
 use App\BackOffice\Http\ReportsController;
@@ -59,6 +60,9 @@ Route::middleware(['web', EnrolledTerminal::class, ActingUser::class])->prefix('
     Route::post('/catalogue/items/{item}', [CatalogueController::class, 'update']);
     Route::get('/catalogue/search', [CatalogueController::class, 'search']);
     Route::get('/catalogue/names/{kind}', [CatalogueController::class, 'names'])->whereIn('kind', ['brands', 'values']);
+    Route::get('/health', [HealthController::class, 'index']);
+    Route::post('/health/backup', [HealthController::class, 'backup']);
+    Route::post('/health/clock', [HealthController::class, 'confirmClock']);
     Route::get('/recovery', [RecoveryController::class, 'index']);
     Route::post('/recovery/lost/{lost}/re-enter', [RecoveryController::class, 'reEnter'])->where('lost', '[0-9A-Za-z]{26}');
     Route::get('/settings', [SettingsController::class, 'index']);

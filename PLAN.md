@@ -162,7 +162,7 @@ Phase 4's owner features started on 7 November 2026, before gate G3, at the prod
 - [x] Prices and reports: first-sale prices, catalogue health, CSV export of items and sales, the daily summary on screen and printed (Claude, 7 November 2026; D43)
 - [ ] Recovery (Claude), started on 7 November 2026 at the product owner's go. Already in place from Phase 3: the counter journal, shop:after-restore with signed epochs and the 1,000 jump, the backup status files and the weekly verified test restore.
   - [x] Restore epochs end to end and the lost window: each counter reports its journal before it sells again after a restore, its epoch raised past anything the journal shows; Lost sales in the back office, where a manager re-enters each lost sale as a back entry under its original receipt number; a fresh catalogue copy on every counter after a restore (D44)
-  - [ ] The health page with the backup, WAL, test restore, disk, SSD, certificate, clock, version, grants and audit checks, and their warnings on the dashboard; catch-up of missed nightly checks at the next quiet moment
+  - [x] Server health: the backup, WAL, test restore, disk, SSD, certificate, clock, version, grants and audit checks, with Back up now, for the owner until the console exists; their warnings on the dashboard; catch-up of missed nightly checks at the next quiet moment; the server clock's unverified mode, which the owner confirms (D45)
   - [ ] Reboot recovery: the "starting, please wait" page and restart policies
 
 Open questions for the product owner from Phase 4 so far: how many items a cashier creates in a day counts as "high" on the dashboard (spec section 6 says a high rate is flagged but sets no number; the count shows without a mark until then); and a look at D40 to D43, which Claude proposed and recorded.
@@ -275,3 +275,4 @@ Assumptions:
 | 7 November 2026 | Review queues: names, new items, barcodes and search words, duplicates with merge and undo (D42) |
 | 7 November 2026 | Prices and reports: first-sale prices with undo, catalogue health, the daily summary on screen and printed, CSV exports (D43) |
 | 7 November 2026 | Recovery starts at the product owner's go: restore epochs end to end and the lost window (D44) |
+| 7 November 2026 | Server health, its dashboard warnings, catch-up of the nightly checks and the server clock (D45) |

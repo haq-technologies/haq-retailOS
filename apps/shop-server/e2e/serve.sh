@@ -4,6 +4,8 @@
 set -eu
 cd "$(dirname "$0")/.."
 php tests/Browser/setup.php
+# The health page's snapshot, as the scheduler makes it every minute in a shop.
+php artisan health:check >/dev/null
 php artisan queue:work --queue=print,default --sleep=1 --tries=3 >storage/logs/e2e-queue.log 2>&1 &
 php artisan printing:fake-printer --port=9100 --log=storage/logs/e2e-printer.log >/dev/null 2>&1 &
 export PHP_CLI_SERVER_WORKERS=6

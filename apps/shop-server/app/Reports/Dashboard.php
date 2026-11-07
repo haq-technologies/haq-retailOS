@@ -6,6 +6,7 @@ namespace App\Reports;
 
 use App\Catalogue\ReviewQueue;
 use App\Cost\Backfill;
+use App\Health\Health;
 use App\Sales\LostWindow;
 use App\Settings\Settings;
 use Carbon\CarbonImmutable;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class Dashboard
 {
-    public function __construct(private Settings $settings, private Flags $flags, private CashierDay $cashiers, private ReviewQueue $review) {}
+    public function __construct(private Settings $settings, private Flags $flags, private CashierDay $cashiers, private ReviewQueue $review, private Health $health) {}
 
     /**
      * The business day now: an open shift's, since a shift that runs past midnight keeps its day (spec
@@ -36,7 +37,9 @@ final readonly class Dashboard
 
     /**
      * What the shop must put right, read live and gone once it is: sales to re-enter after a restore
-     * (spec section 9). Unlike flags, these are never marked as seen.
+     * (spec section 9), and the server's health warnings (spec section 8: a backup older than 48 hours, an
+     * unverified clock, a certificate close to expiry, grant drift or a chain that does not verify, and the
+     * rest of the health page). Unlike flags, these are never marked as seen.
      *
      * @return list<array{kind: string, title: string, detail: string, open: ?string}>
      */
@@ -47,6 +50,9 @@ final readonly class Dashboard
         if ($lost > 0) {
             $alerts[] = ['kind' => 'lost_sales', 'title' => $lost === 1 ? '1 sale to re-enter after the restore' : "{$lost} sales to re-enter after the restore",
                 'detail' => 'A counter journal holds sales the restored data lacks; customers may hold receipts for them.', 'open' => 'recovery'];
+        }
+        foreach ($this->health->warnings() as $w) {
+            $alerts[] = [...$w, 'kind' => 'health_'.$w['kind'], 'open' => 'server'];
         }
 
         return $alerts;
@@ -78,7 +84,9 @@ final readonly class Dashboard
             'profit' => Profit::buckets($day, $day),
             'coverage_percent' => $total === 0 ? 0 : intdiv($covered * 100, $total),
             'attention' => ['total' => count($attention), 'flags' => array_slice($attention, 0, 5)],
-            'alerts' => $this->alerts(),
+            'alerts' => $alerts = $this->alerts(),
+            // The dashboard's line when every server check passes (wireframe BackDashboard).
+            'system' => array_filter($alerts, fn (array $a) => str_starts_with($a['kind'], 'health_')) === [] ? $this->health->allClear() : null,
             'cashiers' => $this->cashiers->forDay($day),
             'todo' => [
                 'needs_cost' => NeedsCost::queue(limit: 0)['total_items'],
