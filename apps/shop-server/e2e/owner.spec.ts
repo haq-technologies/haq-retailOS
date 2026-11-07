@@ -115,3 +115,28 @@ test('lets the owner merge a typed brand into the listed one, then approve the i
     await expect(page.getByRole('status')).toContainText('Oraimo FreePods 3C Earbuds looks right.');
     await expect(page.getByRole('tab', { name: 'New items · 0' })).toBeVisible();
 });
+
+test('sets a first-sale price with one tap, shows catalogue health, and prints and exports the daily summary', async ({ browser }) => {
+    const page = await backOffice(browser, 'Halima', '135790');
+    await page.getByRole('link', { name: /^Prices/ }).first().click();
+    const first = page.getByRole('tabpanel', { name: 'First sales today' });
+    await expect(first.getByText('Type-C to Lightning Cable 1m')).toBeVisible();
+    await page.screenshot({ path: 'e2e/results/screens/first-sale-prices.png', fullPage: true });
+    await first.getByRole('button', { name: /^Set ₦/ }).first().click();
+    await expect(page.getByRole('status')).toContainText('now fills in at');
+    await expect(first.getByRole('button', { name: 'Undo' })).toBeVisible();
+
+    await page.getByRole('link', { name: /^Catalogue health/ }).first().click();
+    await expect(page.getByRole('heading', { name: 'Catalogue health' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Best sellers with no barcode yet' })).toBeVisible();
+    await page.screenshot({ path: 'e2e/results/screens/catalogue-health.png', fullPage: true });
+
+    await page.getByRole('link', { name: /^Daily summary/ }).first().click();
+    await expect(page.getByRole('heading', { name: 'Daily summary' })).toBeVisible();
+    await page.getByRole('button', { name: 'Print daily summary' }).click();
+    await expect(page.getByRole('status')).toContainText("The slip's audit code is", { timeout: 20_000 });
+    await page.screenshot({ path: 'e2e/results/screens/daily-summary.png', fullPage: true });
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'This day' }).click();
+    expect((await download).suggestedFilename()).toMatch(/^sales-\d{4}-\d{2}-\d{2}\.csv$/);
+});

@@ -102,10 +102,40 @@ final readonly class Pricing
         });
     }
 
+    /**
+     * Undoes the latest set price for the type: the one before it comes back, or no set price at all (D43).
+     * A new row, never an edit. Returns the price now in force.
+     */
+    public function undoLast(Item $item, string $customerType, User $actor): ?int
+    {
+        if (! in_array($actor->role->value, ['manager', 'owner'], true)) {
+            throw new SaleRefused('Only a manager or the owner sets prices.');
+        }
+
+        return DB::transaction(function () use ($item, $customerType, $actor): ?int {
+            DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['price:'.$item->id.':'.$customerType]);
+            /** @var list<object{price_kobo: int|string|null}> $rows */
+            $rows = DB::table('item_prices')->where('item_id', $item->id)->where('customer_type', $customerType)
+                ->orderByDesc('effective_from')->orderByDesc('id')->limit(2)->get(['price_kobo'])->all();
+            if ($rows === [] || $rows[0]->price_kobo === null) {
+                throw new SaleRefused('There is no set price to undo.');
+            }
+            $back = isset($rows[1]) && $rows[1]->price_kobo !== null ? (int) $rows[1]->price_kobo : null;
+            DB::table('item_prices')->insert([
+                'id' => Ulid::generate(), 'item_id' => $item->id, 'customer_type' => $customerType, 'price_kobo' => $back,
+                'effective_from' => CarbonImmutable::now()->format('Y-m-d H:i:s.uP'), 'set_by' => $actor->id,
+            ]);
+            $this->audit->record(new AuditEntry(action: 'price.undone', actorId: $actor->id, subjectType: 'item', subjectId: $item->id,
+                before: ['customer_type' => $customerType, 'price_kobo' => (int) $rows[0]->price_kobo], after: ['customer_type' => $customerType, 'price_kobo' => $back]));
+
+            return $back;
+        });
+    }
+
     public function setPrice(string $itemId, string $customerType): ?int
     {
         $price = DB::table('item_prices')->where('item_id', $itemId)->where('customer_type', $customerType)
-            ->orderByDesc('effective_from')->value('price_kobo');
+            ->orderByDesc('effective_from')->orderByDesc('id')->value('price_kobo');
 
         return is_numeric($price) ? (int) $price : null;
     }

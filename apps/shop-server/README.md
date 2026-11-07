@@ -2,7 +2,7 @@
 
 The HAQ Retail OS server that runs in each branch, on the shop's own network: Laravel 13 and PostgreSQL 18, with the counter and the back office in React through Inertia. The spec is [docs/spec/retail-os-spec-v1.5.md](../../docs/spec/retail-os-spec-v1.5.md), and the build order is in [PLAN.md](../../PLAN.md).
 
-**Status:** Phase 2, the foundation, is closed (gate G2 passed, D27). The counter and selling come in Phase 3.
+**Status:** Phases 2 and 3 are built (the foundation, then the counter and sale core); gate G3 waits for the pilot hardware. Phase 4's owner features are built in the back office except recovery, which is next (PLAN.md).
 
 ## Run it on the development computer
 
@@ -85,6 +85,10 @@ apps/shop-server/e2e/run.sh                 # all of them
 apps/shop-server/e2e/run.sh -g "holds"      # the ones whose name matches
 ```
 
+## The back office
+
+Open `/back-office` on a back-office device (the owner's phone or laptop, enrolled with a code such as D01) or from a counter. It signs in with the same name tiles, and each person sees only what their role may open (spec section 3): the dashboard with profit in three parts and Needs your attention, Needs cost with the backfill, Prices (first sales and set prices), Review (typed brands and words, new items, barcodes, duplicates with merge and undo), Catalogue health, Flags, the Daily summary (on screen, printed on a counter's printer, and the sales exports) and Shop settings. Cost and profit reach only those who may see cost, in the API and in every export. The browser tests in `e2e/owner.spec.ts` drive it.
+
 ## Backups
 
 pgBackRest archives WAL to the backup volume (in a shop, the second internal disk given to `install.sh --backup-dir`), and the `backup` service takes a weekly full and daily incrementals, with a weekly test restore that the scheduler verifies (D35). From the repository root, in development:
@@ -121,7 +125,7 @@ Other commands run the same way: `docker compose exec app php artisan …`, `doc
 
 | Path | What it is |
 |---|---|
-| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation` holds the shop, its branches and terminals; `Audit` the hash chains, roots and spool; `Settings` the settings, their history and the shop profile tool; `Identity` name tiles and PINs, acting-user tokens, approvals and counter enrolment; `Catalogue` the categories, pick-lists, brands, models, items, the one name routine, new items made at the counter and what the counter learns (barcodes, aliases); `Cost` cost entries; `Shifts` shifts per drawer; `Sales` Finish, receipt numbers, epochs and prices; `Printing` receipts, the printers and the drawer log; `Counter` the counter's catalogue feed and API. `Http/` and `Providers/` are Laravel's glue |
+| `app/` | The modules (D23): `Platform` holds the shared building blocks, such as the mutability matrix and the `Page` helper; `Organisation` holds the shop, its branches and terminals; `Audit` the hash chains, roots and spool; `Settings` the settings, their history and the shop profile tool; `Identity` name tiles and PINs, acting-user tokens, approvals and counter enrolment; `Catalogue` the categories, pick-lists, brands, models, items, the one name routine, new items made at the counter and what the counter learns (barcodes, aliases); `Cost` cost entries; `Shifts` shifts per drawer; `Sales` Finish, receipt numbers, epochs and prices; `Printing` receipts, the printers and the drawer log; `Counter` the counter's catalogue feed and API; `Backups` backup status and the after-restore epochs; `Reports` the dashboard, profit in three buckets, Needs cost, flags, first-sale prices, catalogue health, the daily summary and the CSV exports; `BackOffice` the back office's API and who may open what. `Http/` and `Providers/` are Laravel's glue |
 | `config/` | Every setting. Laravel's defaults are not merged in, so Redis and the other unused drivers stay out |
 | `database/migrations/` | The schema. Every application table has a ULID key (D21) |
 | `resources/js/` | The React side: `app.tsx` boots Inertia, `pages/` holds the pages |

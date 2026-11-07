@@ -11,6 +11,7 @@ use App\Identity\Role;
 use App\Organisation\Models\Terminal;
 use App\Platform\Http\Page;
 use App\Reports\Dashboard;
+use App\Reports\FirstSales;
 use App\Reports\Flags;
 use App\Reports\NeedsCost;
 use App\Reports\Period;
@@ -53,15 +54,18 @@ final class BackOfficeController
     }
 
     /** The counts on the menu, only for the sections this person may open. */
-    public function badges(Request $request, Access $access, ReviewQueue $review, Flags $flags): JsonResponse
+    public function badges(Request $request, Access $access, ReviewQueue $review, Flags $flags, Dashboard $dashboard): JsonResponse
     {
         $can = $access->for($this->actor($request));
+        $day = $dashboard->today();
+        $firstSales = $can['prices'] ? count(array_filter(FirstSales::forDay($day, Period::day($day, $flags->zone())), fn (array $g) => $g['set'] === null)) : 0;
         $attention = $can['flags'] ? count(array_filter($flags->list(Period::named('last7', $flags->zone()), false, Flags::ATTENTION), fn (array $f) => $f['seen_at'] === null)) : 0;
 
         return response()->json([
             'costs' => $can['costs'] ? NeedsCost::queue(limit: 0)['total_items'] : 0,
             'flags' => $attention,
             'review' => $can['review'] ? $review->total() : 0,
+            'prices' => $firstSales,
         ]);
     }
 

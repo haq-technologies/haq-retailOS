@@ -2,7 +2,7 @@
 
 The living plan from today to the pilot go-live decision and on to the MVP. The spec ([docs/spec/retail-os-spec-v1.5.md](docs/spec/retail-os-spec-v1.5.md)) says what to build; this file says when, by whom, and what happens next. Decisions and their sources are in [docs/decisions.md](docs/decisions.md).
 
-Last updated: 6 November 2026.
+Last updated: 7 November 2026.
 
 ## Goal
 
@@ -17,7 +17,7 @@ The pilot succeeds when (spec section 14):
 
 ## Status
 
-Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3, the dress rehearsal, waits for the pilot hardware; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026.
+Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3, the dress rehearsal, waits for the pilot hardware; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026. Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39); four of the five are built and merged (D40 to D43), and the fifth, recovery, waits for the product owner's go.
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
@@ -32,8 +32,9 @@ Done:
 
 - Gate G2 passed on 6 November 2026 (D27); the identity timings accepted (D28); back-office devices for the owner's phone or laptop (D29).
 - Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the G3 tooling. See the Phase 3 checklist below.
+- Phase 4's owner features, started before G3 at the product owner's go (D39), four of five built on 7 November 2026 (D40 to D43): the back office with the owner's dashboard and cost entry with backfill; flags and Needs your attention; the review queues with merge and undo; first-sale prices, catalogue health, the daily summary on screen and printed, and the CSV exports. See the Phase 4 section below.
 
-Next: gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md), once the pilot hardware is set up. Before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. Phase 4 starts only at the product owner's go.
+Next: Phase 4's last owner feature, recovery (see the Phase 4 section), at the product owner's go. Gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md) still waits for the pilot hardware; before it, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot and the hardening wait for G3 (D39).
 
 ## Team
 
@@ -158,8 +159,10 @@ Phase 4's owner features started on 7 November 2026, before gate G3, at the prod
 - [x] The back office and cost: the back-office app (dashboard, navigation, Shop settings), the three profit buckets, the Needs-cost queue with the backfill preview and bulk apply, and who sees cost (Claude, 7 November 2026; D40)
 - [x] Flags and alerts: the flag list (mark as seen, never deleted), the dashboard's Needs your attention, CSV export of flags (Claude, 7 November 2026; D41)
 - [x] Review queues: brands, phone models and product words; new items and typed lines; learned barcodes, conflicts and search words; duplicates, with merge and undo (Claude, 7 November 2026; D42)
-- [ ] Prices and reports: first-sale prices, catalogue health, CSV export of items and sales, the daily summary on screen and printed (Claude)
-- [ ] Recovery: the health page, the lost-window screen with back entry, restore epochs end to end, reboot recovery and catch-up scheduling (Claude)
+- [x] Prices and reports: first-sale prices, catalogue health, CSV export of items and sales, the daily summary on screen and printed (Claude, 7 November 2026; D43)
+- [ ] Recovery: the health page, the lost-window screen with back entry, restore epochs end to end, reboot recovery and catch-up scheduling (Claude). **Next, at the product owner's go.** Already in place from Phase 3: the counter journal (seven days of sales in each counter's browser), shop:after-restore with signed epochs and the 1,000 jump, the backup status files and the weekly verified test restore. To build: the health page (owner) with the backup, WAL, test restore, disk, certificate, clock, version, grants and audit checks, and their warnings on the dashboard; counters reporting their journals after a restore, with each counter's epoch raised past anything its journal shows before it sells again; the lost-window screen and re-entry as back entries keeping the original receipt number; the "starting, please wait" page and restart policies; catch-up of missed backup and test-restore runs at the next quiet moment
+
+Open questions for the product owner from Phase 4 so far: how many items a cashier creates in a day counts as "high" on the dashboard (spec section 6 says a high rate is flagged but sets no number; the count shows without a mark until then); and a look at D40 to D43, which Claude proposed and recorded.
 
 ## Before Phase 3
 
@@ -267,3 +270,4 @@ Assumptions:
 | 7 November 2026 | The back office and cost: the dashboard, Needs cost with the backfill, profit in three buckets (D40) |
 | 7 November 2026 | Flags and alerts: the flag list, Needs your attention, the cashiers' day and the CSV export (D41) |
 | 7 November 2026 | Review queues: names, new items, barcodes and search words, duplicates with merge and undo (D42) |
+| 7 November 2026 | Prices and reports: first-sale prices with undo, catalogue health, the daily summary on screen and printed, CSV exports (D43) |
