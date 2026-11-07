@@ -210,6 +210,12 @@ export function Dashboard({ api, can, go, onChanged }: { api: CounterApi; can: C
                             <span className="text-text-secondary">Items sold with no cost, highest revenue first</span>
                         </button>
                     )}
+                    {can.review && (
+                        <button type="button" className="flex min-h-[88px] flex-col items-start justify-center rounded-2xl border-2 border-border p-4 text-left" onClick={() => { go('review'); }}>
+                            <span className="text-lg font-semibold">Review · {data.todo.review}</span>
+                            <span className="text-text-secondary">Brands, new items, barcodes and duplicates</span>
+                        </button>
+                    )}
                     {can.flags && (
                         <button type="button" className="flex min-h-[88px] flex-col items-start justify-center rounded-2xl border-2 border-border p-4 text-left" onClick={() => { go('flags'); }}>
                             <span className="text-lg font-semibold">Flags · {data.todo.flags_week}</span>

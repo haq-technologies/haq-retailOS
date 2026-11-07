@@ -32,3 +32,9 @@ export function when(iso: string, now: Date = new Date()): string {
     const prefix = day(at) === day(now) ? 'Today' : day(at) === day(yesterday) ? 'Yesterday' : shortDate(iso);
     return `${prefix} ${clock(iso)}`;
 }
+
+/** The same, inside a sentence: "today, 12:20", "yesterday, 18:12" or "on 4 Nov, 13:10". */
+export function whenInline(iso: string, now: Date = new Date()): string {
+    const [day = '', time = ''] = when(iso, now).split(/ (?=\d\d:\d\d$)/);
+    return day === 'Today' || day === 'Yesterday' ? `${day.toLowerCase()}, ${time}` : `on ${day}, ${time}`;
+}

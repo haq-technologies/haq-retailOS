@@ -95,3 +95,23 @@ test('puts a lockout in Needs your attention, then the owner marks it as seen an
     const file = await download;
     expect(file.suggestedFilename()).toBe('flags-week.csv');
 });
+
+test('lets the owner merge a typed brand into the listed one, then approve the item', async ({ browser }) => {
+    const page = await backOffice(browser, 'Halima', '135790');
+    await page.getByRole('link', { name: /^Review/ }).first().click();
+    await expect(page.getByRole('heading', { name: 'Review', exact: true })).toBeVisible();
+    const brands = page.getByRole('region', { name: 'Brands typed at the counter' });
+    await expect(brands.getByText('Oriamo', { exact: true })).toBeVisible();
+    await expect(brands.getByText(/looks like/)).toBeVisible();
+    await page.screenshot({ path: 'e2e/results/screens/review-names.png', fullPage: true });
+    await brands.getByRole('button', { name: 'Merge into Oraimo' }).click();
+    await expect(page.getByRole('status')).toContainText('Oriamo now counts as Oraimo.');
+
+    await page.getByRole('tab', { name: /^New items/ }).click();
+    const items = page.getByRole('tabpanel', { name: 'New items' });
+    await expect(items.getByText('Oraimo FreePods 3C Earbuds')).toBeVisible();
+    await page.screenshot({ path: 'e2e/results/screens/review-items.png', fullPage: true });
+    await items.getByRole('button', { name: 'Looks right' }).click();
+    await expect(page.getByRole('status')).toContainText('Oraimo FreePods 3C Earbuds looks right.');
+    await expect(page.getByRole('tab', { name: 'New items · 0' })).toBeVisible();
+});

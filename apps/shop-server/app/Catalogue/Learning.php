@@ -86,7 +86,10 @@ final readonly class Learning
                 'status' => $link->status === 'unconfirmed' && $confirmations >= 2 ? 'confirmed' : $link->status,
             ]);
 
-            $this->flagConflict($code, $itemId, $cashierId);
+            // A confirmed link (or one kept in review) no longer raises a conflict by being chosen again.
+            if ($link->status === 'unconfirmed') {
+                $this->flagConflict($code, $itemId, $cashierId);
+            }
         });
     }
 
@@ -97,13 +100,28 @@ final readonly class Learning
      */
     public function candidates(string $code): array
     {
-        /** @var list<object{item_id: string, display_name: string, status: string}> $rows */
+        /** @var list<object{item_id: string, item_status: string, status: string}> $rows */
         $rows = DB::table('barcodes')->join('items', 'items.id', '=', 'barcodes.item_id')
-            ->where('barcodes.code', trim($code))->where('barcodes.status', '!=', 'disabled')->whereNotIn('items.status', ['merged', 'archived'])
-            ->orderByDesc('barcodes.last_chosen_at')->limit(5)
-            ->get(['barcodes.item_id', 'items.display_name', 'barcodes.status'])->all();
+            ->where('barcodes.code', trim($code))->where('barcodes.status', '!=', 'disabled')->where('items.status', '!=', 'archived')
+            ->orderByDesc('barcodes.last_chosen_at')
+            ->get(['barcodes.item_id', 'items.status as item_status', 'barcodes.status'])->all();
 
-        return array_map(fn (object $r) => ['item_id' => $r->item_id, 'name' => $r->display_name, 'status' => $r->status], $rows);
+        // A merged item's code adds the item it now counts under [F18].
+        $found = [];
+        foreach ($rows as $r) {
+            $id = $r->item_status === 'merged' ? Merges::rootOf($r->item_id) : $r->item_id;
+            $found[$id] ??= $r->status;
+        }
+        /** @var array<string, object{id: string, display_name: string, status: string}> $items */
+        $items = DB::table('items')->whereIn('id', array_keys($found))->whereNotIn('status', ['merged', 'archived'])->get(['id', 'display_name', 'status'])->keyBy('id')->all();
+        $candidates = [];
+        foreach ($found as $id => $status) {
+            if (isset($items[$id])) {
+                $candidates[] = ['item_id' => (string) $id, 'name' => $items[$id]->display_name, 'status' => $status];
+            }
+        }
+
+        return array_slice($candidates, 0, 5);
     }
 
     /** Undoes a learned link; no sale changes [F13]. */
@@ -115,6 +133,51 @@ final readonly class Learning
         }
         DB::table('barcodes')->where('id', $barcodeId)->update(['status' => 'disabled']);
         $this->audit->record(new AuditEntry(action: 'catalogue.barcode_undone', actorId: $actorId, subjectType: 'item', subjectId: (string) $link->item_id, before: ['code' => $link->code, 'status' => $link->status]));
+    }
+
+    /**
+     * Settles a conflicted code in review (wireframe ReviewBarcodes): keep one item's link, and the others
+     * are undone; or keep them all, and the counter asks which one each time. No sale changes.
+     */
+    public function settleConflict(string $code, ?string $keepItemId, string $actorId): void
+    {
+        DB::transaction(function () use ($code, $keepItemId, $actorId): void {
+            DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['barcode:'.$code]);
+            /** @var list<object{id: string, item_id: string}> $links */
+            $links = DB::table('barcodes')->where('code', $code)->where('status', '!=', 'disabled')->lockForUpdate()->get(['id', 'item_id'])->all();
+            if ($links === []) {
+                throw new MergeRefused('That barcode has no links left.');
+            }
+            if ($keepItemId !== null && ! in_array($keepItemId, array_column($links, 'item_id'), true)) {
+                throw new MergeRefused('That item is not one of this barcode\'s links.');
+            }
+            $undone = 0;
+            foreach ($links as $link) {
+                if ($keepItemId !== null && $link->item_id !== $keepItemId) {
+                    DB::table('barcodes')->where('id', $link->id)->update(['status' => 'disabled', 'conflicted' => false]);
+                    $undone++;
+                } else {
+                    DB::table('barcodes')->where('id', $link->id)->update(['status' => 'confirmed', 'conflicted' => false]);
+                }
+            }
+            $this->audit->record(new AuditEntry(action: 'catalogue.barcode_conflict_settled', actorId: $actorId, subjectType: 'item', subjectId: $keepItemId,
+                after: ['code' => $code, 'kept' => $keepItemId === null ? 'all' : 'one', 'links_undone' => $undone]));
+        });
+    }
+
+    /** Removes a search word that leads to the wrong item; it never comes back by itself [F13]. */
+    public function removeAlias(string $aliasId, string $actorId): void
+    {
+        /** @var object{id: string, item_id: string, term: string, status: string}|null $alias */
+        $alias = DB::table('aliases')->where('id', $aliasId)->first(['id', 'item_id', 'term', 'status']);
+        if ($alias === null || $alias->status === 'removed') {
+            return;
+        }
+        DB::transaction(function () use ($alias, $actorId): void {
+            DB::table('aliases')->where('id', $alias->id)->update(['status' => 'removed']);
+            $this->audit->record(new AuditEntry(action: 'catalogue.alias_removed', actorId: $actorId, subjectType: 'item', subjectId: $alias->item_id,
+                before: ['term' => $alias->term, 'status' => $alias->status]));
+        });
     }
 
     /** A different cashier choosing a different item for the same code makes the code conflicted. */
@@ -139,6 +202,9 @@ final readonly class Learning
 
         DB::transaction(function () use ($term, $itemId, $activation): void {
             $alias = DB::table('aliases')->where('item_id', $itemId)->where('term', $term)->lockForUpdate()->first();
+            if ($alias !== null && $alias->status === 'removed') {
+                return; // removed in review: it never learns again
+            }
             if ($alias === null) {
                 DB::table('aliases')->insert(['id' => Ulid::generate(), 'item_id' => $itemId, 'term' => $term, 'hits' => 1, 'status' => $activation <= 1 ? 'active' : 'candidate']);
 

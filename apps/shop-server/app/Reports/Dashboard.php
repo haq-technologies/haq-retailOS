@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Reports;
 
+use App\Catalogue\ReviewQueue;
 use App\Cost\Backfill;
 use App\Settings\Settings;
 use Carbon\CarbonImmutable;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class Dashboard
 {
-    public function __construct(private Settings $settings, private Flags $flags, private CashierDay $cashiers) {}
+    public function __construct(private Settings $settings, private Flags $flags, private CashierDay $cashiers, private ReviewQueue $review) {}
 
     /**
      * The business day now: an open shift's, since a shift that runs past midnight keeps its day (spec
@@ -74,6 +75,7 @@ final readonly class Dashboard
             'todo' => [
                 'needs_cost' => NeedsCost::queue(limit: 0)['total_items'],
                 'flags_week' => count($this->flags->list(Period::named('week', $this->flags->zone()), false)),
+                'review' => $this->review->total(),
             ],
         ];
     }

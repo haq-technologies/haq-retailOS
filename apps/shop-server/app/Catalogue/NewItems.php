@@ -30,7 +30,8 @@ use InvalidArgumentException;
  * - A typed brand or phone model prints as typed and waits, pending, for a manager or the owner to approve
  *   it; names are unique ignoring case, so "poga" never makes a second "Poga".
  * - Similar items are offered before a new one is made; the cashier can still create it.
- * - A cashier's new item is sellable at once and waits in the owner's review queue.
+ * - A cashier's new item is sellable at once and waits in the owner's review queue; a typed line (Request-only)
+ *   is marked source "typed", so review offers to make it a proper item.
  */
 final readonly class NewItems
 {
@@ -87,7 +88,7 @@ final readonly class NewItems
             }
 
             return $this->items->findOrCreate($category, $facets, $brand, null, $freeText,
-                source: $actor->role === Role::Cashier ? 'cashier' : 'owner', createdBy: $actor->id, status: $status, typedCategoryWord: $word);
+                source: $requestOnly ? 'typed' : ($actor->role === Role::Cashier ? 'cashier' : 'owner'), createdBy: $actor->id, status: $status, typedCategoryWord: $word);
         } catch (InvalidArgumentException $e) {
             throw new NewItemRefused($e->getMessage());
         }

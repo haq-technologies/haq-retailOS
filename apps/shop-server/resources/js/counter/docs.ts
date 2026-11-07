@@ -10,6 +10,14 @@ export function searchDocs(cat: Catalogue, ids: Set<string> | null): { upsert: S
         names.add(`${item.category_id}|${item.display_name.toLowerCase()}`);
     }
     const wanted = ids === null ? [...cat.items.keys()] : [...ids];
+    // A merged item's search words move to the item it counts under, so that one is indexed again too.
+    if (ids !== null) {
+        for (const id of ids) {
+            const root = cat.root(id);
+            if (root !== id && !wanted.includes(root)) wanted.push(root);
+        }
+    }
+    const aliases = cat.aliasesByItem();
     for (const id of wanted) {
         const item = cat.items.get(id);
         if (item === undefined || !cat.sellable(item)) {
@@ -19,7 +27,7 @@ export function searchDocs(cat: Catalogue, ids: Set<string> | null): { upsert: S
         upsert.push({
             id,
             name: item.display_name,
-            text: [item.search_text, item.item_code, ...cat.activeAliases(id)].join(' '),
+            text: [item.search_text, item.item_code, ...(aliases.get(id) ?? [])].join(' '),
             sold: cat.prices.get(id)?.sold_30d ?? 0,
         });
     }
