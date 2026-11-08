@@ -22,6 +22,8 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         origin: 'http://localhost:5173',
+        // The page comes from nginx at localhost:8080 and loads its scripts from here, so Chrome needs this.
+        cors: { origin: ['http://localhost:8080', 'http://127.0.0.1:8080'] },
         hmr: { host: 'localhost' },
         watch: {
             // Colima passes no file-change events into its VM, so the container polls.
