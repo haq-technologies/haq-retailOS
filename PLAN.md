@@ -294,3 +294,4 @@ Assumptions:
 | 7 November 2026 | Hardening: the cost-leak scanner (check C4) |
 | 7 November 2026 | High item creation at 10 a day, an owner setting (D52); the off-site copy to build before G4 (D53) |
 | 7 November 2026 | Hardening: the off-site copy with its key shares (D53) |
+| 8 November 2026 | The counter's brand step offers every listed brand, found while trying the counter (D54) |

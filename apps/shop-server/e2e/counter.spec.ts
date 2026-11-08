@@ -47,6 +47,9 @@ async function addCable(page: Page, price: string): Promise<void> {
     await expect(page.getByText('Choose connector pair')).toBeVisible();
     await page.getByRole('button', { name: /^Type-C to Lightning/ }).first().click();
     await page.getByRole('button', { name: /^1m/ }).first().click();
+    // The brand step offers every listed brand (D54); these tests sell the cable with no brand.
+    const skip = page.getByRole('button', { name: /^Skip brand/ });
+    if (await skip.isVisible().catch(() => false)) await skip.click();
     const pad = page.getByRole('dialog', { name: 'Price' });
     await expect(pad).toBeVisible();
     await expect(pad.getByText('Prints as')).toBeVisible();
@@ -89,6 +92,9 @@ test('remembers the price it sold at, and asks before an unusual one', async ({ 
     await page.getByRole('button', { name: 'Cables', exact: true }).click();
     await page.getByRole('button', { name: /^Type-C to Lightning/ }).first().click();
     await page.getByRole('button', { name: /^1m/ }).first().click();
+    // The brand step offers every listed brand (D54); these tests sell the cable with no brand.
+    const skip = page.getByRole('button', { name: /^Skip brand/ });
+    if (await skip.isVisible().catch(() => false)) await skip.click();
     const pad = page.getByRole('dialog', { name: 'Price' });
     await expect(pad.getByText('Filled in from the last sale')).toBeVisible();
     await page.screenshot({ path: 'e2e/results/screens/price-pad.png' });
@@ -181,4 +187,16 @@ test('lets a cashier read their own history on the counter', async ({ browser })
     await expect(sheet.getByText('Sale finished').first()).toBeVisible();
     await expect(sheet.getByText('Amina').first()).toBeVisible();
     await expect(sheet.getByText('Halima')).toHaveCount(0);
+});
+
+test('offers every brand for a power bank in a fresh shop, and the receipt name carries it (D54)', async ({ browser }) => {
+    const page = await counter(browser, 'T02');
+    await page.getByRole('button', { name: 'Power banks', exact: true }).click();
+    await expect(page.getByText('Choose brand')).toBeVisible();
+    await page.getByRole('button', { name: /^Oraimo/ }).first().click();
+    await expect(page.getByText('Choose capacity')).toBeVisible();
+    await page.getByRole('button', { name: /^20000mAh/ }).first().click();
+    const pad = page.getByRole('dialog', { name: 'Price' });
+    await expect(pad).toBeVisible();
+    await expect(pad).toContainText('Oraimo Power Bank 20000mAh');
 });

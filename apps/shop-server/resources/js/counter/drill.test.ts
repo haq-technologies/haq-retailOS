@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Catalogue } from './catalogue';
-import { drill } from './drill';
+import { drill, parseShapeId } from './drill';
 
 function cables(): Catalogue {
     const cat = new Catalogue();
@@ -98,5 +98,58 @@ describe('the tiles', () => {
         const view = drill(cables(), { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2l' }, { key: 'length', value: null }] }, 'retail');
         expect(view.tiles.map((t) => t.label)).toEqual(['Oraimo Type-C to Lightning Cable']);
         expect(view.crumbs.at(-1)).toBe('No length');
+    });
+});
+
+describe('the brand step with generated shapes (D54)', () => {
+    function powerBanks(): Catalogue {
+        const cat = new Catalogue();
+        cat.apply({
+            categories: [{ id: 'c-pb', code: 'power_banks', parent_id: null, name: 'Power banks', word: 'Power Bank', sellable: true, aliases: [], position: 1 }],
+            category_templates: [
+                {
+                    id: 't-pb',
+                    category_id: 'c-pb',
+                    facets: [
+                        { key: 'brand', label: 'Brand', type: 'brand' },
+                        { key: 'capacity', label: 'Capacity', type: 'picklist', list: 'capacities_mah' },
+                    ],
+                    drill_order: ['brand', 'capacity'],
+                    name_order: ['brand', '{word}', 'capacity'],
+                    asks_colour: false,
+                },
+            ],
+            picklist_values: [
+                { id: 'p-10k', list: 'capacities_mah', name: '10000mAh', aliases: [], parent_id: null, status: 'active', position: 1 },
+                { id: 'p-20k', list: 'capacities_mah', name: '20000mAh', aliases: [], parent_id: null, status: 'active', position: 2 },
+            ],
+            brands: [
+                { id: 'b-oraimo', name: 'Oraimo', aliases: [], shown_first_in: [], status: 'approved', merged_into_id: null },
+                { id: 'b-new', name: 'Typed Brand', aliases: [], shown_first_in: [], status: 'pending', merged_into_id: null },
+            ],
+        });
+        cat.shapes = [
+            { id: 'shape:c-pb:capacity=p-10k', category_id: 'c-pb', facets: { capacity: 'p-10k' }, display_name: 'Power Bank 10000mAh' },
+            { id: 'shape:c-pb:capacity=p-20k', category_id: 'c-pb', facets: { capacity: 'p-20k' }, display_name: 'Power Bank 20000mAh' },
+        ];
+        return cat;
+    }
+
+    it('offers every listed brand in a fresh shop, not only brands already sold, and a Skip', () => {
+        const view = drill(powerBanks(), { categoryId: 'c-pb', choices: [] }, 'retail');
+        expect(view.prompt).toBe('Choose brand');
+        expect(view.tiles.map((t) => t.label)).toEqual(['Oraimo', 'Skip brand']);
+    });
+
+    it('makes a shape chosen after a brand that brand\'s item, named with it', () => {
+        const view = drill(powerBanks(), { categoryId: 'c-pb', choices: [{ key: 'brand', value: 'b-oraimo' }] }, 'retail');
+        expect(view.prompt).toBe('Choose capacity');
+        // One tap on a capacity that leaves one shape adds it as Oraimo's.
+        expect(view.tiles.find((t) => t.label === '20000mAh')).toMatchObject({ itemId: 'shape:c-pb:capacity=p-20k|brand=b-oraimo' });
+        const item = drill(powerBanks(), { categoryId: 'c-pb', choices: [{ key: 'brand', value: 'b-oraimo' }, { key: 'capacity', value: 'p-20k' }] }, 'retail').tiles;
+        expect(item).toHaveLength(1);
+        expect(item[0]).toMatchObject({ kind: 'item', id: 'shape:c-pb:capacity=p-20k|brand=b-oraimo', label: 'Oraimo Power Bank 20000mAh' });
+        expect(parseShapeId('shape:c-pb:capacity=p-20k|brand=b-oraimo')).toEqual({ shapeId: 'shape:c-pb:capacity=p-20k', brandId: 'b-oraimo' });
+        expect(parseShapeId('shape:c-pb:capacity=p-20k')).toEqual({ shapeId: 'shape:c-pb:capacity=p-20k', brandId: null });
     });
 });

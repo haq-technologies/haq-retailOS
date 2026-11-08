@@ -50,10 +50,12 @@ final class CounterController
     /** The first sale of a generated shape creates its item [R2]. */
     public function sellShape(Request $request, Feed $feed): JsonResponse
     {
-        $data = $request->validate(['category_id' => ['required', 'string', 'size:26'], 'facets' => ['required', 'array'], 'facets.*' => ['string', 'size:26']]);
+        $data = $request->validate(['category_id' => ['required', 'string', 'size:26'], 'facets' => ['required', 'array'], 'facets.*' => ['string', 'size:26'],
+            'brand_id' => ['nullable', 'string', 'size:26']]);
         /** @var array<string, string> $facets */
         $facets = $data['facets'];
-        $item = $feed->itemForShape((string) $data['category_id'], $facets);
+        $brandId = isset($data['brand_id']) && is_string($data['brand_id']) ? strtolower($data['brand_id']) : null;
+        $item = $feed->itemForShape((string) $data['category_id'], $facets, $brandId);
         if ($item === null) {
             return response()->json(['message' => 'That is not one of this category\'s items.'], 422);
         }

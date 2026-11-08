@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Catalogue\Models\Brand;
 use App\Catalogue\Models\Category;
 use App\Catalogue\StarterCatalogue;
 use App\Identity\ActingToken;
@@ -65,6 +66,15 @@ it('lists the generated shapes, and the first sale of one creates its item', fun
     expect($again['item']['id'])->toBe($first['item']['id']);
 
     ($this->as)()->postJson('/api/counter/shapes', ['category_id' => $cables, 'facets' => ['length' => $this->a->id]])->assertStatus(422);
+
+    // Chosen after a brand at the counter, the same shape becomes that brand's own item, named with it (D54).
+    $oraimo = Brand::query()->where('seed_id', 'brand.oraimo')->firstOrFail();
+    $branded = ($this->as)()->postJson('/api/counter/shapes', ['category_id' => $cables, 'facets' => $shape['facets'], 'brand_id' => $oraimo->id])->assertOk()->json();
+    expect($branded['item']['id'])->not->toBe($first['item']['id'])->and($branded['item']['brand_id'])->toBe($oraimo->id);
+    expect($branded['item']['display_name'])->toStartWith('Oraimo ')->toContain('Cable');
+    // A brand not yet approved, or not a brand at all, is refused.
+    $typed = Brand::query()->create(['name' => 'Typed Brand', 'status' => 'pending', 'aliases' => []]);
+    ($this->as)()->postJson('/api/counter/shapes', ['category_id' => $cables, 'facets' => $shape['facets'], 'brand_id' => $typed->id])->assertStatus(422);
 });
 
 it('tells the counter which line needs a price check or a manager, so it can show the prompt', function () {
