@@ -6,7 +6,7 @@ import { addLine, emptyCart, removeLine, restoreLine, setColour, setCustomerType
 import type { Catalogue } from '../catalogue';
 import { addToJournal } from '../db';
 import { journalEntry, reportJournal } from '../recovery';
-import { drill, type DrillState, type Tile } from '../drill';
+import { drill, parseShapeId, type DrillState, type Tile } from '../drill';
 import { naira } from '../money';
 import { isReceiptNumber, ScanDetector } from '../scanner';
 import type { SearchClient } from '../search-client';
@@ -229,10 +229,11 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
             try {
                 let itemId = id;
                 if (id.startsWith('shape:')) {
-                    const shape = cat.shapes.find((s) => s.id === id);
+                    const { shapeId, brandId } = parseShapeId(id);
+                    const shape = cat.shapes.find((s) => s.id === shapeId);
                     if (shape === undefined) return;
                     try {
-                        const a = await api.post<{ item: ItemRow; facets: ItemFacetRow[]; prices: ItemPrices[] }>('/api/counter/shapes', { category_id: shape.category_id, facets: shape.facets });
+                        const a = await api.post<{ item: ItemRow; facets: ItemFacetRow[]; prices: ItemPrices[] }>('/api/counter/shapes', { category_id: shape.category_id, facets: shape.facets, brand_id: brandId });
                         if (!a.ok) {
                             say('error', 'That item could not be added. Try again.');
                             return;

@@ -5,6 +5,10 @@ import type { CustomerType, FacetDefinition, Shape } from './types';
  * The tiles (spec section 6) [D7]: categories, then the category's drill order one facet at a time, then
  * the items. An optional facet has a Skip tile and the item prints without it. A price shows only on the
  * last step, the item tiles. Generated shapes not yet sold are offered alongside the items [R2].
+ *
+ * A brand is never multiplied into the generated shapes (catalogue v1.1), so the brand step offers the full
+ * brand list wherever a shape could still be chosen, as agreed at the shop visit; a shape chosen after a
+ * brand becomes that brand's item on its first sale (D54).
  */
 export interface DrillState {
     categoryId: string | null;
@@ -24,6 +28,16 @@ export interface DrillView {
 }
 
 export const NOT_IN_LIST = '_not_in_list';
+
+/** A generated shape sold under a chosen brand: the shape's id, then the brand (D54). */
+export function brandedShapeId(shapeId: string, brandId: string): string {
+    return `${shapeId}|brand=${brandId}`;
+}
+
+export function parseShapeId(id: string): { shapeId: string; brandId: string | null } {
+    const [shapeId = id, brand] = id.split('|brand=');
+    return { shapeId, brandId: brand ?? null };
+}
 
 interface Candidate {
     id: string;
@@ -52,9 +66,13 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
 
     const template = cat.templates.get(node.id);
     let candidates = candidatesFor(cat, node.id);
+    let brand: string | null = null;
     for (const choice of state.choices) {
-        candidates = candidates.filter((c) => c.value(choice.key) === choice.value);
         const definition = template?.facets.find((f) => f.key === choice.key);
+        // A shape has no brand of its own, so it stays a candidate under any brand chosen.
+        const brandStep = definition?.type === 'brand' && choice.value !== null;
+        if (brandStep) brand = choice.value;
+        candidates = candidates.filter((c) => c.value(choice.key) === choice.value || (brandStep && c.shape !== null));
         crumbs.push(choice.value === null ? `No ${definition?.label.toLowerCase() ?? choice.key}` : valueLabel(cat, definition, choice.value));
     }
 
@@ -70,6 +88,12 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
                 if (v === null) blanks++;
                 else values.add(v);
             }
+            // While a shape could still be chosen, every listed brand is offered, not only those already sold.
+            if (definition?.type === 'brand' && candidates.some((c) => c.shape !== null)) {
+                for (const b of cat.brands.values()) {
+                    if (b.status === 'approved') values.add(b.id);
+                }
+            }
             // One value and no blanks, or nothing at all: there is nothing to choose at this step.
             if (values.size === 0 || (values.size === 1 && blanks === 0)) continue;
 
@@ -82,7 +106,9 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
                     const left = candidates.filter((c) => c.value(key) === v);
                     const only = left.length === 1 ? left[0] : undefined;
                     const price = only === undefined || only.shape !== null ? null : cat.priceFor(only.id, type);
-                    return { kind: 'value' as const, key, value: v, label: text, itemId: only?.id ?? null, priceKobo: price === null ? null : (price.setPrice ?? price.prefill) };
+                    // A shape left after a brand was chosen is added as that brand's item (D54).
+                    const itemId = only === undefined ? null : only.shape !== null && brand !== null ? brandedShapeId(only.id, brand) : only.id;
+                    return { kind: 'value' as const, key, value: v, label: text, itemId, priceKobo: price === null ? null : (price.setPrice ?? price.prefill) };
                 });
             if (blanks > 0) {
                 tiles.push({ kind: 'skip', key, label: `Skip ${label.toLowerCase()}`, hint: `Prints without a ${label.toLowerCase()}` });
@@ -91,15 +117,21 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
         }
     }
 
+    const brandName = brand === null ? null : (cat.brands.get(brand)?.name ?? null);
+    const items = candidates
+        .map((c) => {
+            const price = c.shape === null ? cat.priceFor(c.id, type) : null;
+            if (c.shape !== null && brand !== null && brandName !== null) {
+                return { kind: 'item' as const, id: brandedShapeId(c.id, brand), label: `${brandName} ${c.label}`, priceKobo: null, shape: c.shape };
+            }
+            return { kind: 'item' as const, id: c.id, label: c.label, priceKobo: price === null ? null : (price.setPrice ?? price.prefill), shape: c.shape };
+        })
+        // A branded shape that is already an item shows once, as the item.
+        .filter((t, _, all) => t.shape === null || !all.some((o) => o.shape === null && o.label.toLowerCase() === t.label.toLowerCase()));
     return {
         crumbs,
-        prompt: candidates.length === 0 ? 'Nothing here yet. Use New item.' : 'Choose the item',
-        tiles: candidates
-            .map((c) => {
-                const price = c.shape === null ? cat.priceFor(c.id, type) : null;
-                return { kind: 'item' as const, id: c.id, label: c.label, priceKobo: price === null ? null : (price.setPrice ?? price.prefill), shape: c.shape };
-            })
-            .sort((a, b) => a.label.localeCompare(b.label)),
+        prompt: items.length === 0 ? 'Nothing here yet. Use New item.' : 'Choose the item',
+        tiles: items.sort((a, b) => a.label.localeCompare(b.label)),
     };
 }
 

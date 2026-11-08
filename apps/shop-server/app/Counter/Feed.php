@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Counter;
 
 use App\Catalogue\Items;
+use App\Catalogue\Models\Brand;
 use App\Catalogue\Models\Category;
 use App\Catalogue\Models\CategoryTemplate;
 use App\Catalogue\Models\Item;
@@ -200,12 +201,24 @@ final readonly class Feed
     }
 
     /**
-     * Creates the item for a generated shape on its first sale, or finds it.
+     * Creates the item for a generated shape on its first sale, or finds it; with a brand chosen at the
+     * counter's brand step, that brand's item (D54). The brand must be a listed one; a merged brand counts
+     * as the one it was merged into.
      *
      * @param  array<string, string>  $facets
      */
-    public function itemForShape(string $categoryId, array $facets): ?Item
+    public function itemForShape(string $categoryId, array $facets, ?string $brandId = null): ?Item
     {
+        $brand = null;
+        if ($brandId !== null) {
+            $brand = Brand::query()->find($brandId);
+            for ($hops = 0; $brand !== null && $brand->status === 'merged' && $brand->merged_into_id !== null && $hops < 10; $hops++) {
+                $brand = Brand::query()->find($brand->merged_into_id);
+            }
+            if ($brand === null || $brand->status !== 'approved') {
+                return null;
+            }
+        }
         $template = CategoryTemplate::query()->where('category_id', $categoryId)->first();
         $category = Category::query()->find($categoryId);
         if ($template === null || $category === null) {
@@ -216,7 +229,7 @@ final readonly class Feed
             $wanted = array_filter($shape, fn (?string $v) => $v !== null);
             ksort($wanted);
             if ($wanted === $facets) {
-                return $this->items->findOrCreate($category, $facets, source: 'generated');
+                return $this->items->findOrCreate($category, $facets, brand: $brand, source: 'generated');
             }
         }
 
