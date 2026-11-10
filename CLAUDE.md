@@ -8,7 +8,7 @@ HAQ Retail OS, by HAQ Technology: a point-of-sale system for phone-accessory sho
 
 ## Where we are
 
-Phases 0 and 1 are closed and locked (gates G0 and G1 passed on 6 November 2026, D19). Phase 2, the foundation, was built on 6 November 2026 (D20 to D29), and the product owner passed gate G2 (D27), so Phase 2 is closed. Phase 3, the counter and sale core, was built on 6 November 2026 (D30 to D36); its gate G3, the dress rehearsal on the pilot hardware (docs/operations/g3-dress-rehearsal.md), waits for the pilot hardware (the release signing key and the pilot server's GHCR token are ready). Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39), and all five are built (D40 to D46): the back office and cost, flags and alerts, the review queues, prices and reports, and recovery (the lost window, server health and reboot recovery); a review against the spec added the audit log to read and the counter's speed (D47), and its open questions are in PLAN.md. The shadow pilot and the hardening that needs the shop's hardware wait for G3; the rest of the hardening started on 7 November 2026 (D50). [PLAN.md](PLAN.md) has the phases, gates, status, the checklists and open items.
+Phases 0 and 1 are closed and locked (gates G0 and G1 passed on 6 November 2026, D19). Phase 2, the foundation, was built on 6 November 2026 (D20 to D29), and the product owner passed gate G2 (D27), so Phase 2 is closed. Phase 3, the counter and sale core, was built on 6 November 2026 (D30 to D36); its gate G3, the dress rehearsal on the pilot hardware (docs/operations/g3-dress-rehearsal.md), waits for the pilot hardware (the release signing key and the pilot server's GHCR token are ready). Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39), and all five are built (D40 to D46): the back office and cost, flags and alerts, the review queues, prices and reports, and recovery (the lost window, server health and reboot recovery); a review against the spec added the audit log to read and the counter's speed (D47), and its open questions are in PLAN.md. The shadow pilot and the hardening that needs the shop's hardware wait for G3; the hardening that needs no hardware is done (D50, D55): the cost-leak scanner, the off-site copy, the upgrade-path test, and the 46 acceptance checks written down against their tests (docs/operations/acceptance-checks.md). [PLAN.md](PLAN.md) has the phases, gates, status, the checklists and open items.
 
 ## Sources of truth
 
@@ -80,6 +80,8 @@ python3 -I tools/docs/check_markdown.py
 # The release signing dry run (a throwaway key; the updater's own checks)
 tools/release/dry-run.sh
 ```
+
+CI also runs the upgrade-path test (tools/release/upgrade-path.sh, check E5, D55) as its own job: it builds a shop with sales on the end-of-Phase-3 code and upgrades it to the code under review.
 
 CI (.github/workflows/ci.yml) runs all four on every pull request. It rebuilds the catalogue and fails if the committed files differ, so after changing the build script, rerun the build and commit its outputs.
 

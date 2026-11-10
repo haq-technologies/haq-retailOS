@@ -152,4 +152,16 @@ describe('the brand step with generated shapes (D54)', () => {
         expect(parseShapeId('shape:c-pb:capacity=p-20k|brand=b-oraimo')).toEqual({ shapeId: 'shape:c-pb:capacity=p-20k', brandId: 'b-oraimo' });
         expect(parseShapeId('shape:c-pb:capacity=p-20k')).toEqual({ shapeId: 'shape:c-pb:capacity=p-20k', brandId: null });
     });
+
+    it("still offers a brand's other capacities after one of them is sold, and the sold one once, as the item", () => {
+        const cat = powerBanks();
+        cat.apply({
+            items: [{ id: 'i-o20', category_id: 'c-pb', brand_id: 'b-oraimo', item_code: 'A00020', display_name: 'Oraimo Power Bank 20000mAh', search_text: '', status: 'active' }],
+            item_facets: [{ id: 'f-o20', item_id: 'i-o20', facet_key: 'capacity', picklist_value_id: 'p-20k', text_value: null }],
+        });
+        const view = drill(cat, { categoryId: 'c-pb', choices: [{ key: 'brand', value: 'b-oraimo' }] }, 'retail');
+        expect(view.prompt).toBe('Choose capacity');
+        expect(view.tiles.find((t) => t.label === '20000mAh')).toMatchObject({ itemId: 'i-o20' });
+        expect(view.tiles.find((t) => t.label === '10000mAh')).toMatchObject({ itemId: 'shape:c-pb:capacity=p-10k|brand=b-oraimo' });
+    });
 });

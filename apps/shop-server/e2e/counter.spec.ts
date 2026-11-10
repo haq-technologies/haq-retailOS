@@ -200,3 +200,39 @@ test('offers every brand for a power bank in a fresh shop, and the receipt name 
     await expect(pad).toBeVisible();
     await expect(pad).toContainText('Oraimo Power Bank 20000mAh');
 });
+
+test('shows an item made at one counter in the other counter\'s search within 5 seconds, and warns of a near-duplicate there (check A9)', async ({ browser }) => {
+    const a = await counter(browser, 'T01');
+    const b = await counter(browser, 'T02');
+
+    await a.getByRole('button', { name: 'New item' }).click();
+    const sheet = a.getByRole('dialog', { name: 'New item' });
+    await sheet.getByRole('button', { name: 'Earbuds and earpods', exact: true }).click();
+    await sheet.getByLabel('Or type the brand').fill('Zetasound');
+    await sheet.getByLabel(/^Model/).fill('Zeta Pods 9');
+    await sheet.getByRole('region', { name: 'Price' }).getByRole('button', { name: '5', exact: true }).click();
+    await sheet.getByRole('region', { name: 'Price' }).getByRole('button', { name: '0', exact: true }).click();
+    await sheet.getByRole('region', { name: 'Price' }).getByRole('button', { name: '0', exact: true }).click();
+    await sheet.getByRole('region', { name: 'Price' }).getByRole('button', { name: '0', exact: true }).click();
+    await sheet.getByRole('button', { name: /^Add at/ }).click();
+    await expect(sheet).toBeHidden();
+    const made = Date.now();
+
+    await b.getByPlaceholder('Search or scan').fill('zeta pods');
+    await expect(b.getByRole('button', { name: /Zetasound Zeta Pods 9 Earbuds/ })).toBeVisible({ timeout: 5_000 });
+    expect(Date.now() - made).toBeLessThan(5_000);
+
+    await b.getByPlaceholder('Search or scan').fill('');
+    await b.getByRole('button', { name: 'New item' }).click();
+    const other = b.getByRole('dialog', { name: 'New item' });
+    await other.getByRole('button', { name: 'Earbuds and earpods', exact: true }).click();
+    await other.getByLabel('Or type the brand').fill('Zetasound');
+    await other.getByLabel(/^Model/).fill('Zeta Pods 9 Pro');
+    await other.getByRole('region', { name: 'Price' }).getByRole('button', { name: '6', exact: true }).click();
+    await other.getByRole('region', { name: 'Price' }).getByRole('button', { name: '0', exact: true }).click();
+    await other.getByRole('region', { name: 'Price' }).getByRole('button', { name: '0', exact: true }).click();
+    await other.getByRole('region', { name: 'Price' }).getByRole('button', { name: '0', exact: true }).click();
+    await other.getByRole('button', { name: /^Add at/ }).click();
+    await expect(other.getByText('There are items like this already')).toBeVisible();
+    await expect(other.getByRole('button', { name: /Zetasound Zeta Pods 9 Earbuds/ })).toBeVisible();
+});

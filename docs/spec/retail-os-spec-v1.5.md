@@ -2,7 +2,7 @@
 
 HAQ Technology. Laravel and PostgreSQL, offline-first LAN. Replaces v1.4 in full. 5 November 2026; signed off by the product owner on 6 November 2026 [D13].
 
-**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D54, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
+**Purpose.** This is the complete v1.5 of the product spec. It keeps everything in v1.4 and applies the decisions of the v1.4 review: 20 spec changes (S1 to S21, with S13 not adopted), 8 build changes (R1 to R8), the delivery and design decisions D1 to D55, starter catalogue v1.1 and the answers recorded in docs/decisions.md. The build team works from this one document; PLAN.md holds the schedule.
 
 **How to read it.** A tag such as [F3] marks text that exists because of finding F3 of the engineering teardown (Appendix A). A tag such as [S4], [R3], [C1] or [D2] marks text set by the v1.4 review; Appendix E lists every such change, and docs/decisions.md records where each came from. [Q5] or [FU6] points to an answer in that log; FU1 to FU10 are the review's follow-up questions, not teardown findings.
 
@@ -492,7 +492,7 @@ Each check is pass or fail. The pilot slice is finished when all 46 checks in se
 - From a shop profile file to a first sale takes under 2 hours, including printer, drawer and scanner tests. The 80mm receipt prints from the server without a dialog, a hard reboot returns to the counter, and the power-cut drill keeps one counter selling. [R3, S7]
 - Setting the server clock to the year 2000 does not lock the counter. Sales continue, stamped unverified, and the owner is asked to confirm the time. [F15]
 - A server that was off overnight runs the missed backup and test-restore jobs at the next idle window. [F24]
-- An update is pulled from GHCR only after its signed manifest verifies, and a failed post-update health check rolls back the code and keeps every sale made after the update. [D2] A shop two minor versions behind upgrades through each migration in order. [F16]
+- An update is pulled from GHCR only after its signed manifest verifies, and a failed post-update health check rolls back the code and keeps every sale made after the update. [D2] A shop two minor versions behind upgrades through each migration in order, and the older code still sells against the newer schema (D55). [F16]
 - The health page shows certificate expiry (warning at 60 days), SSD health and clock state. [F24]
 - Loading starter catalogue v1.1 on a clean install creates the 34 categories, the 15 pick-lists with 466 phone models, the 73 brands plus No brand, the 29 models and the 5 generator rules with no duplicates; the generators offer exactly 127 shapes; and running it a second time changes nothing. [v1.3, S20]
 ## MVP checks
