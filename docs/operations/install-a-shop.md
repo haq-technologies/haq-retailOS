@@ -1,6 +1,6 @@
 # Installing HAQ Retail OS in a shop
 
-These are the official steps, from a bare server to the first customer leaving with a receipt (D59). HAQ support follows them at every shop. They take about 2 hours, printer, drawer and scanner tests included (spec section 14, check E2).
+These are the official steps, from a bare server to the first customer leaving with a receipt (D59). HAQ support follows them at every shop. They take under 2 hours (spec section 14, check E2).
 
 The steps use example addresses: the server at 192.168.1.10 and the printers at 192.168.1.21 and up. Use addresses in the shop's own range.
 
@@ -144,9 +144,8 @@ The first takes a full backup now; the owner sees it under **Server health**. Th
 ## 10. Check and hand over
 
 1. `sudo haq check`. It ends with **Every check passed.**
-2. **The power cut:** pull the cord between the UPS and the wall. The server and one counter keep selling. Then pull the server's own cord and plug it back in: within 3 minutes the counters are selling again, each with its open sale kept ([start-up.md](start-up.md)).
-3. Hand over to the owner: their PIN, their key share, Shop settings, and **Your data** in Shop settings, which downloads all the shop's records whenever they want them.
-4. Write down the server's address, each printer's address, the release installed and the date.
+2. Hand over to the owner: their PIN, their key share, Shop settings, and **Your data** in Shop settings, which downloads all the shop's records whenever they want them.
+3. Write down the server's address, each printer's address, the release installed and the date.
 
 ## The server's everyday commands
 

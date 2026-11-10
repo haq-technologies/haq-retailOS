@@ -1,6 +1,6 @@
 # Starting by itself after a power cut
 
-How the shop server and the counters come back after a power cut or a reboot with nobody touching them (spec section 4, reboot recovery; check E2: a hard reboot returns to the counter, and power-on to counter takes under 3 minutes). Set each part up at install, and test it at gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md). Decision D46.
+How the shop server and the counters come back after a power cut or a reboot with nobody touching them (spec section 4, reboot recovery; check E2: a hard reboot returns to the counter, and power-on to counter takes under 3 minutes). Set each part up at install. Decision D46.
 
 ## The server
 
@@ -30,9 +30,3 @@ How the shop server and the counters come back after a power cut or a reboot wit
 - A counter that was open shows **Reconnecting** with its sale kept, and carries on when the server answers. A counter switched on while the server is still starting opens from its saved copy and shows Reconnecting too; one that has never opened the counter shows "Starting, please wait".
 - After a restore, each counter reports its journal by itself before it sells again (D44).
 - If "Starting, please wait" is still there after ten minutes, check that the server is on, then call HAQ support.
-
-## At G3
-
-- [ ] Pull the server's power cord and plug it back in: the server starts by itself, and each counter is selling again within 3 minutes, with its open sale kept.
-- [ ] Switch a counter off at the wall and on again: it signs in to Windows by itself and opens the counter in Chrome's kiosk mode.
-- [ ] `check-install.sh` passes, including "every running service restarts by itself" and "Docker starts with the server".

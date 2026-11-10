@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Gate G3's check after the scripted sales and the power cuts (spec section 14, checks B and D): receipt
+ * The check after the scripted sales and the simulated power cuts (spec section 14, checks B and D): receipt
  * numbers gapless on every counter and epoch, every sale whole (its lines and its payments add up to its
  * total), every receipt printed or listed as pending, every audit chain verified and the grants intact.
  */
@@ -18,7 +18,7 @@ final class RehearsalCheckCommand extends Command
 {
     protected $signature = 'shop:rehearsal-check';
 
-    protected $description = 'Gate G3: check every sale, receipt number, print job and audit chain after the rehearsal';
+    protected $description = 'Check every sale, receipt number, print job and audit chain after the rehearsal';
 
     public function handle(Verifier $verifier): int
     {

@@ -36,4 +36,3 @@ When the server and its backup disk are both lost, see docs/operations/restore-d
 ## Checked
 
 - `haq-offsite.sh selftest` runs in CI on every pull request, in the db image: the key, an encrypted copy with the branch key and epochs, the newest two kept, two shares open it and one does not.
-- The automatic copy when a drive is plugged in (udev and systemd) is tested on the pilot server at G3.

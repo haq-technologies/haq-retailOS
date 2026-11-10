@@ -1,10 +1,12 @@
 # Hardware
 
-What each pilot-shop device must do, and how it is tested. The requirements come from spec v1.5, sections 4 and 16. There are no prices here, because they change too fast.
+What each pilot-shop device must do: the list a shop buys before its install. The requirements come from spec v1.5, sections 4 and 16. There are no prices here, because they change too fast.
+
+Nothing here is tested on the devices themselves. Development and every test run in software on the product owner's computer, with virtual machines and the stand-in printer (D16, D60).
 
 ## Devices
 
-The hardware is chosen and this list is locked (6 November 2026, D17): every device bought for the pilot must meet it, and a change to it is a new decision. No mini-PC is bought for testing: the product owner's computer is the development, staging and test machine (D16). Buy the receipt printer and the scanner first, by week 6, so printing and scanning are tested against them as they are built; the rest comes before the G3 dress rehearsal in week 12.
+The hardware is chosen and this list is locked (6 November 2026, D17): every device bought for the pilot must meet it, and a change to it is a new decision.
 
 | Device | Must have | Why |
 |---|---|---|
@@ -28,16 +30,3 @@ The hardware is chosen and this list is locked (6 November 2026, D17): every dev
 - A cash drawer only where the shop wants one (S21).
 - A phone hotspot for the weekly update; a MiFi is optional and also enables the cloud backup copy (D3, S16).
 - A pre-imaged spare PC (support model, spec section 16).
-
-## Bench test checklist
-
-Printing, the drawer, the scanner and the hotspot are tested on the product owner's computer as soon as the printer and scanner arrive. The kiosk keys, touch and the UPS need the pilot hardware, so they are first tested at G3 (D16).
-
-- [ ] The server prints to the network printer on port 9100: a receipt, a cut and a Code 128 barcode.
-- [ ] The printer prints the ₦ sign legibly. If it cannot, choose the fallback (NGN or N) before G3; the receipt wireframe shows ₦.
-- [ ] The printer kicks the drawer, and its status query reports paper out and cover open.
-- [ ] Record the scanner's suffix (Enter) and its typing speed, and check that scans are told apart from typing by timing.
-- [ ] In Chrome kiosk mode, record which keys reach the page: Ctrl+N, F2, F4, F9, F12 and numpad +.
-- [ ] Touch works across the whole counter screen with 56-pixel targets.
-- [ ] With the mains pulled, the UPS holds the server, switch and router, and the counter on the inverter keeps selling.
-- [ ] The server joins a phone hotspot over Wi-Fi and pulls an image from GHCR.

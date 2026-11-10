@@ -17,7 +17,7 @@ The pilot succeeds when (spec section 14):
 
 ## Status
 
-Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3, the dress rehearsal, waits for the pilot hardware; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026. Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39); all five are built and merged (D40 to D46): the fifth, recovery, at the product owner's go the same day (D44 to D46). A review against the spec added the audit log to read and the counter's speed (D47). Phase 5's tools, which need no hardware, were built on 10 November 2026 at the product owner's go (D56, D57): the measured pilot in the back office and the owner's data export; the 14 measured days themselves follow G4.
+Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3 is a software dress rehearsal on virtual machines (D60), ready to run; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026. Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39); all five are built and merged (D40 to D46): the fifth, recovery, at the product owner's go the same day (D44 to D46). A review against the spec added the audit log to read and the counter's speed (D47). Phase 5's tools were built on 10 November 2026 at the product owner's go (D56, D57): the measured pilot in the back office and the owner's data export; the 14 measured days themselves follow G4. The same day the plan became software only: no work, check or gate depends on physical hardware (D60).
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
@@ -31,11 +31,11 @@ Done:
 - Phase 2, the foundation (D20 to D26): the shop server in apps/shop-server/ as a modular monolith; the three database roles with grants and triggers from the mutability matrix; audit chains, roots and the spool; settings and the shop profile tool; identity with name tiles, PINs, acting-user tokens and bound approvals; the catalogue with the one name routine and the seeder; the multi-process test harness in CI; a shop's Docker stack with images on GHCR, the installer and staging. G2's criteria are met.
 
 - Gate G2 passed on 6 November 2026 (D27); the identity timings accepted (D28); back-office devices for the owner's phone or laptop (D29).
-- Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the G3 tooling. See the Phase 3 checklist below.
+- Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the rehearsal tooling. See the Phase 3 checklist below.
 - Phase 5's tools, built early at the product owner's go (D56, D57): the measured pilot (the notebook's totals beside the app's, each difference traced, the five success measures read live, the owner's decision with the scorecard as it stood) and the owner's data export as one ZIP of spreadsheets; the procedure is in docs/operations/measured-pilot.md.
 - Phase 4's owner features, started before G3 at the product owner's go (D39), all five built on 7 November 2026 (D40 to D46): the back office with the owner's dashboard and cost entry with backfill; flags and Needs your attention; the review queues with merge and undo; first-sale prices, catalogue health, the daily summary on screen and printed, and the CSV exports; and recovery: restore epochs end to end with the lost window, server health with catch-up and the server clock, and reboot recovery. See the Phase 4 section below.
 
-Next: the hardening that needs no hardware is done (D50, D55). Everything left in Phase 4 needs the pilot hardware: gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md), then the soak test, the install rehearsal and the checks marked for G3 in docs/operations/acceptance-checks.md. Before G3, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot waits for G3 (D39). Phase 5's software is built (D56, D57), so after G4 the 14 measured days need only the shop: docs/operations/measured-pilot.md.
+Next: gate G3, the software dress rehearsal on two virtual machines (docs/operations/g3-software-rehearsal.md), which also covers the soak test, the install rehearsal and checks E1 and E2 (docs/operations/acceptance-checks.md). Before G3, the first release is made and signed (docs/operations/releases.md); the GHCR token goes onto the pilot server at install. The rest of Phase 4's hardening is done (D50, D55, D60). The shadow pilot follows G3 (D39). Phase 5's software is built (D56, D57), so after G4 the 14 measured days need only the shop: docs/operations/measured-pilot.md.
 
 ## Team
 
@@ -43,7 +43,7 @@ One person builds HAQ Retail OS: the product owner, working with Claude (D15). T
 
 | Who | Owns |
 |---|---|
-| Product owner | Decisions, the shop owner relationship, contract and pricing; the hardware, shop visits, install, training, the weekly update and the daily reconciliation in the pilot; testing on real hardware; signing releases |
+| Product owner | Decisions, the shop owner relationship, contract and pricing; shop visits, install, training, the weekly update and the daily reconciliation in the pilot; signing releases |
 | Claude | Code, tests, CI/CD, documents and wireframes, through pull requests, under the product owner's direction |
 
 ## Phases and gates
@@ -52,11 +52,11 @@ Weeks count from kickoff. A gate ends a phase only when its criteria are met.
 
 | Phase | Weeks | Delivers | Gate |
 |---|---|---|---|
-| 0. Decide and discover | 1–2 | Decisions; spec v1.5; catalogue v1.1 re-confirmed; the shop visit; the bench hardware test; the GitHub repository and first CI workflow | **G0:** decisions recorded; v1.5 and v1.1 signed off; hardware chosen. Passed on 6 November 2026 |
+| 0. Decide and discover | 1–2 | Decisions; spec v1.5; catalogue v1.1 re-confirmed; the shop visit; the GitHub repository and first CI workflow | **G0:** decisions recorded; v1.5 and v1.1 signed off; hardware chosen. Passed on 6 November 2026 |
 | 1. Wireframes | 2–4 | Touch-first, responsive wireframes on a new canvas: the counter, then the owner's back office. No clickable prototype and no cashier timing before the build (D12) | **G1:** the product owner signs off the wireframes, and the counter interaction model is frozen. Passed on 6 November 2026 |
 | 2. Foundation | 3–8 | Docker stack; database roles, grants and triggers generated from the mutability matrix; the one-shot migration job; identity (name tiles, PINs, acting-user tokens, bound approvals, idle lock); audit chains, roots and spool; settings and the profile tool; catalogue model, name routine and seeder; the multi-process PostgreSQL harness in CI; images pushed to GHCR; staging on the product owner's computer (D16) | **G2:** a clean Ubuntu virtual machine installs from a profile (D16); the seed loads twice with no change; append-only holds against a deliberately widened grant |
-| 3. Counter and sale core | 6–12 | Counter client; Finish with idempotency, receipt counters, epochs, payments and print jobs; server printing with pending print and the drawer log where a drawer is fitted; Awaiting transfer; catalogue polling; counter journal; speed instrumentation; backups with a test restore; Playwright tests in CI; the release manifest and the updater | **G3 (week 12):** a dress rehearsal on the pilot hardware, installed by pulling from GHCR: 300 scripted sales on two counters, power pulled mid-sale and mid-print, and a restore onto the spare box. Touch, the kiosk keys and the UPS are first tested here (D16) |
-| 4. Shadow pilot, owner features, hardening | 13–20 | Install at the shop in week 13; one counter beside the notebook at agreed hours in weeks 13–18; a weekly release; the Needs-cost queue, backfill preview, three profit buckets, alerts, printed daily summary, review queues with merge and undo, catalogue health, CSV export, restore epochs end to end, the lost-window screen, health page, reboot recovery and catch-up scheduling. In weeks 17–20: the 46 checks automated, the cost-leak scanner, a soak test, and an install rehearsal in under 2 hours; the parts that need no hardware start before G3 (D50) | **G4 (week 20):** all 46 checks pass and are written down |
+| 3. Counter and sale core | 6–12 | Counter client; Finish with idempotency, receipt counters, epochs, payments and print jobs; server printing with pending print and the drawer log where a drawer is fitted; Awaiting transfer; catalogue polling; counter journal; speed instrumentation; backups with a test restore; Playwright tests in CI; the release manifest and the updater | **G3 (week 12):** a software dress rehearsal on two virtual machines, installed by pulling from GHCR in under 2 hours: 300 scripted sales on two counters to the stand-in printer, the server powered off hard mid-sale and the printer stopped mid-print, and a restore onto the spare virtual machine (D60) |
+| 4. Shadow pilot, owner features, hardening | 13–20 | Install at the shop in week 13; one counter beside the notebook at agreed hours in weeks 13–18; a weekly release; the Needs-cost queue, backfill preview, three profit buckets, alerts, printed daily summary, review queues with merge and undo, catalogue health, CSV export, restore epochs end to end, the lost-window screen, health page, reboot recovery and catch-up scheduling. In weeks 17–20: the 46 checks automated and the cost-leak scanner, started before G3 (D50); the soak test and the install rehearsal run in software at G3 (D60) | **G4 (week 20):** all 46 checks pass and are written down |
 | 5. Measured pilot and decision | 21–22 | Every counter beside the notebook for 14 trading days, measured against the success thresholds | **G5 (week 22):** the owner decides to continue or stop; on continue, the app becomes the record and the notebook stops a week later |
 
 ## Timeline
@@ -84,7 +84,7 @@ Every change runs the full test suite against a real PostgreSQL before it can me
 1. **Branch and pull request.** Short-lived branches off main; green CI to merge, with no review while one person builds it (D6, D15); no direct pushes.
 2. **CI on every pull request.** Lint and static analysis (Pint, PHPStan, ESLint); unit tests (Pest, Vitest); concurrency, crash and restore tests on a real PostgreSQL; counter flows in Playwright on Docker Compose; the previous release's code against the new schema, and an upgrade from two versions back; the seed validator, the cost-leak scan and an image scan.
 3. **Merge to main.** Docker images are built once and pushed to GHCR, pinned by digest.
-4. **Staging.** The product owner's computer, with the pilot's printer and scanner and 5,000 test items, deploys from main (D16).
+4. **Staging.** The product owner's computer, with the stand-in printer and 5,000 test items, deploys from main (D16, D60).
 5. **Tag a release.** A semantic version, weekly in the pilot, with notes generated from the merged pull requests.
 6. **Release manifest.** Image digests, the compose file and the migrations, in one file the updater trusts.
 7. **Offline signing.** A person signs the manifest with a hardware key; CI never holds the release key.
@@ -95,7 +95,7 @@ Every change runs the full test suite against a real PostgreSQL before it can me
 |---|---|---|
 | 0 (weeks 1–2) | GitHub organisation and repository (public for now, D10), branch protection, and the first workflow: lint, unit tests, a PostgreSQL service | Claude |
 | 2 (weeks 3–8) | Dockerfiles and Compose; images to GHCR on merge; staging on the product owner's computer, deploying from main; the multi-process PostgreSQL harness in CI | Claude |
-| 3 (weeks 6–12) | Playwright counter tests in CI; the release manifest and the updater with code-only rollback; a signing dry run. G3 installs by pulling from GHCR | Claude; the product owner holds the signing key |
+| 3 (weeks 6–12) | Playwright counter tests in CI; the release manifest and the updater with code-only rollback; a signing dry run. G3 installs a virtual machine by pulling from GHCR | Claude; the product owner holds the signing key |
 | 4 and 5 (weeks 13–22) | A weekly signed release pulled at the shop over a phone hotspot; the upgrade-path test; a scheduled restore drill in CI | Claude and the product owner |
 
 Choices and their tradeoffs (runners, registry, environments, housekeeping) are in the review doc's CI/CD section and in spec section 4.
@@ -107,7 +107,7 @@ Choices and their tradeoffs (runners, registry, environments, housekeeping) are 
 - [x] Draft starter catalogue v1.1 (Claude)
 - [x] Organise the project folder (Claude)
 - [x] Choose the hardware and lock the list: [docs/operations/hardware.md](docs/operations/hardware.md) (product owner, 6 November 2026, D17). No mini-PC is bought for testing; the product owner's computer stands in (D16)
-- [x] Shop visit: the owner re-confirms catalogue v1.1; shelf walk; 20-item barcode test; two hours of observation; a week of sales counted from the notebook; a power and network survey: [docs/operations/shop-visit-checklist.md](docs/operations/shop-visit-checklist.md) (product owner). Done by 6 November 2026
+- [x] Shop visit: the owner re-confirms catalogue v1.1; shelf walk; 20-item barcode test; two hours of observation; a week of sales counted from the notebook; a power and network survey (product owner). Done by 6 November 2026
 - [x] Push the first commit to the public repository and protect main (Claude). The repository stays public for now (D10)
 - [x] Touch-first, responsive wireframes in Apple's system colours on a new canvas (Claude, 6 November 2026): the counter, including the price-floor prompt, pending print, lost window, Pending transfers and the idle lock, and the owner's back office
 - [x] Sign off the wireframes: gate G1 (product owner, 6 November 2026, D19)
@@ -150,12 +150,12 @@ Phase 3, the counter and sale core, started on 6 November 2026 at the product ow
 - [x] Backups with pgBackRest 2.60: WAL to the second disk, a weekly full and daily incrementals with catch-up, the weekly test restore verified by the scheduler (row counts and every audit chain), the key and epochs kept beside the backups, `shop:after-restore`, and deploy/restore.sh, rehearsed on staging (Claude, 6 November 2026, D35; docs/operations/restore-drill.md)
 - [x] Playwright 1.65 tests in CI: the counter in Chromium against a fresh test shop in retail_e2e, on every pull request; `apps/shop-server/e2e/run.sh` runs them on this computer (Claude, 6 November 2026)
 - [x] The release manifest, offline signing and the updater: images by digest and the Compose file by hash, signed with an offline Ed25519 key; `update.sh` checks, pulls, backs up, switches, health-checks and rolls back the code only; a signing dry run in CI; rehearsed on staging (Claude, 6 November 2026, D36; docs/operations/releases.md). The product owner makes the real key
-- [x] The G3 tooling: `shop:rehearse` (scripted sales on two counters at once, through the print queue) and `shop:rehearsal-check` (gapless numbers, whole sales, receipts, audit chains, grants), the power-cut procedure and the restore onto the spare box (Claude, 6 November 2026; docs/operations/g3-dress-rehearsal.md). Rehearsed on staging with the database and app killed mid-run
-- [ ] Gate G3: the dress rehearsal on the pilot hardware (product owner, Claude). It waits for the pilot hardware; the signing key and the GHCR token are ready (7 November 2026)
+- [x] The rehearsal tooling: `shop:rehearse` (scripted sales on two counters at once, through the print queue) and `shop:rehearsal-check` (gapless numbers, whole sales, receipts, audit chains, grants) (Claude, 6 November 2026). Rehearsed on staging with the database and app killed mid-run; CI's upgrade-path test runs both
+- [ ] Gate G3: the software dress rehearsal on two virtual machines (product owner, Claude; D60; docs/operations/g3-software-rehearsal.md). The signing key and the GHCR token are ready (7 November 2026)
 
 ## Phase 4 owner features (started early, D39)
 
-Phase 4's owner features started on 7 November 2026, before gate G3, at the product owner's go; the shadow pilot and the hardening that needs the shop's hardware wait for G3 (D50). In order:
+Phase 4's owner features started on 7 November 2026, before gate G3, at the product owner's go; the shadow pilot waits for G3. In order:
 
 - [x] The back office and cost: the back-office app (dashboard, navigation, Shop settings), the three profit buckets, the Needs-cost queue with the backfill preview and bulk apply, and who sees cost (Claude, 7 November 2026; D40)
 - [x] Flags and alerts: the flag list (mark as seen, never deleted), the dashboard's Needs your attention, CSV export of flags (Claude, 7 November 2026; D41)
@@ -168,14 +168,13 @@ Phase 4's owner features started on 7 November 2026, before gate G3, at the prod
 
 - [x] Review of the owner features against the spec and the pilot checks (Claude, 7 November 2026). Two pilot items no phase item covered are built: reading the audit log (check D5) and the counter's speed (check A1) (D47). The rest are open questions below.
 
-## Phase 4 hardening (the parts that need no hardware start before G3, D50)
+## Phase 4 hardening (started before G3, D50)
 
 - [x] The cost-leak scanner (check C4): a test calls every GET route as a cashier and as a manager, at a counter and a back-office device, and fails if a planted cost appears in any answer, page or CSV export; it fails too on a route it cannot call, so a new route is never skipped (Claude, 7 November 2026)
 - [x] The off-site copy with its 2-of-3 key shares (check E1; D53): two labelled flash drives copied by themselves when plugged in, encrypted to a key the server cannot use, its health on the health page, restoring from a drive, and a self-test in CI (Claude, 7 November 2026; docs/operations/offsite-copy.md)
 - [x] The upgrade-path test (check E5; D55): CI makes a shop with sales on the end-of-Phase-3 code, upgrades it through every migration in order, sells on the older code against the newer schema, then sells and runs the rehearsal check on the newer code (Claude, 10 November 2026; tools/release/upgrade-path.sh)
-- [x] Automating the checks that need no hardware, each written down against its check: 27 of the 46 are proved by tests in CI, 16 have their software side tested and finish on the hardware, and 3 are hardware or pilot drills; new tests for search at 5,000 items (A2) and an item reaching the other counter within 5 seconds (A9) (Claude, 10 November 2026; docs/operations/acceptance-checks.md)
+- [x] Automating the checks, each written down against its check: 43 of the 46 are proved by tests in CI, E1 and E2 at the G3 software rehearsal, and A1 by real cashiers in the pilot (D60); new tests for search at 5,000 items (A2) and an item reaching the other counter within 5 seconds (A9) (Claude, 10 November 2026; docs/operations/acceptance-checks.md)
 - [x] The official install steps, made simple (D58, D59): the installer asks the shop's details and installs Docker, a `haq` command on the server, each device trusts the certificate from http://<server>/setup, and device codes last 30 minutes; rehearsed on this computer from install to a printed receipt (Claude, 10 November 2026; docs/operations/install-a-shop.md)
-- [ ] After G3, on the pilot hardware: the soak test, the install rehearsal in under 2 hours, and the checks that need the shop's hardware
 
 Answered on 7 November 2026: undoing a cost is built (D48); check D6 moves to the MVP checks (D49); the hardening work that needs no hardware starts now (D50); the corrected-time view waits for the MVP (D51).
 
@@ -190,11 +189,6 @@ The measured pilot needs the shop and comes after gate G4; the software it needs
 - [x] The procedure for the 14 days and gate G5 (Claude, 10 November 2026; docs/operations/measured-pilot.md)
 - [ ] The 14 measured days at the shop, after G4 (product owner, shop owner and manager)
 - [ ] Gate G5: the owner's decision, and the data export handed over either way (shop owner, product owner)
-
-## Before Phase 3
-
-- [ ] Buy the pilot hardware (product owner): the receipt printer and the scanner by week 6, when printing is built, and the rest before the G3 dress rehearsal in week 12
-- [ ] Bench test (product owner, Claude): print, cut, barcode, drawer kick, printer status, scanner suffix and speed, and the phone hotspot on the product owner's computer once the printer and scanner arrive; Chrome kiosk keys, touch and the UPS changeover on the pilot hardware at G3 (D16)
 
 ## After the pilot
 
@@ -222,7 +216,7 @@ Assumptions:
 - The field work in the pilot weeks (install, training, the weekly update and the daily reconciliation) comes out of the same person's hours.
 - R2, R3, R5 and R6 save about 4 to 6 developer-weeks against the spec as written; S13 is out for now.
 - With no spare week, either G5 moves to week 23 or an item of equal size moves to the MVP under the swap rule. Decide at G2, when the real pace is known.
-- MVP and Pro work, hardware lead times and the legal review are outside the 40.
+- MVP and Pro work and the legal review are outside the 40.
 
 ## Risks
 
@@ -230,8 +224,6 @@ Assumptions:
 |---|---|---|
 | Cashiers miss the speed targets | The speed instrumentation in the shadow weeks; there is no prototype to time first (D12) | Changes ship in the weekly release. They cost more than on a prototype, because the counter is already built |
 | One person does the work planned for two developers and a field lead, with no spare week (D15) | Foundation pace at G2 | Move G5 later, or move an item of equal size to the MVP under the swap rule |
-| Touch, the Windows kiosk keys and the server's power behaviour are first tested at G3, because development and testing run on one computer (D16) | The G3 dress rehearsal in week 12 | Set up the pilot hardware as soon as it arrives, and test the printing code against the real printer from week 6 |
-| Fewer barcodes scan than hoped (the spec assumes 40%) | The 20-item scan test | Search and tiles carry the counter; print item-code labels for the 50 best sellers |
 | An update fails half-way at the shop | The updater's health check | The signed manifest is checked and every image pulled before anything changes; backup first; code-only rollback to the previous images |
 | No connection at update time | A missed weekly update | A phone hotspot by default; a MiFi is optional; trading never depends on it |
 | Scope grows before the pilot | Any item added after G0 | The swap rule: an item enters only if one of equal size leaves, recorded in docs/decisions.md |
@@ -242,10 +234,9 @@ Assumptions:
 
 | Item | Who | Needed by | Default until answered |
 |---|---|---|---|
-| Barcode scan result (20 items) | Product owner, from the shop visit | Install (week 13) | Assume 40% scannable |
 | Busy-day sales volume | Product owner, from the notebook | Install (week 13) | Measured in the shadow weeks |
 | Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | When the product owner chooses; application code is public from Phase 2 (D22) | Public (D10) |
-| A read-only GHCR token for each shop server's updater: the image packages are private. Staging on this computer already pulls from GHCR | Product owner, Claude | The G3 install pulls from GHCR (week 12) | The pilot server's token was made by the product owner on 7 November 2026 (classic, read:packages only); it is given to install.sh on the pilot server, which keeps it in secrets/ |
+| A read-only GHCR token for each shop server's updater: the image packages are private. Staging on this computer already pulls from GHCR | Product owner, Claude | Install (week 13) | The pilot server's token was made by the product owner on 7 November 2026 (classic, read:packages only); it is given to install.sh on the pilot server, which keeps it in secrets/ |
 | Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
@@ -313,3 +304,4 @@ Assumptions:
 | 10 November 2026 | Hardening: the upgrade-path test and the 46 checks written down (D55) |
 | 10 November 2026 | Phase 5's tools at the product owner's go: the measured pilot (D56) and the owner's data export (D57); the procedure for the 14 days and G5 |
 | 10 November 2026 | The official install steps, made simple: device codes last 30 minutes (D58); the installer's questions, the `haq` command and the setup page for the certificate (D59) |
+| 10 November 2026 | Software only: the bench test, the hardware checks and the shop-visit checklist removed; G3 is a software dress rehearsal on virtual machines (D60) |

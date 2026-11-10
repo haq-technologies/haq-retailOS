@@ -1,43 +1,43 @@
 # The pilot's 46 acceptance checks
 
-Spec section 14 lists the 46 checks the pilot slice must pass before gate G4. This page writes down how each is proved: by an automated test that runs in CI on every pull request, by a step on the pilot hardware at G3, or by measurement in the pilot itself. When a check passes on the hardware or in the pilot, write the date and the result in its last column.
+Spec section 14 lists the 46 checks the pilot slice must pass before gate G4. This page writes down how each is proved, in software only (D60): by an automated test that runs in CI on every pull request, by a step of the G3 software rehearsal on virtual machines, or by measurement in the pilot itself. No check needs a physical device. When a check passes, write the date and the result in its last column.
 
 Where the tests live, under apps/shop-server: `tests/Feature` (Pest, feature), `tests/Concurrency` (Pest, separate processes and committed transactions on a real PostgreSQL), `e2e` (Playwright in Chromium), `resources/js/**/*.test.ts` (Vitest). Tools: `tools/release/dry-run.sh`, `tools/release/upgrade-path.sh` and `haq-offsite.sh selftest`, all run in CI.
 
-Status: **Automated** means the tests prove the whole check. **Automated, then hardware** means the tests prove the software side, and the rest needs the pilot hardware (G3, docs/operations/g3-dress-rehearsal.md). **Pilot** means it can only be measured with real cashiers.
+Status: **Automated** means the tests in CI prove the check. **G3** means a step of the software dress rehearsal proves it (docs/operations/g3-software-rehearsal.md). **Pilot** means it can only be measured with real cashiers.
 
 ## A. Counter and speed (13)
 
 | Check | Proved by | Status | Written down |
 |---|---|---|---|
 | A1 A 3-item sale under 30 s and one known barcode under 8 s, by the counter's own timing | Every sale is timed (FinishTest); the daily summary shows each cashier's speed (AuditReadTest, owner.spec) | Pilot: real cashiers, at least 20 sales | |
-| A2 "ora free3c" finds the item under 100 ms with 5,000 items; a one-letter typo too | `search.test.ts` | Automated, then hardware: rerun on a counter PC at G3 | |
-| A3 Full names on every receipt line, never "Others"; Request-only rules; Code 128 receipt number | NamesTest, CounterApiTest (Request-only, Not in the list), PrintingTest (receipt as the wireframe, barcode) | Automated, then hardware: the barcode scans back at the bench test | |
+| A2 "ora free3c" finds the item under 100 ms with 5,000 items; a one-letter typo too | `search.test.ts` | Automated | |
+| A3 Full names on every receipt line, never "Others"; Request-only rules; Code 128 receipt number | NamesTest, CounterApiTest (Request-only, Not in the list), PrintingTest (receipt as the wireframe, barcode) | Automated | |
 | A4 Price pre-fill, override, retail and wholesale, one tap on first-sale prices | PricesTest, ReportsTest, counter.spec | Automated | |
-| A5 A learned barcode adds in one step, shows unconfirmed with undo; picker of 5; junk never learns | CounterApiTest, ReviewTest, counter.spec (scanner) | Automated, then hardware: the real scanner at the bench test | |
+| A5 A learned barcode adds in one step, shows unconfirmed with undo; picker of 5; junk never learns | CounterApiTest, ReviewTest, counter.spec (scanner) | Automated | |
 | A6 A cashier creates an item: category, facets, similar-item warning; sellable at once; in review | CounterApiTest, ReviewTest, counter.spec (check A9) | Automated | |
 | A7 A parked sale resumes on another counter | ParkedTest, counter.spec | Automated | |
-| A8 Every local interaction under 100 ms; a double tap on Finish makes one sale | Concurrency SalesTest (six requests, one sale); the counter works from local state (counter.spec) | Automated, then hardware: time taps on the counter PC at G3 | |
+| A8 Every local interaction under 100 ms; a double tap on Finish makes one sale | Concurrency SalesTest (six requests, one sale); the counter works from local state (counter.spec) | Automated | |
 | A9 An item made at counter A is in counter B's search within 5 s; a near-duplicate at B warns | counter.spec (check A9) | Automated | |
 | A10 A typed brand sells and prints as typed, joins the list only on a manager's approval; "poga" never makes a second Poga | CounterApiTest, ReviewTest, ItemsTest | Automated | |
 | A11 "Not in the list" with a 3-letter word sells and prints it; "others" refused; a cashier cannot make the category | CounterApiTest, ReviewTest | Automated | |
-| A12 A scan never triggers Pay; Pay by its key and by touch | `rules.test.ts` (scanner timing), counter.spec (scanner) | Automated, then hardware: the scanner and the kiosk keys at G3 | |
+| A12 A scan never triggers Pay; Pay by its key and by touch | `rules.test.ts` (scanner timing), counter.spec (scanner) | Automated | |
 | A13 Awaiting transfer shows on every counter, completes when confirmed, flagged after 30 minutes | ParkedTest, FlagsTest, counter.spec | Automated | |
 
 ## B. Integrity (12)
 
 | Check | Proved by | Status | Written down |
 |---|---|---|---|
-| B1 Power cut mid-sale: no half-sale, no used number; the counter is back within 3 minutes | Concurrency SalesTest (a worker killed mid-sale) | Automated, then hardware: pull the power at G3 | |
-| B2 Power cut after commit, before print: the sale stays, the receipt pending and offered | Concurrency SalesTest, PrintingTest | Automated, then hardware: pull the printer's power at G3 | |
+| B1 Power cut mid-sale: no half-sale, no used number; the counter is back within 3 minutes | Concurrency SalesTest (a worker killed mid-sale); at G3, the server powered off hard mid-sale | Automated | |
+| B2 Power cut after commit, before print: the sale stays, the receipt pending and offered | Concurrency SalesTest, PrintingTest; at G3, the stand-in printer stopped mid-print | Automated | |
 | B3 Two requests with one key make one sale; the second gets the original | Concurrency SalesTest | Automated | |
 | B4 A retry with a changed cart is refused and makes nothing | FinishTest | Automated | |
-| B5 Gapless receipt numbers through a soak with forced failures, each logged | Concurrency SalesTest; `shop:rehearsal-check` | Automated, then hardware: 300 sales at G3 | |
+| B5 Gapless receipt numbers through a soak with forced failures, each logged | Concurrency SalesTest; `shop:rehearsal-check` in the upgrade-path test; at G3, 300 sales | Automated | |
 | B6 Totals recalculated; a tampered browser total refused | FinishTest | Automated | |
 | B7 Integer kobo; exact wholesale totals | FinishTest | Automated | |
 | B8 Cash and change printed; the transfer tick, reference and who | FinishTest, PrintingTest | Automated | |
-| B9 After a restore: higher epoch, no tuple reused, lost window lists journal sales; a second restore from the same backup goes higher | RestoreRecoveryTest, BackupsTest, Concurrency RestoreTest, recovery.spec | Automated, then hardware: the restore onto the spare at G3. Head office's quarantine of a conflicting bundle comes with sync in the MVP | |
-| B10 Two terminals at once: valid chains, finalisation under 2 s at the 95th percentile | Concurrency SalesTest | Automated, then hardware: on the mini-PC at G3 | |
+| B9 After a restore: higher epoch, no tuple reused, lost window lists journal sales; a second restore from the same backup goes higher | RestoreRecoveryTest, BackupsTest, Concurrency RestoreTest, recovery.spec | Automated. Head office's quarantine of a conflicting bundle comes with sync in the MVP | |
+| B10 Two terminals at once: valid chains, finalisation under 2 s at the 95th percentile | Concurrency SalesTest | Automated | |
 | B11 The concurrency, crash and restore tests exist and run in CI on a real PostgreSQL | `tests/Concurrency`, run by CI on every pull request | Automated | |
 | B12 A shift 4 hours past closing auto-closes; the next sale is on the new day | FinishTest | Automated | |
 
@@ -57,30 +57,30 @@ Status: **Automated** means the tests prove the whole check. **Automated, then h
 
 | Check | Proved by | Status | Written down |
 |---|---|---|---|
-| D1 The app role cannot change append-only tables or grant; triggers hold against a widened grant; no running container holds the owner's password; chains verify; the summary prints the root | MutabilityTest, AuditTamperTest, ReportsTest; `check-install.sh` | Automated, then hardware: `check-install.sh` on the mini-PC at G3 | |
+| D1 The app role cannot change append-only tables or grant; triggers hold against a widened grant; no running container holds the owner's password; chains verify; the summary prints the root | MutabilityTest, AuditTamperTest, ReportsTest; `check-install.sh` at the G3 install | Automated | |
 | D2 The nightly grant check raises a health alert | MutabilityTest, HealthTest | Automated | |
-| D3 PIN switch under 2 s; lockout after 5; terminal backoff after 10; idle limits | SignInTest | Automated, then hardware: on the touchscreen at G3 | |
+| D3 PIN switch under 2 s; lockout after 5; terminal backoff after 10; idle limits | SignInTest | Automated | |
 | D4 An in-flight request keeps its sender; approvals bind once to line, item and price, survive parking, void on change | SignInTest, ApprovalsTest | Automated | |
 | D5 Every action in the audit log with user, device and redacted values; a cashier reads only their own; only the owner sees sensitive values | AuditTrailTest, AuditReadTest, owner.spec, counter.spec | Automated | |
 | D6 A discard needs a reason, a manager above the limit; both on the dashboard | ParkedTest, FlagsTest | Automated | |
-| D7 Every drawer opening is logged; a counter with no drawer sells cash and reconciles | PrintingTest, FlagsTest | Automated, then hardware: the drawer kick at the bench test | |
+| D7 Every drawer opening is logged; a counter with no drawer sells cash and reconciles | PrintingTest, FlagsTest | Automated | |
 
 ## E. Operations (7)
 
 | Check | Proved by | Status | Written down |
 |---|---|---|---|
-| E1 Restore onto a clean machine within 1 hour, last receipt and chains verified; needs two key shares; the health page shows WAL, backup and restore | BackupsTest, RestoreRecoveryTest, HealthTest; `haq-offsite.sh selftest` | Hardware: the restore drill onto the spare at G3 (docs/operations/restore-drill.md) | |
-| E2 Profile to first sale under 2 hours with printer, drawer and scanner; 80mm prints without a dialog; a hard reboot returns to the counter; the power-cut drill | ProfileTest, RebootRecoveryTest | Hardware: the install rehearsal and the power drills at G3 (docs/operations/start-up.md) | |
+| E1 Restore onto a clean machine within 1 hour, last receipt and chains verified; needs two key shares; the health page shows WAL, backup and restore | BackupsTest, RestoreRecoveryTest, HealthTest; `haq-offsite.sh selftest`; the restore onto the spare virtual machine (docs/operations/restore-drill.md) | G3 | |
+| E2 Profile to first sale under 2 hours; 80mm prints without a dialog; a hard reboot returns to the counter | ProfileTest, RebootRecoveryTest; the timed install and the hard power-off (docs/operations/start-up.md) | G3 | |
 | E3 The clock at the year 2000 does not lock the counter; sales stamped unverified; the owner asked | HealthTest (check E3) | Automated | |
-| E4 Missed backup and test-restore jobs run at the next idle window | HealthTest (check E4) for the nightly checks; the backup service's own catch-up in `haq-backup.sh` | Automated, then hardware: leave the mini-PC off overnight at G3 and watch the health page | |
-| E5 Updates only after the signed manifest verifies; a failed health check rolls back the code and keeps every sale; two versions behind upgrades in order | `tools/release/dry-run.sh`, `tools/release/upgrade-path.sh` | Automated, then hardware: `update.sh` with a real signed release at G3 | |
-| E6 The health page shows certificate expiry (60 days), SSD health and clock state | HealthTest, owner.spec | Automated, then hardware: SSD health from smartctl on the mini-PC at G3 | |
+| E4 Missed backup and test-restore jobs run at the next idle window | HealthTest (check E4) for the nightly checks; the backup service's own catch-up in `haq-backup.sh` | Automated | |
+| E5 Updates only after the signed manifest verifies; a failed health check rolls back the code and keeps every sale; two versions behind upgrades in order | `tools/release/dry-run.sh`, `tools/release/upgrade-path.sh` | Automated | |
+| E6 The health page shows certificate expiry (60 days), SSD health and clock state | HealthTest, owner.spec | Automated | |
 | E7 Starter catalogue v1.1 loads exactly, offers 127 shapes, and a second load changes nothing | StarterCatalogueTest | Automated | |
 
 ## In numbers
 
-- 27 checks are proved entirely by automated tests in CI.
-- 16 have their software side automated and finish on the pilot hardware at G3 or at the bench test.
-- 3 need the hardware or the pilot itself: A1 (real cashiers' speed), and E1 and E2, which run as drills on the hardware.
+- 43 checks are proved by automated tests in CI.
+- 2 are proved at the G3 software rehearsal: E1 (a restore onto a clean machine within 1 hour) and E2 (profile to first sale under 2 hours, and the hard reboot).
+- 1 is measured in the pilot: A1 (real cashiers' speed).
 
 G4 passes when every row has a result written in its last column.

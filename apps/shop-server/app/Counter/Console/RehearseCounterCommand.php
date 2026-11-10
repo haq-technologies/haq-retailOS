@@ -26,7 +26,7 @@ final class RehearseCounterCommand extends Command
 {
     protected $signature = 'shop:rehearse-counter {--counter=} {--count=150} {--pace=2} {--cashier=} {--seed=1}';
 
-    protected $description = 'One counter of the G3 scripted sales';
+    protected $description = 'One counter of the scripted sales';
 
     protected $hidden = true;
 
@@ -85,7 +85,7 @@ final class RehearseCounterCommand extends Command
             $roll = $rng->getInt(1, 10);
             $payment = $roll <= 7
                 ? ['method' => 'cash', 'amount_kobo' => $total, 'tendered_kobo' => (int) (ceil($total / 100_000) * 100_000)]
-                : ($roll <= 9 ? ['method' => 'transfer', 'amount_kobo' => $total, 'reference' => "G3-{$n}", 'alert_seen' => true] : ['method' => 'pos', 'amount_kobo' => $total]);
+                : ($roll <= 9 ? ['method' => 'transfer', 'amount_kobo' => $total, 'reference' => "R-{$n}", 'alert_seen' => true] : ['method' => 'pos', 'amount_kobo' => $total]);
             try {
                 $sale = $finish->finish($terminal, $cashier, SaleRequest::fromArray([
                     'idempotency_key' => Ulid::generate(), 'customer_type' => 'retail', 'lines' => $lines, 'payments' => [$payment],
