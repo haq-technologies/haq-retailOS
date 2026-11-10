@@ -8,7 +8,7 @@ HAQ Retail OS, by HAQ Technology: a point-of-sale system for phone-accessory sho
 
 ## Where we are
 
-Phases 0 and 1 are closed and locked (gates G0 and G1 passed on 6 November 2026, D19). Phase 2, the foundation, was built on 6 November 2026 (D20 to D29), and the product owner passed gate G2 (D27), so Phase 2 is closed. Phase 3, the counter and sale core, was built on 6 November 2026 (D30 to D36); its gate G3, the dress rehearsal on the pilot hardware (docs/operations/g3-dress-rehearsal.md), waits for the pilot hardware (the release signing key and the pilot server's GHCR token are ready). Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39), and all five are built (D40 to D46): the back office and cost, flags and alerts, the review queues, prices and reports, and recovery (the lost window, server health and reboot recovery); a review against the spec added the audit log to read and the counter's speed (D47), and its open questions are in PLAN.md. The shadow pilot and the hardening that needs the shop's hardware wait for G3; the hardening that needs no hardware is done (D50, D55): the cost-leak scanner, the off-site copy, the upgrade-path test, and the 46 acceptance checks written down against their tests (docs/operations/acceptance-checks.md). Phase 5's tools were built on 10 November 2026 at the product owner's go (D56, D57): the measured pilot in the back office and the owner's data export; the 14 measured days follow G4 (docs/operations/measured-pilot.md). [PLAN.md](PLAN.md) has the phases, gates, status, the checklists and open items.
+Phases 0 and 1 are closed and locked (gates G0 and G1 passed on 6 November 2026, D19). Phase 2, the foundation, was built on 6 November 2026 (D20 to D29), and the product owner passed gate G2 (D27), so Phase 2 is closed. Phase 3, the counter and sale core, was built on 6 November 2026 (D30 to D36); its gate G3 is a software dress rehearsal on two virtual machines (docs/operations/g3-software-rehearsal.md, D60), ready to run (the release signing key and the pilot server's GHCR token are ready). Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39), and all five are built (D40 to D46): the back office and cost, flags and alerts, the review queues, prices and reports, and recovery (the lost window, server health and reboot recovery); a review against the spec added the audit log to read and the counter's speed (D47), and its open questions are in PLAN.md. The shadow pilot waits for G3; the hardening is done (D50, D55): the cost-leak scanner, the off-site copy, the upgrade-path test, and the 46 acceptance checks written down against their tests (docs/operations/acceptance-checks.md). Phase 5's tools were built on 10 November 2026 at the product owner's go (D56, D57): the measured pilot in the back office and the owner's data export; the 14 measured days follow G4 (docs/operations/measured-pilot.md). [PLAN.md](PLAN.md) has the phases, gates, status, the checklists and open items.
 
 ## Sources of truth
 
@@ -28,7 +28,7 @@ PLAN.md            the living plan
 docs/spec/         the product spec (v1.5)
 docs/decisions.md  decision log
 docs/catalogue/    starter catalogue v1.1: seed (master), review workbook, Appendix C (generated)
-docs/operations/   hardware list and shop-visit checklist
+docs/operations/   install, restore, release and operations guides, the 46 checks and the G3 rehearsal
 docs/archive/      superseded originals: spec v1.4 (.docx), locked catalogue v1. Read-only
 tools/catalogue/   scripts that build and verify the catalogue
 tools/docs/        the Markdown checker
@@ -42,6 +42,7 @@ compose.yaml       the development stack for the shop server
 - Ask, do not assume. Shop practice, prices and what a catalogue entry means come from the user or the shop owner, so ask.
 - When there is a better way than the spec, recommend it with its tradeoffs. Never change the design silently.
 - Build for the people who use it: cashiers in a busy queue on a touchscreen, owners who are often away, a small support team.
+- Software only (D60): never plan work, a check or a gate that needs physical hardware. Virtual machines stand in for the shop server, and the stand-in printer for receipt printers.
 - Record every new decision in docs/decisions.md (next ID, date, source), then update the spec and PLAN.md if they are affected.
 - Scope follows the swap rule: a feature enters a phase only if something of equal size leaves (spec section 16). The never-cut list in spec section 13 is never traded away.
 - Write documents in plain British English (colour, catalogue), in short sentences. Show money as ₦ in text and store it as integer kobo in data; write dates like 5 November 2026.

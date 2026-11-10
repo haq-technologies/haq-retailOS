@@ -20,8 +20,8 @@ class PrintingServiceProvider extends ServiceProvider
     {
         $this->app->bind(PrinterConnection::class, NetworkPrinter::class);
         $this->app->extend(Registry::class, function (Registry $registry): Registry {
-            // What prints before the total. Thermal printers' character sets rarely hold ₦, so "NGN" until
-            // the bench test shows this printer can print the sign (D31; docs/operations/hardware.md).
+            // What prints before the total. Thermal printers' character sets rarely hold ₦, so "NGN" unless
+            // this setting is changed (D31, D60).
             $registry->define(new Definition('receipt.currency', 'Currency before the receipt total', 'NGN', ['required', 'in:NGN,N,₦'], lockedByDefault: true, source: 'D31'));
 
             return $registry;

@@ -1,6 +1,6 @@
 # Restore drill
 
-How a shop's server is restored from its backup disk, on the same box or on the pre-imaged spare PC (spec section 9). Gate G3 runs it on the pilot hardware, and the target is service back within 1 hour (spec section 14, check E). It was rehearsed on staging on 6 November 2026: the restore took about a minute, a change made after the last backup came back through the archived WAL, and a second restore from the same backup started a higher epoch.
+How a shop's server is restored from its backup disk, on the same box or on the pre-imaged spare PC (spec section 9). Gate G3 runs it on a spare virtual machine (docs/operations/g3-software-rehearsal.md), and the target is service back within 1 hour (spec section 14, check E). It was rehearsed on staging on 6 November 2026: the restore took about a minute, a change made after the last backup came back through the archived WAL, and a second restore from the same backup started a higher epoch.
 
 ## What is backed up, and where
 

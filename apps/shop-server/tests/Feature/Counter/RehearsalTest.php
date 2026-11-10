@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Tests\Support\Counter;
 
 /*
- * Gate G3's scripted sales and the check after them (PLAN.md, Phase 3; spec section 14, checks B and D).
+ * The scripted sales and the check after them (PLAN.md, Phase 3; spec section 14, checks B and D).
  */
 
 beforeEach(function () {

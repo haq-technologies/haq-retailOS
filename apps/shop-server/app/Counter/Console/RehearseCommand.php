@@ -10,10 +10,11 @@ use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
 
 /**
- * Gate G3's scripted sales (PLAN.md, Phase 3): 300 sales across two counters at once, each counter its own
- * process, through Finish and the print queue to the real printers. The sales are real rows that can never
- * be deleted, so this runs only on the dress-rehearsal install, which is wiped before the shop trades.
- * Pull the power while it runs; then `shop:rehearsal-check` shows what survived.
+ * Scripted sales for a test install (the G3 software rehearsal, staging, and CI's upgrade-path test): sales
+ * across several counters at once, each counter its own process, through Finish and the print queue to the
+ * stand-in printer. The sales are real rows that can never be deleted, so this runs only on a rehearsal or
+ * test install, which is wiped afterwards. Power the server off while it runs; then `shop:rehearsal-check`
+ * shows what survived (D60).
  */
 final class RehearseCommand extends Command
 {
@@ -24,12 +25,12 @@ final class RehearseCommand extends Command
         {--cashier= : The cashier who sells (default: the first active cashier)}
         {--confirm : Required: these are real sales on this server}';
 
-    protected $description = 'Gate G3: scripted sales on several counters at once (dress rehearsal only)';
+    protected $description = 'Scripted sales on several counters at once (a rehearsal or test install only)';
 
     public function handle(): int
     {
         if (! $this->option('confirm')) {
-            $this->components->error('These are real sales that can never be deleted. Run it only on the dress-rehearsal install, with --confirm.');
+            $this->components->error('These are real sales that can never be deleted. Run it only on a rehearsal or test install, with --confirm.');
 
             return self::INVALID;
         }
