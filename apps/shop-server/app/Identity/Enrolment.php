@@ -22,11 +22,12 @@ final readonly class Enrolment
 {
     public const COOKIE = 'haq_device';
 
-    private const CODE_MINUTES = 15;
+    /** Long enough to walk from the server to a counter and set it up (D58). */
+    public const CODE_MINUTES = 30;
 
     public function __construct(private AuditLog $audit) {}
 
-    /** A one-time code, valid for 15 minutes, such as 4827-1093. */
+    /** A one-time code, valid for 30 minutes, such as 4827-1093. */
     public function issueCode(Terminal $terminal): string
     {
         $code = sprintf('%04d-%04d', random_int(0, 9999), random_int(0, 9999));

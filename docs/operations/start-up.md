@@ -23,7 +23,7 @@ How the shop server and the counters come back after a power cut or a reboot wit
 3. **Never sleep.** In Settings, Power, set sleep to Never when plugged in. The screen may turn off; a touch wakes it.
 4. **Updates outside trading hours.** In Settings, Windows Update, set the active hours to the shop's trading hours, so Windows never restarts a counter in a queue.
 5. **BIOS:** the counter on the UPS or the inverter rarely loses power, but set "Restore on AC power loss" to Power On on every counter too.
-6. **Trust the shop's certificate authority** once, as `install.sh` says at the end, so HTTPS opens with no warning.
+6. **Trust the shop's certificate authority** once, so HTTPS opens with no warning: open http://<server>/setup in Chrome and paste its one line into Terminal (Admin) (docs/operations/install-a-shop.md, step 6).
 
 ## What people see
 

@@ -174,6 +174,7 @@ Phase 4's owner features started on 7 November 2026, before gate G3, at the prod
 - [x] The off-site copy with its 2-of-3 key shares (check E1; D53): two labelled flash drives copied by themselves when plugged in, encrypted to a key the server cannot use, its health on the health page, restoring from a drive, and a self-test in CI (Claude, 7 November 2026; docs/operations/offsite-copy.md)
 - [x] The upgrade-path test (check E5; D55): CI makes a shop with sales on the end-of-Phase-3 code, upgrades it through every migration in order, sells on the older code against the newer schema, then sells and runs the rehearsal check on the newer code (Claude, 10 November 2026; tools/release/upgrade-path.sh)
 - [x] Automating the checks that need no hardware, each written down against its check: 27 of the 46 are proved by tests in CI, 16 have their software side tested and finish on the hardware, and 3 are hardware or pilot drills; new tests for search at 5,000 items (A2) and an item reaching the other counter within 5 seconds (A9) (Claude, 10 November 2026; docs/operations/acceptance-checks.md)
+- [x] The official install steps, made simple (D58, D59): the installer asks the shop's details and installs Docker, a `haq` command on the server, each device trusts the certificate from http://<server>/setup, and device codes last 30 minutes; rehearsed on this computer from install to a printed receipt (Claude, 10 November 2026; docs/operations/install-a-shop.md)
 - [ ] After G3, on the pilot hardware: the soak test, the install rehearsal in under 2 hours, and the checks that need the shop's hardware
 
 Answered on 7 November 2026: undoing a cost is built (D48); check D6 moves to the MVP checks (D49); the hardening work that needs no hardware starts now (D50); the corrected-time view waits for the MVP (D51).
@@ -311,3 +312,4 @@ Assumptions:
 | 8 November 2026 | The counter's brand step offers every listed brand, found while trying the counter (D54) |
 | 10 November 2026 | Hardening: the upgrade-path test and the 46 checks written down (D55) |
 | 10 November 2026 | Phase 5's tools at the product owner's go: the measured pilot (D56) and the owner's data export (D57); the procedure for the 14 days and G5 |
+| 10 November 2026 | The official install steps, made simple: device codes last 30 minutes (D58); the installer's questions, the `haq` command and the setup page for the certificate (D59) |

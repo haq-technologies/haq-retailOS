@@ -72,6 +72,7 @@ Every feature and every engineering practice in this spec must serve at least on
 - Throttling: five wrong PINs lock that user for a cooldown period (15 minutes). Separately, each terminal backs off exponentially after 10 wrong PINs in 10 minutes across all users (1 second, doubling, at most 5 minutes), so guessing across names is also slowed. [D28] Lockouts and backoffs appear on the owner dashboard. PINs are stored with Argon2id. [F8]
 - Approval flagging: an approval by a manager who is not signed in at that branch that day is flagged for the owner. Signed in means the manager entered a PIN at any counter of the branch since the business day opened. [F8, S3]
 - Elevated sessions (a manager signed in at a counter) expire back to the cashier after an idle limit you set (2 minutes by default). [D28]
+- Registering a device. Each counter and back-office device is registered once with a one-time code that HAQ support makes on the server; it works once, for 30 minutes, and registering a device again stops its old PC. [D58]
 - Back-office devices. The owner's or a manager's phone or laptop on the shop's network is enrolled like a counter, with a code such as D01 instead of T01, and signs in with the same name tile and PIN. It opens the back office, has no cash drawer and never sells: Finish refuses a sale from it. [D29]
 - Users are deactivated, never deleted, and the last active owner cannot be deactivated. Deactivation is a high-priority record that propagates with the next sync and can also be applied locally at any branch at once (see section 4). [F18]
 # 4. Architecture and deployment
@@ -241,7 +242,7 @@ Every printed name is built by one routine in this order: Brand, Model or connec
 | Phase | What happens | Time |
 |---|---|---|
 | 0. Prepare | Starter catalogue and shop profile file generated before the visit. In the pilot, where the console is not built yet, you generate the profile with a command-line tool (shop:make-profile); the profile carries the shop, the branch, its counters and drawers, and the receipt text, and applying it twice changes nothing. [F25, D14] | Before the visit |
-| 1. Install | Your team installs the Docker bundle, applies the profile, creates users, ticks categories and brands, connects printer, drawer and scanner, prints a test receipt, and runs the power-cut drill | About 2 hours |
+| 1. Install | Your team installs the Docker bundle, applies the profile, creates users, ticks categories and brands, connects printer, drawer and scanner, prints a test receipt, and runs the power-cut drill, following docs/operations/install-a-shop.md: the installer asks the shop's details when no profile was made, and each device trusts the shop's certificate from the server's setup page [D59] | About 2 hours |
 | 2. Learn while selling | Items and barcodes are learned from real sales | Weeks 1 to 2 |
 | 3. Cost queue | The owner prices items sold without cost, sorted by revenue, with bulk apply | From day 2 |
 | 4. Shelf-scan sessions | The storekeeper scans items and enters cost and opening quantity outside rush hours | Weeks 2 to 4 |
@@ -710,7 +711,7 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
 | Paid-outs | Included, with drops and top-ups |
 | Credit limit | Per customer, shop-wide fallback, scoped per branch |
 | Language | English |
-| Installer | Your team |
+| Installer | Your team, following the official steps in docs/operations/install-a-shop.md; one `haq` command on the server for the everyday work [D59] |
 | Delivery | Docker bundle, code on GitHub, signing offline |
 | Currency and tax | Naira, no tax by default |
 | Backup targets | 15 minutes maximum data loss for disk failure, up to 24 hours for whole-machine loss without the standby kit, 1 hour to restore; about 5 minutes of whole-machine loss with internet and the cloud copy [S16] |

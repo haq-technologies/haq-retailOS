@@ -13,12 +13,14 @@ The scripted sales are real rows that can never be deleted, so the rehearsal ins
 
 ## 1. Install by pulling from GHCR
 
+Follow [install-a-shop.md](install-a-shop.md), steps 1 to 7, with the rehearsal's own details:
+
 ```
-sudo apps/shop-server/deploy/install.sh --profile rehearsal.profile.json --name haq-server.local --ip 192.168.1.10 --backup-dir /mnt/backup --tag <release>
-sudo /opt/haq-retail-os/bin/check-install.sh
+sudo apps/shop-server/deploy/install.sh --profile rehearsal.profile.json --ip 192.168.1.10 --backup-dir /mnt/backup --tag <release>
+sudo haq check
 ```
 
-Add a cashier and a manager (`shop:add-user`), and enrol both counters (`shop:enrol-terminal`, then /enrol on each counter).
+Add a cashier and a manager (`sudo haq add-user`), and register both counters (`sudo haq enrol T01`, then http://192.168.1.10/setup on each counter).
 
 ## 2. The counters by hand (touch, keys, scanner, printer)
 

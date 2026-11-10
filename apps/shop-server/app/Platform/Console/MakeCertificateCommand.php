@@ -58,6 +58,7 @@ class MakeCertificateCommand extends Command
         $tlsDir = $this->directory('tls-dir', 'app/tls');
 
         if (! $this->option('renew') && $this->stillGood("{$tlsDir}/server.crt", $name, $ip)) {
+            $this->thumbprint($tlsDir);
             $this->components->info('The server certificate is still good; nothing to change.');
 
             return self::SUCCESS;
@@ -66,11 +67,26 @@ class MakeCertificateCommand extends Command
         [$caKey, $caCert] = $this->authority($caDir);
         $this->server($tlsDir, $name, $ip, $caKey, $caCert);
         copy("{$caDir}/ca.crt", "{$tlsDir}/ca.crt");
+        $this->thumbprint($tlsDir);
 
         $this->components->info("Made the certificate for {$name} ({$ip}), valid for 5 years.");
         $this->line("Install {$tlsDir}/ca.crt as a trusted root on every counter, once.");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The authority's thumbprint (SHA-1, as Windows shows it in the certificate's details), beside it for
+     * the counters' setup page and `haq certificate`, so whoever trusts it on a counter can see it is the
+     * shop's own (D59). Written on every run, so an older install gains it too.
+     */
+    private function thumbprint(string $tlsDir): void
+    {
+        $pem = @file_get_contents("{$tlsDir}/ca.crt");
+        $hex = is_string($pem) ? openssl_x509_fingerprint($pem, 'sha1') : false;
+        if (is_string($hex)) {
+            $this->write("{$tlsDir}/ca.thumbprint", implode(' ', str_split(strtoupper($hex), 4))."\n", 0o644);
+        }
     }
 
     /**

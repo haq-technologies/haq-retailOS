@@ -11,7 +11,7 @@ export default function Enrol() {
             <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-4">
                 <h1 className="text-3xl font-semibold">Enrol this counter</h1>
                 <p className="text-lg text-text-secondary">
-                    Type the code from HAQ support. It works once, for 15 minutes.
+                    Type the code from HAQ support. It works once, for 30 minutes.
                 </p>
                 <form
                     className="flex flex-col gap-4"

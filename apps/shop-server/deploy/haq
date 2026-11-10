@@ -1,0 +1,104 @@
+#!/bin/bash
+# The shop server's everyday commands in one place (D59), installed by install.sh as `haq`. Run it with sudo:
+#
+#   sudo haq add-user "Halima" owner     add a person; asks their PIN twice
+#   sudo haq enrol T01                   a one-time code (30 minutes) to register counter T01, or D01 for a phone
+#   sudo haq certificate                 the setup address for new devices, and the certificate's thumbprint
+#   sudo haq check                       check the whole install
+#   sudo haq status                      what is running
+#   sudo haq backup                      a full backup now
+#   sudo haq export [file.zip]           the shop's whole record for the owner (it holds cost)
+#   sudo haq update [options]            take a signed release (docs/operations/releases.md)
+#   sudo haq offsite-key                 make the off-site key and its three shares, once
+#   sudo haq receipts                    a rehearsal's stand-in printer: the receipts as they print
+#   sudo haq logs [service]              follow a service's log
+#   sudo haq artisan <command>           any server command, for HAQ support
+set -euo pipefail
+
+self="$(readlink -f "$0" 2>/dev/null || echo "$0")"
+dir="${HAQ_DIR:-$(cd "$(dirname "$self")/.." && pwd)}"
+if [ ! -f "$dir/haq.conf" ]; then
+    echo "There is no HAQ Retail OS install in $dir (no haq.conf). Run install.sh first." >&2
+    exit 1
+fi
+# shellcheck source=/dev/null
+. "$dir/haq.conf"
+if [ -n "${PROFILES:-}" ]; then export COMPOSE_PROFILES="$PROFILES"; fi
+if ! docker info >/dev/null 2>&1; then
+    echo "Docker did not answer. Run it with sudo: sudo haq $*" >&2
+    exit 1
+fi
+
+compose() { docker compose --project-name "$PROJECT" --project-directory "$dir" -f "$dir/compose.yaml" --env-file "$dir/.env" "$@"; }
+# A terminal gets the interactive prompts (PINs); a script gets plain output.
+interactive=(-T)
+if [ -t 0 ] && [ -t 1 ]; then interactive=(); fi
+https_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "https://$IP"; else echo "https://$IP:$HTTPS_PORT"; fi; }
+http_url() { if [ "${HTTP_PORT:-80}" = 80 ]; then echo "http://$IP"; else echo "http://$IP:$HTTP_PORT"; fi; }
+setup_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "$(http_url)/setup"; else echo "$(http_url)/setup?https_port=$HTTPS_PORT"; fi; }
+
+usage() { sed -n '2,16p' "$self" | sed 's/^# \{0,1\}//'; }
+
+command="${1:-help}"
+[ $# -gt 0 ] && shift
+case "$command" in
+    add-user)
+        if [ $# -lt 2 ]; then echo 'Give the name and the role: sudo haq add-user "Halima" owner (cashier, manager, storekeeper or owner).' >&2; exit 2; fi
+        name="$1"; role="$2"; shift 2
+        compose exec ${interactive[@]+"${interactive[@]}"} app php artisan shop:add-user "$name" --role="$role" "$@"
+        ;;
+    enrol)
+        if [ $# -lt 1 ]; then echo 'Give the device: sudo haq enrol T01 (a counter) or sudo haq enrol D01 (a back-office laptop or phone).' >&2; exit 2; fi
+        device="$(echo "$1" | tr '[:lower:]' '[:upper:]')"
+        if ! output="$(compose exec -T app php artisan shop:enrol-terminal "$device" 2>&1)"; then
+            echo "$output" >&2
+            echo "The devices this shop has are in its profile. To add one, run install.sh again with a profile that lists it." >&2
+            exit 1
+        fi
+        code="$(echo "$output" | tail -n 1 | tr -d '[:space:]')"
+        cat <<TEXT
+
+  Code for $device:   $code
+
+  It works once, for 30 minutes. On that device, in Chrome:
+    - the first time, open $(setup_url) and follow step 1 (the certificate);
+    - then open $(https_url)/enrol and type the code.
+
+TEXT
+        ;;
+    certificate)
+        if [ "${1:-}" = "--file" ]; then compose exec -T web cat /etc/haq/tls/ca.crt; exit 0; fi
+        thumb="$(compose exec -T web cat /etc/haq/tls/ca.thumbprint 2>/dev/null || echo 'not made yet: run install.sh again')"
+        cat <<TEXT
+
+  New devices open:     $(setup_url)
+  It shows one line to paste into Windows Terminal (Admin), which makes Windows trust the shop's certificate.
+
+  The certificate's thumbprint: $thumb
+  (The setup page shows the same; Windows shows it under the certificate's Details as Thumbprint.)
+
+TEXT
+        ;;
+    check) exec "$dir/bin/check-install.sh" --dir "$dir" --project "$PROJECT" "$@" ;;
+    status) compose ps --format 'table {{.Service}}\t{{.State}}\t{{.Status}}' ;;
+    backup) compose exec -T backup haq-backup.sh full ;;
+    export)
+        file="${1:-haq-shop-data-$(date +%Y-%m-%d).zip}"
+        (umask 077 && compose exec -T app php artisan shop:export - > "$file")
+        echo "The shop's data is in $file. It holds cost: give it to the owner only."
+        ;;
+    update) exec "$dir/bin/update.sh" --dir "$dir" --project "$PROJECT" "$@" ;;
+    offsite-key) HAQ_DIR="$dir" HAQ_PROJECT="$PROJECT" exec "$dir/bin/offsite.sh" key "$@" ;;
+    receipts)
+        if [ -z "$(compose ps --status running -q printer 2>/dev/null)" ]; then
+            echo "There is no stand-in printer here: a shop's receipts print on its real printers." >&2
+            exit 1
+        fi
+        echo "Receipts from the stand-in printer, as they print (Ctrl+C to stop):"
+        compose logs -f --no-log-prefix --tail 60 printer
+        ;;
+    logs) compose logs -f --tail 100 "$@" ;;
+    artisan) compose exec ${interactive[@]+"${interactive[@]}"} app php artisan "$@" ;;
+    help|-h|--help) usage ;;
+    *) echo "Unknown command: $command" >&2; usage >&2; exit 2 ;;
+esac

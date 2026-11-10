@@ -45,6 +45,10 @@ it('issues a certificate for the server\'s name and IP, signed by the shop\'s au
     $chain = openssl_x509_checkpurpose((string) file_get_contents($this->dir.'/tls/server.crt'), X509_PURPOSE_SSL_SERVER, [$this->dir.'/tls/ca.crt']);
     expect($chain)->toBeTrue();
     expect(decoct(fileperms($this->dir.'/ca/ca.key') & 0o777))->toBe('600');
+
+    // The thumbprint the counters' setup page shows, as Windows shows it in the certificate's details (D59).
+    $thumb = strtoupper((string) openssl_x509_fingerprint((string) file_get_contents($this->dir.'/tls/ca.crt'), 'sha1'));
+    expect(file_get_contents($this->dir.'/tls/ca.thumbprint'))->toBe(implode(' ', str_split($thumb, 4))."\n");
 });
 
 it('keeps a certificate that is still good, and renews on request with the same authority', function () {
@@ -52,8 +56,11 @@ it('keeps a certificate that is still good, and renews on request with the same 
     $first = (string) file_get_contents($this->dir.'/tls/server.crt');
     $ca = (string) file_get_contents($this->dir.'/ca/ca.crt');
 
+    unlink($this->dir.'/tls/ca.thumbprint');
     makeCertificate($this->dir)->expectsOutputToContain('still good')->assertSuccessful();
     expect(file_get_contents($this->dir.'/tls/server.crt'))->toBe($first);
+    // An install from before the thumbprint gains it on its next run.
+    expect(is_file($this->dir.'/tls/ca.thumbprint'))->toBeTrue();
 
     makeCertificate($this->dir, ['--renew' => true])->assertSuccessful();
     expect(file_get_contents($this->dir.'/tls/server.crt'))->not->toBe($first);

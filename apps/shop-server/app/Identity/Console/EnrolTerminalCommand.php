@@ -30,7 +30,9 @@ class EnrolTerminalCommand extends Command
         }
 
         $code = $enrolment->issueCode($terminal);
-        $this->components->info("On {$terminal->code} ({$terminal->name}), open /enrol in the browser and type {$code}. The code works once, for 15 minutes.");
+        $this->components->info("On {$terminal->code} ({$terminal->name}), open /enrol in the browser and type the code below.");
+        $this->line('It works once, for '.Enrolment::CODE_MINUTES.' minutes.');
+        // The code comes last, on its own line, for `haq enrol` to show.
         $this->line($code);
 
         return self::SUCCESS;

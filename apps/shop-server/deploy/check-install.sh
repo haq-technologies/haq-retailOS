@@ -58,8 +58,15 @@ name="$(env_value SERVER_NAME)"
 ca="$(mktemp)"
 compose exec -T web cat /etc/haq/tls/ca.crt > "$ca"
 code="$(curl -s -o /dev/null -w '%{http_code}' --cacert "$ca" --resolve "$name:$https_port:127.0.0.1" "https://$name:$https_port/up")"
-rm -f "$ca"
 if [ "$code" = 200 ]; then pass "HTTPS answers with a certificate the shop's authority signed"; else fail "HTTPS did not answer as expected (HTTP $code)"; fi
+
+# New devices fetch the setup page and the authority's certificate over plain HTTP, before they trust it (D59).
+http_port="$(env_value HTTP_PORT)"
+served="$(mktemp)"
+setup="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${http_port:-80}/setup")"
+curl -s -o "$served" "http://127.0.0.1:${http_port:-80}/ca.crt"
+if [ "$setup" = 200 ] && cmp -s "$ca" "$served"; then pass "new devices get the setup page and the shop's certificate at http://<server>/setup"; else fail "the setup page or the certificate is not served over HTTP (setup: HTTP $setup)"; fi
+rm -f "$ca" "$served"
 
 # 4. The starter catalogue loads a second time with no change (check E, gate G2).
 counts() { as_superuser "SELECT (SELECT count(*) FROM categories), (SELECT count(*) FROM picklist_values), (SELECT count(*) FROM brands), (SELECT count(*) FROM product_models), (SELECT count(*) FROM category_templates)"; }

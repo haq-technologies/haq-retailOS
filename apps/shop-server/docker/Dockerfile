@@ -91,6 +91,8 @@ USER www-data
 FROM ${NGINX_IMAGE} AS web
 
 COPY apps/shop-server/docker/nginx/shop.conf /etc/nginx/conf.d/default.conf
+# The page a new counter or phone opens at http://<server>/setup to trust the shop's certificate (D59).
+COPY apps/shop-server/docker/nginx/setup.html /usr/share/haq/setup.html
 COPY --from=assets /app/public /app/public
 
 # --- A shop's PostgreSQL, with the script the one-shot `roles` job runs to create the three roles -------

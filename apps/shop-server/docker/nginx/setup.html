@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set up this device · HAQ Retail OS</title>
+<!--
+  The setup page (D59), served by the shop server over plain HTTP at http://<server>/setup, because a new
+  device does not trust the shop's certificate yet. It holds nothing secret: the authority's certificate is
+  public. Colours are the spec's tokens (section 15); no external file is loaded, as the shop may be offline.
+-->
+<style>
+  :root { --bg: #ffffff; --panel: #f2f2f7; --border: #d1d1d6; --text: #000000; --muted: #6c6c70; --action: #007aff; --action-text: #0040dd; --warning: #ff9500; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 18px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 30px; font-weight: 700; line-height: 1.2; margin: 8px 0 4px; }
+  h2 { font-size: 22px; font-weight: 700; margin: 0 0 8px; display: flex; gap: 12px; align-items: baseline; }
+  .n { display: inline-flex; width: 36px; height: 36px; border-radius: 50%; background: var(--panel); align-items: center; justify-content: center; font-weight: 700; flex: none; }
+  .lead, .muted { color: var(--muted); }
+  section { background: var(--panel); border-radius: 16px; padding: 20px; margin-top: 16px; }
+  ol { padding-left: 24px; margin: 8px 0; }
+  li { margin: 6px 0; }
+  textarea { width: 100%; min-height: 96px; font: 15px/1.4 ui-monospace, Consolas, monospace; padding: 12px; border: 2px solid var(--border); border-radius: 12px; resize: vertical; background: var(--bg); color: var(--text); }
+  .button { display: inline-flex; align-items: center; min-height: 56px; padding: 0 20px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg); color: var(--action-text); font-family: inherit; font-size: 19px; font-weight: 700; line-height: 1; text-decoration: none; cursor: pointer; }
+  .primary { background: var(--action); border-color: var(--action); color: #ffffff; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 8px; }
+  code { font-family: ui-monospace, Consolas, monospace; background: var(--bg); padding: 2px 6px; border-radius: 6px; }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; font-weight: 600; padding: 10px 0; }
+  .note { border: 2px solid var(--warning); background: var(--bg); border-radius: 12px; padding: 12px 16px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="muted">HAQ Retail OS</p>
+  <h1>Set up this device</h1>
+  <p class="lead">Do this once on each counter PC and on the owner's laptop or phone. It takes about five minutes. You need the code HAQ support makes on the server for this device.</p>
+
+  <section aria-labelledby="s1">
+    <h2 id="s1"><span class="n">1</span> Trust the shop's certificate</h2>
+    <p>The shop server proves who it is with a certificate from the shop's own authority. Windows must trust that authority once, or Chrome warns that the connection is not private.</p>
+    <p><strong>On a Windows PC:</strong></p>
+    <ol>
+      <li>Right-click the Start button and choose <strong>Terminal (Admin)</strong> (on Windows 10, <strong>Windows PowerShell (Admin)</strong>). Choose <strong>Yes</strong>.</li>
+      <li>Copy this line, paste it into that window (right-click pastes it) and press Enter:</li>
+    </ol>
+    <textarea id="command" readonly aria-label="The command to paste"></textarea>
+    <div class="row">
+      <button type="button" class="button primary" id="copy">Copy the line</button>
+      <span id="copied" class="muted" role="status"></span>
+    </div>
+    <ol start="3">
+      <li>When it says <code>command completed successfully</code>, close Chrome completely (every window) and open it again.</li>
+    </ol>
+    <p class="muted" id="thumb-line" hidden>The certificate's thumbprint is <strong id="thumb"></strong>. On the server, <code>sudo haq certificate</code> shows the same.</p>
+    <details>
+      <summary>A phone, a Mac, or doing it by hand</summary>
+      <p><a class="button" id="download" href="/ca.crt">Download the certificate</a></p>
+      <ol>
+        <li><strong>Windows by hand:</strong> open the downloaded file, choose Install Certificate, then Local Machine, then "Place all certificates in the following store", Browse, <em>Trusted Root Certification Authorities</em>, OK, Next, Finish.</li>
+        <li><strong>Android:</strong> Settings, Security, More security settings, Install from device storage, CA certificate, then choose the downloaded file.</li>
+        <li><strong>iPhone:</strong> open this page in Safari and download the certificate, choose Allow; then Settings, Profile Downloaded, Install. Then Settings, General, About, Certificate Trust Settings, and turn on "HAQ Retail OS shop authority".</li>
+        <li><strong>Mac:</strong> open the downloaded file; in Keychain Access put it in System, open it, and under Trust choose Always Trust.</li>
+      </ol>
+    </details>
+  </section>
+
+  <section aria-labelledby="s2">
+    <h2 id="s2"><span class="n">2</span> Register this device</h2>
+    <p>On the server, HAQ support runs <code>sudo haq enrol T01</code> for counter 1 (T02 for counter 2, D01 for the owner's laptop or phone) and gives you the code it shows, such as <code>4827-1093</code>. A code works once, for 30 minutes.</p>
+    <div class="row"><a class="button primary" id="enrol" href="/enrol">Open the registration page</a></div>
+    <div class="note">If Chrome says "Your connection is not private", step 1 is not finished: run the line again as administrator, then close every Chrome window and open Chrome again.</div>
+  </section>
+
+  <section aria-labelledby="s3">
+    <h2 id="s3"><span class="n">3</span> A counter opens by itself</h2>
+    <p>On a counter PC only: press Windows and R, type <code>shell:startup</code> and press Enter. In that folder, right-click, New, Shortcut, and paste this as its location:</p>
+    <textarea id="kiosk" readonly aria-label="The shortcut's location"></textarea>
+    <p class="muted">Name it HAQ Retail OS. After a restart the counter opens full screen; the cashier taps their name and types their PIN. docs/operations/start-up.md has the rest: signing in to Windows by itself, and never sleeping.</p>
+  </section>
+</main>
+<script>
+  (function () {
+    // The HTTPS port is 443 in a shop; a rehearsal on other ports adds ?https_port=8443 to this page's address.
+    var params = new URLSearchParams(window.location.search);
+    var port = /^\d{1,5}$/.test(params.get('https_port') || '') ? params.get('https_port') : '';
+    var secure = 'https://' + window.location.hostname + (port && port !== '443' ? ':' + port : '');
+    var plain = 'http://' + window.location.host;
+    var command = 'curl.exe -fsSo "$env:TEMP\\haq-shop-ca.crt" ' + plain + '/ca.crt; if ($LASTEXITCODE -eq 0) { certutil -addstore -f Root "$env:TEMP\\haq-shop-ca.crt" }';
+    document.getElementById('command').value = command;
+    document.getElementById('kiosk').value = '"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --kiosk ' + secure + '/counter --no-first-run --noerrdialogs';
+    document.getElementById('download').href = plain + '/ca.crt';
+    document.getElementById('enrol').href = secure + '/enrol';
+
+    // Over plain HTTP the clipboard API is not offered, so select the text and copy it the older way.
+    document.getElementById('copy').addEventListener('click', function () {
+      var box = document.getElementById('command');
+      box.focus();
+      box.select();
+      var done = false;
+      try { done = document.execCommand('copy'); } catch (e) { done = false; }
+      document.getElementById('copied').textContent = done ? 'Copied. Now paste it into the administrator window.' : 'Press Ctrl+C to copy the selected line.';
+    });
+
+    var request = new XMLHttpRequest();
+    request.open('GET', '/ca.thumbprint');
+    request.onload = function () {
+      if (request.status === 200 && request.responseText.trim() !== '') {
+        document.getElementById('thumb').textContent = request.responseText.trim();
+        document.getElementById('thumb-line').hidden = false;
+      }
+    };
+    request.send();
+  })();
+</script>
+</body>
+</html>
