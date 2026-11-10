@@ -66,7 +66,7 @@ The automatic tests run with `docker compose run --rm -e COMPOSER_PROCESS_TIMEOU
 | [docs/spec/](docs/spec/) | The product spec, v1.5 |
 | [docs/decisions.md](docs/decisions.md) | The decision log |
 | [docs/catalogue/](docs/catalogue/) | Starter catalogue v1.1: the JSON seed (the master), the review workbook for the shop owner, and Appendix C |
-| [docs/operations/](docs/operations/) | The hardware list, the shop visit, the G3 rehearsal, restores, releases, start-up, the off-site copy, the 46 checks and the measured pilot |
+| [docs/operations/](docs/operations/) | Installing a shop (install-a-shop.md), the hardware list, the shop visit, the G3 rehearsal, restores, releases, start-up, the off-site copy, the 46 checks and the measured pilot |
 | [docs/archive/](docs/archive/) | Superseded originals: spec v1.4 and the locked catalogue v1. Read-only |
 | [tools/catalogue/](tools/catalogue/) | Scripts that build and verify the catalogue |
 | [apps/shop-server/](apps/shop-server/) | The shop server: Laravel, Inertia and React, with its own README |

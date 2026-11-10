@@ -51,18 +51,18 @@ The owner's phone or laptop reaches the back office as a back-office device (D29
 
 ## Install a shop's server
 
-A shop's server runs the images CI publishes to GHCR on every merge to main (D26). On the server (Ubuntu Server with Docker), from a checkout of this repository:
+The official steps, from a bare server to the first sale, are in [docs/operations/install-a-shop.md](../../docs/operations/install-a-shop.md) (D59). A shop's server runs the images CI publishes to GHCR on every merge to main (D26). On the server (Ubuntu Server 24.04), from a checkout of this repository:
 
 ```
-sudo apps/shop-server/deploy/install.sh --profile shop.profile.json --name haq-server.local --ip 192.168.1.10
+sudo apps/shop-server/deploy/install.sh --ip 192.168.1.10 --backup-dir /mnt/backup --tag <release>
 ```
 
-It makes every secret on the server, pulls the images, starts the stack (the roles, migration and certificate jobs run first and exit), applies the profile and loads the starter catalogue. It also adds smartmontools and a systemd timer, haq-host-health, that writes the server's own report (SSD health and its time source) for the health page every 15 minutes (`deploy/host-health.sh`, D45). It is safe to run again. If the images are private, set `GHCR_USER` and `GHCR_TOKEN` (a read-only token) first.
+It installs Docker if the server has none, asks for the read-only GHCR token (hidden as it is typed) and, with no `--profile`, asks the shop's details and makes the profile. It makes every secret on the server, pulls the images, starts the stack (the roles, migration and certificate jobs run first and exit), applies the profile and loads the starter catalogue. Then `sudo haq` does the everyday work: `add-user`, `enrol T01` (a code for 30 minutes, D58), `certificate`, `check`, `backup`, `export`, `update` and `offsite-key`. Each new device opens `http://<server>/setup` to trust the shop's certificate and register. It also adds smartmontools and a systemd timer, haq-host-health, that writes the server's own report (SSD health and its time source) for the health page every 15 minutes (`deploy/host-health.sh`, D45). It is safe to run again. A rehearsal with no printer adds `--standin-printer`; `sudo haq receipts` then shows each receipt.
 
 Then check the install (gate G2; spec section 14, checks D and E):
 
 ```
-sudo apps/shop-server/deploy/check-install.sh
+sudo haq check
 ```
 
 It checks every service and one-shot job, that no running container holds the owner's password, HTTPS against the shop's authority, a second catalogue load changing nothing, append-only holding against a deliberately widened grant (and the grant check reporting it), and the audit trail. It puts back what it touches.

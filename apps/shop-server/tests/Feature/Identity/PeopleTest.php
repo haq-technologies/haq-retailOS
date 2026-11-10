@@ -53,6 +53,19 @@ it('enrols a counter with a code that works once', function () {
     $this->post('/enrol', ['code' => $code])->assertSessionHasErrors('code');
 });
 
+it('keeps a code working for 30 minutes, long enough to set up the counter, and not after (D58)', function () {
+    [$t1, $t2] = $this->shop['terminals'];
+    $enrolment = app(Enrolment::class);
+    $this->freezeTime();
+    $early = $enrolment->issueCode($t1);
+    $late = $enrolment->issueCode($t2);
+
+    $this->travel(29)->minutes();
+    $this->post('/enrol', ['code' => $early])->assertRedirect('/')->assertCookie(Enrolment::COOKIE);
+    $this->travel(2)->minutes();
+    $this->post('/enrol', ['code' => $late])->assertSessionHasErrors('code');
+});
+
 it('stops the old PC when a counter is enrolled again', function () {
     [$t1] = $this->shop['terminals'];
     $old = People::enrol($t1);
@@ -63,6 +76,6 @@ it('stops the old PC when a counter is enrolled again', function () {
 });
 
 it('prints a one-time code for the installer', function () {
-    $this->artisan('shop:enrol-terminal', ['code' => 'T01'])->expectsOutputToContain('open /enrol in the browser')->assertSuccessful();
+    $this->artisan('shop:enrol-terminal', ['code' => 'T01'])->expectsOutputToContain('open /enrol in the browser')->expectsOutputToContain('for 30 minutes')->assertSuccessful();
     $this->artisan('shop:enrol-terminal', ['code' => 'T09'])->assertFailed();
 });

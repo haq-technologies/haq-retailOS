@@ -49,6 +49,18 @@ it('makes a profile that the installer accepts', function () {
     expect($profile['receipt']['shop_name'])->toBe('Example Accessories');
 });
 
+it('puts each counter\'s receipt printer in the profile, so nobody edits it by hand (D59)', function () {
+    makeProfile($this->path, ['--printers' => 'T01=192.168.1.21, T02=printer:9101']);
+
+    $profile = json_decode((string) file_get_contents($this->path), true);
+    expect($profile['terminals'][0]['printer'])->toBe(['host' => '192.168.1.21', 'port' => 9100])
+        ->and($profile['terminals'][1]['printer'])->toBe(['host' => 'printer', 'port' => 9101]);
+    $this->artisan('shop:apply-profile', ['path' => $this->path])->assertSuccessful();
+    expect(Terminal::query()->where('code', 'T01')->value('printer_host'))->toBe('192.168.1.21');
+
+    expect(fn () => makeProfile($this->path, ['--printers' => 'T01=not an address']))->toThrow(InvalidArgumentException::class);
+});
+
 it('sets up the shop, its branch, counters, drawers and receipt text', function () {
     makeProfile($this->path);
 
