@@ -92,6 +92,9 @@ USER www-data
 # --- A shop's nginx: HTTPS with the shop's own certificate, and the built assets ------------------------
 FROM ${NGINX_IMAGE} AS web
 
+# Alpine's security updates are taken at build time, as Debian's are in the other images (D65).
+RUN apk upgrade --no-cache
+
 COPY apps/shop-server/docker/nginx/shop.conf /etc/nginx/conf.d/default.conf
 # The page a new counter or phone opens at http://<server>/setup to trust the shop's certificate (D59).
 COPY apps/shop-server/docker/nginx/setup.html /usr/share/haq/setup.html

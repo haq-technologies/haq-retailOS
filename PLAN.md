@@ -6,14 +6,14 @@ Last updated: 10 November 2026.
 
 ## Goal
 
-Run the pilot shop on HAQ Retail OS and reach the owner's go-live decision (gate G5) about 22 weeks after kickoff. Then ship the MVP that makes the product sellable, with the first paid shop around month 9.
+Put the first shop live on HAQ Retail OS, with no pilot (D67): from install the app is the shop's record, with a one-week safety net in which the shop also keeps its notebook. Then ship the MVP that makes the product sellable, with the first paid shop around month 9.
 
-The pilot succeeds when (spec section 14):
-- all 46 pilot acceptance checks pass and are written down (the original check D6, two simultaneous returns of one line, moved to the MVP with returns, and the D checks were renumbered, D49);
-- on at least 10 of 14 measured days, the app's totals per payment method match the notebook after differences are traced;
-- every receipt number is used once, and no sale is lost to a crash or power cut;
-- a trained cashier rings a 3-item sale in under 30 seconds on typical days;
-- at least 80% of revenue has a cost, at sale or estimated, by day 14.
+Go-live needs (spec section 14, Go-live criteria):
+- the go-live basics built: voids, returns, the day-end close with the Z-report, and paid-outs, drops and top-ups (D68);
+- all 52 acceptance checks passing and written down (gate G4): the 46 of sections A to E (the original check D6 returns as F3, D49) and the 6 go-live basics of section F;
+- gate G3, the software dress rehearsal, passed on the release that goes live;
+- every receipt number used once, and no sale lost to a crash or power cut;
+- in the safety week, the notebook and the app agree each evening, every difference traced, and anything traced to the app fixed before the notebook stops; then the owner's go to stop the notebook.
 
 ## Status
 
@@ -37,7 +37,9 @@ Done:
 
 - A QA review of the whole codebase (10 November 2026; the QA report, a Claude Doc) found 10 product defects, 8 pipeline findings and 6 places where the documents drifted. Every one in the code and the documents is fixed on the branch fix/qa-report-findings, with a test for each (D61 to D65): manager approvals that survive parking and a slow transfer, a Finish with no answer that can never be sold twice, receipt counters that only go up, printing that never opens the drawer twice, the enrolment and PIN races, the Content Security Policy, digest-pinned updates, and in CI the image scan, the dependency audits, the coverage floor, the restore drill and a weekly run. Every CI job became a required check on main the same day (D66); the restore drill joins the list when this branch merges. Squash-only merges stay with the product owner.
 
-Next: gate G3, the software dress rehearsal on two virtual machines (docs/operations/g3-software-rehearsal.md), which also covers the soak test, the install rehearsal and checks E1 and E2 (docs/operations/acceptance-checks.md). Before G3, the first release is made and signed (docs/operations/releases.md); the GHCR token goes onto the pilot server at install. The rest of Phase 4's hardening is done (D50, D55, D60). The shadow pilot follows G3 (D39). Phase 5's software is built (D56, D57), so after G4 the 14 measured days need only the shop: docs/operations/measured-pilot.md.
+- The pilot is gone (D67, 10 November 2026): no shadow pilot and no 14 measured days. The shop goes live with a one-week safety net, and the go-live basics move into the first release (D68).
+
+Next: build the go-live basics (D68; the checklist below), then make and sign the release that goes live (docs/operations/releases.md), then gate G3 on it (docs/operations/g3-software-rehearsal.md; Claude runs a practice on this computer first), then G4, then install at the shop and the safety week (docs/operations/measured-pilot.md).
 
 ## Team
 
@@ -58,8 +60,8 @@ Weeks count from kickoff. A gate ends a phase only when its criteria are met.
 | 1. Wireframes | 2–4 | Touch-first, responsive wireframes on a new canvas: the counter, then the owner's back office. No clickable prototype and no cashier timing before the build (D12) | **G1:** the product owner signs off the wireframes, and the counter interaction model is frozen. Passed on 6 November 2026 |
 | 2. Foundation | 3–8 | Docker stack; database roles, grants and triggers generated from the mutability matrix; the one-shot migration job; identity (name tiles, PINs, acting-user tokens, bound approvals, idle lock); audit chains, roots and spool; settings and the profile tool; catalogue model, name routine and seeder; the multi-process PostgreSQL harness in CI; images pushed to GHCR; staging on the product owner's computer (D16) | **G2:** a clean Ubuntu virtual machine installs from a profile (D16); the seed loads twice with no change; append-only holds against a deliberately widened grant |
 | 3. Counter and sale core | 6–12 | Counter client; Finish with idempotency, receipt counters, epochs, payments and print jobs; server printing with pending print and the drawer log where a drawer is fitted; Awaiting transfer; catalogue polling; counter journal; speed instrumentation; backups with a test restore; Playwright tests in CI; the release manifest and the updater | **G3 (week 12):** a software dress rehearsal on two virtual machines, installed by pulling from GHCR in under 2 hours: 300 scripted sales on two counters to the stand-in printer, the server powered off hard mid-sale and the printer stopped mid-print, and a restore onto the spare virtual machine (D60) |
-| 4. Shadow pilot, owner features, hardening | 13–20 | Install at the shop in week 13; one counter beside the notebook at agreed hours in weeks 13–18; a weekly release; the Needs-cost queue, backfill preview, three profit buckets, alerts, printed daily summary, review queues with merge and undo, catalogue health, CSV export, restore epochs end to end, the lost-window screen, health page, reboot recovery and catch-up scheduling. In weeks 17–20: the 46 checks automated and the cost-leak scanner, started before G3 (D50); the soak test and the install rehearsal run in software at G3 (D60) | **G4 (week 20):** all 46 checks pass and are written down |
-| 5. Measured pilot and decision | 21–22 | Every counter beside the notebook for 14 trading days, measured against the success thresholds | **G5 (week 22):** the owner decides to continue or stop; on continue, the app becomes the record and the notebook stops a week later |
+| 4. Owner features, hardening, go-live basics | 13–20 | Install at the shop in week 13; one counter beside the notebook at agreed hours in weeks 13–18; a weekly release; the Needs-cost queue, backfill preview, three profit buckets, alerts, printed daily summary, review queues with merge and undo, catalogue health, CSV export, restore epochs end to end, the lost-window screen, health page, reboot recovery and catch-up scheduling. In weeks 17–20: the 46 checks automated and the cost-leak scanner, started before G3 (D50); the soak test and the install rehearsal run in software at G3 (D60) | **G4 (week 20):** all 46 checks pass and are written down |
+| 5. Go-live and the safety week | after G4 | Install at the shop; the app is the record from the first sale; for one week the notebook too, compared each evening (D67) | **G5:** at the end of the safety week the owner confirms the notebook can stop |
 
 ## Timeline
 
@@ -69,15 +71,14 @@ Week                           1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17
 1 Wireframes                   . ## ## ##  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  G1
 2 Foundation                   .  . ## ## ## ## ## ##  .  .  .  .  .  .  .  .  .  .  .  .  .  .  G2
 3 Counter and sale core        .  .  .  .  . ## ## ## ## ## ## ##  .  .  .  .  .  .  .  .  .  .  G3
-4 Shadow pilot, one counter    .  .  .  .  .  .  .  .  .  .  .  . ## ## ## ## ## ##  .  .  .  .
 4 Owner features, weekly       .  .  .  .  .  .  .  .  .  .  .  . ## ## ## ## ## ## ##  .  .  .
 4 Hardening, 46 checks         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . ## ## ## ##  .  .  G4
-5 Measured pilot, 14 days      .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . ## ##  G5
+5 Go-live, safety week         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . ##  .  G5
 CI/CD pipeline set-up         ## ## ## ## ## ## ## ## ## ## ## ##  .  .  .  .  .  .  .  .  .  .
 Weekly releases from GitHub    .  .  .  .  .  .  .  .  .  .  .  . ## ## ## ## ## ## ## ## ## ##
 ```
 
-The notebook stays the shop's record until G5, so real cashiers meet the system early with no real money at stake.
+There is no pilot (D67): the shadow-pilot row is gone, and go-live follows G4, with the notebook kept for the first week only.
 
 ## CI/CD with Git, GitHub and Docker
 
@@ -157,7 +158,7 @@ Phase 3, the counter and sale core, started on 6 November 2026 at the product ow
 
 ## Phase 4 owner features (started early, D39)
 
-Phase 4's owner features started on 7 November 2026, before gate G3, at the product owner's go; the shadow pilot waits for G3. In order:
+Phase 4's owner features started on 7 November 2026, before gate G3, at the product owner's go. In order:
 
 - [x] The back office and cost: the back-office app (dashboard, navigation, Shop settings), the three profit buckets, the Needs-cost queue with the backfill preview and bulk apply, and who sees cost (Claude, 7 November 2026; D40)
 - [x] Flags and alerts: the flag list (mark as seen, never deleted), the dashboard's Needs your attention, CSV export of flags (Claude, 7 November 2026; D41)
@@ -182,19 +183,29 @@ Answered on 7 November 2026: undoing a cost is built (D48); check D6 moves to th
 
 Also answered: a cashier's item creation counts as high at 10 a day, which the owner changes in Shop settings (D52); and the off-site copy with its key shares is built in Phase 4, before G4, as Claude recommended (D53).
 
-## Phase 5 (its tools built early, D56)
+## Go-live basics (D68)
 
-The measured pilot needs the shop and comes after gate G4; the software it needs was built on 10 November 2026, at the product owner's go ("proceed with phase 5, finish it up").
+Built before go-live, because the app is the shop's record from day one (D67):
+
+- [ ] Voids: a manager voids a whole sale within its shift, on its drawer, as a reversing sale with its own receipt number (check F1) (Claude)
+- [ ] Returns: by receipt number or barcode, a manager's PIN, a reason and a disposition, refunded by cash, transfer or POS, the cost reversed, no line returned twice even from two counters, and the owner alone with no receipt (checks F2 to F4) (Claude)
+- [ ] The day-end close: the blind count, the variance against expected cash, the flag above the threshold, the Z-report with the audit code (check F5) (Claude)
+- [ ] Paid-outs, drops and top-ups, with a reason and a manager above the set amount (check F6) (Claude)
+
+## Phase 5: go-live and the safety week (D67)
+
+The measured pilot's tools were built on 10 November 2026 (D56, D57); its Measured pilot section is kept, for comparing the notebook with the app in the safety week.
 
 - [x] The measured pilot in the back office: the owner starts the 14 days, a manager or the owner types the notebook's totals each evening and traces each difference to the notebook or the app, the five measures are read live, and the owner records continue or stop with the scorecard as it stood (Claude, 10 November 2026; D56)
 - [x] The owner's data export: the whole record, cost included, as one ZIP of CSV files with each file's SHA-256, from the back office or `shop:export` (Claude, 10 November 2026; D57)
-- [x] The procedure for the 14 days and gate G5 (Claude, 10 November 2026; docs/operations/measured-pilot.md)
-- [ ] The 14 measured days at the shop, after G4 (product owner, shop owner and manager)
-- [ ] Gate G5: the owner's decision, and the data export handed over either way (shop owner, product owner)
+- [x] The procedure for the safety week (Claude; docs/operations/measured-pilot.md, rewritten for D67)
+- [ ] Install at the shop, after G4 (product owner)
+- [ ] The safety week: the notebook beside the app for seven trading days, compared each evening (shop owner and manager)
+- [ ] Gate G5: the owner confirms the notebook can stop (shop owner, product owner)
 
-## After the pilot
+## After go-live
 
-- **MVP, about 12 to 16 weeks:** returns, exchanges and voids; shifts per drawer with handover counts and the Z-report; paid-outs, drops and top-ups; the sysadmin console and licences; one-way sync and the cloud head office (hosting decided first); bank statement import; back-entry; staged rollout and the fleet dashboard. The first paid shop lands around month 9.
+- **MVP, about 12 to 16 weeks:** store credit vouchers and the one-step exchange screen; drawer handover counts and cash-out services; the sysadmin console and licences; one-way sync and the cloud head office (hosting decided first); bank statement import; back-entry; staged rollout and the fleet dashboard. The first paid shop lands around month 9.
 - **Straight after the MVP:** two-way sync of shop-global records, because target shops include multi-branch shops [R7, FU7].
 - **Pro:** stock tracking with colour variants and cost layers; the credit ledger; the multi-branch view; the advanced printer features; promotions and loyalty (spec section 13).
 
@@ -210,7 +221,7 @@ About 40 developer-weeks to gate G4 in week 20. The plan was made for two develo
 | Owner features and operations | 8 |
 | CI/CD pipeline and the updater | 4 |
 | Acceptance checks and hardening | 4 |
-| Pilot support in the shadow weeks | 2 |
+| Go-live basics (D68) in the place of pilot support (D67) | 2 |
 | **Total** | **40** |
 
 Assumptions:
@@ -224,27 +235,25 @@ Assumptions:
 
 | Risk | Early signal | Response |
 |---|---|---|
-| Cashiers miss the speed targets | The speed instrumentation in the shadow weeks; there is no prototype to time first (D12) | Changes ship in the weekly release. They cost more than on a prototype, because the counter is already built |
+| Cashiers miss the speed targets | The speed instrumentation in the first live week; there is no prototype to time first (D12) | Changes ship in the weekly release. They cost more than on a prototype, because the counter is already built |
 | One person does the work planned for two developers and a field lead, with no spare week (D15) | Foundation pace at G2 | Move G5 later, or move an item of equal size to the MVP under the swap rule |
 | An update fails half-way at the shop | The updater's health check | The signed manifest is checked and every image pulled before anything changes; backup first; code-only rollback to the previous images |
 | No connection at update time | A missed weekly update | A phone hotspot by default; a MiFi is optional; trading never depends on it |
 | Scope grows before the pilot | Any item added after G0 | The swap rule: an item enters only if one of equal size leaves, recorded in docs/decisions.md |
 | Pilot support and field work eat the build | Hours spent on shop issues in weeks 13–20 | Batch fixes into the weekly release, and train the shop's manager to handle the first checks: the paper pad, printer paper and a reboot |
-| Cost coverage stays under 80% by day 14 | The profit-coverage card in the shadow weeks | Two fixed 30-minute cost sessions a week, bulk entry from supplier invoices, or the "Manager may enter cost" setting (FU6) |
+| Cost coverage stays low after go-live | The profit-coverage card in the first live weeks | Two fixed 30-minute cost sessions a week, bulk entry from supplier invoices, or the "Manager may enter cost" setting (FU6) |
 
 ## Open items
 
 | Item | Who | Needed by | Default until answered |
 |---|---|---|---|
-| Busy-day sales volume | Product owner, from the notebook | Install (week 13) | Measured in the shadow weeks |
+| Busy-day sales volume | Product owner, from the notebook | Install | Measured in the first live week |
 | Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | When the product owner chooses; application code is public from Phase 2 (D22) | Public (D10) |
 | A read-only GHCR token for each shop server's updater: the image packages are private. Staging on this computer already pulls from GHCR | Product owner, Claude | Install (week 13) | The pilot server's token was made by the product owner on 7 November 2026 (classic, read:packages only); it is given to install.sh on the pilot server, which keeps it in secrets/ |
-| Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
+| Tile (drill) order per category | Speed data from the first live weeks (D12, D67) | A month after go-live | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
-| Whether the pilot shop's notebook records how each sale was paid (cash, transfer or POS), which the daily totals compare | Product owner, from the shop owner | The measured pilot (week 21) | The cashiers add a payment column for the 14 days (docs/operations/measured-pilot.md) |
-| Confirm D56's readings of the thresholds: a difference traced to the app fails the day, and "typical days" for speed means 10 of every 14 days with timed 3-item sales, over at least 20 | Product owner | The measured pilot (week 21) | As built (D56) |
-| On stop at G5: what happens to the server, its backups, the off-site drives and the key shares | Product owner, in the shop agreement | Gate G5 (week 22) | The owner keeps the data export (D57); the hardware follows the agreement |
+| Whether the shop's notebook records how each sale was paid (cash, transfer or POS), which the safety week's totals compare | Product owner, from the shop owner | The safety week | The cashiers add a payment column for the 14 days (docs/operations/measured-pilot.md) |
 | The pilot shop's closing time, for the forgotten-shift rule: a shift still open four hours later closes as unclosed (S12) | Shop owner, in Shop settings on a back-office device (D37) | Install (week 13) | None set: no shift closes by itself |
 | The pilot shop's discard limit: the most a cashier may discard of their own parked sale without a manager (F12) | Shop owner, in Shop settings on a back-office device (D38) | Install (week 13) | ₦0: every cashier discard needs a manager (D33) |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
@@ -307,3 +316,4 @@ Assumptions:
 | 10 November 2026 | Phase 5's tools at the product owner's go: the measured pilot (D56) and the owner's data export (D57); the procedure for the 14 days and G5 |
 | 10 November 2026 | The official install steps, made simple: device codes last 30 minutes (D58); the installer's questions, the `haq` command and the setup page for the certificate (D59) |
 | 10 November 2026 | Software only: the bench test, the hardware checks and the shop-visit checklist removed; G3 is a software dress rehearsal on virtual machines (D60) |
+| 10 November 2026 | No pilot (D67): go-live with a one-week safety net; the go-live basics (voids, returns, the day-end close, paid-outs, drops and top-ups) move into the first release, with checks F1 to F6 (D68) |

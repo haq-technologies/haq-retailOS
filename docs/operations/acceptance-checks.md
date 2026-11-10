@@ -1,16 +1,16 @@
-# The pilot's 46 acceptance checks
+# The 52 acceptance checks for go-live
 
-Spec section 14 lists the 46 checks the pilot slice must pass before gate G4. This page writes down how each is proved, in software only (D60): by an automated test that runs in CI on every pull request, by a step of the G3 software rehearsal on virtual machines, or by measurement in the pilot itself. No check needs a physical device. When a check passes, write the date and the result in its last column.
+Spec section 14 lists the checks the first release must pass before gate G4: the 46 of sections A to E and the 6 go-live basics of section F (D68). There is no pilot (D67). This page writes down how each is proved, in software only (D60): by an automated test that runs in CI on every pull request, by a step of the G3 software rehearsal on virtual machines, or by measurement in the first live week. No check needs a physical device. When a check passes, write the date and the result in its last column.
 
 Where the tests live, under apps/shop-server: `tests/Feature` (Pest, feature), `tests/Concurrency` (Pest, separate processes and committed transactions on a real PostgreSQL), `e2e` (Playwright in Chromium), `resources/js/**/*.test.ts` (Vitest). Tools: `tools/release/dry-run.sh`, `tools/release/upgrade-path.sh` and `haq-offsite.sh selftest`, all run in CI.
 
-Status: **Automated** means the tests in CI prove the check. **G3** means a step of the software dress rehearsal proves it (docs/operations/g3-software-rehearsal.md). **Pilot** means it can only be measured with real cashiers.
+Status: **Automated** means the tests in CI prove the check. **G3** means a step of the software dress rehearsal proves it (docs/operations/g3-software-rehearsal.md). **First live week** means it can only be measured with real cashiers (D67).
 
 ## A. Counter and speed (13)
 
 | Check | Proved by | Status | Written down |
 |---|---|---|---|
-| A1 A 3-item sale under 30 s and one known barcode under 8 s, by the counter's own timing | Every sale is timed (FinishTest); the daily summary shows each cashier's speed (AuditReadTest, owner.spec) | Pilot: real cashiers, at least 20 sales | |
+| A1 A 3-item sale under 30 s and one known barcode under 8 s, by the counter's own timing | Every sale is timed (FinishTest); the daily summary shows each cashier's speed (AuditReadTest, owner.spec) | First live week: real cashiers, at least 20 sales (D67) | |
 | A2 "ora free3c" finds the item under 100 ms with 5,000 items; a one-letter typo too | `search.test.ts` (both timed) | Automated | |
 | A3 Full names on every receipt line, never "Others"; Request-only rules; Code 128 receipt number | NamesTest, CounterApiTest (Request-only, Not in the list), PrintingTest (receipt as the wireframe, barcode) | Automated | |
 | A4 Price pre-fill, override, retail and wholesale, one tap on first-sale prices | PricesTest, ReportsTest, counter.spec | Automated | |
@@ -77,10 +77,24 @@ Status: **Automated** means the tests in CI prove the check. **G3** means a step
 | E6 The health page shows certificate expiry (60 days), SSD health and clock state | HealthTest, owner.spec | Automated | |
 | E7 Starter catalogue v1.1 loads exactly, offers 127 shapes, and a second load changes nothing | StarterCatalogueTest | Automated | |
 
+## F. Go-live basics (6) [D68]
+
+There is no pilot (D67), so these are built before go-live. Each is proved by tests written with it.
+
+| Check | Proved by | Status | Written down |
+|---|---|---|---|
+| F1 A void within its shift, on its drawer, prints with its own number and nets every total; after the close, on another drawer or after a return it is refused | To be written with voids | To build | |
+| F2 A return by receipt number or barcode: manager's PIN, reason, disposition, refund by cash, transfer or POS, a return slip, the cost reversed | To be written with returns | To build | |
+| F3 No line returned beyond the quantity sold, even from two counters at once | To be written with returns (multi-process) | To build | |
+| F4 A return with no receipt: the owner only, flagged | To be written with returns | To build | |
+| F5 The day-end close: blind count, variance, a flag above the threshold, the Z-report with the audit code, a closed shift locked | To be written with the close | To build | |
+| F6 Paid-outs, drops and top-ups: a reason, a manager above the set amount, expected cash changed | To be written with the close | To build | |
+
 ## In numbers
 
 - 43 checks are proved by automated tests in CI.
 - 2 are proved at the G3 software rehearsal: E1 (a restore onto a clean machine within 1 hour) and E2 (profile to first sale under 2 hours, and the hard reboot).
-- 1 is measured in the pilot: A1 (real cashiers' speed).
+- 1 is measured in the first live week: A1 (real cashiers' speed, D67).
+- 6 more, F1 to F6, come with the go-live basics (D68).
 
-G4 passes when every row has a result written in its last column.
+G4 passes when every row, F1 to F6 included, has a result written in its last column.
