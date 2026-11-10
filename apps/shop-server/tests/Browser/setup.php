@@ -10,10 +10,12 @@ declare(strict_types=1);
 
 use App\Catalogue\Models\Category;
 use App\Catalogue\NewItems;
+use App\Counter\Feed;
 use App\Identity\Enrolment;
 use App\Identity\Role;
 use App\Identity\Users;
 use App\Organisation\Models\Terminal;
+use App\Sales\Pricing;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -45,8 +47,17 @@ $run('catalogue:seed');
 DB::table('terminals')->where('kind', 'counter')->update(['printer_host' => '127.0.0.1', 'printer_port' => 9100]);
 
 $amina = app(Users::class)->add('Amina', Role::Cashier, '1357');
-app(Users::class)->add('Kemi', Role::Manager, '246810');
+$kemi = app(Users::class)->add('Kemi', Role::Manager, '246810');
 app(Users::class)->add('Halima', Role::Owner, '135790');
+
+// A cable with a set price of ₦3,000, so it has a usual range and a floor of ₦1,500 (the manager approval test).
+$shape = collect(app(Feed::class)->shapes())->firstWhere('display_name', 'USB-A to Micro-USB Cable 3m');
+$cable = $shape === null ? null : app(Feed::class)->itemForShape($shape['category_id'], $shape['facets']);
+if ($cable === null) {
+    fwrite(STDERR, 'The browser-test shop has no USB-A to Micro-USB Cable 3m.'.PHP_EOL);
+    exit(1);
+}
+app(Pricing::class)->set($cable, 'retail', 300_000, $kemi);
 
 // Something for Review: an item a cashier added at the counter, with its brand typed slightly wrong.
 app(NewItems::class)->create(['category_id' => Category::query()->where('code', 'earbuds')->value('id'), 'brand_text' => 'Oriamo',

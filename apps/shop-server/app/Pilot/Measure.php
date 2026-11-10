@@ -335,7 +335,7 @@ final readonly class Measure
             ->whereNotExists(fn ($q) => $q->from('print_jobs as j')->whereColumn('j.sale_id', 's.id')->where('j.kind', 'receipt'))->count();
         /** @var list<string> $pending */
         $pending = DB::table('print_jobs as j')->join('sales as s', 's.id', '=', 'j.sale_id')->where('j.kind', 'receipt')
-            ->whereIn('j.status', ['pending', 'failed'])->whereIn('s.business_day', $days)->orderBy('s.receipt_number')->pluck('s.receipt_number')->all();
+            ->whereIn('j.status', ['pending', 'sending', 'failed'])->whereIn('s.business_day', $days)->orderBy('s.receipt_number')->pluck('s.receipt_number')->all();
         $out['pending_print'] = $pending;
         $out['lost_waiting'] = DB::table('lost_sales as l')->whereIn('l.business_day', $days)
             ->whereNotExists(fn ($q) => $q->from('back_entries as b')->whereColumn('b.lost_sale_id', 'l.id'))->count();

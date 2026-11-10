@@ -18,9 +18,11 @@ FROM ${PHP_IMAGE} AS base
 
 # pdo_pgsql for PostgreSQL, intl for money and number formatting, pcntl so queue workers stop cleanly,
 # bcmath for exact arithmetic, zip for the owner's data export (D57). OPcache is built into PHP 8.5. The
-# -dev packages are removed after the build.
+# -dev packages are removed after the build. Debian's security updates are taken at build time, so a fix
+# released after the base image reaches the shop with the next image (CI's image scan checks, D65).
 RUN set -eux; \
     apt-get update; \
+    apt-get upgrade -y --no-install-recommends; \
     apt-get install -y --no-install-recommends libpq5 libicu76 libzip5 libpq-dev libicu-dev libzip-dev; \
     docker-php-ext-install -j"$(nproc)" pdo_pgsql intl pcntl bcmath zip; \
     apt-get purge -y --auto-remove libpq-dev libicu-dev libzip-dev; \
@@ -100,9 +102,11 @@ FROM ${POSTGRES_IMAGE} AS db
 
 # pgBackRest from the PostgreSQL project's own packages, pinned (spec section 9) [S16, R6], jq for the
 # backup loop, and age and ssss for the encrypted off-site copy and its 2-of-3 key shares [S17, D53].
-# /backup is the second disk; a new volume takes its owner from here.
+# /backup is the second disk; a new volume takes its owner from here. Debian's security updates are taken
+# at build time, as in the PHP images (D65).
 RUN set -eux; \
     apt-get update; \
+    apt-get upgrade -y --no-install-recommends; \
     apt-get install -y --no-install-recommends pgbackrest=2.60.0-1.pgdg13+1 jq age=1.2.1-1+b5 ssss=0.5-5; \
     rm -rf /var/lib/apt/lists/*; \
     mkdir -p /backup /etc/pgbackrest; \

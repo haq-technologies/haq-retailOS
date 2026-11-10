@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { expectNothingBlocked, watched } from './csp';
 
 /*
  * Undoing a cost (spec section 2: every cost backfill is reversible) [D48]. It runs last (files run in
@@ -8,9 +9,13 @@ import { fileURLToPath } from 'node:url';
  */
 const here = dirname(fileURLToPath(import.meta.url));
 
+test.afterEach(() => {
+    expectNothingBlocked();
+});
+
 test('lets the owner undo a cost, so its sales wait for a cost again', async ({ browser }) => {
     const context = await browser.newContext({ storageState: join(here, '.auth', 'D01.json') });
-    const page = await context.newPage();
+    const page = watched(await context.newPage());
     await page.goto('/back-office');
     await page.getByRole('button', { name: /^Halima/ }).click();
     await page.keyboard.type('135790', { delay: 60 });

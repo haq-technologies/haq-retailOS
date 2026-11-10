@@ -77,11 +77,11 @@ class PriceRules
                     $floor = intdiv($range['low'] * $floorPercent, 100);
                     if ($price < $floor) {
                         $approvalId = $this->bind($terminal, $line, ApprovalAction::PriceBelowFloor,
-                            "{$item->display_name} at ".Money::naira($price).' is below the floor. A manager must approve this price.');
+                            "{$item->display_name} at ".Money::naira($price).' is below the floor. A manager must approve this price.', $request->parkedSaleId);
                         $flags['below_floor'] = true;
                     } elseif ($confirmsUsed >= $confirmLimit) {
                         $approvalId = $this->bind($terminal, $line, ApprovalAction::BelowRangeConfirmLimit,
-                            'That is more prices below the usual range than one shift allows. A manager must approve this one.');
+                            'That is more prices below the usual range than one shift allows. A manager must approve this one.', $request->parkedSaleId);
                     } elseif (! $line['confirmed_outside_range']) {
                         throw new PriceNeedsCheck("{$usual}. Sell {$item->display_name} at ".Money::naira($price).'?', $line['client_line_id'], 'confirm');
                     } else {
@@ -98,17 +98,20 @@ class PriceRules
     }
 
     /**
+     * The line's manager approval, bound when it was granted (spec section 3) [S3]. With none, or one that no
+     * longer holds, the counter is asked for an approval again, so the cashier can call the manager from Pay.
+     *
      * @param  array{client_line_id: string, item_id: string, unit_price_kobo: int, approval_token: ?string}  $line
      */
-    private function bind(Terminal $terminal, array $line, ApprovalAction $action, string $needed): string
+    private function bind(Terminal $terminal, array $line, ApprovalAction $action, string $needed, ?string $parkedSaleId): string
     {
         if ($line['approval_token'] === null) {
             throw new ApprovalNeeded($needed, $action, $line['client_line_id'], $line['item_id'], $line['unit_price_kobo']);
         }
         try {
-            return $this->approvals->bind($terminal, $line['approval_token'], $action, $line['client_line_id'], $line['item_id'], $line['unit_price_kobo']);
+            return $this->approvals->useForLine($terminal, $line['approval_token'], $action, $line['client_line_id'], $line['item_id'], $line['unit_price_kobo'], $parkedSaleId);
         } catch (ApprovalRefused $e) {
-            throw new SaleRefused($e->getMessage());
+            throw new ApprovalNeeded($e->getMessage(), $action, $line['client_line_id'], $line['item_id'], $line['unit_price_kobo']);
         }
     }
 

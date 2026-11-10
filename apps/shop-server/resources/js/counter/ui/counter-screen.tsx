@@ -78,7 +78,9 @@ function junk(code: string, linked: number): boolean {
 
 export function CounterScreen({ session, setToken, terminal, people, settings, cat, catVersion, online, search, sync, cart, update, onLock }: Props) {
     const api = useCounterApi(session.token, setToken);
-    const [view, setView] = useState<'sale' | 'pay' | 'after'>('sale');
+    const [chosenView, setView] = useState<'sale' | 'pay' | 'after'>('sale');
+    // A Finish the server never answered stays on Pay until it answers, even after the idle lock (D61).
+    const view = (cart.pending ?? null) !== null ? 'pay' : chosenView;
     const [onlyTransfer, setOnlyTransfer] = useState(false);
     const [afterSale, setAfterSale] = useState<SaleSummary | null>(null);
     const [state, setState] = useState<DrillState>({ categoryId: null, choices: [] });
@@ -397,7 +399,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
             const a = await api.post<{ id?: string; message?: string }>('/api/counter/parked', {
                 kind: 'hold',
                 label: label.trim() === '' ? null : label.trim(),
-                payload: { cart: { ...cart, finishKey: null, parkedSaleId: null } },
+                payload: { cart: { ...cart, finishKey: null, pending: null, parkedSaleId: null } },
                 amount_kobo: totalKobo(cart),
             });
             if (!a.ok) {
@@ -418,7 +420,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
             const a = await api.post<{ message?: string }>('/api/counter/parked', {
                 kind: 'awaiting_transfer',
                 label: label.trim() === '' ? null : label.trim(),
-                payload: { cart: { ...cart, finishKey: null, parkedSaleId: null }, payment },
+                payload: { cart: { ...cart, finishKey: null, pending: null, parkedSaleId: null }, payment },
                 amount_kobo: totalKobo(cart),
             });
             if (!a.ok) return a.body.message ?? 'That did not park. Try again.';

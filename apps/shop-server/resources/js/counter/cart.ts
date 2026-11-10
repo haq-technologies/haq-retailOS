@@ -31,6 +31,12 @@ export interface Cart {
     parkedSaleId: string | null;
     lines: CartLine[];
     finishKey: { key: string; hash: string } | null;
+    /**
+     * A Finish the server never answered (D61): the exact request, kept until the server says whether that
+     * sale exists. Until then the sale and its payment cannot change, so a sale the server did commit is
+     * never sold again under a new key. It lives on the cart, so it survives the idle lock.
+     */
+    pending?: FinishPayload | null;
 }
 
 export type Payment =
@@ -231,6 +237,16 @@ export function finishPayload(cart: Cart, payments: Payment[], newKey: () => str
     const hash = JSON.stringify(body);
     const key = cart.finishKey !== null && cart.finishKey.hash === hash ? cart.finishKey.key : newKey();
     return { payload: { idempotency_key: key, ...body }, cart: { ...cart, finishKey: { key, hash } } };
+}
+
+/**
+ * Whether an answer to Finish says what became of the sale (D61): the sale itself, or one of Finish's own
+ * refusals (409, 422), which the server gives only after looking for the sale's key. Any other answer (a
+ * sign-in that ran out, an expired page, a server error) comes before that, so it says nothing: a sale that
+ * was in doubt stays in doubt.
+ */
+export function finishSettles(status: number): boolean {
+    return (status >= 200 && status < 300) || status === 409 || status === 422;
 }
 
 /** What is still to pay, and the change, for a set of payments. */

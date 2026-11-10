@@ -7,6 +7,7 @@ How a shop's server is restored from its backup disk, on the same box or on the 
 - pgBackRest archives every WAL segment to the second internal disk as it fills, and at least every 15 minutes in a quiet shop (D35).
 - The backup service takes a full backup each week and an incremental each day, in the night window from 01:00, or at the next quiet moment if the box was off (catch-up). It keeps four weeks.
 - Each week it also restores the latest backup into a temporary database, and the scheduler checks its row counts and every audit chain. `php artisan backups:status` shows the last backups and the last test restore.
+- CI runs the same round trip on every pull request and every Monday: `tools/backup/restore-drill.sh` makes a shop with sales, takes a full backup, restores it and has the app verify the copy (D65). It runs as its own Compose project with its own volumes, so on the development computer it never touches the development database.
 - The scheduler keeps a copy of the branch's signing key and each counter's highest epoch beside the backups, so a restore elsewhere carries on both.
 - The cloud copy and the encrypted flash drives come with the MVP (spec section 9).
 

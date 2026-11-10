@@ -100,6 +100,33 @@ it('keeps a receipt pending when the printer is off, and prints it when asked ag
     $as()->getJson('/api/counter/print-jobs')->assertJsonCount(0, 'print_jobs');
 });
 
+it('prints a stamped copy, with the drawer shut, when an earlier send never reported back (D63)', function () {
+    $sale = sale([$this->a->id => [1, 5000]]);
+    $job = (string) DB::table('print_jobs')->where('sale_id', $sale['id'])->value('id');
+    expect($this->printer->lastText())->toContain('[drawer]');
+    $this->printer->sent = [];
+
+    // The server lost power after the printer was sent the receipt but before it was marked printed.
+    DB::table('print_jobs')->where('id', $job)->update(['status' => 'sending']);
+    $device = People::enrol($this->t1);
+    $token = (string) $this->withCookie(Enrolment::COOKIE, $device)->postJson('/api/identity/pin', ['user_id' => $this->cashier->id, 'pin' => '1357'])->json('token');
+    $as = fn () => $this->withCookie(Enrolment::COOKIE, $device)->withHeader(ActingToken::HEADER, $token);
+    $this->travel(10)->seconds();
+    $as()->getJson('/api/counter/print-jobs')->assertJsonPath('print_jobs.0.status', 'sending');
+
+    $as()->postJson("/api/counter/print-jobs/{$job}/retry")->assertOk();
+    expect($this->printer->lastText())->toContain('DUPLICATE')->toContain('T01-E1-000001')->toContain('by the server')->not->toContain('[drawer]');
+    expect(DB::table('print_jobs')->where('id', $job)->value('status'))->toBe('printed');
+    expect(DB::table('cash_events')->where('type', 'sale_open')->count())->toBe(1);
+    expect(DB::table('audit_log')->where('action', 'print.outcome_unknown')->where('subject_id', $job)->count())->toBe(1);
+
+    // The queue finding a job still marked sending does the same.
+    $second = (string) DB::table('print_jobs')->where('sale_id', sale([$this->a->id => [1, 5000]])['id'])->value('id');
+    DB::table('print_jobs')->where('id', $second)->update(['status' => 'sending']);
+    expect(app(Printing::class)->print($second))->toBeTrue();
+    expect($this->printer->lastText())->toContain('DUPLICATE')->toContain('T01-E1-000002')->not->toContain('[drawer]');
+});
+
 it('reprints with the original number, stamped DUPLICATE, and logs it', function () {
     $sale = sale([$this->a->id => [1, 5000]]);
     $device = People::enrol($this->t1);

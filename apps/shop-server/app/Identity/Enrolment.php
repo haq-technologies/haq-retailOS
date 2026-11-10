@@ -41,7 +41,10 @@ final readonly class Enrolment
      */
     public function redeem(string $code): ?string
     {
-        $terminalId = Cache::pull($this->cacheKey(trim($code)));
+        // A read and a delete are two steps on the database cache, so two browsers typing the same code at
+        // once could both read it; the lock lets only one of them take it.
+        $key = $this->cacheKey(trim($code));
+        $terminalId = Cache::lock($key.'.redeem', 10)->block(5, fn () => Cache::pull($key));
         if (! is_string($terminalId)) {
             return null;
         }

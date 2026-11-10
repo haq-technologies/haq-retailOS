@@ -28,7 +28,7 @@ final class PrintingController
     public function pending(Request $request): JsonResponse
     {
         $jobs = DB::table('print_jobs as j')->join('sales as s', 's.id', '=', 'j.sale_id')
-            ->where('j.terminal_id', $this->terminal($request)->id)->whereIn('j.status', ['pending', 'failed'])
+            ->where('j.terminal_id', $this->terminal($request)->id)->whereIn('j.status', ['pending', 'sending', 'failed'])
             ->where('j.created_at', '<', now()->subSeconds(5)->format('Y-m-d H:i:s.uP'))
             ->orderBy('j.created_at')->get(['j.id', 'j.kind', 'j.status', 'j.attempts', 's.receipt_number', 's.id as sale_id']);
 
@@ -38,10 +38,21 @@ final class PrintingController
         ])->all()]);
     }
 
-    public function retry(Request $request, string $printJob): JsonResponse
+    public function retry(Request $request, string $printJob, Printing $printing): JsonResponse
     {
-        $updated = DB::table('print_jobs')->where('id', $printJob)->where('terminal_id', $this->terminal($request)->id)
-            ->whereIn('status', ['pending', 'failed'])->update(['status' => 'pending']);
+        $terminal = $this->terminal($request);
+        $updated = DB::transaction(function () use ($printJob, $terminal, $printing): int {
+            $status = DB::table('print_jobs')->where('id', $printJob)->where('terminal_id', $terminal->id)->lockForUpdate()->value('status');
+            if (! in_array($status, ['pending', 'sending', 'failed'], true)) {
+                return 0;
+            }
+            // A send that never reported back may have printed: the retry prints a stamped copy (D63).
+            if ($status === 'sending') {
+                $printing->markUncertain($printJob, $terminal->id);
+            }
+
+            return DB::table('print_jobs')->where('id', $printJob)->update(['status' => 'pending']);
+        });
         if ($updated === 0) {
             return response()->json(['message' => 'That receipt has already printed.'], 409);
         }

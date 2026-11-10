@@ -1,13 +1,18 @@
-# CI for HAQ Retail OS. It guards the documents and the catalogue, and checks the shop server on every
-# pull request: PHP style, static analysis and tests against a real PostgreSQL; the frontend's lint,
-# types, tests and build; and the PHP image build. Playwright and the multi-process PostgreSQL harness
-# join later in Phase 2 and in Phase 3 (PLAN.md).
+# CI for HAQ Retail OS. On every pull request, on main and every Monday it guards the documents and the
+# catalogue, and checks the shop server: PHP style, static analysis, the dependency audits and the tests
+# against a real PostgreSQL (feature, with a coverage floor, and the multi-process suite); the frontend's
+# lint, types, tests and build; Playwright in Chromium; the upgrade path; the restore drill; and every image,
+# built and scanned. Third-party actions are pinned by commit (D65).
 name: CI
 
 on:
   pull_request:
   push:
     branches: [main]
+  # Weekly, so a new advisory or a broken restore shows up even in a week with no change (D65).
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,9 +27,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.14"
 
@@ -79,7 +84,7 @@ jobs:
       DB_OWNER_USERNAME: retail_owner
       DB_OWNER_PASSWORD: owner-ci
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Create the three database roles and the test database
         working-directory: .
@@ -94,14 +99,14 @@ jobs:
         run: apps/shop-server/docker/postgres/init/01-roles.sh
 
       # The same PHP minor and extensions as the image (apps/shop-server/docker/Dockerfile).
-      - uses: shivammathur/setup-php@2.40.0
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: "8.5"
           extensions: pdo_pgsql, intl, pcntl, bcmath, zip
-          coverage: none
+          coverage: pcov
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/composer/files
           key: composer-${{ hashFiles('apps/shop-server/composer.lock') }}
@@ -112,14 +117,19 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
+      - name: Composer audit (known advisories in the PHP packages)
+        run: composer audit --locked
+
       - name: Pint
         run: composer lint
 
       - name: Larastan
         run: composer analyse
 
-      - name: Pest, against PostgreSQL 18 (architecture and feature tests)
-        run: composer test
+      # The floor stops coverage falling unnoticed: 92.4% when it was set (10 November 2026). Raise it as tests
+      # are added; never lower it (D65).
+      - name: Pest, against PostgreSQL 18 (architecture and feature tests), with a coverage floor
+        run: composer test -- --coverage --min=90
 
       - name: Pest, the multi-process suite (concurrency, committed transactions)
         run: composer test:concurrency
@@ -132,9 +142,9 @@ jobs:
       run:
         working-directory: apps/shop-server
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "26.13.0"
           cache: npm
@@ -142,6 +152,9 @@ jobs:
 
       - name: Install
         run: npm ci
+
+      - name: npm audit (known advisories in the JavaScript packages)
+        run: npm audit --audit-level=high
 
       - name: ESLint
         run: npm run lint
@@ -187,7 +200,7 @@ jobs:
       VITE_HOT_FILE: /tmp/no-hot-file
       APP_URL: http://localhost:8000
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Create the three database roles and the browser-test database
         working-directory: .
@@ -201,19 +214,19 @@ jobs:
           RETAIL_DATABASES: retail_e2e
         run: apps/shop-server/docker/postgres/init/01-roles.sh
 
-      - uses: shivammathur/setup-php@2.40.0
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: "8.5"
           extensions: pdo_pgsql, intl, pcntl, bcmath, zip
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/composer/files
           key: composer-${{ hashFiles('apps/shop-server/composer.lock') }}
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "26.13.0"
           cache: npm
@@ -276,7 +289,7 @@ jobs:
       DB_OWNER_USERNAME: retail_owner
       DB_OWNER_PASSWORD: owner-ci
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -291,7 +304,7 @@ jobs:
           RETAIL_DATABASES: retail_upgrade_test
         run: apps/shop-server/docker/postgres/init/01-roles.sh
 
-      - uses: shivammathur/setup-php@2.40.0
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: "8.5"
           extensions: pdo_pgsql, intl, pcntl, bcmath, zip
@@ -307,6 +320,26 @@ jobs:
       - name: Upgrade through every migration in order, and sell on both versions
         run: tools/release/upgrade-path.sh "$RUNNER_TEMP/old/apps/shop-server" "$PWD/apps/shop-server"
 
+  # The restore drill (spec section 9, check E1) [F2, D35]: a shop with sales on the development stack is
+  # backed up by pgBackRest, restored into a temporary PostgreSQL, and verified by the app, row counts and
+  # every audit chain, as a shop's weekly test restore is.
+  restore-drill:
+    name: restore drill
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Build the development stack and install its packages
+        run: |
+          docker compose build app db
+          docker compose run --rm --no-deps app composer install --no-interaction --no-progress --prefer-dist
+          cp apps/shop-server/.env.example apps/shop-server/.env
+          docker compose run --rm --no-deps app php artisan key:generate
+
+      - name: Back up a shop with sales, restore it, and verify the copy
+        run: tools/backup/restore-drill.sh
+
   shop-server-image:
     name: shop-server image ${{ matrix.target }}
     runs-on: ubuntu-24.04
@@ -316,7 +349,7 @@ jobs:
       matrix:
         target: [dev, app, web, db]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Check the Compose files
         if: matrix.target == 'dev'
@@ -326,10 +359,10 @@ jobs:
           mkdir -p apps/shop-server/deploy/secrets && touch apps/shop-server/deploy/secrets/{postgres,owner,app,reporting}_password
           docker compose -f apps/shop-server/deploy/compose.yaml config --quiet
 
-      - uses: docker/setup-buildx-action@v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
       - name: Build the ${{ matrix.target }} image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           file: apps/shop-server/docker/Dockerfile
@@ -337,8 +370,19 @@ jobs:
           push: false
           cache-from: type=gha,scope=${{ matrix.target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.target }}
-          load: ${{ matrix.target == 'db' }}
+          load: ${{ matrix.target != 'dev' }}
           tags: retail-os-${{ matrix.target }}:ci
+
+      # Known vulnerabilities with a fix, high or critical, fail the build (D65). gosu (from the official
+      # PostgreSQL image) only switches user before PostgreSQL starts; the scanners' reports on its Go
+      # library (TLS, URL parsing) concern code it never runs, as that image's maintainers explain.
+      - name: Scan the ${{ matrix.target }} image
+        if: matrix.target != 'dev'
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock
+          aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+          image --quiet --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1
+          --skip-files usr/local/bin/gosu retail-os-${{ matrix.target }}:ci
 
       # The off-site copy's whole round trip in the db image: key, encrypted copy, two shares open it (D53).
       - name: Off-site copy self-test
@@ -350,7 +394,7 @@ jobs:
   publish-images:
     name: publish images to GHCR
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [docs, shop-server-php, shop-server-js, shop-server-browser, shop-server-image]
+    needs: [docs, shop-server-php, shop-server-js, shop-server-browser, upgrade-path, restore-drill, shop-server-image]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -360,18 +404,18 @@ jobs:
       matrix:
         target: [app, web, db]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: docker/setup-buildx-action@v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
-      - uses: docker/login-action@v4
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push retail-os-${{ matrix.target }}
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           file: apps/shop-server/docker/Dockerfile

@@ -13,8 +13,10 @@ use App\Sales\PriceNeedsCheck;
 use App\Sales\SaleChanged;
 use App\Sales\SaleRefused;
 use App\Sales\SaleRequest;
+use App\Sales\Sales;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use LogicException;
 
 final class SaleController
@@ -44,5 +46,24 @@ final class SaleController
         }
 
         return response()->json(['sale' => $sale]);
+    }
+
+    /**
+     * The sale this counter finished under an idempotency key, if any (spec section 7) [F5, D61]. After a
+     * Finish that got no answer, the counter asks here before it lets the cashier change the sale, so a sale
+     * the server did commit is never sold a second time under a new key.
+     */
+    public function byKey(Request $request, string $key): JsonResponse
+    {
+        $terminal = $request->attributes->get('terminal');
+        if (! $terminal instanceof Terminal) {
+            throw new LogicException('The EnrolledTerminal middleware must run first.');
+        }
+        $id = DB::table('sales')->where('branch_id', $terminal->branch_id)->where('terminal_id', $terminal->id)
+            ->where('idempotency_key', $key)->value('id');
+
+        return is_string($id)
+            ? response()->json(['sale' => [...Sales::summary($id), 'retried' => true]])
+            : response()->json(['message' => 'This counter has no sale under that key, so nothing was sold.'], 404);
     }
 }

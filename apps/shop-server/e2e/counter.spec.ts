@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { expectNothingBlocked, watched } from './csp';
 
 /*
  * The counter in a real browser (spec section 14 A): sign in, drill the tiles, the price pad, Pay and the
@@ -13,12 +14,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const open: BrowserContext[] = [];
 test.afterEach(async () => {
     await Promise.all(open.splice(0).map((c) => c.close()));
+    expectNothingBlocked();
 });
 
 async function counter(browser: Browser, terminal: 'T01' | 'T02', name = 'Amina', pin = '1357'): Promise<Page> {
     const context = await browser.newContext({ storageState: join(here, '.auth', `${terminal}.json`) });
     open.push(context);
-    const page = await context.newPage();
+    const page = watched(await context.newPage());
     await page.goto('/counter');
     await page.getByRole('button', { name: new RegExp(`^${name}`) }).click();
     await page.keyboard.type(pin, { delay: 60 });
@@ -235,4 +237,148 @@ test('shows an item made at one counter in the other counter\'s search within 5 
     await other.getByRole('button', { name: /^Add at/ }).click();
     await expect(other.getByText('There are items like this already')).toBeVisible();
     await expect(other.getByRole('button', { name: /Zetasound Zeta Pods 9 Earbuds/ })).toBeVisible();
+});
+
+test('keeps a manager\'s approval of a price below the floor through a slow transfer, and the other counter finishes it (check D4)', async ({ browser }) => {
+    const one = await counter(browser, 'T01');
+    await one.getByRole('button', { name: 'Cables', exact: true }).click();
+    await one.getByRole('button', { name: /^USB-A to Micro-USB/ }).first().click();
+    await one.getByRole('button', { name: /^3m/ }).first().click();
+    const skip = one.getByRole('button', { name: /^Skip brand/ });
+    if (await skip.isVisible().catch(() => false)) await skip.click();
+    // A set price adds the cable at ₦3,000 in one tap; the cashier changes the line's price.
+    const sale = one.getByRole('complementary', { name: 'Sale' });
+    await sale.getByRole('button', { name: 'Change the price of USB-A to Micro-USB Cable 3m' }).click();
+    const pad = one.getByRole('dialog', { name: 'Price' });
+    await expect(pad.getByText('This is the set price; type to replace it.')).toBeVisible();
+
+    // ₦1,000 is below the floor (half of ₦3,000): the manager approves this line at this price.
+    await one.keyboard.type('1000', { delay: 60 });
+    await pad.getByRole('button', { name: /^Add at/ }).click();
+    await expect(pad.getByText(/below the lowest price a cashier can give/)).toBeVisible();
+    await pad.getByRole('button', { name: /^Kemi/ }).click();
+    await one.keyboard.type('246810', { delay: 40 });
+    await expect(pad).toBeHidden();
+    await expect(sale.getByText('₦1,000').first()).toBeVisible();
+
+    // The alert is slow: the cart waits as Awaiting transfer, long past the minute an approval has to bind.
+    await one.keyboard.press('F8');
+    await one.getByRole('tab', { name: 'Transfer' }).click();
+    await one.getByLabel('Transfer reference').fill('Bisi');
+    await one.getByRole('button', { name: 'Awaiting transfer' }).click();
+    await expect(one.getByText(/Waiting for the transfer/)).toBeVisible();
+
+    const two = await counter(browser, 'T02');
+    await two.getByRole('button', { name: /awaiting transfer/ }).click();
+    const pending = two.getByRole('dialog', { name: 'Waiting sales' }).getByRole('region', { name: 'Pending transfers' });
+    await pending.locator('div').filter({ hasText: 'Bisi' }).filter({ has: two.getByRole('button', { name: 'Alert seen' }) })
+        .getByRole('button', { name: 'Alert seen' }).click();
+    await expect(two.getByRole('heading', { name: 'Pay ₦1,000' })).toBeVisible();
+    await two.getByText(/I have seen the bank alert/).click();
+    await two.getByRole('button', { name: 'Finish' }).click();
+    await expect(two.getByRole('heading', { name: 'Sale complete' })).toBeVisible();
+    await expect(two.getByText(/T02-E\d+-\d{6}/).first()).toBeVisible();
+});
+
+test('keeps a sale the server never answered just as it is, and never sells it twice (D61)', async ({ browser }) => {
+    const page = await counter(browser, 'T01');
+    const keys: string[] = [];
+    // The sale reaches the server and commits, but the answer is lost on the way back, once.
+    let lost = 1;
+    await page.route('**/api/counter/sales', async (route) => {
+        const request = route.request();
+        if (request.method() !== 'POST') return route.fallback();
+        keys.push((request.postDataJSON() as { idempotency_key: string }).idempotency_key);
+        if (lost-- > 0) {
+            await route.fetch();
+            return route.abort('connectionreset');
+        }
+        return route.fallback();
+    });
+
+    await addCable(page, '3000');
+    await page.keyboard.press('F8');
+    await page.getByRole('tab', { name: 'POS' }).click();
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page.getByText('The server did not answer, so this sale may already be finished.')).toBeVisible();
+    // Nothing about the sale or its payment can change until the server answers.
+    await expect(page.getByRole('button', { name: 'Back to sale' })).toBeDisabled();
+    await expect(page.getByRole('tab', { name: 'Cash' })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('heading', { name: 'Pay ₦3,000' })).toBeVisible();
+
+    // A refusal before Finish runs (here a sign-in that ran out) says nothing about the sale: it stays locked.
+    await page.route('**/api/counter/sales', (route) => route.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"Sign in with your name and PIN."}' }), { times: 1 });
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page.getByText('Sign in with your name and PIN.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Back to sale' })).toBeDisabled();
+
+    // Finish again sends the same request; the server answers with the sale it already has.
+    const answered = page.waitForResponse((r) => r.url().endsWith('/api/counter/sales') && r.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Finish' }).click();
+    const body = (await (await answered).json()) as { sale: { retried?: boolean } };
+    expect(body.sale.retried).toBe(true);
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).toBe(keys[0]);
+    await expect(page.getByRole('heading', { name: 'Sale complete' })).toBeVisible();
+    await page.getByRole('button', { name: 'Next customer' }).click();
+
+    // Check the server finds it too, so a cashier who wants to change the sale learns it is already sold.
+    lost = 1;
+    await addCable(page, '3000');
+    await page.keyboard.press('F8');
+    await page.getByRole('tab', { name: 'POS' }).click();
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page.getByRole('button', { name: 'Check the server' })).toBeVisible();
+    const looked = page.waitForResponse((r) => r.url().includes('/api/counter/sales/by-key/'));
+    await page.getByRole('button', { name: 'Check the server' }).click();
+    expect((await looked).status()).toBe(200);
+    await expect(page.getByRole('heading', { name: 'Sale complete' })).toBeVisible();
+    expect(keys).toHaveLength(3);
+});
+
+test('answers every local interaction within 100 ms (check A8)', async ({ browser }) => {
+    const page = await counter(browser, 'T01');
+    await addCable(page, '3000');
+    // Measured in the page: from the tap to the sale panel showing the change, the median of 10 taps.
+    const times = await page.evaluate(async () => {
+        const panel = document.querySelector('[aria-label="Sale"]');
+        const more = [...(panel?.querySelectorAll('button') ?? [])].find((b) => (b.getAttribute('aria-label') ?? '').startsWith('One more'));
+        if (panel === null || more === undefined) return [];
+        const out: number[] = [];
+        for (let i = 0; i < 10; i++) {
+            const changed = new Promise<void>((resolve) => {
+                const observer = new MutationObserver(() => {
+                    observer.disconnect();
+                    resolve();
+                });
+                observer.observe(panel, { subtree: true, childList: true, characterData: true });
+            });
+            const started = performance.now();
+            more.click();
+            await changed;
+            out.push(performance.now() - started);
+        }
+        return out.sort((a, b) => a - b);
+    });
+    expect(times).toHaveLength(10);
+    expect(times[5]).toBeLessThan(100);
+
+    // Opening Pay, from F8 to its heading.
+    const pay = await page.evaluate(async () => {
+        const started = performance.now();
+        const shown = new Promise<void>((resolve) => {
+            const observer = new MutationObserver(() => {
+                if ([...document.querySelectorAll('h2')].some((h) => h.textContent.startsWith('Pay '))) {
+                    observer.disconnect();
+                    resolve();
+                }
+            });
+            observer.observe(document.body, { subtree: true, childList: true });
+        });
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F8', bubbles: true, cancelable: true }));
+        await shown;
+        return performance.now() - started;
+    });
+    expect(pay).toBeLessThan(100);
 });

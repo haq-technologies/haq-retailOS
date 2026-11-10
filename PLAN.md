@@ -9,7 +9,7 @@ Last updated: 10 November 2026.
 Run the pilot shop on HAQ Retail OS and reach the owner's go-live decision (gate G5) about 22 weeks after kickoff. Then ship the MVP that makes the product sellable, with the first paid shop around month 9.
 
 The pilot succeeds when (spec section 14):
-- all 46 pilot acceptance checks pass and are written down (check D6 moved to the MVP with returns, D49);
+- all 46 pilot acceptance checks pass and are written down (the original check D6, two simultaneous returns of one line, moved to the MVP with returns, and the D checks were renumbered, D49);
 - on at least 10 of 14 measured days, the app's totals per payment method match the notebook after differences are traced;
 - every receipt number is used once, and no sale is lost to a crash or power cut;
 - a trained cashier rings a 3-item sale in under 30 seconds on typical days;
@@ -24,7 +24,7 @@ Done:
 - Spec v1.5 written, with the decisions applied and tagged, and signed off by the product owner on 6 November 2026 (D13).
 - Starter catalogue v1.1 drafted with 466 phone models, built and verified by script, and re-confirmed by the shop owner at the shop visit.
 - Project folder organised: README.md, CLAUDE.md, this plan, docs/ and tools/.
-- GitHub: main is pushed to haq-technologies/haq-retailOS, and the first CI run passed. The "Protect main" ruleset allows changes only through a pull request with the docs check green, and blocks force-pushes and deletion. The repository stays public for now (D10), and commits use the GitHub noreply email.
+- GitHub: main is pushed to haq-technologies/haq-retailOS, and the first CI run passed. The "Protect main" ruleset allows changes only through a pull request with every CI check green (D66; the docs check alone until 10 November 2026), and blocks force-pushes and deletion. The repository stays public for now (D10), and commits use the GitHub noreply email.
 - Design direction decided: Apple's system colours, the Inter typeface, and responsive layouts (D4, D5). The counter and the owner's back office are drawn on the new canvas (36 boards), and the counter decisions D7 to D9 and D11 are recorded.
 - The shop visit is done, with no changes to catalogue v1.1, and the hardware list is locked (D17), so gate G0 is passed (6 November 2026).
 - Wireframes signed off by the product owner, so gate G1 is passed (D19). The printed daily summary carries no profit or cost amounts (D18).
@@ -34,6 +34,8 @@ Done:
 - Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the rehearsal tooling. See the Phase 3 checklist below.
 - Phase 5's tools, built early at the product owner's go (D56, D57): the measured pilot (the notebook's totals beside the app's, each difference traced, the five success measures read live, the owner's decision with the scorecard as it stood) and the owner's data export as one ZIP of spreadsheets; the procedure is in docs/operations/measured-pilot.md.
 - Phase 4's owner features, started before G3 at the product owner's go (D39), all five built on 7 November 2026 (D40 to D46): the back office with the owner's dashboard and cost entry with backfill; flags and Needs your attention; the review queues with merge and undo; first-sale prices, catalogue health, the daily summary on screen and printed, and the CSV exports; and recovery: restore epochs end to end with the lost window, server health with catch-up and the server clock, and reboot recovery. See the Phase 4 section below.
+
+- A QA review of the whole codebase (10 November 2026; the QA report, a Claude Doc) found 10 product defects, 8 pipeline findings and 6 places where the documents drifted. Every one in the code and the documents is fixed on the branch fix/qa-report-findings, with a test for each (D61 to D65): manager approvals that survive parking and a slow transfer, a Finish with no answer that can never be sold twice, receipt counters that only go up, printing that never opens the drawer twice, the enrolment and PIN races, the Content Security Policy, digest-pinned updates, and in CI the image scan, the dependency audits, the coverage floor, the restore drill and a weekly run. Every CI job became a required check on main the same day (D66); the restore drill joins the list when this branch merges. Squash-only merges stay with the product owner.
 
 Next: gate G3, the software dress rehearsal on two virtual machines (docs/operations/g3-software-rehearsal.md), which also covers the soak test, the install rehearsal and checks E1 and E2 (docs/operations/acceptance-checks.md). Before G3, the first release is made and signed (docs/operations/releases.md); the GHCR token goes onto the pilot server at install. The rest of Phase 4's hardening is done (D50, D55, D60). The shadow pilot follows G3 (D39). Phase 5's software is built (D56, D57), so after G4 the 14 measured days need only the shop: docs/operations/measured-pilot.md.
 
@@ -82,7 +84,7 @@ The notebook stays the shop's record until G5, so real cashiers meet the system 
 Every change runs the full test suite against a real PostgreSQL before it can merge, and every release reaches a shop as Docker images pulled from GitHub and checked against a signed release manifest [D1, D2].
 
 1. **Branch and pull request.** Short-lived branches off main; green CI to merge, with no review while one person builds it (D6, D15); no direct pushes.
-2. **CI on every pull request.** Lint and static analysis (Pint, PHPStan, ESLint); unit tests (Pest, Vitest); concurrency, crash and restore tests on a real PostgreSQL; counter flows in Playwright on Docker Compose; the previous release's code against the new schema, and an upgrade from two versions back; the seed validator, the cost-leak scan and an image scan.
+2. **CI on every pull request.** Lint and static analysis (Pint, PHPStan, ESLint); unit tests (Pest, Vitest); concurrency, crash and restore tests on a real PostgreSQL; counter flows in Playwright on Docker Compose; the previous release's code against the new schema, and an upgrade from two versions back; the seed validator, the cost-leak scan, the dependency audits, an image scan, a coverage floor and the restore drill. The same run happens every Monday, with third-party actions pinned by commit (D65).
 3. **Merge to main.** Docker images are built once and pushed to GHCR, pinned by digest.
 4. **Staging.** The product owner's computer, with the stand-in printer and 5,000 test items, deploys from main (D16, D60).
 5. **Tag a release.** A semantic version, weekly in the pilot, with notes generated from the merged pull requests.
@@ -96,7 +98,7 @@ Every change runs the full test suite against a real PostgreSQL before it can me
 | 0 (weeks 1–2) | GitHub organisation and repository (public for now, D10), branch protection, and the first workflow: lint, unit tests, a PostgreSQL service | Claude |
 | 2 (weeks 3–8) | Dockerfiles and Compose; images to GHCR on merge; staging on the product owner's computer, deploying from main; the multi-process PostgreSQL harness in CI | Claude |
 | 3 (weeks 6–12) | Playwright counter tests in CI; the release manifest and the updater with code-only rollback; a signing dry run. G3 installs a virtual machine by pulling from GHCR | Claude; the product owner holds the signing key |
-| 4 and 5 (weeks 13–22) | A weekly signed release pulled at the shop over a phone hotspot; the upgrade-path test; a scheduled restore drill in CI | Claude and the product owner |
+| 4 and 5 (weeks 13–22) | A weekly signed release pulled at the shop over a phone hotspot; the upgrade-path test; the restore drill in CI on every pull request and every Monday (built, D65) | Claude and the product owner |
 
 Choices and their tradeoffs (runners, registry, environments, housekeeping) are in the review doc's CI/CD section and in spec section 4.
 

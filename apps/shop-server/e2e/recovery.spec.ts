@@ -1,6 +1,7 @@
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { expectNothingBlocked, watched } from './csp';
 
 /*
  * Restore recovery in a real browser (spec section 9; check B9 in section 14) [F1, D44]. A counter whose
@@ -11,13 +12,14 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const open: BrowserContext[] = [];
 test.afterEach(async () => {
+    expectNothingBlocked();
     await Promise.all(open.splice(0).map((c) => c.close()));
 });
 
 test('reports a sale the server lacks from the counter journal, and the owner re-enters it', async ({ browser }) => {
     const counter = await browser.newContext({ storageState: join(here, '.auth', 'T02.json') });
     open.push(counter);
-    const page = await counter.newPage();
+    const page = watched(await counter.newPage());
     await page.goto('/counter');
     await expect(page.getByRole('heading', { name: 'Who is selling?' })).toBeVisible();
 
@@ -55,7 +57,7 @@ test('reports a sale the server lacks from the counter journal, and the owner re
 
     const office = await browser.newContext({ storageState: join(here, '.auth', 'D01.json') });
     open.push(office);
-    const back = await office.newPage();
+    const back = watched(await office.newPage());
     await back.goto('/back-office');
     await back.getByRole('button', { name: /^Halima/ }).click();
     await back.keyboard.type('135790', { delay: 60 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addLine, countLabel, emptyCart, finishPayload, paymentState, removeLine, restoreLine, setCustomerType, setPrice, setQty, totalKobo, type NewLine } from './cart';
+import { addLine, countLabel, emptyCart, finishPayload, finishSettles, paymentState, removeLine, restoreLine, setCustomerType, setPrice, setQty, totalKobo, type NewLine } from './cart';
 
 let n = 0;
 const id = () => `line-${String(++n)}`;
@@ -76,6 +76,13 @@ describe('the cart', () => {
         cart = setQty(again.cart, cart.lines[0]?.clientLineId ?? '', 2);
         expect(finishPayload(cart, payments, key).payload.idempotency_key).not.toBe(first.payload.idempotency_key);
         expect(first.payload.payments[0]).toEqual({ method: 'cash', amount_kobo: 1_400_000, tendered_kobo: 1_500_000 });
+    });
+
+    it('treats only Finish\'s own answers as saying what became of a sale in doubt (D61)', () => {
+        // The sale, or Finish's refusals, which come after the server has looked for the key.
+        for (const status of [200, 409, 422]) expect(finishSettles(status)).toBe(true);
+        // A sign-in that ran out, an expired page, a rate limit or a server error says nothing about the sale.
+        for (const status of [401, 403, 404, 419, 429, 500, 503]) expect(finishSettles(status)).toBe(false);
     });
 
     it('works out what is left to pay and the change', () => {

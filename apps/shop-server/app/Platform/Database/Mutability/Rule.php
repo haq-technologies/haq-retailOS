@@ -17,6 +17,8 @@ final readonly class Rule
      * @param  list<string>  $lockedValues  For MutableWhileOpen: the values that close the row.
      * @param  list<string>  $fixed  For Mutable and NeverDeleted: columns that never change once written,
      *                               such as permanent codes and seed IDs.
+     * @param  list<string>  $increasing  For MutableColumns: columns that may only grow, such as a receipt
+     *                                    counter, so a number can never be handed out twice.
      */
     public function __construct(
         public string $table,
@@ -25,6 +27,7 @@ final readonly class Rule
         public ?string $lockColumn = null,
         public array $lockedValues = [],
         public array $fixed = [],
+        public array $increasing = [],
     ) {
         $needsColumns = in_array($kind, [Kind::SetOnce, Kind::MutableColumns], true);
         if ($needsColumns && $columns === []) {
@@ -35,6 +38,9 @@ final readonly class Rule
         }
         if ($fixed !== [] && ! in_array($kind, [Kind::Mutable, Kind::NeverDeleted], true)) {
             throw new InvalidArgumentException("{$table}: only a mutable or never-deleted table names fixed columns.");
+        }
+        if (array_diff($increasing, $kind === Kind::MutableColumns ? $columns : []) !== []) {
+            throw new InvalidArgumentException("{$table}: only a column-restricted table's own columns can be increasing.");
         }
     }
 
@@ -53,10 +59,11 @@ final readonly class Rule
 
     /**
      * @param  list<string>  $columns
+     * @param  list<string>  $increasing  those of the columns that may only grow
      */
-    public static function mutableColumns(string $table, array $columns): self
+    public static function mutableColumns(string $table, array $columns, array $increasing = []): self
     {
-        return new self($table, Kind::MutableColumns, $columns);
+        return new self($table, Kind::MutableColumns, $columns, increasing: $increasing);
     }
 
     /**
