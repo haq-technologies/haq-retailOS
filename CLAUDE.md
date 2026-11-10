@@ -121,7 +121,7 @@ Apple's system colours with fixed roles, the Inter typeface, and responsive layo
 ## Git
 
 - Remote: https://github.com/haq-technologies/haq-retailOS. It stays public until the owner makes it private (D10), so every push publishes. Commit with the GitHub noreply email set in this repository's git config, never a personal address, and check each diff for secrets, shop data and personal data before pushing.
-- Branch from main and keep branches short-lived. Merge only through a pull request with green CI; never push directly to main. No approval is required, because one person builds this (D15) and GitHub does not let an author approve their own pull request. GitHub enforces this with the "Protect main" ruleset: a pull request, the docs check green and up to date, squash merges only, no force-push or deletion, and no bypass.
+- Branch from main and keep branches short-lived. Merge only through a pull request with green CI; never push directly to main. No approval is required, because one person builds this (D15) and GitHub does not let an author approve their own pull request. GitHub enforces this with the "Protect main" ruleset: a pull request, every CI check green and up to date (D66), squash merges only, no force-push or deletion, and no bypass. A new CI job becomes a required check once it is on main; add it to the ruleset then, never before, or every pull request waits for it.
 - End every commit message with the co-author line for Claude.
 
 ## Environment notes (6 November 2026)
