@@ -97,7 +97,7 @@ jobs:
       - uses: shivammathur/setup-php@2.40.0
         with:
           php-version: "8.5"
-          extensions: pdo_pgsql, intl, pcntl, bcmath
+          extensions: pdo_pgsql, intl, pcntl, bcmath, zip
           coverage: none
 
       - name: Cache Composer packages
@@ -204,7 +204,7 @@ jobs:
       - uses: shivammathur/setup-php@2.40.0
         with:
           php-version: "8.5"
-          extensions: pdo_pgsql, intl, pcntl, bcmath
+          extensions: pdo_pgsql, intl, pcntl, bcmath, zip
           coverage: none
 
       - name: Cache Composer packages
@@ -294,7 +294,7 @@ jobs:
       - uses: shivammathur/setup-php@2.40.0
         with:
           php-version: "8.5"
-          extensions: pdo_pgsql, intl, pcntl, bcmath
+          extensions: pdo_pgsql, intl, pcntl, bcmath, zip
           coverage: none
 
       - name: Install the older and the newer code
