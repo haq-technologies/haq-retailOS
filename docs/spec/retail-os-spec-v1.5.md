@@ -413,6 +413,8 @@ After any restore or server replacement, the system starts a new epoch, and the 
 - CSV export of items and sales, opening cleanly in Excel. Exports never contain cost for roles that cannot see it. [F10]
 - First-sale prices: one tap makes a typed price the set price, and Undo puts back the one before, or none. [S4, D43]
 - Counter speed on the daily summary screen: each cashier's sales timed, typical sale, 3-item sales under 30 seconds and one scanned item under 8 seconds, from the counter's own timing. [S8, D47]
+- The measured pilot: the 14 days beside the notebook, each day's totals per payment method against the notebook's with every difference traced to the notebook or the app, the five success measures read live, and the owner's decision with the scorecard as it stood (section 14). [D56]
+- The owner's data export: the shop's whole record, cost included, as one ZIP of CSV files that open in Excel, with each file's SHA-256 and the audit code it was made at. Only the owner downloads it; HAQ can make it on the server. [D57]
 ## MVP
 - Weekly and monthly views, and top items by revenue. These move here from the pilot (see the swap in section 16). [F12]
 - Per-cashier sales and variance, including handover variances. Shift (Z) reports per drawer.
@@ -438,7 +440,7 @@ After any restore or server replacement, the system starts a new epoch, and the 
 | Server printing to network printers, with drawer kick and drawer log where a drawer is fitted [R3, S21] | Bank statement CSV import and matching | Analytics, scheduled exports |
 | Three database roles, append-only triggers, grant-drift check, restore epochs, counter journal and lost-window recovery | Per-cashier reports, weekly and monthly views, top items | Billing automation |
 | pgBackRest backups with 2-of-3 key shares, restore drill, health page, Docker install and the updater pulling from GHCR, reboot recovery, catch-up scheduling [S16, S17, D2] | Staged rollout, fleet dashboard, standby kit option | Receipt by WhatsApp or SMS |
-| Daily summary printout, flag list, catalogue health, CSV export, speed instrumentation [S8] | Back-entry screen with paper receipt numbers | Scheduled export |
+| Daily summary printout, flag list, catalogue health, CSV export, speed instrumentation, the measured pilot's scorecard and the owner's data export [S8, D56, D57] | Back-entry screen with paper receipt numbers | Scheduled export |
 | Starter catalogue v1.1 seed with phone models; typed brands, product words and phone models through the review queue [C2] | Phone models moved to the pilot [C2] | No change |
 
 The never-cut list for every phase: transaction tests, concurrency and crash tests on a real PostgreSQL, backup and restore, export, audit, and restore epochs. [F6]
@@ -517,6 +519,8 @@ Each check is pass or fail. The pilot slice is finished when all 46 checks in se
 | Speed | A trained cashier rings a 3-item sale in under 30 seconds on typical days |
 | Profit coverage | At least 80% of revenue has a cost (at sale or estimated) by day 14, with the split between the two shown, so that backfilling alone cannot hide a poor result [F14] |
 | Owner’s decision | Continue or stop, and either way the owner receives his data export |
+
+How each is measured (D56): a trading day is a business day with a sale in the app or a total in the notebook, and the measured days are the first 14 from the day the owner starts them. A day matches when its totals agree, or once every difference is traced to the notebook; a difference traced to the app means it does not match. "Typical days" for speed are 10 of every 14 days that had timed 3-item sales, over at least 20 of them. Profit coverage is counted as it stood at the end of day 14. The back office's Measured pilot reads all five live, and the owner's decision keeps the scorecard as it stood. The data export is one ZIP of CSV files (D57).
 
 # 15. Engineering and design standards
 Every practice below is here because it serves one of the six problems (P1 to P6) in section 1.
@@ -729,6 +733,8 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
 | Code structure | A modular monolith: modules by business area with one-way dependencies, one database, one ordered set of migrations [D23] |
 | Spec and records | Markdown in Git; the JSON seed is the catalogue master; decisions in docs/decisions.md [R8, Q9] |
 | Owner remote view | Not in Core for now [S13] |
+| Measured pilot | The 14 days are measured in the back office against the notebook, each difference traced to the notebook or the app; the owner's decision keeps the scorecard as it stood [D56] |
+| Owner's data | The owner downloads the whole record, cost included, as one ZIP of CSV files at any time; HAQ can make it on the server [D57] |
 
 # Appendix A. Change register
 Each review finding from the engineering teardown, and where v1.2 fixes it.

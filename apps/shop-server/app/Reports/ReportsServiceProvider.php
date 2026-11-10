@@ -29,4 +29,11 @@ class ReportsServiceProvider extends ServiceProvider
             return $registry;
         });
     }
+
+    public function boot(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([Console\ExportCommand::class]);
+        }
+    }
 }

@@ -64,9 +64,11 @@ final class Speed
     }
 
     /**
+     * The middle value, or the mean of the middle two; null for none.
+     *
      * @param  list<int>  $values
      */
-    private static function median(array $values): ?int
+    public static function median(array $values): ?int
     {
         if ($values === []) {
             return null;
