@@ -56,7 +56,7 @@ final readonly class SummarySlip
     }
 
     /**
-     * @param  array{day: string, opened_at: ?string, counters: list<string>, sales: array{count: int, total_kobo: int, by_method: list<array{method: string, sales: int, amount_kobo: int}>}, transfers_waiting: array{count: int, amount_kobo: int}, buckets: array<string, mixed>, flags: array<string, int>, root: mixed}  $s
+     * @param  array{day: string, opened_at: ?string, counters: list<string>, sales: array{count: int, total_kobo: int, by_method: list<array{method: string, sales: int, amount_kobo: int}>, voids: array{count: int, total_kobo: int}, returns: array{count: int, total_kobo: int}}, transfers_waiting: array{count: int, amount_kobo: int}, buckets: array<string, mixed>, flags: array<string, int>, root: mixed}  $s
      * @param  array{shop_name: ?string, address: ?string, phone: ?string, footer: ?string, currency: string, timezone: string}  $text
      */
     public static function blocks(array $s, array $text, string $printedBy, string $rootHash): Receipt
@@ -79,6 +79,12 @@ final readonly class SummarySlip
         $b[] = ['rule'];
 
         $b[] = ['pair', 'SALES '.$s['sales']['count'], $text['currency'].Money::plain($s['sales']['total_kobo']), true];
+        // Voids and returns are already taken off the total and the methods below (D68).
+        foreach (['voids' => 'Voids', 'returns' => 'Returns'] as $key => $label) {
+            if ($s['sales'][$key]['count'] > 0) {
+                $b[] = ['pair', $label.' '.$s['sales'][$key]['count'], Money::plain($s['sales'][$key]['total_kobo'])];
+            }
+        }
         $names = ['cash' => 'Cash', 'transfer' => 'Transfer', 'pos' => 'POS'];
         foreach ($s['sales']['by_method'] as $m) {
             $b[] = ['pair', str_pad($names[$m['method']] ?? $m['method'], 12).str_pad((string) $m['sales'], 4, ' ', STR_PAD_LEFT), Money::plain($m['amount_kobo'])];

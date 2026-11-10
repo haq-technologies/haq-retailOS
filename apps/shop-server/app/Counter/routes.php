@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Counter\Http\CounterController;
+use App\Counter\Http\DrawerController;
 use App\Identity\Http\ActingUser;
 use App\Identity\Http\EnrolledTerminal;
 use Illuminate\Support\Facades\Route;
@@ -25,4 +26,9 @@ Route::middleware(['web', EnrolledTerminal::class, ActingUser::class])->prefix('
     Route::get('/shift', [CounterController::class, 'shift']);
     Route::post('/shift', [CounterController::class, 'openShift']);
     Route::get('/history', [CounterController::class, 'history']);
+    // The drawer beside sales, and closing the day (D68).
+    Route::post('/drawer/cash', [DrawerController::class, 'cash']);
+    Route::get('/close', [DrawerController::class, 'status']);
+    Route::post('/close', [DrawerController::class, 'close']);
+    Route::post('/close/print', [DrawerController::class, 'print']);
 });

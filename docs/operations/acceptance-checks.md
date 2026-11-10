@@ -79,22 +79,22 @@ Status: **Automated** means the tests in CI prove the check. **G3** means a step
 
 ## F. Go-live basics (6) [D68]
 
-There is no pilot (D67), so these are built before go-live. Each is proved by tests written with it.
+There is no pilot (D67), so these are built before go-live (D68).
 
 | Check | Proved by | Status | Written down |
 |---|---|---|---|
-| F1 A void within its shift, on its drawer, prints with its own number and nets every total; after the close, on another drawer or after a return it is refused | To be written with voids | To build | |
-| F2 A return by receipt number or barcode: manager's PIN, reason, disposition, refund by cash, transfer or POS, a return slip, the cost reversed | To be written with returns | To build | |
-| F3 No line returned beyond the quantity sold, even from two counters at once | To be written with returns (multi-process) | To build | |
-| F4 A return with no receipt: the owner only, flagged | To be written with returns | To build | |
-| F5 The day-end close: blind count, variance, a flag above the threshold, the Z-report with the audit code, a closed shift locked | To be written with the close | To build | |
-| F6 Paid-outs, drops and top-ups: a reason, a manager above the set amount, expected cash changed | To be written with the close | To build | |
+| F1 A void within its shift, on its drawer, prints with its own number and nets every total; after the close, on another drawer or after a return it is refused | ReversalsTest (the void, its slip, the totals; each refusal) | Automated | |
+| F2 A return by receipt number or barcode: manager's PIN, reason, disposition, refund by cash, transfer or POS, a return slip, the cost reversed | ReversalsTest (the return, its slip, the cost and the totals; over HTTP), counter.spec (check F2) | Automated | |
+| F3 No line returned beyond the quantity sold, even from two counters at once | Concurrency ReturnsTest (two counters at once, three rounds), ReversalsTest | Automated | |
+| F4 A return with no receipt: the owner only, flagged | ReversalsTest (a manager refused, the owner allowed, the flag) | Automated | |
+| F5 The day-end close: blind count, variance, a flag above the threshold, the Z-report with the audit code, a closed shift locked | DrawerTest (expected cash, the variance, the flag, the Z-report, the lock), counter.spec (check F5) | Automated | |
+| F6 Paid-outs, drops and top-ups: a reason, a manager above the set amount, expected cash changed | DrawerTest (the limit, the manager, a retry once, expected cash; over HTTP with the drawer) | Automated | |
 
 ## In numbers
 
 - 43 checks are proved by automated tests in CI.
 - 2 are proved at the G3 software rehearsal: E1 (a restore onto a clean machine within 1 hour) and E2 (profile to first sale under 2 hours, and the hard reboot).
 - 1 is measured in the first live week: A1 (real cashiers' speed, D67).
-- 6 more, F1 to F6, come with the go-live basics (D68).
+- 6 more, F1 to F6, are proved by tests in CI too, so 49 of the 52 are automated (D68).
 
 G4 passes when every row, F1 to F6 included, has a result written in its last column.

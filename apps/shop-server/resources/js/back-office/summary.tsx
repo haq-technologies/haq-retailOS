@@ -17,13 +17,33 @@ interface Summary {
     today: string;
     opened_at: string | null;
     counters: string[];
-    sales: { count: number; total_kobo: number; by_method: { method: string; sales: number; amount_kobo: number }[] };
+    sales: {
+        count: number;
+        total_kobo: number;
+        by_method: { method: string; sales: number; amount_kobo: number }[];
+        voids: { count: number; total_kobo: number };
+        returns: { count: number; total_kobo: number };
+    };
+    drawers: Drawer[];
     transfers_waiting: { count: number; amount_kobo: number };
     buckets: { revenue_kobo: number; confirmed: Bucket; estimated: Bucket; pending: Bucket };
     flags: Record<string, number>;
     audit_code: string | null;
     printers: { id: string; code: string; name: string }[];
     speed: Speed[];
+}
+
+/** Each drawer's day: cash out and in beside sales, and its close with the count (D68). */
+interface Drawer {
+    drawer: string;
+    status: string;
+    expected_cash_kobo: number;
+    counted_cash_kobo: number | null;
+    variance_kobo: number | null;
+    flagged: boolean;
+    paid_out_kobo: number;
+    drop_kobo: number;
+    top_up_kobo: number;
 }
 
 /** Each cashier's speed that day, from the counter's own timing (check A1) [S8, D47]. On screen only. */
@@ -157,8 +177,56 @@ export function DailySummary({ api, go }: { api: CounterApi; go: (section: strin
                         ))}
                         <dt>Transfers still waiting</dt>
                         <dd className="text-right font-semibold">{data.transfers_waiting.count}</dd>
+                        {data.sales.voids.count > 0 && (
+                            <>
+                                <dt>Voids · {data.sales.voids.count}</dt>
+                                <dd className="text-right font-semibold">{naira(data.sales.voids.total_kobo)}</dd>
+                            </>
+                        )}
+                        {data.sales.returns.count > 0 && (
+                            <>
+                                <dt>Returns · {data.sales.returns.count}</dt>
+                                <dd className="text-right font-semibold">{naira(data.sales.returns.total_kobo)}</dd>
+                            </>
+                        )}
                     </dl>
+                    {(data.sales.voids.count > 0 || data.sales.returns.count > 0) && <p className="text-text-secondary">The total and each method are after voids and returns.</p>}
                 </section>
+
+                {data.drawers.length > 0 && (
+                    <section aria-labelledby="sum-drawers" className="flex flex-col gap-3 rounded-2xl bg-panel p-5">
+                        <h2 id="sum-drawers" className="text-lg font-semibold text-text-secondary">
+                            Drawers
+                        </h2>
+                        {data.drawers.map((d, i) => (
+                            <dl key={`${d.drawer}-${String(i)}`} className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-lg">
+                                <dt className="font-semibold">{d.drawer}</dt>
+                                <dd className="text-right">{d.status === 'open' ? 'Open' : d.status === 'closed' ? 'Closed and counted' : 'Closed by itself, not counted'}</dd>
+                                <dt>Expected cash</dt>
+                                <dd className="text-right font-semibold">{naira(d.expected_cash_kobo)}</dd>
+                                {d.counted_cash_kobo !== null && d.variance_kobo !== null && (
+                                    <>
+                                        <dt>Counted</dt>
+                                        <dd className="text-right font-semibold">{naira(d.counted_cash_kobo)}</dd>
+                                        <dt className={d.flagged ? 'font-semibold text-warning-text' : ''}>
+                                            {d.variance_kobo === 0 ? 'Right' : d.variance_kobo > 0 ? 'Over by' : 'Short by'}
+                                            {d.flagged ? ' (flagged)' : ''}
+                                        </dt>
+                                        <dd className="text-right font-semibold">{d.variance_kobo === 0 ? '' : naira(Math.abs(d.variance_kobo))}</dd>
+                                    </>
+                                )}
+                                {d.paid_out_kobo + d.drop_kobo + d.top_up_kobo > 0 && (
+                                    <>
+                                        <dt>Paid out · dropped · topped up</dt>
+                                        <dd className="text-right">
+                                            {naira(d.paid_out_kobo)} · {naira(d.drop_kobo)} · {naira(d.top_up_kobo)}
+                                        </dd>
+                                    </>
+                                )}
+                            </dl>
+                        ))}
+                    </section>
+                )}
 
                 <section aria-labelledby="sum-cost" className="flex flex-col gap-3 rounded-2xl bg-panel p-5">
                     <h2 id="sum-cost" className="text-lg font-semibold text-text-secondary">

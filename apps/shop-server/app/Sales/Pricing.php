@@ -167,7 +167,7 @@ final readonly class Pricing
 
         $candidates = DB::table('sale_lines as l')->join('sales as s', 's.id', '=', 'l.sale_id')->join('items as i', 'i.id', '=', 'l.item_id')
             ->where('i.category_id', $item->category_id)->where('i.id', '!=', $item->id)->where('s.customer_type', $customerType)
-            ->groupBy('l.item_id')->havingRaw('count(*) >= ?', [self::MIN_SALES])
+            ->where('s.kind', 'sale')->groupBy('l.item_id')->havingRaw('count(*) >= ?', [self::MIN_SALES])
             ->selectRaw('l.item_id, count(*) as sales')->get();
 
         $best = null;

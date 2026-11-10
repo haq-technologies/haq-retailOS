@@ -382,3 +382,38 @@ test('answers every local interaction within 100 ms (check A8)', async ({ browse
     });
     expect(pay).toBeLessThan(100);
 });
+
+test('returns an item by its receipt with a manager\'s PIN, then closes the day with a blind count (checks F2 and F5)', async ({ browser }) => {
+    const page = await counter(browser, 'T01');
+    await addCable(page, '3000');
+    await page.keyboard.press('F8');
+    await page.getByRole('button', { name: 'Exact' }).click();
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page.getByRole('heading', { name: 'Sale complete' })).toBeVisible();
+    const receipt = ((await page.getByText(/T01-E\d+-\d{6}/).first().textContent()) ?? '').match(/T01-E\d+-\d{6}/)?.[0] ?? '';
+    expect(receipt).not.toBe('');
+    await page.getByRole('button', { name: 'Next customer' }).click();
+
+    // The customer brings it back: find the sale, choose the item, and a manager approves the refund.
+    await page.getByRole('button', { name: 'Returns and voids' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Returns and voids' });
+    await sheet.getByPlaceholder('T01-E1-000123').fill(receipt);
+    await sheet.getByRole('button', { name: 'Find the sale' }).click();
+    await sheet.getByRole('button', { name: 'One more Type-C to Lightning Cable 1m back' }).click();
+    await sheet.getByRole('button', { name: 'Return and refund ₦3,000' }).click();
+    await expect(sheet.getByText('A manager must approve the return')).toBeVisible();
+    await sheet.getByRole('button', { name: /^Kemi/ }).click();
+    await page.keyboard.type('246810', { delay: 40 });
+    await expect(page.getByText(/Returned: ₦3,000 back to the customer\. Slip T01-E\d+-\d{6} prints\./)).toBeVisible();
+
+    // Closing the day: the count first, then what was expected, and the Z-report prints.
+    await page.getByRole('button', { name: 'Close the day' }).click();
+    const close = page.getByRole('dialog', { name: 'Close the day' });
+    await expect(close.getByText('You see what was expected after.')).toBeVisible();
+    await expect(close.getByText('Expected', { exact: true })).toHaveCount(0);
+    await page.keyboard.type('5000', { delay: 40 });
+    await close.getByRole('button', { name: 'Close the day' }).click();
+    await expect(close.getByText('Expected', { exact: true })).toBeVisible();
+    await expect(close.getByText('Counted', { exact: true })).toBeVisible();
+    await expect(close.getByText('The Z-report is printing.')).toBeVisible();
+});

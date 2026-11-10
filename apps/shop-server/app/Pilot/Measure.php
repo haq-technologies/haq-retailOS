@@ -454,9 +454,9 @@ final readonly class Measure
         $r = DB::selectOne(<<<SQL
             WITH lines AS (
                 SELECT l.line_total_kobo AS revenue, l.cost_snapshot_kobo AS snap,
-                       (SELECT r.unit_cost_kobo FROM cost_resolutions r WHERE r.sale_line_id = l.id {$by} ORDER BY r.created_at DESC, r.id DESC LIMIT 1) AS est
+                       (SELECT r.unit_cost_kobo FROM cost_resolutions r WHERE r.sale_line_id = coalesce(l.reverses_line_id, l.id) {$by} ORDER BY r.created_at DESC, r.id DESC LIMIT 1) AS est
                 FROM sale_lines l JOIN sales s ON s.id = l.sale_id
-                WHERE s.kind IN ('sale', 'back_entry') AND s.business_day IN ({$in})
+                WHERE s.kind IN ('sale', 'back_entry', 'void', 'return') AND s.business_day IN ({$in})
             )
             SELECT coalesce(sum(revenue) FILTER (WHERE snap IS NOT NULL), 0) AS c,
                    coalesce(sum(revenue) FILTER (WHERE snap IS NULL AND est IS NOT NULL), 0) AS e,

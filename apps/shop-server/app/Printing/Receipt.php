@@ -24,7 +24,7 @@ final readonly class Receipt
     public function __construct(public array $blocks) {}
 
     /**
-     * @param  array{receipt_number: string, recorded_at: string, cashier: string, total_kobo: int, lines: list<array{name: string, colour: ?string, qty: int, unit_price_kobo: int, line_total_kobo: int}>, payments: list<array{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string}>}  $sale  Sales::summary()
+     * @param  array{receipt_number: string, kind?: string, reverses_receipt_number?: ?string, recorded_at: string, cashier: string, total_kobo: int, lines: list<array{name: string, colour: ?string, qty: int, unit_price_kobo: int, line_total_kobo: int}>, payments: list<array{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string}>}  $sale  Sales::summary()
      * @param  array{shop_name: ?string, address: ?string, phone: ?string, footer: ?string, currency: string, timezone: string}  $text
      * @param  array{at: CarbonImmutable, by: string}|null  $duplicate
      */
@@ -34,6 +34,12 @@ final readonly class Receipt
         if ($duplicate !== null) {
             $b[] = ['band', 'DUPLICATE'];
         }
+        // A void or a return prints as a slip of its own, naming the sale it undoes; its money goes back (D68).
+        $kind = $sale['kind'] ?? 'sale';
+        $reversal = $kind === 'void' || $kind === 'return';
+        if ($reversal) {
+            $b[] = ['band', $kind === 'void' ? 'VOID' : 'RETURN'];
+        }
         $b[] = ['title', $text['shop_name'] ?? 'HAQ Retail OS'];
         foreach ([$text['address'], $text['phone']] as $line) {
             if ($line !== null && $line !== '') {
@@ -42,7 +48,10 @@ final readonly class Receipt
         }
         $b[] = ['rule'];
         $when = CarbonImmutable::parse($sale['recorded_at'])->setTimezone($text['timezone']);
-        $b[] = ['pair', 'Receipt', $sale['receipt_number']];
+        $b[] = ['pair', $reversal ? 'Slip' : 'Receipt', $sale['receipt_number']];
+        if ($reversal) {
+            $b[] = ['pair', $kind === 'void' ? 'Voids' : 'Returns from', $sale['reverses_receipt_number'] ?? 'no receipt'];
+        }
         $b[] = ['pair', 'Date', $when->format('j M Y H:i')];
         $b[] = ['pair', 'Counter', $counterName];
         $b[] = ['pair', 'Cashier', $sale['cashier']];
@@ -53,12 +62,22 @@ final readonly class Receipt
             if ($line['colour'] !== null) {
                 $b[] = ['indent', 'Colour: '.$line['colour']];
             }
-            $b[] = ['indentpair', $line['qty'].' x '.Money::plain($line['unit_price_kobo']), Money::plain($line['line_total_kobo'])];
+            $b[] = ['indentpair', abs($line['qty']).' x '.Money::plain($line['unit_price_kobo']), Money::plain($line['line_total_kobo'])];
         }
         $b[] = ['rule'];
-        $b[] = ['pair', 'TOTAL', $text['currency'].Money::plain($sale['total_kobo']), true];
+        $b[] = $reversal
+            ? ['pair', 'REFUND', $text['currency'].Money::plain(abs($sale['total_kobo'])), true]
+            : ['pair', 'TOTAL', $text['currency'].Money::plain($sale['total_kobo']), true];
 
         foreach ($sale['payments'] as $payment) {
+            if ($reversal) {
+                $b[] = ['pair', ['cash' => 'Cash back', 'transfer' => 'Transfer back', 'pos' => 'POS refund'][$payment['method']] ?? $payment['method'], Money::plain(abs($payment['amount_kobo']))];
+                if ($payment['reference'] !== null) {
+                    $b[] = ['indent', 'Ref: '.$payment['reference']];
+                }
+
+                continue;
+            }
             if ($payment['method'] === 'cash') {
                 $b[] = ['pair', 'Cash', Money::plain($payment['tendered_kobo'] ?? $payment['amount_kobo'])];
                 if (($payment['change_kobo'] ?? 0) > 0) {

@@ -12,6 +12,7 @@ use App\Reports\CashierDay;
 use App\Sales\Parked;
 use App\Settings\Settings;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Testing\TestResponse;
 use Tests\Support\Catalogue;
 use Tests\Support\People;
 use Tests\Support\Shop;
@@ -34,10 +35,15 @@ beforeEach(function () {
     };
 });
 
+/** One of the owner's settings as Shop settings lists them, found by its key (they are listed by name). */
+function ownerSetting(TestResponse $response, string $key): array
+{
+    return collect($response->assertOk()->json('settings'))->firstWhere('key', $key) ?? [];
+}
+
 it('lets the owner set the closing time, keeps it in the history, and the forgotten-shift rule uses it', function () {
     $owner = ($this->as)('Halima', '135790');
-    $owner->getJson('/api/back-office/settings')->assertOk()
-        ->assertJsonPath('settings.0.key', 'shifts.closing_time')->assertJsonPath('settings.0.value', null)->assertJsonPath('settings.0.locked', false);
+    expect(ownerSetting($owner->getJson('/api/back-office/settings'), 'shifts.closing_time'))->toMatchArray(['value' => null, 'locked' => false]);
 
     $owner->postJson('/api/back-office/settings', ['key' => 'shifts.closing_time', 'value' => '21:30'])->assertOk()->assertJsonPath('value', '21:30');
     expect(app(Settings::class)->get('shifts.closing_time'))->toBe('21:30');
@@ -56,14 +62,13 @@ it('lets nobody but the owner change it, and never a setting not meant for the o
 it('shows a setting HAQ locked, and refuses to change it', function () {
     app(Settings::class)->set('shifts.closing_time', '22:00', 'console', locked: true);
     $owner = ($this->as)('Halima', '135790');
-    $owner->getJson('/api/back-office/settings')->assertJsonPath('settings.0.locked', true)->assertJsonPath('settings.0.value', '22:00');
+    expect(ownerSetting($owner->getJson('/api/back-office/settings'), 'shifts.closing_time'))->toMatchArray(['locked' => true, 'value' => '22:00']);
     $owner->postJson('/api/back-office/settings', ['key' => 'shifts.closing_time', 'value' => '21:00'])->assertStatus(423);
 });
 
 it('lets the owner set a cashier\'s discard limit in naira, kept in kobo, and the discard rule uses it (D38)', function () {
     $owner = ($this->as)('Halima', '135790');
-    $owner->getJson('/api/back-office/settings')->assertJsonPath('settings.1.key', 'parked.discard_limit_kobo')
-        ->assertJsonPath('settings.1.kind', 'money')->assertJsonPath('settings.1.value', 0);
+    expect(ownerSetting($owner->getJson('/api/back-office/settings'), 'parked.discard_limit_kobo'))->toMatchArray(['kind' => 'money', 'value' => 0]);
 
     $owner->postJson('/api/back-office/settings', ['key' => 'parked.discard_limit_kobo', 'value' => 500_000])->assertOk()->assertJsonPath('value', 500_000);
     expect(app(Parked::class)->limitKobo())->toBe(500_000);

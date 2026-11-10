@@ -15,6 +15,7 @@ import type { CounterSettings, CustomerType, ItemPrices, ItemFacetRow, ItemRow, 
 import { useCounterApi } from '../use-api';
 import { AfterPay, PaidSummary } from './after-pay';
 import { CartPanel } from './cart-panel';
+import { CashSheet, CloseDaySheet, ReturnsSheet } from './drawer-sheets';
 import { NewItem } from './new-item';
 import { Pay } from './pay';
 import { PricePad, type PriceChoice } from './price-pad';
@@ -62,6 +63,9 @@ type SheetState =
     | { kind: 'no-sale' }
     | { kind: 'shift' }
     | { kind: 'history' }
+    | { kind: 'returns'; receipt: string | null }
+    | { kind: 'cash' }
+    | { kind: 'close' }
     | { kind: 'cart' };
 
 const initials = (name: string) =>
@@ -284,8 +288,9 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                 say('warning', 'Finish what is open first, then scan.');
                 return;
             }
+            // A receipt's barcode opens Returns and voids with that sale (D68).
             if (isReceiptNumber(code)) {
-                say('info', `Receipt ${code}. Reprints are on the screen after Pay; returns come with the next release.`);
+                setSheet({ kind: 'returns', receipt: code });
                 return;
             }
             const all = [...cat.barcodes.values()].filter((b) => b.code === code && b.status !== 'disabled');
@@ -304,6 +309,13 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
             }
         },
         [view, sheet, cat, addItem, say],
+    );
+
+    // Items for a return with no receipt, from the counter's own copy of the catalogue (D68).
+    const findItems = useCallback(
+        async (q: string) =>
+            search === null ? [] : (await search.query(q)).map((id) => ({ id, name: cat.items.get(id)?.display_name ?? '' })).filter((i) => i.name !== ''),
+        [search, cat],
     );
 
     const pay = useCallback(() => {
@@ -782,6 +794,33 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                                 >
                                     My history
                                 </button>
+                                <button
+                                    type="button"
+                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
+                                    onClick={() => {
+                                        setSheet({ kind: 'returns', receipt: null });
+                                    }}
+                                >
+                                    Returns and voids
+                                </button>
+                                <button
+                                    type="button"
+                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
+                                    onClick={() => {
+                                        setSheet({ kind: 'cash' });
+                                    }}
+                                >
+                                    Cash out or in
+                                </button>
+                                <button
+                                    type="button"
+                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
+                                    onClick={() => {
+                                        setSheet({ kind: 'close' });
+                                    }}
+                                >
+                                    Close the day
+                                </button>
                             </div>
                         </>
                     )}
@@ -917,6 +956,45 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                         setSheetError(null);
                     }}
                     onHold={(label) => void hold(label)}
+                />
+            )}
+
+            {sheet?.kind === 'returns' && (
+                <ReturnsSheet
+                    api={api}
+                    people={people}
+                    initialReceipt={sheet.receipt}
+                    findItems={findItems}
+                    onClose={() => {
+                        setSheet(null);
+                    }}
+                    onDone={(done) => {
+                        setSheet(null);
+                        say('info', `${done.kind === 'void' ? 'Voided' : 'Returned'}: ${naira(Math.abs(done.total_kobo))} back to the customer. Slip ${done.receipt_number} prints.`);
+                    }}
+                />
+            )}
+
+            {sheet?.kind === 'cash' && (
+                <CashSheet
+                    api={api}
+                    people={people}
+                    onClose={() => {
+                        setSheet(null);
+                    }}
+                    onDone={(message) => {
+                        setSheet(null);
+                        say('info', message);
+                    }}
+                />
+            )}
+
+            {sheet?.kind === 'close' && (
+                <CloseDaySheet
+                    api={api}
+                    onClose={() => {
+                        setSheet(null);
+                    }}
                 />
             )}
 

@@ -188,6 +188,25 @@ final readonly class Printing
             after: ['reason' => $reason, 'sale_id' => $saleId]));
     }
 
+    /**
+     * Opens a fitted drawer for cash taken out or put in beside a sale (a paid-out, a drop, a top-up), which the
+     * drawer log already records (D68). Returns opened, not_opened (the printer did not answer) or none.
+     */
+    public function openFor(Terminal $terminal): string
+    {
+        $host = $terminal->printer_host;
+        if (! $this->drawerFitted($terminal) || $host === null || $host === '') {
+            return 'none';
+        }
+        try {
+            $this->printer->send($host, $terminal->printer_port ?? 9100, EscPos::drawerKick());
+
+            return 'opened';
+        } catch (PrinterUnavailable) {
+            return 'not_opened';
+        }
+    }
+
     private function drawerFitted(Terminal $terminal): bool
     {
         return (bool) DB::table('drawers')->where('terminal_id', $terminal->id)->value('fitted');
