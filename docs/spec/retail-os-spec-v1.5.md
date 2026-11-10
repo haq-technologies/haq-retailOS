@@ -446,9 +446,11 @@ After any restore or server replacement, the system starts a new epoch, and the 
 | Daily summary printout, flag list, catalogue health, CSV export, speed instrumentation, the measured pilot's scorecard and the owner's data export [S8, D56, D57] | Back-entry screen with paper receipt numbers | Scheduled export |
 | Starter catalogue v1.1 seed with phone models; typed brands, product words and phone models through the review queue [C2] | Phone models moved to the pilot [C2] | No change |
 
+There is no pilot (D67): the first shop goes live with a one-week safety net, so the go-live basics move from the MVP into the first release, in the place of the pilot weeks. They are voids, returns refunded by cash, transfer or POS, the day-end close with its blind count and Z-report, and paid-outs, drops and top-ups. Drawer handover counts, store credit, cash-out services, the one-step exchange screen and paper back-entry stay in the MVP. [D68]
+
 The never-cut list for every phase: transaction tests, concurrency and crash tests on a real PostgreSQL, backup and restore, export, audit, and restore epochs. [F6]
 # 14. Acceptance criteria
-Each check is pass or fail. The pilot slice is finished when all 46 checks in sections A to E pass and are written down; check D6 moved to the MVP checks with returns. [D49] MVP and Pro checks are verified before those releases. Integrity and audit checks that involve concurrency, crashes or restores run as multi-process tests against a real PostgreSQL with committed transactions. Tests that wrap each case in a rolled-back transaction (Laravel RefreshDatabase or DatabaseTransactions) do not count for them. [F6]
+Each check is pass or fail. The pilot slice is finished when all 46 checks in sections A to E pass and are written down; check D6 moved to the MVP checks with returns. [D49] The go-live basics add their own checks, in section F. [D68] MVP and Pro checks are verified before those releases. Integrity and audit checks that involve concurrency, crashes or restores run as multi-process tests against a real PostgreSQL with committed transactions. Tests that wrap each case in a rolled-back transaction (Laravel RefreshDatabase or DatabaseTransactions) do not count for them. [F6]
 ## A. Counter and speed (13)
 - A trained cashier completes a 3-item sale in under 30 seconds, and a single known-barcode item in under 8 seconds, measured by the counter's own timing over at least 20 sales. [S8]
 - Typing “ora free3c” returns Oraimo FreePods 3C Earbuds in under 100 ms from the browser cache with 5,000 items loaded, and a one-letter typo still finds the item. [S10]
@@ -513,17 +515,26 @@ Each check is pass or fail. The pilot slice is finished when all 46 checks in se
 - With colour tracking on, a sold-out colour shows as out of stock while another colour of the same item shows stock. [F22]
 - Two counters approving credit sales for one customer at the same time cannot exceed the limit. Debt ageing equals the sum of unallocated balances by sale date. [F23]
 - Discount and tax rounding tests give line sums equal to the sale total. [F23]
-## Pilot success thresholds (set with the owner)
+## F. Go-live basics (6) [D68]
+- A manager voids a sale within its shift, on its drawer: the void prints with its own receipt number and nets every total. A void after the shift closed, on another drawer, or of a sale with a return is refused. [F7, F19]
+- A return found by receipt number or its barcode needs a manager's PIN, a reason and a disposition, refunds by cash, transfer or POS, prints a return slip, and reverses the sale's cost, so profit stays correct. [F7]
+- No line is returned beyond the quantity sold, even when two counters return it at the same moment (the original check D6). [F7]
+- A return with no receipt is allowed only for the owner, and it is flagged. [F7]
+- Closing the day: the drawer's holder counts the cash blind, then sees the variance against expected cash (float plus cash sales, less cash refunds, paid-outs and drops, plus top-ups). A variance above the threshold is flagged, the Z-report prints with the audit code, and a closed shift never changes. [F19, S12]
+- Paid-outs, drops and top-ups each need a reason, a manager's PIN above the set amount, and change expected cash. [F19]
+
+## Go-live criteria (D67)
+
+There is no pilot: the app is the shop's record from install, with a one-week safety net. Go-live needs:
 
 | Measure | Threshold |
 |---|---|
-| Daily totals | On at least 10 of 14 pilot days the app’s total per payment method matches the notebook, after differences are traced and written down |
+| Checks | Every acceptance check passes and is written down (gate G4), the go-live basics' included [D68] |
+| Rehearsal | Gate G3, the software dress rehearsal, passes on the release that goes live |
 | Receipts | Every receipt tuple used once, and no committed sale without either a printed or a pending-print record. No sale lost to a crash or power cut |
-| Speed | A trained cashier rings a 3-item sale in under 30 seconds on typical days |
-| Profit coverage | At least 80% of revenue has a cost (at sale or estimated) by day 14, with the split between the two shown, so that backfilling alone cannot hide a poor result [F14] |
-| Owner’s decision | Continue or stop, and either way the owner receives his data export |
-
-How each is measured (D56): a trading day is a business day with a sale in the app or a total in the notebook, and the measured days are the first 14 from the day the owner starts them. A day matches when its totals agree, or once every difference is traced to the notebook; a difference traced to the app means it does not match. "Typical days" for speed are 10 of every 14 days that had timed 3-item sales, over at least 20 of them. Profit coverage is counted as it stood at the end of day 14. The back office's Measured pilot reads all five live, and the owner's decision keeps the scorecard as it stood. The data export is one ZIP of CSV files (D57).
+| Safety week | For the first week the shop also writes each sale in the notebook, and each evening a manager compares the notebook's totals per payment method with the app's in the back office's Measured pilot section, tracing every difference. A difference traced to the app is fixed before the notebook stops |
+| Speed | A trained cashier rings a 3-item sale in under 30 seconds on typical days, read from the daily summary in the first live week. A miss is fixed in a weekly release; it does not stop trading |
+| Owner's go | At the end of the week the owner confirms the notebook can stop. The owner may download the shop's data export at any time [D57] |
 
 # 15. Engineering and design standards
 Every practice below is here because it serves one of the six problems (P1 to P6) in section 1.
@@ -649,7 +660,7 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
 
 | Area | Deliverable |
 |---|---|
-| Wireframes and speed test | The five v1.4 screens predate the catalogue and are redrawn touch-first on a new canvas, adding the price-floor prompt, pending print, lost window, Pending transfers and the idle lock. There is no clickable prototype: the product owner signs off the wireframes at gate G1, and the speed instrumentation times real cashiers on the counter from the shadow pilot. Returns, shift close and the console are drawn in the MVP phase. The product owner signed the wireframes off on 6 November 2026. [Q10, D12, D19] |
+| Wireframes and speed test | The five v1.4 screens predate the catalogue and are redrawn touch-first on a new canvas, adding the price-floor prompt, pending print, lost window, Pending transfers and the idle lock. There is no clickable prototype: the product owner signs off the wireframes at gate G1, and the speed instrumentation times real cashiers on the counter from the first live week (D67). Returns, shift close and the console are drawn in the MVP phase. The product owner signed the wireframes off on 6 November 2026. [Q10, D12, D19] |
 | Release policy | GitHub Actions CI on every pull request with a real PostgreSQL; images on GHCR; a release manifest signed offline with a hardware token; staging on the product owner's computer with 5,000 test items [D16]; the pilot shop as the beta channel with a weekly release; automatic code rollback on a failed health check. [D1, D2] |
 | Hardware specification | Server with SSDs that have power-loss protection. UPS covering server, switch and router; one counter and its printer on the UPS or the inverter. Network thermal printers; cash drawers optional. Fixed IP and local name. Local certificate authority and renewal steps. Optional standby device. The device list lives in docs/operations/hardware.md and is locked. [F24, S7, R3, S21, D17] |
 | Support model | Remote access when online. A send-diagnostics bundle. A runbook for printer, PC start, wrong-date and restore problems. A pre-imaged spare PC with a licence transfer procedure. |
@@ -681,7 +692,7 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
 | Trademark status of HAQ (classes 9 and 42) | You, with a trademark agent | Proceed with the name and register before the first paid install |
 | Say-it-aloud test of HAQ with five shop owners (does it sound like “hack”) | You | Proceed with HAQ unless owners object |
 | Where head office and cloud backups are hosted, and data residency | You, with the lawyer | Not needed for the pilot; decide before the MVP [Q7] |
-| Tile (drill) order per category | Speed data from the shadow pilot | The v1.1 proposal [R1, D12] |
+| Tile (drill) order per category | Speed data from the first live weeks (D67) | The v1.1 proposal [R1, D12] |
 
 # 19. Decisions recorded
 
@@ -840,7 +851,7 @@ Every change below comes from the v1.4 review of 5 November 2026 or a decision a
 | Repository (section 4) | Public until the owner makes it private; nothing secret or personal is committed; green CI to merge, with no review while one person builds it | D10, D15 |
 | Receipts (sections 7 and 11) | The header and footer are a shop setting that only the sysadmin changes, with a branch override for the address and phone | D14 |
 | Hardware (section 16) | The hardware list is locked | D17 |
-| Delivery (section 16) | No clickable prototype: gate G1 is the product owner's sign-off of the wireframes, and real cashiers are first timed on the counter in the shadow pilot. The product owner's computer is the staging and test machine, with no office mini-PC. The wireframes are signed off | D12, D16, D19 |
+| Delivery (section 16) | No clickable prototype: gate G1 is the product owner's sign-off of the wireframes, and real cashiers are first timed on the counter in the first live week (D67). The product owner's computer is the staging and test machine, with no office mini-PC. The wireframes are signed off | D12, D16, D19 |
 | Reports (section 12) | The printed daily summary carries no profit or cost amounts | D18 |
 | Build (sections 4 and 19) | The shop server in apps/shop-server/ with pinned versions, TypeScript and Tailwind CSS; Laravel's own tables keep their keys; application code in the public repository; a modular monolith | D20, D21, D22, D23 |
 | Not adopted | An owner phone summary and read-only cloud view in Core | S13 |

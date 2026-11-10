@@ -2,7 +2,7 @@
 
 A point-of-sale system for phone-accessory shops in Nigeria, by HAQ Technology. A small server in each shop runs everything on the shop's own network, so selling never depends on the internet. Every receipt names the product properly, profit stays honest while cost prices are still being filled in, and every sale survives power cuts and tampering. The tiers are Core and Pro.
 
-**Status:** 10 November 2026. Phases 0, 1 and 2 are closed: gate G2 passed (D27). Phase 3, the counter and sale core, is built (D30 to D36); its gate G3 is a software dress rehearsal on virtual machines (D60). Phase 4's owner features and its hardening are built (D39 to D55), and so are Phase 5's tools: the measured pilot and the owner's data export (D56, D57). Everything is built and tested in software only; what is left is G3, then the pilot in the shop (PLAN.md).
+**Status:** 10 November 2026. Phases 0, 1 and 2 are closed: gate G2 passed (D27). Phase 3, the counter and sale core, is built (D30 to D36); its gate G3 is a software dress rehearsal on virtual machines (D60). Phase 4's owner features and its hardening are built (D39 to D55), and so are Phase 5's tools: the measured pilot and the owner's data export (D56, D57). Everything is built and tested in software only. There is no pilot (D67): what is left is the go-live basics (D68), the release, G3 and G4, then go-live with a one-week safety net (PLAN.md).
 
 ## Start here
 
@@ -66,7 +66,7 @@ The automatic tests run with `docker compose run --rm -e COMPOSER_PROCESS_TIMEOU
 | [docs/spec/](docs/spec/) | The product spec, v1.5 |
 | [docs/decisions.md](docs/decisions.md) | The decision log |
 | [docs/catalogue/](docs/catalogue/) | Starter catalogue v1.1: the JSON seed (the master), the review workbook for the shop owner, and Appendix C |
-| [docs/operations/](docs/operations/) | Installing a shop (install-a-shop.md), the hardware list, the G3 software rehearsal, restores, releases, start-up, the off-site copy, the 46 checks and the measured pilot |
+| [docs/operations/](docs/operations/) | Installing a shop (install-a-shop.md), the hardware list, the G3 software rehearsal, restores, releases, start-up, the off-site copy, the 52 checks and the safety week (measured-pilot.md) |
 | [docs/archive/](docs/archive/) | Superseded originals: spec v1.4 and the locked catalogue v1. Read-only |
 | [tools/catalogue/](tools/catalogue/) | Scripts that build and verify the catalogue |
 | [apps/shop-server/](apps/shop-server/) | The shop server: Laravel, Inertia and React, with its own README |
