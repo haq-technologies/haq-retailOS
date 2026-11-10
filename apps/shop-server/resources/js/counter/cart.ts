@@ -239,6 +239,16 @@ export function finishPayload(cart: Cart, payments: Payment[], newKey: () => str
     return { payload: { idempotency_key: key, ...body }, cart: { ...cart, finishKey: { key, hash } } };
 }
 
+/**
+ * Whether an answer to Finish says what became of the sale (D61): the sale itself, or one of Finish's own
+ * refusals (409, 422), which the server gives only after looking for the sale's key. Any other answer (a
+ * sign-in that ran out, an expired page, a server error) comes before that, so it says nothing: a sale that
+ * was in doubt stays in doubt.
+ */
+export function finishSettles(status: number): boolean {
+    return (status >= 200 && status < 300) || status === 409 || status === 422;
+}
+
 /** What is still to pay, and the change, for a set of payments. */
 export function paymentState(total: number, payments: Payment[]): { paid: number; left: number; change: number } {
     const paid = payments.reduce((s, p) => s + p.amountKobo, 0);

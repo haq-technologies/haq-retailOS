@@ -3,7 +3,7 @@ import { Keypad, padKeyFrom } from '@/components/keypad';
 import { Notice } from '@/components/notice';
 import type { Tile } from '@/components/sign-in-panel';
 import { WarningIcon } from '@/components/icons';
-import { finishPayload, markChecked, paymentState, totalKobo, type Cart, type FinishPayload, type Payment } from '../cart';
+import { finishPayload, finishSettles, markChecked, paymentState, totalKobo, type Cart, type FinishPayload, type Payment } from '../cart';
 import { digitsToKobo, koboToDigits, naira, quickCash, typeDigits } from '../money';
 import type { CounterSettings } from '../types';
 import type { CounterApi } from '../use-api';
@@ -116,10 +116,11 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                 if (!answer.ok && answer.body.journal_needed === true && (await reportJournal())) {
                     answer = await api.post<FinishAnswer>('/api/counter/sales', payload, 30_000);
                 }
-                if (answer.status >= 500) {
-                    // A server error may come after the sale committed: it stays in doubt until the server answers.
-                    setCart({ ...keyed, pending: payload });
-                    setProblem({ kind: 'offline' });
+                if (!finishSettles(answer.status)) {
+                    // A server error may come after the sale committed, so it puts the sale in doubt; a refusal before
+                    // Finish ran (a sign-in that ran out, an expired page) leaves a sale in doubt just as it was.
+                    if (held !== null || answer.status >= 500) setCart({ ...keyed, pending: payload });
+                    setProblem(answer.status >= 500 ? { kind: 'offline' } : { kind: 'message', message: answer.body.message ?? 'The sale did not finish. Try again.' });
                     return;
                 }
                 if (held !== null) setCart({ ...keyed, pending: null });
@@ -160,7 +161,7 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                 setCart({ ...cart, pending: null });
                 setProblem({ kind: 'cleared' });
             } else {
-                setProblem({ kind: 'offline' });
+                setProblem(answer.status >= 500 ? { kind: 'offline' } : { kind: 'message', message: answer.body.message ?? 'The server could not say. Try again.' });
             }
         } catch {
             setProblem({ kind: 'offline' });

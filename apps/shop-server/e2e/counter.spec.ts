@@ -307,6 +307,12 @@ test('keeps a sale the server never answered just as it is, and never sells it t
     await page.keyboard.press('Escape');
     await expect(page.getByRole('heading', { name: 'Pay ₦3,000' })).toBeVisible();
 
+    // A refusal before Finish runs (here a sign-in that ran out) says nothing about the sale: it stays locked.
+    await page.route('**/api/counter/sales', (route) => route.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"Sign in with your name and PIN."}' }), { times: 1 });
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page.getByText('Sign in with your name and PIN.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Back to sale' })).toBeDisabled();
+
     // Finish again sends the same request; the server answers with the sale it already has.
     const answered = page.waitForResponse((r) => r.url().endsWith('/api/counter/sales') && r.request().method() === 'POST');
     await page.getByRole('button', { name: 'Finish' }).click();
