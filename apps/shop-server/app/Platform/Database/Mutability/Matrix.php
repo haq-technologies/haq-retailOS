@@ -56,6 +56,9 @@ final readonly class Matrix
             'restores', 'journal_reports', 'lost_sales', 'back_entries',
             // The server clock's changes of state: unverified, then confirmed by the owner [F15]
             'clock_events',
+            // The measured pilot (D56): its start and the owner's decision, the notebook's totals and each
+            // difference traced; a correction or a withdrawal is a new row
+            'pilot_events', 'notebook_totals', 'pilot_traces',
             // Stock, once stock tracking is on (Pro)
             'stock_movements',
             // Every PIN entry, right or wrong: lockouts, backoff and the owner dashboard [F8]

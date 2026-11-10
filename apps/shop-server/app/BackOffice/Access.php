@@ -18,7 +18,7 @@ final readonly class Access
     public function __construct(private CostAccess $cost) {}
 
     /**
-     * @return array{dashboard: bool, profit: bool, costs: bool, prices: bool, review: bool, names: bool, categories: bool, promote: bool, flags: bool, summary: bool, catalogue: bool, settings: bool, health: bool, recovery: bool, audit: bool}
+     * @return array{dashboard: bool, profit: bool, costs: bool, prices: bool, review: bool, names: bool, categories: bool, promote: bool, flags: bool, summary: bool, catalogue: bool, settings: bool, health: bool, recovery: bool, audit: bool, pilot: bool, pilot_decide: bool, export: bool}
      */
     public function for(User $user): array
     {
@@ -50,6 +50,12 @@ final readonly class Access
             // Reading the audit log: a manager the branch's, redacted; the owner all, with sensitive values
             // (spec section 3) [D47]. A cashier reads their own on the counter; a storekeeper none.
             'audit' => $boss,
+            // The measured pilot (D56): managers and the owner enter the notebook's totals and trace each
+            // difference; only the owner starts the 14 days and records the decision at gate G5.
+            'pilot' => $boss,
+            'pilot_decide' => $role === Role::Owner,
+            // The shop's whole record, cost included, for the owner to keep (spec section 14; D57).
+            'export' => $role === Role::Owner,
         ];
     }
 

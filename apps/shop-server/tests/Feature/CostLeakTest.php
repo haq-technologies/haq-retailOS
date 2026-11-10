@@ -66,6 +66,7 @@ function scannedUrls(object $test): array
     $values = [
         'item' => $test->a->id, 'sale' => $test->sale['id'], 'code' => '6001234567890', 'kind' => 'brands',
         'category' => (string) DB::table('items')->where('id', $test->a->id)->value('category_id'), 'entry' => $test->entry,
+        'day' => (string) DB::table('sales')->where('id', $test->sale['id'])->value('business_day'),
     ];
     // Answers with more in them: the whole period, not only today.
     $queries = ['api/back-office/flags' => '?period=all', 'api/back-office/flags.csv' => '?period=all', 'api/back-office/exports/sales.csv' => '?period=all',

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\BackOffice\Http;
 
+use App\Audit\AuditEntry;
+use App\Audit\AuditLog;
 use App\BackOffice\SummarySlip;
 use App\Cost\CostAccess;
 use App\Organisation\Models\Terminal;
@@ -13,6 +15,7 @@ use App\Reports\CatalogueHealth;
 use App\Reports\Csv;
 use App\Reports\DailySummary;
 use App\Reports\Dashboard;
+use App\Reports\DataExport;
 use App\Reports\Exports;
 use App\Reports\Period;
 use App\Reports\Speed;
@@ -21,6 +24,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Reports (spec section 12): catalogue health, the daily summary on screen and printed, and the CSV exports
@@ -89,6 +93,21 @@ final class ReportsController
         $label = $period->name === 'day' ? $this->day($request, $dashboard) : $period->name.'-'.CarbonImmutable::now($this->zone())->format('Y-m-d');
 
         return Csv::download("sales-{$label}.csv", Exports::salesHeader($withCost), Exports::sales($period, $withCost, $this->zone()));
+    }
+
+    /**
+     * The shop's whole record for the owner to keep (D57): one ZIP of CSV files, cost included. Made fresh
+     * each time, and deleted from the server once sent.
+     */
+    public function shop(Request $request, DataExport $export, AuditLog $audit): BinaryFileResponse
+    {
+        $actor = $this->allowed($request, 'export');
+        $path = DataExport::temporaryPath();
+        $made = $export->write($path, $actor->name);
+        $audit->record(new AuditEntry(action: 'export.downloaded', actorId: $actor->id, subjectType: 'shop',
+            after: ['files' => count($made['files']), 'sales' => $made['files']['receipts.csv']['rows'] ?? 0]));
+
+        return response()->download($path, $export->filename(), ['Content-Type' => 'application/zip', 'Cache-Control' => 'no-store'])->deleteFileAfterSend();
     }
 
     private function day(Request $request, Dashboard $dashboard): string

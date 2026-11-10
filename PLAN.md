@@ -2,7 +2,7 @@
 
 The living plan from today to the pilot go-live decision and on to the MVP. The spec ([docs/spec/retail-os-spec-v1.5.md](docs/spec/retail-os-spec-v1.5.md)) says what to build; this file says when, by whom, and what happens next. Decisions and their sources are in [docs/decisions.md](docs/decisions.md).
 
-Last updated: 7 November 2026.
+Last updated: 10 November 2026.
 
 ## Goal
 
@@ -17,7 +17,7 @@ The pilot succeeds when (spec section 14):
 
 ## Status
 
-Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3, the dress rehearsal, waits for the pilot hardware; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026. Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39); all five are built and merged (D40 to D46): the fifth, recovery, at the product owner's go the same day (D44 to D46). A review against the spec added the audit log to read and the counter's speed (D47).
+Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3, the dress rehearsal, waits for the pilot hardware; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026. Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39); all five are built and merged (D40 to D46): the fifth, recovery, at the product owner's go the same day (D44 to D46). A review against the spec added the audit log to read and the counter's speed (D47). Phase 5's tools, which need no hardware, were built on 10 November 2026 at the product owner's go (D56, D57): the measured pilot in the back office and the owner's data export; the 14 measured days themselves follow G4.
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
@@ -32,9 +32,10 @@ Done:
 
 - Gate G2 passed on 6 November 2026 (D27); the identity timings accepted (D28); back-office devices for the owner's phone or laptop (D29).
 - Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the G3 tooling. See the Phase 3 checklist below.
+- Phase 5's tools, built early at the product owner's go (D56, D57): the measured pilot (the notebook's totals beside the app's, each difference traced, the five success measures read live, the owner's decision with the scorecard as it stood) and the owner's data export as one ZIP of spreadsheets; the procedure is in docs/operations/measured-pilot.md.
 - Phase 4's owner features, started before G3 at the product owner's go (D39), all five built on 7 November 2026 (D40 to D46): the back office with the owner's dashboard and cost entry with backfill; flags and Needs your attention; the review queues with merge and undo; first-sale prices, catalogue health, the daily summary on screen and printed, and the CSV exports; and recovery: restore epochs end to end with the lost window, server health with catch-up and the server clock, and reboot recovery. See the Phase 4 section below.
 
-Next: the hardening that needs no hardware is done (D50, D55). Everything left in Phase 4 needs the pilot hardware: gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md), then the soak test, the install rehearsal and the checks marked for G3 in docs/operations/acceptance-checks.md. Before G3, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot waits for G3 (D39).
+Next: the hardening that needs no hardware is done (D50, D55). Everything left in Phase 4 needs the pilot hardware: gate G3 on the pilot hardware (docs/operations/g3-dress-rehearsal.md), then the soak test, the install rehearsal and the checks marked for G3 in docs/operations/acceptance-checks.md. Before G3, the first release is made and signed (docs/operations/releases.md), and the GHCR token goes onto the pilot server at install. The shadow pilot waits for G3 (D39). Phase 5's software is built (D56, D57), so after G4 the 14 measured days need only the shop: docs/operations/measured-pilot.md.
 
 ## Team
 
@@ -179,6 +180,16 @@ Answered on 7 November 2026: undoing a cost is built (D48); check D6 moves to th
 
 Also answered: a cashier's item creation counts as high at 10 a day, which the owner changes in Shop settings (D52); and the off-site copy with its key shares is built in Phase 4, before G4, as Claude recommended (D53).
 
+## Phase 5 (its tools built early, D56)
+
+The measured pilot needs the shop and comes after gate G4; the software it needs was built on 10 November 2026, at the product owner's go ("proceed with phase 5, finish it up").
+
+- [x] The measured pilot in the back office: the owner starts the 14 days, a manager or the owner types the notebook's totals each evening and traces each difference to the notebook or the app, the five measures are read live, and the owner records continue or stop with the scorecard as it stood (Claude, 10 November 2026; D56)
+- [x] The owner's data export: the whole record, cost included, as one ZIP of CSV files with each file's SHA-256, from the back office or `shop:export` (Claude, 10 November 2026; D57)
+- [x] The procedure for the 14 days and gate G5 (Claude, 10 November 2026; docs/operations/measured-pilot.md)
+- [ ] The 14 measured days at the shop, after G4 (product owner, shop owner and manager)
+- [ ] Gate G5: the owner's decision, and the data export handed over either way (shop owner, product owner)
+
 ## Before Phase 3
 
 - [ ] Buy the pilot hardware (product owner): the receipt printer and the scanner by week 6, when printing is built, and the rest before the G3 dress rehearsal in week 12
@@ -237,6 +248,9 @@ Assumptions:
 | Tile (drill) order per category | Speed data from the shadow pilot (D12) | The measured pilot (week 21) | The v1.1 proposal |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
+| Whether the pilot shop's notebook records how each sale was paid (cash, transfer or POS), which the daily totals compare | Product owner, from the shop owner | The measured pilot (week 21) | The cashiers add a payment column for the 14 days (docs/operations/measured-pilot.md) |
+| Confirm D56's readings of the thresholds: a difference traced to the app fails the day, and "typical days" for speed means 10 of every 14 days with timed 3-item sales, over at least 20 | Product owner | The measured pilot (week 21) | As built (D56) |
+| On stop at G5: what happens to the server, its backups, the off-site drives and the key shares | Product owner, in the shop agreement | Gate G5 (week 22) | The owner keeps the data export (D57); the hardware follows the agreement |
 | The pilot shop's closing time, for the forgotten-shift rule: a shift still open four hours later closes as unclosed (S12) | Shop owner, in Shop settings on a back-office device (D37) | Install (week 13) | None set: no shift closes by itself |
 | The pilot shop's discard limit: the most a cashier may discard of their own parked sale without a manager (F12) | Shop owner, in Shop settings on a back-office device (D38) | Install (week 13) | ₦0: every cashier discard needs a manager (D33) |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
@@ -295,3 +309,5 @@ Assumptions:
 | 7 November 2026 | High item creation at 10 a day, an owner setting (D52); the off-site copy to build before G4 (D53) |
 | 7 November 2026 | Hardening: the off-site copy with its key shares (D53) |
 | 8 November 2026 | The counter's brand step offers every listed brand, found while trying the counter (D54) |
+| 10 November 2026 | Hardening: the upgrade-path test and the 46 checks written down (D55) |
+| 10 November 2026 | Phase 5's tools at the product owner's go: the measured pilot (D56) and the owner's data export (D57); the procedure for the 14 days and G5 |

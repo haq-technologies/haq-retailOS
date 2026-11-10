@@ -17,12 +17,13 @@ FROM ${COMPOSER_IMAGE} AS composer
 FROM ${PHP_IMAGE} AS base
 
 # pdo_pgsql for PostgreSQL, intl for money and number formatting, pcntl so queue workers stop cleanly,
-# bcmath for exact arithmetic. OPcache is built into PHP 8.5. The -dev packages are removed after the build.
+# bcmath for exact arithmetic, zip for the owner's data export (D57). OPcache is built into PHP 8.5. The
+# -dev packages are removed after the build.
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends libpq5 libicu76 libpq-dev libicu-dev; \
-    docker-php-ext-install -j"$(nproc)" pdo_pgsql intl pcntl bcmath; \
-    apt-get purge -y --auto-remove libpq-dev libicu-dev; \
+    apt-get install -y --no-install-recommends libpq5 libicu76 libzip5 libpq-dev libicu-dev libzip-dev; \
+    docker-php-ext-install -j"$(nproc)" pdo_pgsql intl pcntl bcmath zip; \
+    apt-get purge -y --auto-remove libpq-dev libicu-dev libzip-dev; \
     rm -rf /var/lib/apt/lists/*
 
 COPY apps/shop-server/docker/php/conf.d/app.ini /usr/local/etc/php/conf.d/zz-app.ini

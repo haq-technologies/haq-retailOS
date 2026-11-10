@@ -9,6 +9,7 @@ use App\Catalogue\ReviewQueue;
 use App\Identity\Models\User;
 use App\Identity\Role;
 use App\Organisation\Models\Terminal;
+use App\Pilot\Measure;
 use App\Platform\Http\Page;
 use App\Reports\Dashboard;
 use App\Reports\FirstSales;
@@ -55,7 +56,7 @@ final class BackOfficeController
     }
 
     /** The counts on the menu, only for the sections this person may open. */
-    public function badges(Request $request, Access $access, ReviewQueue $review, Flags $flags, Dashboard $dashboard): JsonResponse
+    public function badges(Request $request, Access $access, ReviewQueue $review, Flags $flags, Dashboard $dashboard, Measure $pilot): JsonResponse
     {
         $can = $access->for($this->actor($request));
         $day = $dashboard->today();
@@ -70,6 +71,8 @@ final class BackOfficeController
             'recovery' => $can['recovery'] ? LostWindow::waiting() : 0,
             // The lost-window screen joins the menu after a restore, and while a lost sale waits.
             'recovery_shown' => $can['recovery'] && LostWindow::shown(),
+            // Measured-pilot days still without the notebook's totals or with a difference to trace (D56).
+            'pilot' => $can['pilot'] ? $pilot->waiting() : 0,
         ]);
     }
 

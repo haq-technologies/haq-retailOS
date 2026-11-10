@@ -29,6 +29,25 @@ final class Csv
     }
 
     /**
+     * Writes the file a row at a time, so a long one never sits in memory. Returns the rows written.
+     *
+     * @param  resource  $handle
+     * @param  list<string>  $header
+     * @param  iterable<list<string|int|null>>  $rows
+     */
+    public static function write($handle, array $header, iterable $rows): int
+    {
+        fwrite($handle, "\u{FEFF}".self::line($header));
+        $n = 0;
+        foreach ($rows as $row) {
+            fwrite($handle, self::line($row));
+            $n++;
+        }
+
+        return $n;
+    }
+
+    /**
      * @param  list<string>  $header
      * @param  iterable<list<string|int|null>>  $rows
      */

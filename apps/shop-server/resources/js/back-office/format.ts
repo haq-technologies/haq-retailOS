@@ -51,3 +51,15 @@ export function describeValues(values: Record<string, unknown> | null): string {
         })
         .join(' · ');
 }
+
+/**
+ * A naira amount as typed from the notebook ("12,500", "₦12500" or "12500.50") in kobo; null when it is
+ * not an amount. Never negative, and at most two places after the point.
+ */
+export function nairaToKobo(text: string): number | null {
+    const clean = text.replace(/[₦,\s]/g, '');
+    const match = /^(\d{1,12})(?:\.(\d{1,2}))?$/.exec(clean);
+    if (match === null) return null;
+    const [, whole = '0', part = ''] = match;
+    return Number.parseInt(whole, 10) * 100 + (part === '' ? 0 : Number.parseInt(part.padEnd(2, '0'), 10));
+}
