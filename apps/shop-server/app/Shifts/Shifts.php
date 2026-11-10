@@ -122,7 +122,7 @@ final readonly class Shifts
     }
 
     /** A counter's drawer row, fitted or not; a counter with no fitted drawer still has one [F19, S21]. */
-    private function drawerFor(Terminal $terminal): string
+    public function drawerFor(Terminal $terminal): string
     {
         $id = DB::table('drawers')->where('terminal_id', $terminal->id)->value('id');
         if (is_string($id)) {

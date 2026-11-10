@@ -41,10 +41,13 @@ final readonly class Flags
         'approval_away' => 'Approved while not signed in',
         'locked_out' => 'Locked out',
         'back_entry' => 'Re-entered after a restore',
+        'voided' => 'Sale voided',
+        'return_no_receipt' => 'Return with no receipt',
+        'cash_variance' => 'Drawer over or short',
     ];
 
     /** What goes to the dashboard's Needs your attention until someone marks it as seen. */
-    public const ATTENTION = ['below_cost', 'below_cost_later', 'below_floor', 'transfer_waited', 'approval_away', 'locked_out'];
+    public const ATTENTION = ['below_cost', 'below_cost_later', 'below_floor', 'transfer_waited', 'approval_away', 'locked_out', 'return_no_receipt', 'cash_variance'];
 
     public function __construct(private Settings $settings) {}
 
@@ -80,6 +83,9 @@ final readonly class Flags
                 'approval_away' => $this->approvalAway($period),
                 'locked_out' => $this->lockedOut($period),
                 'back_entry' => $this->backEntries($period),
+                'voided' => $this->voided($period),
+                'return_no_receipt' => $this->returnsWithoutReceipt($period),
+                'cash_variance' => $this->cashVariances($period),
                 default => [],
             };
             array_push($rows, ...$found);
@@ -124,6 +130,8 @@ final readonly class Flags
             'auto_closed' => ['shifts', 'id'],
             'approval_away' => ['approvals', 'id'],
             'back_entry' => ['back_entries', 'id'],
+            'voided', 'return_no_receipt' => ['sales', 'id'],
+            'cash_variance' => ['shift_events', 'id'],
             default => ['audit_log', 'id'],
         };
 
@@ -433,6 +441,70 @@ final readonly class Flags
         return array_map(fn (object $r) => $this->row('locked_out', $r->id, $r->at, ($r->person ?? 'Someone').' was locked out after wrong PINs',
             $r->until === null ? 'Too many wrong PINs' : 'Unlocks by itself at '.$this->time(CarbonImmutable::parse($r->until)),
             who: $r->person, cashierId: $r->user_id, terminal: $r->terminal), $rows);
+    }
+
+    /**
+     * Every void, with its reason and who approved it (D68): a void undoes a whole sale, so the owner sees each.
+     *
+     * @return list<Flag>
+     */
+    private function voided(Period $p): array
+    {
+        /** @var list<object{id: string, at: string, receipt_number: string, original: string, original_id: string, amount: int|string, actor_id: string, actor: string, terminal: string, reason: ?string}> $rows */
+        $rows = DB::select(<<<'SQL'
+            SELECT v.id, v.recorded_at AS at, v.receipt_number, o.receipt_number AS original, o.id AS original_id, -v.total_kobo AS amount,
+                   u.id AS actor_id, u.name AS actor, t.name AS terminal,
+                   (SELECT a.redacted_after->>'reason' FROM audit_log a WHERE a.action = 'sale.voided' AND a.subject_id = o.id ORDER BY a.seq DESC LIMIT 1) AS reason
+            FROM sales v JOIN sales o ON o.id = v.reverses_sale_id JOIN users u ON u.id = v.cashier_id JOIN terminals t ON t.id = v.terminal_id
+            WHERE v.kind = 'void' AND v.recorded_at >= ? AND v.recorded_at < ?
+            SQL, [$p->fromSql(), $p->toSql()]);
+
+        return array_map(fn (object $r) => $this->row('voided', $r->id, $r->at, "{$r->original} voided ({$r->receipt_number})",
+            'Reason: '.($r->reason ?? 'none given'), who: $r->actor, cashierId: $r->actor_id, terminal: $r->terminal,
+            saleIds: [$r->original_id, $r->id], receipt: $r->original, amount: (int) $r->amount), $rows);
+    }
+
+    /**
+     * Goods taken back with no receipt: the owner's alone, and always flagged (spec section 9) [F7, D68].
+     *
+     * @return list<Flag>
+     */
+    private function returnsWithoutReceipt(Period $p): array
+    {
+        /** @var list<object{id: string, at: string, receipt_number: string, amount: int|string, actor_id: string, actor: string, terminal: string, items: ?string}> $rows */
+        $rows = DB::select(<<<'SQL'
+            SELECT s.id, s.recorded_at AS at, s.receipt_number, -s.total_kobo AS amount, u.id AS actor_id, u.name AS actor, t.name AS terminal,
+                   (SELECT string_agg((-l.qty)::text || ' × ' || l.name_snapshot, ', ' ORDER BY l.line_no) FROM sale_lines l WHERE l.sale_id = s.id) AS items
+            FROM sales s JOIN users u ON u.id = s.cashier_id JOIN terminals t ON t.id = s.terminal_id
+            WHERE s.kind = 'return' AND s.reverses_sale_id IS NULL AND s.recorded_at >= ? AND s.recorded_at < ?
+            SQL, [$p->fromSql(), $p->toSql()]);
+
+        return array_map(fn (object $r) => $this->row('return_no_receipt', $r->id, $r->at, "Taken back with no receipt ({$r->receipt_number})",
+            $r->items ?? '', who: $r->actor, cashierId: $r->actor_id, terminal: $r->terminal, saleIds: [$r->id], receipt: $r->receipt_number,
+            amount: (int) $r->amount), $rows);
+    }
+
+    /**
+     * A drawer whose count at the close was over or short by more than the shop's threshold [F19, D68].
+     *
+     * @return list<Flag>
+     */
+    private function cashVariances(Period $p): array
+    {
+        $threshold = $this->settings->get('cash.variance_flag_kobo');
+        /** @var list<object{id: string, at: string, variance: int|string, counted: int|string, expected: int|string, business_day: string, drawer: string, terminal: string, actor_id: ?string, actor: ?string}> $rows */
+        $rows = DB::select(<<<'SQL'
+            SELECT e.id, e.at, e.variance_kobo AS variance, e.counted_cash_kobo AS counted, e.expected_cash_kobo AS expected, sh.business_day,
+                   d.label AS drawer, t.name AS terminal, u.id AS actor_id, u.name AS actor
+            FROM shift_events e JOIN shifts sh ON sh.id = e.shift_id JOIN drawers d ON d.id = sh.drawer_id JOIN terminals t ON t.id = d.terminal_id
+            LEFT JOIN users u ON u.id = e.cashier_id
+            WHERE e.type = 'close_count' AND abs(e.variance_kobo) > ? AND e.at >= ? AND e.at < ?
+            SQL, [is_int($threshold) ? $threshold : 0, $p->fromSql(), $p->toSql()]);
+
+        return array_map(fn (object $r) => $this->row('cash_variance', $r->id, $r->at,
+            "{$r->drawer} ".((int) $r->variance > 0 ? 'over' : 'short').' by '.Money::naira(abs((int) $r->variance)),
+            'Counted '.Money::naira((int) $r->counted).', expected '.Money::naira((int) $r->expected).", business day {$r->business_day}",
+            who: $r->actor, cashierId: $r->actor_id, terminal: $r->terminal, amount: abs((int) $r->variance)), $rows);
     }
 
     /**

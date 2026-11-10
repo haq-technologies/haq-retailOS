@@ -7,6 +7,7 @@ use App\Identity\Http\EnrolledTerminal;
 use App\Sales\Http\JournalController;
 use App\Sales\Http\ParkedController;
 use App\Sales\Http\PriceController;
+use App\Sales\Http\ReversalController;
 use App\Sales\Http\SaleController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,10 @@ Route::middleware(['web', EnrolledTerminal::class])->post('/api/counter/journal'
 Route::middleware(['web', EnrolledTerminal::class, ActingUser::class])->group(function (): void {
     Route::post('/api/counter/sales', [SaleController::class, 'finish']);
     Route::get('/api/counter/sales/by-key/{key}', [SaleController::class, 'byKey'])->where('key', '[A-Za-z0-9_-]{8,64}');
+    // Voids and returns (D68).
+    Route::get('/api/counter/receipts/{number}', [ReversalController::class, 'find'])->where('number', '[A-Za-z0-9-]{1,40}');
+    Route::post('/api/counter/voids', [ReversalController::class, 'void']);
+    Route::post('/api/counter/returns', [ReversalController::class, 'return']);
     Route::get('/api/counter/items/{item}/price', [PriceController::class, 'show']);
     Route::post('/api/counter/items/{item}/prices', [PriceController::class, 'store']);
     Route::get('/api/counter/parked', [ParkedController::class, 'index']);

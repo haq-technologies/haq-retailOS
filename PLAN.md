@@ -187,10 +187,10 @@ Also answered: a cashier's item creation counts as high at 10 a day, which the o
 
 Built before go-live, because the app is the shop's record from day one (D67):
 
-- [ ] Voids: a manager voids a whole sale within its shift, on its drawer, as a reversing sale with its own receipt number (check F1) (Claude)
-- [ ] Returns: by receipt number or barcode, a manager's PIN, a reason and a disposition, refunded by cash, transfer or POS, the cost reversed, no line returned twice even from two counters, and the owner alone with no receipt (checks F2 to F4) (Claude)
-- [ ] The day-end close: the blind count, the variance against expected cash, the flag above the threshold, the Z-report with the audit code (check F5) (Claude)
-- [ ] Paid-outs, drops and top-ups, with a reason and a manager above the set amount (check F6) (Claude)
+- [x] Voids: a manager voids a whole sale within its shift, on its drawer, as a reversing sale with its own receipt number (check F1) (Claude, 10 November 2026)
+- [x] Returns: by receipt number or barcode, a manager's PIN, a reason and a disposition, refunded by cash, transfer or POS, the cost reversed, no line returned twice even from two counters, and the owner alone with no receipt (checks F2 to F4) (Claude, 10 November 2026)
+- [x] The day-end close: the blind count, the variance against expected cash, the flag above the threshold, the Z-report with the audit code (check F5) (Claude, 10 November 2026)
+- [x] Paid-outs, drops and top-ups, with a reason and a manager above the set amount (check F6) (Claude, 10 November 2026). The owner sets three new things in Shop settings: the cash limit without a manager (₦0 until set), the drawer difference that is flagged (₦1,000 until set) and the return window (no limit until set); see Open items
 
 ## Phase 5: go-live and the safety week (D67)
 
@@ -247,6 +247,7 @@ Assumptions:
 
 | Item | Who | Needed by | Default until answered |
 |---|---|---|---|
+| The owner's three go-live settings: cash out of or into the drawer without a manager, the drawer difference that is flagged, and how many days a sale can be returned (D68) | Shop owner, in Shop settings | Install | ₦0 (every paid-out, drop and top-up needs a manager), ₦1,000, and no return limit |
 | Busy-day sales volume | Product owner, from the notebook | Install | Measured in the first live week |
 | Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | When the product owner chooses; application code is public from Phase 2 (D22) | Public (D10) |
 | A read-only GHCR token for each shop server's updater: the image packages are private. Staging on this computer already pulls from GHCR | Product owner, Claude | Install (week 13) | The pilot server's token was made by the product owner on 7 November 2026 (classic, read:packages only); it is given to install.sh on the pilot server, which keeps it in secrets/ |

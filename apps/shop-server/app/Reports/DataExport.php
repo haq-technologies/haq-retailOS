@@ -182,7 +182,7 @@ final readonly class DataExport
             FROM sales s JOIN terminals t ON t.id = s.terminal_id JOIN users u ON u.id = s.cashier_id LEFT JOIN payments p ON p.sale_id = s.id
             GROUP BY s.id, t.code, u.name ORDER BY s.recorded_at, s.receipt_number
             SQL);
-        $kinds = ['sale' => 'Sale', 'back_entry' => 'Re-entered after a restore', 'void' => 'Void'];
+        $kinds = ['sale' => 'Sale', 'back_entry' => 'Re-entered after a restore', 'void' => 'Void', 'return' => 'Return'];
         $printed = ['printed' => 'Printed', 'pending' => 'Waiting to print', 'failed' => 'Did not print'];
         foreach ($rows as $r) {
             /** @var object{receipt_number: string, business_day: string, recorded_at: string, counter: string, cashier: string, customer_type: string, kind: string, total_kobo: int|string, clock_state: string, cash: int|string, transfer: int|string, pos: int|string, printed: ?string} $r */

@@ -63,7 +63,7 @@ final readonly class ReviewQueue
         /** @var list<object{id: string, name: string, typed_by: ?string, sales: int|string, items: ?string, first_sold: ?string}> $rows */
         $rows = DB::select(<<<'SQL'
             SELECT b.id, b.name, u.name AS typed_by,
-                   (SELECT count(*) FROM sale_lines l JOIN items i ON i.id = l.item_id WHERE i.brand_id = b.id) AS sales,
+                   (SELECT count(*) FROM sale_lines l JOIN items i ON i.id = l.item_id WHERE i.brand_id = b.id AND l.qty > 0) AS sales,
                    (SELECT string_agg(i.display_name, ', ' ORDER BY i.display_name) FROM items i WHERE i.brand_id = b.id AND i.status <> 'merged') AS items,
                    (SELECT min(s.recorded_at) FROM sale_lines l JOIN sales s ON s.id = l.sale_id JOIN items i ON i.id = l.item_id WHERE i.brand_id = b.id) AS first_sold
             FROM brands b LEFT JOIN users u ON u.id = b.created_by
@@ -88,7 +88,7 @@ final readonly class ReviewQueue
         $rows = DB::select(<<<'SQL'
             SELECT v.id, v.name, v.list, f.name AS family,
                    (SELECT u.name FROM audit_log al JOIN users u ON u.id = al.actor_id WHERE al.action = 'catalogue.phone_model_typed' AND al.subject_id = v.id LIMIT 1) AS typed_by,
-                   (SELECT count(*) FROM sale_lines l JOIN item_facets x ON x.item_id = l.item_id WHERE x.picklist_value_id = v.id) AS sales,
+                   (SELECT count(*) FROM sale_lines l JOIN item_facets x ON x.item_id = l.item_id WHERE x.picklist_value_id = v.id AND l.qty > 0) AS sales,
                    (SELECT string_agg(i.display_name, ', ' ORDER BY i.display_name) FROM items i JOIN item_facets x ON x.item_id = i.id WHERE x.picklist_value_id = v.id AND i.status <> 'merged') AS items
             FROM picklist_values v LEFT JOIN picklist_values f ON f.id = v.parent_id
             WHERE v.status = 'pending'
@@ -149,7 +149,7 @@ final readonly class ReviewQueue
         $rows = DB::select(<<<'SQL'
             SELECT min(i.typed_category_word) AS word, json_agg(i.id ORDER BY i.created_at)::text AS item_ids,
                    string_agg(i.display_name, ', ' ORDER BY i.display_name) AS names, string_agg(DISTINCT u.name, ', ') AS typed_by,
-                   (SELECT count(*) FROM sale_lines l JOIN items j ON j.id = l.item_id WHERE j.status = 'pending_category' AND lower(j.typed_category_word) = lower(min(i.typed_category_word))) AS sales,
+                   (SELECT count(*) FROM sale_lines l JOIN items j ON j.id = l.item_id WHERE l.qty > 0 AND j.status = 'pending_category' AND lower(j.typed_category_word) = lower(min(i.typed_category_word))) AS sales,
                    (SELECT min(l.unit_price_kobo) FROM sale_lines l JOIN items j ON j.id = l.item_id WHERE j.status = 'pending_category' AND lower(j.typed_category_word) = lower(min(i.typed_category_word))) AS low,
                    (SELECT max(l.unit_price_kobo) FROM sale_lines l JOIN items j ON j.id = l.item_id WHERE j.status = 'pending_category' AND lower(j.typed_category_word) = lower(min(i.typed_category_word))) AS high
             FROM items i LEFT JOIN users u ON u.id = i.created_by
@@ -177,7 +177,7 @@ final readonly class ReviewQueue
         /** @var list<object{id: string, name: string, source: string, category: string, created_by: ?string, created_at: string, sales: int|string, prices: ?string, brand_status: ?string, brand: ?string, parts: ?string}> $rows */
         $rows = DB::select(<<<'SQL'
             SELECT i.id, i.display_name AS name, i.source, c.name AS category, u.name AS created_by, i.created_at,
-                   (SELECT count(*) FROM sale_lines l WHERE l.item_id = i.id) AS sales,
+                   (SELECT count(*) FROM sale_lines l WHERE l.item_id = i.id AND l.qty > 0) AS sales,
                    (SELECT json_agg(DISTINCT l.unit_price_kobo)::text FROM sale_lines l WHERE l.item_id = i.id) AS prices,
                    b.status AS brand_status, b.name AS brand,
                    (SELECT string_agg(coalesce(v.name, x.text_value), ', ' ORDER BY x.facet_key) FROM item_facets x LEFT JOIN picklist_values v ON v.id = x.picklist_value_id WHERE x.item_id = i.id) AS parts
@@ -228,7 +228,7 @@ final readonly class ReviewQueue
         /** @var list<object{code: string, item_id: string, name: string, chosen_by: ?string, sales: int|string}> $rows */
         $rows = DB::select(<<<'SQL'
             SELECT bc.code, bc.item_id, i.display_name AS name, u.name AS chosen_by,
-                   (SELECT count(*) FROM sale_lines l WHERE l.item_id = bc.item_id AND l.flags->>'barcode' = bc.code) AS sales
+                   (SELECT count(*) FROM sale_lines l WHERE l.item_id = bc.item_id AND l.qty > 0 AND l.flags->>'barcode' = bc.code) AS sales
             FROM barcodes bc JOIN items i ON i.id = bc.item_id LEFT JOIN users u ON u.id = bc.learned_by
             WHERE bc.conflicted AND bc.status <> 'disabled'
             ORDER BY bc.code, bc.learned_at
@@ -315,7 +315,7 @@ final readonly class ReviewQueue
         /** @var object{id: string, name: string, source: string, sales: int|string, barcodes: int|string, price: ?int} $r */
         $r = DB::selectOne(<<<'SQL'
             SELECT i.id, i.display_name AS name, i.source,
-                   (SELECT count(*) FROM sale_lines l WHERE l.item_id = i.id) AS sales,
+                   (SELECT count(*) FROM sale_lines l WHERE l.item_id = i.id AND l.qty > 0) AS sales,
                    (SELECT count(*) FROM barcodes bc WHERE bc.item_id = i.id AND bc.status <> 'disabled') AS barcodes,
                    (SELECT p.price_kobo FROM item_prices p WHERE p.item_id = i.id AND p.customer_type = 'retail' ORDER BY p.effective_from DESC LIMIT 1) AS price
             FROM items i WHERE i.id = ?

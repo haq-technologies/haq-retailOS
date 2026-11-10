@@ -18,6 +18,8 @@ enum ApprovalAction: string
     case Void = 'void';
     case CreditSale = 'credit_sale';
     case PaidOut = 'paid_out';
+    case CashDrop = 'cash_drop';
+    case CashTopUp = 'cash_top_up';
 
     /** A price approval names its cart line, item and price, and is bound to them when it is granted [S3]. */
     public function isPrice(): bool

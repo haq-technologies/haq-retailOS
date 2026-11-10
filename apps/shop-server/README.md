@@ -76,7 +76,7 @@ apps/shop-server/deploy/staging.sh --local   # images built here: docker build .
 
 ## The counter
 
-Open `/counter` on an enrolled counter (home goes there). It signs in with the name tiles, keeps its own copy of the catalogue in the browser, and sells from it: the tiles, search, the scanner, the price pad, Pay, held sales and Awaiting transfer. Pay is F8, Hold F4 and New item F2 (D34).
+Open `/counter` on an enrolled counter (home goes there). It signs in with the name tiles, keeps its own copy of the catalogue in the browser, and sells from it: the tiles, search, the scanner, the price pad, Pay, held sales and Awaiting transfer. Pay is F8, Hold F4 and New item F2 (D34). Returns and voids (scan a receipt's barcode, or type its number), Cash out or in (paid-outs, drops and top-ups) and Close the day (a blind count and the Z-report) are on the same screen, each asking for a manager's PIN when the shop's rules say so (D68).
 
 The browser tests drive it in Chromium against a fresh test shop in the `retail_e2e` database, never the development one. From the repository root:
 

@@ -13,12 +13,12 @@ use Illuminate\Support\Facades\DB;
 final class Sales
 {
     /**
-     * @return array{id: string, receipt_number: string, business_day: string, recorded_at: string, customer_type: string, cashier: string, cashier_id: string, total_kobo: int, change_kobo: int, lines: list<array{client_line_id: string, item_id: string, name: string, colour: ?string, qty: int, unit_price_kobo: int, line_total_kobo: int}>, payments: list<array{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string}>, print_status: ?string, retried: bool}
+     * @return array{id: string, receipt_number: string, kind: string, reverses_receipt_number: ?string, business_day: string, recorded_at: string, customer_type: string, cashier: string, cashier_id: string, total_kobo: int, change_kobo: int, lines: list<array{client_line_id: string, item_id: string, name: string, colour: ?string, qty: int, unit_price_kobo: int, line_total_kobo: int}>, payments: list<array{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string}>, print_status: ?string, retried: bool}
      */
     public static function summary(string $saleId): array
     {
-        /** @var object{id: string, receipt_number: string, business_day: string, recorded_at: string, customer_type: string, cashier_id: string, total_kobo: int}|null $sale */
-        $sale = DB::table('sales')->where('id', $saleId)->first(['id', 'receipt_number', 'business_day', 'recorded_at', 'customer_type', 'cashier_id', 'total_kobo']);
+        /** @var object{id: string, receipt_number: string, kind: string, reverses_sale_id: ?string, business_day: string, recorded_at: string, customer_type: string, cashier_id: string, total_kobo: int}|null $sale */
+        $sale = DB::table('sales')->where('id', $saleId)->first(['id', 'receipt_number', 'kind', 'reverses_sale_id', 'business_day', 'recorded_at', 'customer_type', 'cashier_id', 'total_kobo']);
         if ($sale === null) {
             throw new \RuntimeException("No sale {$saleId}.");
         }
@@ -29,10 +29,15 @@ final class Sales
         $payments = DB::table('payments')->where('sale_id', $saleId)->orderBy('id')->get(['method', 'amount_kobo', 'tendered_kobo', 'change_kobo', 'reference'])->all();
         $print = DB::table('print_jobs')->where('sale_id', $saleId)->where('kind', 'receipt')->value('status');
         $cashier = DB::table('users')->where('id', $sale->cashier_id)->value('name');
+        $reverses = $sale->reverses_sale_id === null ? null : DB::table('sales')->where('id', $sale->reverses_sale_id)->value('receipt_number');
+        $reverses = is_string($reverses) ? $reverses : null;
 
         return [
             'id' => $sale->id,
             'receipt_number' => $sale->receipt_number,
+            // A void or a return names the sale it undoes (D68).
+            'kind' => $sale->kind,
+            'reverses_receipt_number' => $reverses,
             'business_day' => $sale->business_day,
             'recorded_at' => $sale->recorded_at,
             'customer_type' => $sale->customer_type,

@@ -31,6 +31,11 @@ class SalesServiceProvider extends ServiceProvider
                 lockedByDefault: false, source: 'F12, D33, D38', ownerFacing: true, ownerKind: 'money',
                 help: 'A cashier may discard their own held sale up to this amount, with a reason. Above it, or for someone else\'s sale, a manager or you must type a PIN. At ₦0 every discard needs one.'));
 
+            // How long after a sale it may be returned; 0 means no limit (spec section 9) [F7, D68]. The owner sets it.
+            $registry->define(new Definition('returns.window_days', 'Days a sale can be returned', 0, ['required', 'integer', 'min:0', 'max:3650'],
+                lockedByDefault: false, source: 'F7, D68', ownerFacing: true, ownerKind: 'number',
+                help: 'A sale can be returned for this many days after it was made, with a manager\'s PIN. 0 means no limit.'));
+
             return $registry;
         });
     }

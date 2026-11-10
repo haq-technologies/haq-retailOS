@@ -18,7 +18,9 @@ final class Profit
      */
     public static function buckets(?string $fromDay = null, ?string $toDay = null): array
     {
-        $where = "s.kind IN ('sale', 'back_entry')";
+        // Voids and returns count too: their lines are negative and carry the cost of the line they reverse, so
+        // revenue and profit net them; a reversed line's later estimate is its original's (D68).
+        $where = "s.kind IN ('sale', 'back_entry', 'void', 'return')";
         $bindings = [];
         if ($fromDay !== null) {
             $where .= ' AND s.business_day >= ?';
@@ -32,7 +34,7 @@ final class Profit
         $r = DB::selectOne(<<<SQL
             WITH lines AS (
                 SELECT l.line_total_kobo AS revenue, l.qty, l.cost_snapshot_kobo AS snap,
-                       (SELECT r.unit_cost_kobo FROM cost_resolutions r WHERE r.sale_line_id = l.id ORDER BY r.created_at DESC, r.id DESC LIMIT 1) AS est
+                       (SELECT r.unit_cost_kobo FROM cost_resolutions r WHERE r.sale_line_id = coalesce(l.reverses_line_id, l.id) ORDER BY r.created_at DESC, r.id DESC LIMIT 1) AS est
                 FROM sale_lines l JOIN sales s ON s.id = l.sale_id
                 WHERE {$where}
             )
