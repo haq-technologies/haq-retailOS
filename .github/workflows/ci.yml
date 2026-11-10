@@ -126,9 +126,10 @@ jobs:
       - name: Larastan
         run: composer analyse
 
-      # The floor stops coverage falling unnoticed; raise it as tests are added, never lower it (D65).
+      # The floor stops coverage falling unnoticed: 92.4% when it was set (10 November 2026). Raise it as tests
+      # are added; never lower it (D65).
       - name: Pest, against PostgreSQL 18 (architecture and feature tests), with a coverage floor
-        run: composer test -- --coverage --min=0
+        run: composer test -- --coverage --min=90
 
       - name: Pest, the multi-process suite (concurrency, committed transactions)
         run: composer test:concurrency
