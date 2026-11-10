@@ -65,16 +65,16 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
     }
 
     const template = cat.templates.get(node.id);
+    const facets = template?.facets ?? [];
     let candidates = candidatesFor(cat, node.id);
     let brand: string | null = null;
     for (const choice of state.choices) {
-        const definition = template?.facets.find((f) => f.key === choice.key);
-        // A shape has no brand of its own, so it stays a candidate under any brand chosen.
-        const brandStep = definition?.type === 'brand' && choice.value !== null;
-        if (brandStep) brand = choice.value;
-        candidates = candidates.filter((c) => c.value(choice.key) === choice.value || (brandStep && c.shape !== null));
+        const definition = facets.find((f) => f.key === choice.key);
+        if (definition?.type === 'brand' && choice.value !== null) brand = choice.value;
+        candidates = candidates.filter((c) => matches(c, definition, choice.key, choice.value));
         crumbs.push(choice.value === null ? `No ${definition?.label.toLowerCase() ?? choice.key}` : valueLabel(cat, definition, choice.value));
     }
+    candidates = distinct(candidates, facets, brand);
 
     const chosen = new Set(state.choices.map((c) => c.key));
     if (template !== undefined && candidates.length > 1) {
@@ -103,11 +103,19 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
                 .map((v) => ({ v, label: valueLabel(cat, definition, v), order: valueOrder(cat, definition, v, node.code) }))
                 .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
                 .map(({ v, label: text }) => {
-                    const left = candidates.filter((c) => c.value(key) === v);
+                    // What the tile leaves is worked out as the next step would: under a brand, the shapes not
+                    // yet sold as that brand's items stay too, so a brand with one item sold still offers the
+                    // rest (a power bank's other capacities, a cable's other lengths).
+                    const brandAfter = definition?.type === 'brand' ? v : brand;
+                    const left = distinct(
+                        candidates.filter((c) => matches(c, definition, key, v)),
+                        facets,
+                        brandAfter,
+                    );
                     const only = left.length === 1 ? left[0] : undefined;
                     const price = only === undefined || only.shape !== null ? null : cat.priceFor(only.id, type);
                     // A shape left after a brand was chosen is added as that brand's item (D54).
-                    const itemId = only === undefined ? null : only.shape !== null && brand !== null ? brandedShapeId(only.id, brand) : only.id;
+                    const itemId = only === undefined ? null : only.shape !== null && brandAfter !== null ? brandedShapeId(only.id, brandAfter) : only.id;
                     return { kind: 'value' as const, key, value: v, label: text, itemId, priceKobo: price === null ? null : (price.setPrice ?? price.prefill) };
                 });
             if (blanks > 0) {
@@ -125,14 +133,33 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
                 return { kind: 'item' as const, id: brandedShapeId(c.id, brand), label: `${brandName} ${c.label}`, priceKobo: null, shape: c.shape };
             }
             return { kind: 'item' as const, id: c.id, label: c.label, priceKobo: price === null ? null : (price.setPrice ?? price.prefill), shape: c.shape };
-        })
-        // A branded shape that is already an item shows once, as the item.
-        .filter((t, _, all) => t.shape === null || !all.some((o) => o.shape === null && o.label.toLowerCase() === t.label.toLowerCase()));
+        });
     return {
         crumbs,
         prompt: items.length === 0 ? 'Nothing here yet. Use New item.' : 'Choose the item',
         tiles: items.sort((a, b) => a.label.localeCompare(b.label)),
     };
+}
+
+/** Whether a candidate stays after a choice. A shape has no brand of its own, so it stays under any brand chosen. */
+function matches(c: Candidate, definition: FacetDefinition | undefined, key: string, value: string | null): boolean {
+    return c.value(key) === value || (definition?.type === 'brand' && value !== null && c.shape !== null);
+}
+
+/**
+ * Drops each shape that is already an item: under the brand chosen (or none), a shape whose values are
+ * exactly an item's, with no facet of its own beyond them, prints the same name and is the same item, so it
+ * shows once, as the item with its price (D54).
+ */
+function distinct(candidates: Candidate[], facets: FacetDefinition[], brand: string | null): Candidate[] {
+    const items = candidates.filter((c) => c.shape === null);
+    return candidates.filter(
+        (c) =>
+            c.shape === null ||
+            !items.some((item) =>
+                facets.every((f) => item.value(f.key) === (f.type === 'brand' ? brand : (c.shape?.facets[f.key] ?? null))),
+            ),
+    );
 }
 
 function candidatesFor(cat: Catalogue, categoryId: string): Candidate[] {

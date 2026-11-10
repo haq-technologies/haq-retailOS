@@ -247,6 +247,66 @@ jobs:
         if: failure()
         run: tail -n 200 storage/logs/e2e-server.log storage/logs/e2e-queue.log storage/logs/laravel.log || true
 
+  # The upgrade-path test (spec section 14, check E5) [F16]: the end of Phase 3 (b34d27e) builds a shop with
+  # sales, the code under review migrates it in order, the older code still sells against the newer schema,
+  # and the newer code's rehearsal check passes over every sale.
+  upgrade-path:
+    name: upgrade path
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.6-trixie
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres-ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      DB_DATABASE: retail_upgrade_test
+      DB_USERNAME: retail_app
+      DB_PASSWORD: app-ci
+      DB_OWNER_USERNAME: retail_owner
+      DB_OWNER_PASSWORD: owner-ci
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Create the three database roles and the upgrade database
+        env:
+          PGHOST: 127.0.0.1
+          PGPASSWORD: postgres-ci
+          POSTGRES_USER: postgres
+          RETAIL_OWNER_PASSWORD: owner-ci
+          RETAIL_APP_PASSWORD: app-ci
+          RETAIL_REPORTING_PASSWORD: reporting-ci
+          RETAIL_DATABASES: retail_upgrade_test
+        run: apps/shop-server/docker/postgres/init/01-roles.sh
+
+      - uses: shivammathur/setup-php@2.40.0
+        with:
+          php-version: "8.5"
+          extensions: pdo_pgsql, intl, pcntl, bcmath
+          coverage: none
+
+      - name: Install the older and the newer code
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/old" b34d27e
+          for dir in "$RUNNER_TEMP/old/apps/shop-server" apps/shop-server; do
+            (cd "$dir" && composer install --no-interaction --no-progress --prefer-dist && cp .env.example .env && php artisan key:generate)
+          done
+
+      - name: Upgrade through every migration in order, and sell on both versions
+        run: tools/release/upgrade-path.sh "$RUNNER_TEMP/old/apps/shop-server" "$PWD/apps/shop-server"
+
   shop-server-image:
     name: shop-server image ${{ matrix.target }}
     runs-on: ubuntu-24.04

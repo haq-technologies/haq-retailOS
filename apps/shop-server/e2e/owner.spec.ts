@@ -111,9 +111,10 @@ test('lets the owner merge a typed brand into the listed one, then approve the i
     const items = page.getByRole('tabpanel', { name: 'New items' });
     await expect(items.getByText('Oraimo FreePods 3C Earbuds')).toBeVisible();
     await page.screenshot({ path: 'e2e/results/screens/review-items.png', fullPage: true });
-    await items.getByRole('button', { name: 'Looks right' }).click();
+    // Other tests made new items in this shop too (check A9); approve the Oraimo one.
+    await items.getByRole('listitem').filter({ hasText: 'Oraimo FreePods 3C Earbuds' }).getByRole('button', { name: 'Looks right' }).click();
     await expect(page.getByRole('status')).toContainText('Oraimo FreePods 3C Earbuds looks right.');
-    await expect(page.getByRole('tab', { name: 'New items · 0' })).toBeVisible();
+    await expect(items.getByText('Oraimo FreePods 3C Earbuds')).toBeHidden();
 });
 
 test('sets a first-sale price with one tap, shows catalogue health, and prints and exports the daily summary', async ({ browser }) => {
