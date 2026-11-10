@@ -11,13 +11,13 @@ Status: **Automated** means the tests in CI prove the check. **G3** means a step
 | Check | Proved by | Status | Written down |
 |---|---|---|---|
 | A1 A 3-item sale under 30 s and one known barcode under 8 s, by the counter's own timing | Every sale is timed (FinishTest); the daily summary shows each cashier's speed (AuditReadTest, owner.spec) | Pilot: real cashiers, at least 20 sales | |
-| A2 "ora free3c" finds the item under 100 ms with 5,000 items; a one-letter typo too | `search.test.ts` | Automated | |
+| A2 "ora free3c" finds the item under 100 ms with 5,000 items; a one-letter typo too | `search.test.ts` (both timed) | Automated | |
 | A3 Full names on every receipt line, never "Others"; Request-only rules; Code 128 receipt number | NamesTest, CounterApiTest (Request-only, Not in the list), PrintingTest (receipt as the wireframe, barcode) | Automated | |
 | A4 Price pre-fill, override, retail and wholesale, one tap on first-sale prices | PricesTest, ReportsTest, counter.spec | Automated | |
 | A5 A learned barcode adds in one step, shows unconfirmed with undo; picker of 5; junk never learns | CounterApiTest, ReviewTest, counter.spec (scanner) | Automated | |
 | A6 A cashier creates an item: category, facets, similar-item warning; sellable at once; in review | CounterApiTest, ReviewTest, counter.spec (check A9) | Automated | |
 | A7 A parked sale resumes on another counter | ParkedTest, counter.spec | Automated | |
-| A8 Every local interaction under 100 ms; a double tap on Finish makes one sale | Concurrency SalesTest (six requests, one sale); the counter works from local state (counter.spec) | Automated | |
+| A8 Every local interaction under 100 ms; a double tap on Finish makes one sale | Concurrency SalesTest (six requests, one sale); counter.spec (check A8: a cart tap and opening Pay, timed in the page); counter.spec (D61: a Finish with no answer is never sold twice) | Automated | |
 | A9 An item made at counter A is in counter B's search within 5 s; a near-duplicate at B warns | counter.spec (check A9) | Automated | |
 | A10 A typed brand sells and prints as typed, joins the list only on a manager's approval; "poga" never makes a second Poga | CounterApiTest, ReviewTest, ItemsTest | Automated | |
 | A11 "Not in the list" with a 3-letter word sells and prints it; "others" refused; a cashier cannot make the category | CounterApiTest, ReviewTest | Automated | |
@@ -29,7 +29,7 @@ Status: **Automated** means the tests in CI prove the check. **G3** means a step
 | Check | Proved by | Status | Written down |
 |---|---|---|---|
 | B1 Power cut mid-sale: no half-sale, no used number; the counter is back within 3 minutes | Concurrency SalesTest (a worker killed mid-sale); at G3, the server powered off hard mid-sale | Automated | |
-| B2 Power cut after commit, before print: the sale stays, the receipt pending and offered | Concurrency SalesTest, PrintingTest; at G3, the stand-in printer stopped mid-print | Automated | |
+| B2 Power cut after commit, before print: the sale stays, the receipt pending and offered | Concurrency SalesTest, PrintingTest (D63: a send that never reported back reprints stamped DUPLICATE, drawer shut); at G3, the stand-in printer stopped mid-print | Automated | |
 | B3 Two requests with one key make one sale; the second gets the original | Concurrency SalesTest | Automated | |
 | B4 A retry with a changed cart is refused and makes nothing | FinishTest | Automated | |
 | B5 Gapless receipt numbers through a soak with forced failures, each logged | Concurrency SalesTest; `shop:rehearsal-check` in the upgrade-path test; at G3, 300 sales | Automated | |
@@ -48,7 +48,7 @@ Status: **Automated** means the tests in CI prove the check. **G3** means a step
 | C1 No cost stores NULL; the item is in Needs cost by revenue | FinishTest, CostTest | Automated | |
 | C2 A cost shows a preview, writes estimates with the right source, changes no sale line, audits each | CostTest, CostUndoTest | Automated | |
 | C3 Three buckets with percentages that reconcile to the sales | CostTest, ReportsTest | Automated | |
-| C4 Cost reaches no cashier or (by default) manager anywhere: API, pages, audit views, exports | CostLeakTest (every GET route as each), FlagsTest, ReportsTest, AuditReadTest | Automated. Sync bundles come with the MVP | |
+| C4 Cost reaches no cashier or (by default) manager anywhere: API, pages, audit views, exports | CostLeakTest (every GET route as each, and the answers to what each sends), FlagsTest, ReportsTest, AuditReadTest | Automated. Sync bundles come with the MVP | |
 | C5 Below cost flagged when saved, and again after a later cost entry | FlagsTest | Automated | |
 | C6 A merge changes no sale, reports combine; a cycle refused; undo restores | ReviewTest, Concurrency CatalogueTest | Automated | |
 | C7 Below the floor needs a manager; sibling ranges; the fourth confirm needs a manager; 3 times the usual is retyped | PricesTest, ApprovalsTest, counter.spec | Automated | |
@@ -59,9 +59,9 @@ Status: **Automated** means the tests in CI prove the check. **G3** means a step
 |---|---|---|---|
 | D1 The app role cannot change append-only tables or grant; triggers hold against a widened grant; no running container holds the owner's password; chains verify; the summary prints the root | MutabilityTest, AuditTamperTest, ReportsTest; `check-install.sh` at the G3 install | Automated | |
 | D2 The nightly grant check raises a health alert | MutabilityTest, HealthTest | Automated | |
-| D3 PIN switch under 2 s; lockout after 5; terminal backoff after 10; idle limits | SignInTest | Automated | |
-| D4 An in-flight request keeps its sender; approvals bind once to line, item and price, survive parking, void on change | SignInTest, ApprovalsTest | Automated | |
-| D5 Every action in the audit log with user, device and redacted values; a cashier reads only their own; only the owner sees sensitive values | AuditTrailTest, AuditReadTest, owner.spec, counter.spec | Automated | |
+| D3 PIN switch under 2 s; lockout after 5; terminal backoff after 10; idle limits | SignInTest (timed against a PIN hashed at a shop's full Argon2id cost); Concurrency IdentityTest (eight wrong PINs at once still lock after five); ApprovalsTest (wrong approval PINs count too) | Automated | |
+| D4 An in-flight request keeps its sender; approvals bind once to line, item and price, survive parking, void on change | SignInTest, ApprovalsTest, PricesTest (5 minutes open; a slow transfer finished on the other counter; used once), counter.spec (check D4) | Automated | |
+| D5 Every action in the audit log with user, device and redacted values; a cashier reads only their own; only the owner sees sensitive values | AuditTrailTest, AuditReadTest, AccessMatrixTest (every back-office route for every role), owner.spec, counter.spec | Automated | |
 | D6 A discard needs a reason, a manager above the limit; both on the dashboard | ParkedTest, FlagsTest | Automated | |
 | D7 Every drawer opening is logged; a counter with no drawer sells cash and reconciles | PrintingTest, FlagsTest | Automated | |
 
@@ -69,7 +69,7 @@ Status: **Automated** means the tests in CI prove the check. **G3** means a step
 
 | Check | Proved by | Status | Written down |
 |---|---|---|---|
-| E1 Restore onto a clean machine within 1 hour, last receipt and chains verified; needs two key shares; the health page shows WAL, backup and restore | BackupsTest, RestoreRecoveryTest, HealthTest; `haq-offsite.sh selftest`; the restore onto the spare virtual machine (docs/operations/restore-drill.md) | G3 | |
+| E1 Restore onto a clean machine within 1 hour, last receipt and chains verified; needs two key shares; the health page shows WAL, backup and restore | BackupsTest, RestoreRecoveryTest, HealthTest; `haq-offsite.sh selftest`; `tools/backup/restore-drill.sh` in CI (a backup restored and verified, D65); the restore onto the spare virtual machine within the hour (docs/operations/restore-drill.md) | G3 | |
 | E2 Profile to first sale under 2 hours; 80mm prints without a dialog; a hard reboot returns to the counter | ProfileTest, RebootRecoveryTest; the timed install and the hard power-off (docs/operations/start-up.md) | G3 | |
 | E3 The clock at the year 2000 does not lock the counter; sales stamped unverified; the owner asked | HealthTest (check E3) | Automated | |
 | E4 Missed backup and test-restore jobs run at the next idle window | HealthTest (check E4) for the nightly checks; the backup service's own catch-up in `haq-backup.sh` | Automated | |

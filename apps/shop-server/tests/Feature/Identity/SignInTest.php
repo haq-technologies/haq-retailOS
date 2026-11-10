@@ -141,7 +141,13 @@ it('stops a deactivated person at once, even with a live token', function () {
     signIn($this->device1, $this->amina->id, '1357')->assertStatus(422);
 });
 
-it('signs in well inside two seconds', function () {
+it('signs in well inside two seconds, with the PIN hashed at a shop\'s full Argon2id cost (check D3)', function () {
+    // phpunit.xml makes Argon2id cheap so the suite stays quick; a shop hashes PINs at the cost in
+    // config/hashing.php (64 MiB, 4 passes, 1 thread), which a check reads back from the hash itself.
+    $full = password_hash('1357', PASSWORD_ARGON2ID, ['memory_cost' => 65536, 'time_cost' => 4, 'threads' => 1]);
+    DB::table('users')->where('id', $this->amina->id)->update(['pin_hash' => $full]);
+    expect(password_get_info($full)['options'])->toMatchArray(['memory_cost' => 65536, 'time_cost' => 4]);
+
     $started = microtime(true);
     signIn($this->device1, $this->amina->id, '1357')->assertOk();
     expect(microtime(true) - $started)->toBeLessThan(2.0);

@@ -78,6 +78,13 @@ fi
 app="$(json "$work/manifest.json" images.app)"
 web="$(json "$work/manifest.json" images.web)"
 db="$(json "$work/manifest.json" images.db)"
+# Every image is pinned by its digest, so what is pulled is exactly what was signed (D2, D65).
+for image in "$app" "$web" "$db"; do
+    if ! printf '%s' "$image" | grep -Eq '^[a-z0-9.:/_-]+@sha256:[0-9a-f]{64}$'; then
+        echo "The release names an image that is not pinned by its digest ($image). Nothing was changed." >&2
+        exit 1
+    fi
+done
 echo "   Release $version is signed; installed: $installed"
 if [ "$check_only" = 1 ]; then
     echo "The release checks out. Nothing was changed (--check-only)."

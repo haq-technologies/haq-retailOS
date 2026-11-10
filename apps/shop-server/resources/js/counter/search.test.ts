@@ -39,8 +39,15 @@ describe('counter search at 5,000 items (check A2)', () => {
         expect(times[7]).toBeLessThan(100);
     });
 
-    it('still finds it with a one-letter typo', () => {
+    it('still finds it with a one-letter typo, in under 100 ms', () => {
         expect(search(index, 'oraimo freepids 3c')[0]).toBe('target');
         expect(search(index, 'oraino free3c')[0]).toBe('target');
+        // Fuzzy matching does more work than an exact one, so the typo is timed too (check A2).
+        const times = Array.from({ length: 15 }, () => {
+            const started = performance.now();
+            search(index, 'oraino free3c');
+            return performance.now() - started;
+        }).sort((a, b) => a - b);
+        expect(times[7]).toBeLessThan(100);
     });
 });

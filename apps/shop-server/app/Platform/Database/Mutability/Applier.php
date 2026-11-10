@@ -119,6 +119,12 @@ final readonly class Applier
             Kind::ReadOnly => [],
         };
 
+        if ($rule->increasing !== []) {
+            $increasing = implode(', ', array_map(fn (string $c) => $this->literal($c), $rule->increasing));
+            $triggers['increasing'] = "CREATE TRIGGER {$p}increasing BEFORE UPDATE ON {$t} FOR EACH ROW "
+                ."EXECUTE FUNCTION haq_guard_increasing({$increasing})";
+        }
+
         if ($rule->fixed !== []) {
             $fixed = implode(', ', array_map(fn (string $c) => $this->literal($c), $rule->fixed));
             $triggers['fixed'] = "CREATE TRIGGER {$p}fixed BEFORE UPDATE ON {$t} FOR EACH ROW "
@@ -194,6 +200,22 @@ final readonly class Applier
                 FOREACH col IN ARRAY TG_ARGV LOOP
                     IF to_jsonb(OLD) -> col IS DISTINCT FROM to_jsonb(NEW) -> col THEN
                         RAISE EXCEPTION 'HAQ Retail OS: %.% never changes once written', TG_TABLE_NAME, col
+                            USING ERRCODE = '42501';
+                    END IF;
+                END LOOP;
+                RETURN NEW;
+            END
+            $fn$
+            SQL,
+            <<<'SQL'
+            CREATE OR REPLACE FUNCTION haq_guard_increasing() RETURNS trigger LANGUAGE plpgsql AS $fn$
+            DECLARE
+                col text;
+            BEGIN
+                FOREACH col IN ARRAY TG_ARGV LOOP
+                    IF (to_jsonb(NEW) ->> col)::numeric <= (to_jsonb(OLD) ->> col)::numeric
+                        AND to_jsonb(NEW) -> col IS DISTINCT FROM to_jsonb(OLD) -> col THEN
+                        RAISE EXCEPTION 'HAQ Retail OS: %.% only ever goes up', TG_TABLE_NAME, col
                             USING ERRCODE = '42501';
                     END IF;
                 END LOOP;

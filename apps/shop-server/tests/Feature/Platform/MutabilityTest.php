@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
  * real, committed attempts, and nothing waits on the test's own transaction.
  */
 
-const PROBES = ['probe_append', 'probe_once', 'probe_columns', 'probe_open', 'probe_users'];
+const PROBES = ['probe_append', 'probe_once', 'probe_columns', 'probe_counter', 'probe_open', 'probe_users'];
 
 function ownerDb(): Connection
 {
@@ -39,6 +39,7 @@ function probeMatrix(): Matrix
         Rule::appendOnly('probe_append'),
         Rule::setOnce('probe_once', ['bound_at']),
         Rule::mutableColumns('probe_columns', ['status', 'attempts']),
+        Rule::mutableColumns('probe_counter', ['last_no'], increasing: ['last_no']),
         Rule::mutableWhileOpen('probe_open', 'status', ['closed']),
         Rule::neverDeleted('probe_users'),
     ]);
@@ -66,6 +67,7 @@ beforeEach(function () {
     $o->statement('CREATE TABLE probe_append (id char(26) PRIMARY KEY, note text)');
     $o->statement('CREATE TABLE probe_once (id char(26) PRIMARY KEY, note text, bound_at timestamptz)');
     $o->statement('CREATE TABLE probe_columns (id char(26) PRIMARY KEY, note text, status text, attempts int)');
+    $o->statement('CREATE TABLE probe_counter (id char(26) PRIMARY KEY, last_no bigint NOT NULL)');
     $o->statement('CREATE TABLE probe_open (id char(26) PRIMARY KEY, note text, status text)');
     $o->statement('CREATE TABLE probe_users (id char(26) PRIMARY KEY, name text)');
     (new Applier(probeMatrix(), app(Roles::class)))->apply($o);
@@ -136,6 +138,19 @@ it('lets only the listed columns change', function () {
 
     ownerDb()->statement('GRANT UPDATE ON probe_columns TO '.config('database.roles.app'));
     expect(attempt("UPDATE probe_columns SET note = 'changed'"))->toContain('probe_columns.note cannot change');
+});
+
+it('lets a receipt counter only go up, even with a widened grant (D62)', function () {
+    $row = newUlid();
+    ownerDb()->statement("INSERT INTO probe_counter VALUES ('{$row}', 41)");
+
+    expect(attempt('UPDATE probe_counter SET last_no = last_no + 1'))->toBeNull();
+    expect(attempt('UPDATE probe_counter SET last_no = 42'))->toBeNull();
+    expect(attempt('UPDATE probe_counter SET last_no = 7'))->toContain('probe_counter.last_no only ever goes up');
+
+    ownerDb()->statement('GRANT UPDATE ON probe_counter TO '.config('database.roles.app'));
+    expect(attempt('UPDATE probe_counter SET last_no = 0'))->toContain('probe_counter.last_no only ever goes up');
+    expect((int) appDb()->selectOne('SELECT last_no FROM probe_counter')->last_no)->toBe(42);
 });
 
 it('lets an open row change and locks it once closed', function () {

@@ -37,10 +37,12 @@
         "lint": "pint --test",
         "analyse": "phpstan analyse --memory-limit=1G --no-progress",
         "test": [
+            "Composer\\Config::disableProcessTimeout",
             "@php artisan config:clear --ansi @no_additional_args",
             "pest"
         ],
         "test:concurrency": [
+            "Composer\\Config::disableProcessTimeout",
             "@php artisan config:clear --ansi @no_additional_args",
             "pest -c phpunit.concurrency.xml"
         ],

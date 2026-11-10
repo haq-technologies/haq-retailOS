@@ -200,3 +200,20 @@ it('finishes over HTTP for the signed-in cashier', function () {
     $this->withCookie(Enrolment::COOKIE, $device)->withHeader(ActingToken::HEADER, $token)
         ->postJson('/api/counter/sales', $bad)->assertStatus(422)->assertJsonPath('message', 'The payments do not add up to the total. Check the amounts.');
 });
+
+it('tells a counter whether it finished a sale under a key, so an unanswered Finish is never sold twice (D61)', function () {
+    $data = Counter::cashSale([$this->a->id => [1, 150_000]]);
+    $sale = sell($this->t1, $data);
+    $at = function (Terminal $terminal) {
+        $device = People::enrol($terminal);
+        $token = (string) $this->withCookie(Enrolment::COOKIE, $device)->postJson('/api/identity/pin', ['user_id' => $this->cashier->id, 'pin' => '1357'])->json('token');
+
+        return $this->withCookie(Enrolment::COOKIE, $device)->withHeader(ActingToken::HEADER, $token);
+    };
+
+    $at($this->t1)->getJson("/api/counter/sales/by-key/{$data['idempotency_key']}")
+        ->assertOk()->assertJsonPath('sale.receipt_number', $sale['receipt_number'])->assertJsonPath('sale.retried', true);
+    $at($this->t1)->getJson('/api/counter/sales/by-key/no-sale-here-123')->assertNotFound();
+    // Keys belong to their counter: another counter's lookup finds nothing.
+    $at($this->t2)->getJson("/api/counter/sales/by-key/{$data['idempotency_key']}")->assertNotFound();
+});

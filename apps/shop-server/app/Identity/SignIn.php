@@ -27,24 +27,25 @@ final readonly class SignIn
 
     public function attempt(Terminal $terminal, string $userId, string $pin): SignInResult
     {
-        $wait = $this->throttle->terminalWaitSeconds($terminal->id);
-        if ($wait > 0) {
-            return SignInResult::terminalBackoff($wait);
-        }
-
         $user = User::query()->active()->find($userId);
         if ($user === null) {
             return SignInResult::unavailable();
         }
 
-        $lockedUntil = $this->throttle->lockedUntil($user->id);
-        if ($lockedUntil !== null) {
-            return SignInResult::locked($lockedUntil, $this->timezone());
-        }
+        return DB::transaction(function () use ($terminal, $user, $pin): SignInResult {
+            // One PIN at a time per counter and per person, so guesses sent at once cannot slip past the
+            // backoff or the lockout before the earlier ones are counted [F8].
+            $this->throttle->serialise($terminal->id, $user->id);
+            $wait = $this->throttle->terminalWaitSeconds($terminal->id);
+            if ($wait > 0) {
+                return SignInResult::terminalBackoff($wait);
+            }
+            $lockedUntil = $this->throttle->lockedUntil($user->id);
+            if ($lockedUntil !== null) {
+                return SignInResult::locked($lockedUntil, $this->timezone());
+            }
 
-        $ok = $this->pins->check($pin, $user->pin_hash);
-
-        return DB::transaction(function () use ($terminal, $user, $ok): SignInResult {
+            $ok = $this->pins->check($pin, $user->pin_hash);
             $this->throttle->record($terminal->id, $user->id, 'sign_in', $ok);
 
             if (! $ok) {

@@ -32,9 +32,11 @@ final class CostController
         return response()->json(NeedsCost::queue(is_string($search) ? $search : null, 200));
     }
 
-    public function item(Request $request, Item $item, Pricing $pricing): JsonResponse
+    public function item(Request $request, string $item, Pricing $pricing): JsonResponse
     {
+        // The role first, then the item: someone who may not see cost learns nothing, not even what exists.
         $this->allowed($request, 'costs');
+        $item = Item::query()->findOrFail($item);
         $usual = $pricing->info($item, 'retail');
         /** @var list<object{unit_cost_kobo: int|string|null, effective_from: string, name: ?string, undoes_id: ?string}> $history */
         $history = DB::table('cost_entries as c')->leftJoin('users as u', 'u.id', '=', 'c.entered_by')->where('c.item_id', $item->id)

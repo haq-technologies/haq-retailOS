@@ -94,7 +94,8 @@ final readonly class Matrix
             // A parked sale that was resumed, discarded or finished never changes again [F12, S2]
             Rule::mutableWhileOpen('parked_sales', 'status', ['resumed', 'discarded', 'completed']),
 
-            Rule::mutableColumns('receipt_counters', ['last_no']),
+            // A receipt counter only goes up, so a number is never handed out twice (spec section 4) [F1, D62].
+            Rule::mutableColumns('receipt_counters', ['last_no'], increasing: ['last_no']),
             Rule::mutableColumns('print_jobs', ['status', 'attempts']),
 
             // Users are deactivated, never deleted [F18]

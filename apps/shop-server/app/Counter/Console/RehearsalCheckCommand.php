@@ -55,9 +55,9 @@ final class RehearsalCheckCommand extends Command
         $jobs = array_map(fn (int|string $n) => (int) $n, $raw);
         // A back entry prints nothing: the customer already holds the receipt (spec section 9) [F1].
         $sales = DB::table('sales')->where('kind', 'sale')->count();
-        $check(array_sum($jobs) === $sales, "every sale has its receipt job ({$sales} sales; printed ".($jobs['printed'] ?? 0).', pending '.($jobs['pending'] ?? 0).', failed '.($jobs['failed'] ?? 0).')');
+        $check(array_sum($jobs) === $sales, "every sale has its receipt job ({$sales} sales; printed ".($jobs['printed'] ?? 0).', pending '.($jobs['pending'] ?? 0).', sending '.($jobs['sending'] ?? 0).', failed '.($jobs['failed'] ?? 0).')');
         /** @var list<string> $waiting */
-        $waiting = DB::table('print_jobs as j')->join('sales as s', 's.id', '=', 'j.sale_id')->whereIn('j.status', ['pending', 'failed'])->pluck('s.receipt_number')->all();
+        $waiting = DB::table('print_jobs as j')->join('sales as s', 's.id', '=', 'j.sale_id')->whereIn('j.status', ['pending', 'sending', 'failed'])->pluck('s.receipt_number')->all();
         if ($waiting !== []) {
             $this->line('      Receipts still to print (each counter offers them as Print pending receipt): '.implode(', ', array_slice($waiting, 0, 20)).(count($waiting) > 20 ? ' …' : ''));
         }

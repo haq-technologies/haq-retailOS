@@ -3,7 +3,7 @@ import { Keypad, padKeyFrom } from '@/components/keypad';
 import { Notice } from '@/components/notice';
 import type { Tile } from '@/components/sign-in-panel';
 import { WarningIcon } from '@/components/icons';
-import { finishPayload, markChecked, paymentState, totalKobo, type Cart, type Payment } from '../cart';
+import { finishPayload, markChecked, paymentState, totalKobo, type Cart, type FinishPayload, type Payment } from '../cart';
 import { digitsToKobo, koboToDigits, naira, quickCash, typeDigits } from '../money';
 import type { CounterSettings } from '../types';
 import type { CounterApi } from '../use-api';
@@ -13,8 +13,9 @@ import { newId, type FinishAnswer, type SaleSummary } from './types';
 /**
  * Pay (spec section 7) [D11, F12, S2]: cash with the amount received and change, transfer with the
  * bank-alert tick and a reference, POS with nothing typed, or a split. Finish sends the sale once; a lost
- * answer is safe to retry, because the idempotency key stays the same. Wireframes: PayCash, PayTransfer,
- * PaySplit.
+ * answer is safe to retry, because the idempotency key stays the same. After a Finish with no answer, the
+ * exact request is kept on the cart and nothing can change until the server answers: Finish sends it again,
+ * or Check the server asks whether that sale exists (D61). Wireframes: PayCash, PayTransfer, PaySplit.
  */
 type Method = 'cash' | 'transfer' | 'pos' | 'split';
 
@@ -28,6 +29,7 @@ interface SplitRow {
 type Problem =
     | { kind: 'message'; message: string }
     | { kind: 'offline' }
+    | { kind: 'cleared' }
     | { kind: 'confirm'; lineId: string; message: string }
     | { kind: 'retype'; lineId: string; message: string; digits: string }
     | { kind: 'approval'; message: string; approval: NonNullable<FinishAnswer['approval']> };
@@ -59,6 +61,9 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
     const [selected, setSelected] = useState(0);
     const [busy, setBusy] = useState(false);
     const [problem, setProblem] = useState<Problem | null>(null);
+    // A Finish the server never answered: it may be sold already, so nothing changes until it answers (D61).
+    const pending = cart.pending ?? null;
+    const locked = pending !== null;
 
     const payments = useCallback((): Payment[] | null => {
         const tick = (seen: boolean) => seen || !settings.transferAlertTick;
@@ -89,10 +94,20 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
 
     const finish = useCallback(
         async (forCart: Cart) => {
-            const list = payments();
-            if (list === null || busy) return;
-            const { payload, cart: keyed } = finishPayload(forCart, list, newId);
-            setCart(keyed);
+            if (busy) return;
+            const held = forCart.pending ?? null;
+            let payload: FinishPayload;
+            let keyed: Cart;
+            if (held !== null) {
+                // The same request again, byte for byte: the server answers with the sale if it already has it.
+                payload = held;
+                keyed = forCart;
+            } else {
+                const list = payments();
+                if (list === null) return;
+                ({ payload, cart: keyed } = finishPayload(forCart, list, newId));
+                setCart(keyed);
+            }
             setBusy(true);
             setProblem(null);
             try {
@@ -101,6 +116,13 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                 if (!answer.ok && answer.body.journal_needed === true && (await reportJournal())) {
                     answer = await api.post<FinishAnswer>('/api/counter/sales', payload, 30_000);
                 }
+                if (answer.status >= 500) {
+                    // A server error may come after the sale committed: it stays in doubt until the server answers.
+                    setCart({ ...keyed, pending: payload });
+                    setProblem({ kind: 'offline' });
+                    return;
+                }
+                if (held !== null) setCart({ ...keyed, pending: null });
                 if (answer.ok && answer.body.sale !== undefined) {
                     onFinished(answer.body.sale);
                     return;
@@ -115,6 +137,8 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                     setProblem({ kind: 'message', message });
                 }
             } catch {
+                // No answer: the server may have finished it. Keep this exact request until it answers (D61).
+                setCart({ ...keyed, pending: payload });
                 setProblem({ kind: 'offline' });
             } finally {
                 setBusy(false);
@@ -123,8 +147,31 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
         [payments, busy, setCart, api, onFinished, reportJournal],
     );
 
+    /** Asks the server whether the unanswered sale exists: if it does, it is finished; if not, the sale may change. */
+    const check = useCallback(async () => {
+        if (pending === null || busy) return;
+        setBusy(true);
+        try {
+            const answer = await api.get<FinishAnswer>(`/api/counter/sales/by-key/${encodeURIComponent(pending.idempotency_key)}`);
+            if (answer.ok && answer.body.sale !== undefined) {
+                setCart({ ...cart, pending: null });
+                onFinished(answer.body.sale);
+            } else if (answer.status === 404) {
+                setCart({ ...cart, pending: null });
+                setProblem({ kind: 'cleared' });
+            } else {
+                setProblem({ kind: 'offline' });
+            }
+        } catch {
+            setProblem({ kind: 'offline' });
+        } finally {
+            setBusy(false);
+        }
+    }, [pending, busy, api, cart, setCart, onFinished]);
+
     const typeKey = useCallback(
         (key: string) => {
+            if (locked) return;
             if (problem?.kind === 'retype') {
                 setProblem({ ...problem, digits: typeDigits(problem.digits, key) });
             } else if (method === 'cash') {
@@ -133,7 +180,7 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                 setSplit((rows) => rows.map((r, i) => (i === selected ? { ...r, digits: typeDigits(r.digits, key) } : r)));
             }
         },
-        [problem, method, selected, setCash, setSplit, setProblem],
+        [locked, problem, method, selected, setCash, setSplit, setProblem],
     );
 
     useEffect(() => {
@@ -141,10 +188,10 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
             if (event.target instanceof HTMLInputElement && event.target.type === 'text') return;
             if (event.key === 'Escape') {
                 event.preventDefault();
-                onBack();
+                if (!locked) onBack();
             } else if (event.key === 'Enter') {
                 event.preventDefault();
-                if (ready) void finish(cart);
+                if (ready || locked) void finish(cart);
             } else {
                 const key = padKeyFrom(event.key);
                 if (key !== null) {
@@ -157,7 +204,7 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
         return () => {
             window.removeEventListener('keydown', onKey);
         };
-    }, [ready, finish, cart, onBack, typeKey]);
+    }, [ready, locked, finish, cart, onBack, typeKey]);
 
     const tabs: Method[] = onlyTransfer ? ['transfer'] : ['cash', 'transfer', 'pos', 'split'];
     const tendered = digitsToKobo(cash);
@@ -166,12 +213,34 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
     return (
         <section aria-label="Pay" className="flex flex-col gap-4">
             <header className="flex flex-wrap items-center justify-between gap-3">
-                <button type="button" className="min-h-touch rounded-xl border-2 border-border px-4 text-lg" onClick={onBack}>
+                <button type="button" disabled={locked} className="min-h-touch rounded-xl border-2 border-border px-4 text-lg disabled:opacity-60" onClick={onBack}>
                     Back to sale
                 </button>
                 <h2 className="text-3xl font-bold">Pay {naira(total)}</h2>
             </header>
 
+            {locked && (
+                <div className="flex flex-col gap-3 rounded-xl border-2 border-warning-text p-4">
+                    <Notice tone="warning">
+                        The server did not answer, so this sale may already be finished. Tap Finish to send it again: it is never sold twice. To change the sale
+                        instead, tap Check the server first.
+                    </Notice>
+                    <p className="text-lg">
+                        Waiting to hear about {naira(pending.payments.reduce((sum, p) => sum + p.amount_kobo, 0))} by{' '}
+                        {[...new Set(pending.payments.map((p) => (p.method === 'pos' ? 'POS' : p.method)))].join(' and ')}.
+                    </p>
+                    <button
+                        type="button"
+                        disabled={busy}
+                        className="min-h-touch self-start rounded-xl border-2 border-action px-4 text-lg font-semibold text-action disabled:opacity-60"
+                        onClick={() => void check()}
+                    >
+                        Check the server
+                    </button>
+                </div>
+            )}
+
+            <fieldset disabled={locked} className="contents">
             <div role="tablist" aria-label="Payment method" className="grid grid-cols-4 gap-2">
                 {tabs.map((m) => (
                     <button
@@ -356,10 +425,14 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                 </div>
             )}
 
+            </fieldset>
+
             {problem !== null && (
                 <div className="flex flex-col gap-3">
                     {problem.kind === 'offline' ? (
-                        <Notice tone="warning">The server did not answer. The sale is kept; tap Finish again. It will not be sold twice.</Notice>
+                        <Notice tone="warning">The server did not answer. The sale is kept just as it is; tap Finish again. It is never sold twice.</Notice>
+                    ) : problem.kind === 'cleared' ? (
+                        <Notice tone="warning">The server has no record of that sale, so nothing was sold. You can change it now.</Notice>
                     ) : (
                         <Notice tone={problem.kind === 'message' ? 'error' : 'warning'}>{problem.message}</Notice>
                     )}
@@ -415,11 +488,11 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                 </div>
             )}
 
-            {(method === 'cash' || method === 'split' || problem?.kind === 'retype') && <Keypad onKey={typeKey} />}
+            {!locked && (method === 'cash' || method === 'split' || problem?.kind === 'retype') && <Keypad onKey={typeKey} />}
 
             <button
                 type="button"
-                disabled={!ready || busy}
+                disabled={(!ready && !locked) || busy}
                 className="min-h-[72px] rounded-xl bg-pay text-2xl font-bold text-white disabled:opacity-60"
                 onClick={() => void finish(cart)}
             >

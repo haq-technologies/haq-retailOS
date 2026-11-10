@@ -82,7 +82,7 @@ python3 -I tools/docs/check_markdown.py
 tools/release/dry-run.sh
 ```
 
-CI also runs the upgrade-path test (tools/release/upgrade-path.sh, check E5, D55) as its own job: it builds a shop with sales on the end-of-Phase-3 code and upgrades it to the code under review.
+CI also runs the upgrade-path test (tools/release/upgrade-path.sh, check E5, D55) as its own job: it builds a shop with sales on the end-of-Phase-3 code and upgrades it to the code under review. The restore drill (tools/backup/restore-drill.sh, check E1, D65) backs up a shop with sales, restores it and verifies the copy, in its own Compose project, so it also runs safely on this Mac. CI audits the PHP and JavaScript packages, scans every image, keeps a coverage floor and runs every Monday too (D65).
 
 CI (.github/workflows/ci.yml) runs all four on every pull request. It rebuilds the catalogue and fails if the committed files differ, so after changing the build script, rerun the build and commit its outputs.
 
@@ -105,7 +105,7 @@ CI also runs these on every pull request, with PostgreSQL 18, and builds every i
 
 ## Code structure (D23)
 
-The shop server is a modular monolith. Each module is a namespace under app/ (Platform, Organisation, Audit, Settings, Identity, Catalogue, Cost, Shifts, Sales, Printing, Counter, Backups, Health, Reports and BackOffice, and later Sync) and owns its models, actions, policies, controllers and API Resources. A module uses only the modules beneath it, as listed in tests/Arch/ArchitectureTest.php; add a module there before writing it. Pages render only through App\Platform\Http\Page. Migrations stay in database/migrations, and every new table gets its rule in the mutability matrix (app/Platform/Database/Mutability/Matrix.php) or the migration fails.
+The shop server is a modular monolith. Each module is a namespace under app/ (Platform, Organisation, Audit, Settings, Identity, Catalogue, Cost, Shifts, Sales, Printing, Counter, Backups, Health, Reports, Pilot and BackOffice, and later Sync) and owns its models, actions, policies, controllers and API Resources. A module uses only the modules beneath it, as listed in tests/Arch/ArchitectureTest.php; add a module there before writing it. Pages render only through App\Platform\Http\Page. Migrations stay in database/migrations, and every new table gets its rule in the mutability matrix (app/Platform/Database/Mutability/Matrix.php) or the migration fails.
 
 ## Design
 

@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { expectNothingBlocked, watched } from './csp';
 
 /*
  * The measured pilot in a real browser (Phase 5; spec section 14) [D56, D57]: the owner starts the 14
@@ -11,13 +12,14 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const open: BrowserContext[] = [];
 test.afterEach(async () => {
+    expectNothingBlocked();
     await Promise.all(open.splice(0).map((c) => c.close()));
 });
 
 async function backOffice(browser: Browser, name: string, pin: string): Promise<Page> {
     const context = await browser.newContext({ storageState: join(here, '.auth', 'D01.json') });
     open.push(context);
-    const page = await context.newPage();
+    const page = watched(await context.newPage());
     await page.goto('/back-office#/pilot');
     await page.getByRole('button', { name: new RegExp(`^${name}`) }).click();
     await page.keyboard.type(pin, { delay: 60 });

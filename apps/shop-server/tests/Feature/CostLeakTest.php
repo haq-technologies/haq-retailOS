@@ -11,6 +11,7 @@ use App\Sales\Finish;
 use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Testing\TestResponse;
 use Inertia\DevTools\DevTools;
 use Tests\Support\Counter;
 use Tests\Support\People;
@@ -67,6 +68,7 @@ function scannedUrls(object $test): array
         'item' => $test->a->id, 'sale' => $test->sale['id'], 'code' => '6001234567890', 'kind' => 'brands',
         'category' => (string) DB::table('items')->where('id', $test->a->id)->value('category_id'), 'entry' => $test->entry,
         'day' => (string) DB::table('sales')->where('id', $test->sale['id'])->value('business_day'),
+        'key' => (string) DB::table('sales')->where('id', $test->sale['id'])->value('idempotency_key'),
     ];
     // Answers with more in them: the whole period, not only today.
     $queries = ['api/back-office/flags' => '?period=all', 'api/back-office/flags.csv' => '?period=all', 'api/back-office/exports/sales.csv' => '?period=all',
@@ -144,4 +146,39 @@ it('never records page data for the devtools on a shop server', function () {
     app()->instance('env', 'production');
     app()['env'] = 'production';
     expect(DevTools::enabled())->toBeFalse();
+});
+
+it('finds no cost in the answers to what a cashier or a manager sends, either (check C4)', function () {
+    $cashier = ($this->as)('Amina', '1357', $this->till);
+    $sale = Counter::cashSale([$this->a->id => [1, 1_500_000]]);
+    $found = [];
+    $scan = function (string $who, string $url, TestResponse $response) use (&$found): void {
+        // A 503 is a printer that did not print (this shop has none): its words are scanned too.
+        expect($response->getStatusCode())->not->toBe(500);
+        foreach ([...PROBE_FORMS, ...COST_KEYS] as $form) {
+            if (str_contains((string) $response->getContent(), $form)) {
+                $found[] = "{$who} POST {$url}: {$form}";
+            }
+        }
+    };
+
+    // The counter: a sale and its retry, prices for the cache, a shift, a held cart, a learned barcode, a reprint.
+    foreach (['/api/counter/sales' => $sale, '/api/counter/prices' => ['item_ids' => [$this->a->id, $this->b->id]],
+        '/api/counter/shift' => ['opening_float_kobo' => 500_000], '/api/counter/barcodes' => ['code' => '6009876543210', 'item_id' => $this->a->id],
+        '/api/counter/parked' => ['kind' => 'hold', 'payload' => $sale, 'amount_kobo' => 1_500_000]] as $url => $body) {
+        $scan('cashier', $url, $cashier->postJson($url, $body));
+    }
+    $scan('cashier', '/api/counter/sales (retry)', $cashier->postJson('/api/counter/sales', $sale));
+    $scan('cashier', '/api/counter/sales/{sale}/reprint', $cashier->postJson("/api/counter/sales/{$this->sale['id']}/reprint"));
+
+    // The back office as a manager: a price, the flags marked seen, the cost preview (refused), the summary printed.
+    $manager = ($this->as)('Kemi', '246810', $this->office);
+    foreach (['/api/back-office/prices' => ['item_id' => $this->a->id, 'customer_type' => 'retail', 'price_kobo' => 1_600_000],
+        '/api/back-office/flags/seen' => ['keys' => ['below_cost:'.$this->sale['id']]],
+        '/api/back-office/costs/preview' => ['item_ids' => [$this->a->id], 'unit_cost_kobo' => PROBE, 'basis' => 'first_null'],
+        '/api/back-office/reports/summary/print' => ['terminal_id' => $this->t1->id]] as $url => $body) {
+        $scan('manager', $url, $manager->postJson($url, $body));
+    }
+
+    expect($found)->toBe([]);
 });

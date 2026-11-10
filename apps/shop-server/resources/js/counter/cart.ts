@@ -31,6 +31,12 @@ export interface Cart {
     parkedSaleId: string | null;
     lines: CartLine[];
     finishKey: { key: string; hash: string } | null;
+    /**
+     * A Finish the server never answered (D61): the exact request, kept until the server says whether that
+     * sale exists. Until then the sale and its payment cannot change, so a sale the server did commit is
+     * never sold again under a new key. It lives on the cart, so it survives the idle lock.
+     */
+    pending?: FinishPayload | null;
 }
 
 export type Payment =

@@ -19,6 +19,17 @@ final readonly class Throttle
 {
     public function __construct(private Settings $settings) {}
 
+    /**
+     * Takes this counter's and this person's PIN locks until the transaction ends, so the checks below and
+     * the attempt's record happen as one step. Always the counter first, then the person, so two locks
+     * never wait on each other in a circle. Call inside a transaction.
+     */
+    public function serialise(string $terminalId, string $userId): void
+    {
+        DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['pin-terminal:'.$terminalId]);
+        DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['pin-user:'.$userId]);
+    }
+
     public function record(string $terminalId, ?string $userId, string $kind, bool $succeeded): void
     {
         DB::table('sign_in_attempts')->insert([

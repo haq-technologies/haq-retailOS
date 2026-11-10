@@ -30,60 +30,100 @@ final readonly class Printing
         private AuditLog $audit,
     ) {}
 
-    /** Prints one job. Returns true when it printed, false when it should be tried again. */
+    /**
+     * Prints one job. Returns true when it is done (printed, or nothing to retry), false to try again.
+     *
+     * The job is marked as sending, and committed, before the printer is sent anything; the send itself runs
+     * outside any transaction. A later attempt that finds a job still sending cannot know whether that paper
+     * came out, so it prints a copy stamped DUPLICATE and never opens the drawer a second time (D63).
+     */
     public function print(string $printJobId): bool
     {
-        return DB::transaction(function () use ($printJobId): bool {
+        /** @var array{job: object{id: string, sale_id: string, terminal_id: string, kind: string, status: string, attempts: int, created_at: string}, attempts: int, host: string, port: int}|bool $claim */
+        $claim = DB::transaction(function () use ($printJobId): array|bool {
             /** @var object{id: string, sale_id: string, terminal_id: string, kind: string, status: string, attempts: int, created_at: string}|null $job */
             $job = DB::table('print_jobs')->where('id', $printJobId)->lockForUpdate()->first();
             if ($job === null || $job->status === 'printed') {
                 return true;
             }
+            if ($job->status === 'sending') {
+                $this->markUncertain($job->id, $job->terminal_id);
+            }
             $terminal = Terminal::query()->findOrFail($job->terminal_id);
             $attempts = (int) $job->attempts + 1;
-
             $host = $terminal->printer_host;
             if ($host === null || $host === '') {
                 DB::table('print_jobs')->where('id', $job->id)->update(['attempts' => $attempts, 'status' => 'failed']);
 
                 return true; // Nothing to retry until a printer is set; the counter shows it as pending.
             }
-            $port = $terminal->printer_port ?? 9100;
+            DB::table('print_jobs')->where('id', $job->id)->update(['attempts' => $attempts, 'status' => 'sending']);
 
-            $sale = Sales::summary($job->sale_id);
-            $duplicate = null;
-            if ($job->kind === 'duplicate') {
-                $by = DB::table('audit_log')->where('action', 'print.reprint_requested')->where('subject_id', $job->id)->value('actor_id');
-                $name = is_string($by) ? DB::table('users')->where('id', $by)->value('name') : null;
-                $duplicate = ['at' => CarbonImmutable::parse($job->created_at), 'by' => is_string($name) ? $name : 'staff'];
-            }
-            $receipt = Receipt::forSale($sale, $terminal->name, $this->text(), $duplicate);
+            return ['job' => $job, 'attempts' => $attempts, 'host' => $host, 'port' => $terminal->printer_port ?? 9100];
+        });
+        if (is_bool($claim)) {
+            return $claim;
+        }
 
-            $openDrawer = $job->kind === 'receipt' && $this->drawerFitted($terminal)
-                && in_array('cash', array_column($sale['payments'], 'method'), true);
+        $job = $claim['job'];
+        $terminal = Terminal::query()->findOrFail($job->terminal_id);
+        $sale = Sales::summary($job->sale_id);
+        // An earlier attempt may have printed it: this copy is stamped, and the drawer stays shut.
+        $uncertain = $job->kind === 'receipt' && $this->isUncertain($job->id);
+        $duplicate = null;
+        if ($job->kind === 'duplicate') {
+            $by = DB::table('audit_log')->where('action', 'print.reprint_requested')->where('subject_id', $job->id)->value('actor_id');
+            $name = is_string($by) ? DB::table('users')->where('id', $by)->value('name') : null;
+            $duplicate = ['at' => CarbonImmutable::parse($job->created_at), 'by' => is_string($name) ? $name : 'staff'];
+        } elseif ($uncertain) {
+            $duplicate = ['at' => CarbonImmutable::now(), 'by' => 'the server'];
+        }
+        $receipt = Receipt::forSale($sale, $terminal->name, $this->text(), $duplicate);
+        $openDrawer = $job->kind === 'receipt' && ! $uncertain && $this->drawerFitted($terminal)
+            && in_array('cash', array_column($sale['payments'], 'method'), true);
 
-            try {
-                $this->printer->send($host, $port, EscPos::render($receipt, $openDrawer));
-            } catch (PrinterUnavailable $e) {
-                $final = $attempts >= self::MAX_ATTEMPTS;
-                DB::table('print_jobs')->where('id', $job->id)->update(['attempts' => $attempts, 'status' => $final ? 'failed' : 'pending']);
+        try {
+            $this->printer->send($claim['host'], $claim['port'], EscPos::render($receipt, $openDrawer));
+        } catch (PrinterUnavailable $e) {
+            $final = $claim['attempts'] >= self::MAX_ATTEMPTS;
+            DB::transaction(function () use ($job, $terminal, $sale, $final, $e): void {
+                DB::table('print_jobs')->where('id', $job->id)->update(['status' => $final ? 'failed' : 'pending']);
                 if ($final) {
                     $this->audit->record(new AuditEntry(action: 'print.failed', terminalId: $terminal->id, subjectType: 'print_job', subjectId: $job->id,
                         after: ['receipt_number' => $sale['receipt_number'], 'reason' => $e->getMessage()]));
                 }
+            });
 
-                return $final;
-            }
+            return $final;
+        }
 
-            DB::table('print_jobs')->where('id', $job->id)->update(['attempts' => $attempts, 'status' => 'printed']);
+        DB::transaction(function () use ($job, $terminal, $sale, $openDrawer, $uncertain): void {
+            DB::table('print_jobs')->where('id', $job->id)->update(['status' => 'printed']);
             if ($openDrawer) {
                 $this->logOpening($terminal, 'sale_open', null, $job->sale_id, null);
             }
-            $this->audit->record(new AuditEntry(action: $job->kind === 'duplicate' ? 'print.duplicate_printed' : 'print.printed',
+            $this->audit->record(new AuditEntry(action: $job->kind === 'duplicate' || $uncertain ? 'print.duplicate_printed' : 'print.printed',
                 terminalId: $terminal->id, subjectType: 'print_job', subjectId: $job->id, after: ['receipt_number' => $sale['receipt_number']]));
-
-            return true;
         });
+
+        return true;
+    }
+
+    /**
+     * Records that a job's last send never reported back, so nobody knows whether it printed (D63). Once
+     * recorded, every later print of that receipt is a stamped copy and leaves the drawer shut.
+     */
+    public function markUncertain(string $printJobId, string $terminalId): void
+    {
+        if ($this->isUncertain($printJobId)) {
+            return;
+        }
+        $this->audit->record(new AuditEntry(action: 'print.outcome_unknown', terminalId: $terminalId, subjectType: 'print_job', subjectId: $printJobId));
+    }
+
+    private function isUncertain(string $printJobId): bool
+    {
+        return DB::table('audit_log')->where('action', 'print.outcome_unknown')->where('subject_id', $printJobId)->exists();
     }
 
     /** A reprint: the original number, stamped DUPLICATE, logged [S9]. Returns the new print job's ID. */

@@ -15,6 +15,7 @@ Route::middleware(['web', EnrolledTerminal::class])->post('/api/counter/journal'
 
 Route::middleware(['web', EnrolledTerminal::class, ActingUser::class])->group(function (): void {
     Route::post('/api/counter/sales', [SaleController::class, 'finish']);
+    Route::get('/api/counter/sales/by-key/{key}', [SaleController::class, 'byKey'])->where('key', '[A-Za-z0-9_-]{8,64}');
     Route::get('/api/counter/items/{item}/price', [PriceController::class, 'show']);
     Route::post('/api/counter/items/{item}/prices', [PriceController::class, 'store']);
     Route::get('/api/counter/parked', [ParkedController::class, 'index']);

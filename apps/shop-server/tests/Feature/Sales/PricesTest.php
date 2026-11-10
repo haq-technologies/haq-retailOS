@@ -8,11 +8,14 @@ use App\Identity\Approvals;
 use App\Identity\Enrolment;
 use App\Identity\Role;
 use App\Platform\Money;
+use App\Sales\ApprovalNeeded;
 use App\Sales\Finish;
+use App\Sales\Parked;
 use App\Sales\Pricing;
 use App\Sales\SaleRefused;
 use App\Settings\Settings;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\Support\Catalogue;
 use Tests\Support\Counter;
 use Tests\Support\People;
@@ -133,8 +136,74 @@ describe('with a usual range of ₦2,500 to ₦3,000', function () {
         $sale['lines'][0]['approval_token'] = $approval['token'];
 
         expect(fn () => app(Finish::class)->finish($this->t1, $this->cashier, Counter::request($sale)))
-            ->toThrow(SaleRefused::class, 'The line changed after it was approved');
-        expect(DB::table('approvals')->where('id', $approval['id'])->value('bound_at'))->toBeNull();
+            ->toThrow(ApprovalNeeded::class, 'The line changed after it was approved');
+        expect(DB::table('sale_lines')->whereNotNull('approval_id')->count())->toBe(0);
+    });
+
+    it('keeps a manager\'s approval bound to its line while the sale goes on, here 5 minutes (S3, check D4)', function () {
+        $sale = priced($this->item, 100_000);
+        $approval = app(Approvals::class)->grant($this->t1, $this->cashier->id, $this->manager->id, '135790', ApprovalAction::PriceBelowFloor,
+            $sale['lines'][0]['client_line_id'], $this->item->id, 100_000);
+        expect(DB::table('approvals')->where('id', $approval['id'])->value('bound_at'))->not->toBeNull();
+
+        $this->travel(5)->minutes();
+        $sale['lines'][0]['approval_token'] = $approval['token'];
+        app(Finish::class)->finish($this->t1, $this->cashier, Counter::request($sale));
+        expect(DB::table('sale_lines')->whereNotNull('approval_id')->value('approval_id'))->toBe($approval['id']);
+    });
+
+    it('keeps the approval through a slow transfer, and another counter finishes the sale (check D4)', function () {
+        [, $t2] = $this->counter['terminals'];
+        $sale = priced($this->item, 100_000);
+        $approval = app(Approvals::class)->grant($this->t1, $this->cashier->id, $this->manager->id, '135790', ApprovalAction::PriceBelowFloor,
+            $sale['lines'][0]['client_line_id'], $this->item->id, 100_000);
+        $sale['lines'][0]['approval_token'] = $approval['token'];
+        $sale['payments'] = [['method' => 'transfer', 'amount_kobo' => 100_000, 'reference' => 'Chidi', 'alert_seen' => true]];
+        $parked = app(Parked::class)->park($this->t1, $this->cashier, 'awaiting_transfer', 'Chidi', $sale, 100_000);
+
+        $this->travel(40)->minutes();
+        $done = app(Finish::class)->finish($t2, $this->cashier, Counter::request([...$sale, 'parked_sale_id' => $parked]));
+        expect($done['receipt_number'])->toStartWith('T02-');
+        expect(DB::table('sale_lines')->whereNotNull('approval_id')->value('approval_id'))->toBe($approval['id']);
+    });
+
+    it('uses an approval once, and asks for the manager again when it no longer holds', function () {
+        [, $t2] = $this->counter['terminals'];
+        // A set price keeps the usual range still, so ₦1,000 stays below the floor after the first sale.
+        $this->pricing->set($this->item, 'retail', 270_000, $this->manager);
+        $sale = priced($this->item, 100_000);
+        $approval = app(Approvals::class)->grant($this->t1, $this->cashier->id, $this->manager->id, '135790', ApprovalAction::PriceBelowFloor,
+            $sale['lines'][0]['client_line_id'], $this->item->id, 100_000);
+        $sale['lines'][0]['approval_token'] = $approval['token'];
+        app(Finish::class)->finish($this->t1, $this->cashier, Counter::request($sale));
+
+        // The same token on a second sale: the counter is asked for a fresh approval, with the line it is for.
+        $again = [...$sale, 'idempotency_key' => (string) Str::uuid()];
+        try {
+            app(Finish::class)->finish($this->t1, $this->cashier, Counter::request($again));
+            $this->fail('The approval was used twice.');
+        } catch (ApprovalNeeded $e) {
+            expect($e->getMessage())->toContain('already been used');
+            expect($e->toArray())->toBe(['action' => 'price_below_floor', 'subject_id' => $sale['lines'][0]['client_line_id'], 'item_id' => $this->item->id, 'price_kobo' => 100_000]);
+        }
+
+        // Another counter's approval works only when that counter finishes a held cart.
+        $other = priced($this->item, 100_000);
+        $grant = app(Approvals::class)->grant($this->t1, $this->cashier->id, $this->manager->id, '135790', ApprovalAction::PriceBelowFloor,
+            $other['lines'][0]['client_line_id'], $this->item->id, 100_000);
+        $other['lines'][0]['approval_token'] = $grant['token'];
+        expect(fn () => app(Finish::class)->finish($t2, $this->cashier, Counter::request($other)))->toThrow(ApprovalNeeded::class, 'not for this counter');
+        expect(DB::table('sale_lines')->whereNotNull('approval_id')->count())->toBe(1);
+    });
+
+    it('answers an approval that no longer holds with the approval to ask for, over HTTP', function () {
+        $device = People::enrol($this->t1);
+        $token = (string) $this->withCookie(Enrolment::COOKIE, $device)->postJson('/api/identity/pin', ['user_id' => $this->cashier->id, 'pin' => '1357'])->json('token');
+        $sale = priced($this->item, 100_000, ['approval_token' => 'no-such-approval']);
+
+        $this->withCookie(Enrolment::COOKIE, $device)->withHeader(ActingToken::HEADER, $token)->postJson('/api/counter/sales', $sale)
+            ->assertStatus(422)->assertJsonPath('approval.action', 'price_below_floor')
+            ->assertJsonPath('approval.subject_id', $sale['lines'][0]['client_line_id'])->assertJsonPath('approval.price_kobo', 100_000);
     });
 
     it('needs a manager for the fourth below-range confirm in a shift (S5)', function () {

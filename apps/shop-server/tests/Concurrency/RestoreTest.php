@@ -75,6 +75,7 @@ it('makes one back entry when three managers re-enter the same lost sale at once
 });
 
 it('never sells under a number the journal holds when a sale races its counter\'s report', function () {
+    $sold = 0;
     foreach (range(1, 3) as $round) {
         $results = Harness::run([
             [FinishSales::class, ['terminal' => $this->t1->id, 'cashier' => $this->cashier->id, 'items' => [$this->item], 'count' => 3]],
@@ -83,10 +84,14 @@ it('never sells under a number the journal holds when a sale races its counter\'
         // Before the report a sale is refused; after it, it numbers from the raised epoch.
         foreach ($results[0]['done'] as $sale) {
             expect($sale['receipt'])->toStartWith('T01-E3-');
+            $sold++;
         }
     }
+    // Once its report is in, the counter sells again, so the rounds after the first always sell: the
+    // numbering below is never checked over an empty list.
+    expect($sold)->toBeGreaterThan(0);
     $numbers = DB::table('sales')->where('terminal_id', $this->t1->id)->where('epoch', 3)->orderBy('receipt_no')->pluck('receipt_no')->all();
-    expect($numbers)->toBe($numbers === [] ? [] : range(1001, 1000 + count($numbers)));
+    expect($numbers)->toBe(range(1001, 1000 + $sold));
     expect(DB::table('sales')->where('terminal_id', $this->t1->id)->where('epoch', 2)->count())->toBe(0);
     expect(app(Verifier::class)->problems())->toBe([]);
 });
