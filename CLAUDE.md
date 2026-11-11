@@ -84,7 +84,7 @@ tools/release/dry-run.sh
 
 CI also runs the upgrade-path test (tools/release/upgrade-path.sh, check E5, D55) as its own job: it builds a shop with sales on the end-of-Phase-3 code and upgrades it to the code under review. The restore drill (tools/backup/restore-drill.sh, check E1, D65) backs up a shop with sales, restores it and verifies the copy, in its own Compose project, so it also runs safely on this Mac. CI audits the PHP and JavaScript packages, scans every image, keeps a coverage floor and runs every Monday too (D65).
 
-CI (.github/workflows/ci.yml) runs all four on every pull request. It rebuilds the catalogue and fails if the committed files differ, so after changing the build script, rerun the build and commit its outputs.
+CI (.github/workflows/ci.yml) runs all four on every pull request. Publishing a signed release runs .github/workflows/release.yml, which tags its images with its version on GHCR (D70); it never runs on a pull request, so it is never a required check. It rebuilds the catalogue and fails if the committed files differ, so after changing the build script, rerun the build and commit its outputs.
 
 The shop server runs only in Docker; PHP, Composer and Node are never run on the Mac itself. Its commands are in [apps/shop-server/README.md](apps/shop-server/README.md). The everyday ones, from the repository root:
 

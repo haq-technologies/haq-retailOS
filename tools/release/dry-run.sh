@@ -1,7 +1,8 @@
 #!/bin/bash
 # The signing dry run (PLAN.md, Phase 3), with a throwaway key: a signed release checks out with the
 # updater's own checks; a changed manifest, a changed Compose file, a release signed by another key, an
-# older release and a release whose images are not pinned by digest are all refused. Runs in CI; it touches nothing outside a temporary folder.
+# older release and a release whose images are not pinned by digest are all refused. tag-images.sh (D70)
+# tags a release's images only after the same checks. Runs in CI; it touches nothing outside a temporary folder.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -57,5 +58,13 @@ expect fail "an older release than the installed one is refused" check "$tmp/old
 release "$tmp/tagged" 2026.11.3 ":main"
 "$root/tools/release/sign.sh" "$tmp/tagged/manifest.json" "$tmp/key/release-private.pem" >/dev/null
 expect fail "a signed release with an image named by tag, not digest, is refused" check "$tmp/tagged"
+# Tagging a published release's images with its version (D70) runs the same checks first.
+tag() { "$root/tools/release/tag-images.sh" --release "$1" --public-key "$tmp/key/release-public.pem" --check-only; }
+expect pass "a signed release's images are tagged with its version" tag "$tmp/good"
+expect fail "a release signed by another key is never tagged" tag "$tmp/stranger"
+expect fail "a release with an image named by tag, not digest, is never tagged" tag "$tmp/tagged"
+release "$tmp/odd" 2026.11
+"$root/tools/release/sign.sh" "$tmp/odd/manifest.json" "$tmp/key/release-private.pem" >/dev/null
+expect fail "a release whose version is not YEAR.MONTH.N is never tagged" tag "$tmp/odd"
 
 [ "$failures" = 0 ] && echo "The signing dry run passed." || { echo "The signing dry run failed ($failures)."; exit 1; }

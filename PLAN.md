@@ -39,7 +39,7 @@ Done:
 
 - The pilot is gone (D67, 10 November 2026): no shadow pilot and no 14 measured days. The shop goes live with a one-week safety net, and the go-live basics move into the first release (D68).
 
-Next: make and sign the release that goes live (docs/operations/releases.md), then gate G3 on it (docs/operations/g3-software-rehearsal.md), then G4, then install at the shop and the safety week (docs/operations/measured-pilot.md).
+Next: release 2026.11.1, the release that goes live, was signed and published by the product owner on 11 November 2026; gate G3 on it (docs/operations/g3-software-rehearsal.md), then G4, then install at the shop and the safety week (docs/operations/measured-pilot.md).
 
 ## Team
 
@@ -90,7 +90,7 @@ Every change runs the full test suite against a real PostgreSQL before it can me
 4. **Staging.** The product owner's computer, with the stand-in printer and 5,000 test items, deploys from main (D16, D60).
 5. **Tag a release.** A semantic version, weekly in the pilot, with notes generated from the merged pull requests.
 6. **Release manifest.** Image digests, the compose file and the migrations, in one file the updater trusts.
-7. **Offline signing.** A person signs the manifest with a hardware key; CI never holds the release key.
+7. **Offline signing.** A person signs the manifest with a hardware key; CI never holds the release key. Publishing the signed release tags its images with its version on GHCR, after the same checks the updater makes (D70).
 8. **The shop pulls from GitHub.** Over a phone hotspot where the shop has no internet; a MiFi is optional [D3].
 9. **The updater on the shop server.** Verifies the signature, pulls every image, backs up, migrates, runs the health check, and rolls back the code only if the check fails.
 
@@ -319,3 +319,4 @@ Assumptions:
 | 10 November 2026 | Software only: the bench test, the hardware checks and the shop-visit checklist removed; G3 is a software dress rehearsal on virtual machines (D60) |
 | 10 November 2026 | No pilot (D67): go-live with a one-week safety net; the go-live basics (voids, returns, the day-end close, paid-outs, drops and top-ups) move into the first release, with checks F1 to F6 (D68) |
 | 11 November 2026 | The G3 practice on this computer passes all five steps; it finds that a restore onto the spare cost the counters their trust and enrolment, fixed by keeping the shop's certificate authority and app key beside the backups (D69) |
+| 11 November 2026 | Release 2026.11.1 signed and published by the product owner; publishing a release now tags its images with its version on GHCR, so a shop installs it by version (D70) |

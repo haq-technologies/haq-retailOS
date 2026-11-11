@@ -34,6 +34,16 @@ Keep `release-private.pem` there, with a copy in a safe place. Commit only `rele
    gh release create 2026.11.1 release/2026.11.1/manifest.json release/2026.11.1/manifest.json.sig release/2026.11.1/compose.yaml --title 2026.11.1
    ```
 
+   Answer **No** when it asks whether this is a prerelease: the updater takes GitHub's latest release, which never includes a prerelease.
+
+5. Publishing it starts the Release workflow (D70). It checks the release with the updater's own checks against the release public key on main, then gives the three images the version as their tag on GHCR, pointing at the manifest's digests; a version's tag is never moved. A new shop then installs exactly the signed images with `install.sh --tag 2026.11.1`. Check it is green:
+
+   ```
+   gh run list --workflow Release --limit 1
+   ```
+
+   For a release published before the workflow existed, run it by hand: `gh workflow run release.yml -f version=2026.11.1`.
+
 ## Updating a shop
 
 On the shop's server, with internet (a phone hotspot is enough):
