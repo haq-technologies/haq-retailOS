@@ -1,0 +1,54 @@
+name: Release
+
+# When a release is published, its three images get its version as their tag on GHCR, so a new shop is
+# installed with `install.sh --tag <version>` and runs exactly the images the signed manifest pins (D70).
+# The release must check out first, with the updater's own checks against the release public key on main.
+# Run it by hand for a release published before this workflow: gh workflow run release.yml -f version=2026.11.1
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The published release whose images to tag, such as 2026.11.1
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  tag-images:
+    name: tag the release's images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      # Main, not the release's own commit: the tagging tool and the trusted public key are main's.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ github.event.release.tag_name || inputs.version }}
+        run: |
+          printf '%s' "$VERSION" | grep -Eq '^[0-9]{4}\.[0-9]{1,2}\.[0-9]+$' || { echo "Not a release version: $VERSION" >&2; exit 1; }
+          gh release download "$VERSION" --repo "$GITHUB_REPOSITORY" --dir "release/$VERSION" \
+            --pattern manifest.json --pattern manifest.json.sig --pattern compose.yaml
+
+      - name: Check the release and tag its images
+        env:
+          VERSION: ${{ github.event.release.tag_name || inputs.version }}
+        run: tools/release/tag-images.sh --release "release/$VERSION"
