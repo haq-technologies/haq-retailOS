@@ -2,7 +2,7 @@
 
 The HAQ Retail OS server that runs in each branch, on the shop's own network: Laravel 13 and PostgreSQL 18, with the counter and the back office in React through Inertia. The spec is [docs/spec/retail-os-spec-v1.5.md](../../docs/spec/retail-os-spec-v1.5.md), and the build order is in [PLAN.md](../../PLAN.md).
 
-**Status:** Phases 2 and 3 are built (the foundation, then the counter and sale core); gate G3 is a software dress rehearsal on virtual machines (D60). Phase 4's owner features are built, recovery included, with the hardening; the shadow pilot waits for G3. Phase 5's tools are built: the measured pilot and the owner's data export (PLAN.md).
+**Status:** Phases 2 and 3 are built (the foundation, then the counter and sale core); gate G3, a software dress rehearsal on virtual machines (D60), passed on release 2026.11.1 (D71). Phase 4's owner features are built, recovery included, with the hardening, and so are the go-live basics (D68). There is no pilot (D67): the shop goes live with a one-week safety net, using the measured pilot's section of the back office (PLAN.md).
 
 ## Run it on the development computer
 

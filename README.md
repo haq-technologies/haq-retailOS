@@ -2,7 +2,7 @@
 
 A point-of-sale system for phone-accessory shops in Nigeria, by HAQ Technology. A small server in each shop runs everything on the shop's own network, so selling never depends on the internet. Every receipt names the product properly, profit stays honest while cost prices are still being filled in, and every sale survives power cuts and tampering. The tiers are Core and Pro.
 
-**Status:** 10 November 2026. Phases 0, 1 and 2 are closed: gate G2 passed (D27). Phase 3, the counter and sale core, is built (D30 to D36); its gate G3 is a software dress rehearsal on virtual machines (D60). Phase 4's owner features and its hardening are built (D39 to D55), and so are Phase 5's tools: the measured pilot and the owner's data export (D56, D57). Everything is built and tested in software only. There is no pilot (D67): what is left is the go-live basics (D68), the release, G3 and G4, then go-live with a one-week safety net (PLAN.md).
+**Status:** 11 November 2026. Phases 0, 1 and 2 are closed: gate G2 passed (D27). Phase 3, the counter and sale core, is built (D30 to D36); its gate G3 is a software dress rehearsal on virtual machines (D60). Phase 4's owner features and its hardening are built (D39 to D55), and so are Phase 5's tools: the measured pilot and the owner's data export (D56, D57). Everything is built and tested in software only. There is no pilot (D67): the go-live basics are built (D68), release 2026.11.1 is published, and gates G3 and G4 passed on it (D71). What is left is the install at the shop and a one-week safety net (PLAN.md).
 
 ## Start here
 
