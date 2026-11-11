@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 use App\Identity\Enrolment;
 use App\Identity\Models\User;
+use App\Identity\Pins;
 use App\Identity\Role;
+use App\Identity\Throttle;
 use App\Identity\Users;
+use Illuminate\Support\Facades\DB;
 use Tests\Support\People;
 use Tests\Support\Shop;
 
@@ -78,4 +81,59 @@ it('stops the old PC when a counter is enrolled again', function () {
 it('prints a one-time code for the installer', function () {
     $this->artisan('shop:enrol-terminal', ['code' => 'T01'])->expectsOutputToContain('open /enrol in the browser')->expectsOutputToContain('for 30 minutes')->assertSuccessful();
     $this->artisan('shop:enrol-terminal', ['code' => 'T09'])->assertFailed();
+});
+
+it('lists everyone for HAQ support, the active first, with their role, status and ID (D74, QA finding P15)', function () {
+    $amina = People::add('Amina', Role::Cashier, '1357');
+    $kemi = People::add('Kemi', Role::Manager, '246810');
+    $tunde = People::add('Tunde', Role::Cashier, '2468');
+    app(Users::class)->deactivate($tunde);
+
+    // One check per table row (a row meets one check): Amina's ID, Kemi's role, and Tunde, last, deactivated.
+    $this->artisan('shop:list-users')
+        ->expectsOutputToContain($amina->id)->expectsOutputToContain('Manager')->expectsOutputToContain('Deactivated')->assertSuccessful();
+    expect($kemi->pin_changed_at)->not->toBeNull();
+});
+
+it('gives a person a new PIN by the name on their tile, and the old one stops working (D74, QA finding P15)', function () {
+    $amina = People::add('Amina', Role::Cashier, '1357');
+    $kemi = People::add('Kemi', Role::Manager, '246810');
+    $pins = app(Pins::class);
+
+    $this->artisan('shop:set-pin', ['person' => ' amina ', '--pin' => '9753'])->expectsOutputToContain("Amina's PIN is changed")->assertSuccessful();
+    expect($pins->check('9753', $amina->fresh()?->pin_hash))->toBeTrue()
+        ->and($pins->check('1357', $amina->fresh()?->pin_hash))->toBeFalse();
+    expect(DB::table('audit_log')->where('action', 'identity.pin_changed')->where('subject_id', $amina->id)->exists())->toBeTrue();
+
+    // A manager's PIN is 6 digits, because it also approves; a wrong length changes nothing.
+    $this->artisan('shop:set-pin', ['person' => 'Kemi', '--pin' => '1234'])->expectsOutputToContain("A manager's PIN is 6 digits.")->assertFailed();
+    expect($pins->check('246810', $kemi->fresh()?->pin_hash))->toBeTrue();
+
+    // Someone locked after wrong PINs is told when the new PIN starts to work.
+    foreach (range(1, 5) as $_) {
+        app(Throttle::class)->record($this->shop['terminals'][0]->id, $kemi->id, 'sign_in', false);
+    }
+    $this->artisan('shop:set-pin', ['person' => $kemi->id, '--pin' => '864200'])->expectsOutputToContain('still locked after wrong PINs')->assertSuccessful();
+});
+
+it('deactivates someone who leaves by name, and asks for the ID when two share the name (D74, QA finding P15)', function () {
+    $first = People::add('Musa', Role::Cashier, '1357');
+    $second = People::add('Musa', Role::Cashier, '2468');
+    People::add('Halima', Role::Owner);
+
+    $this->artisan('shop:deactivate-user', ['person' => 'Musa'])
+        ->expectsOutputToContain('2 active people are called Musa')->expectsOutputToContain($first->id)->expectsOutputToContain($second->id)->assertFailed();
+    expect($first->fresh()?->isActive())->toBeTrue()->and($second->fresh()?->isActive())->toBeTrue();
+
+    $this->artisan('shop:deactivate-user', ['person' => strtoupper($first->id)])->expectsOutputToContain('Musa (Cashier) is deactivated')->assertSuccessful();
+    expect($first->fresh()?->isActive())->toBeFalse()->and($second->fresh()?->isActive())->toBeTrue();
+    $this->artisan('shop:deactivate-user', ['person' => $first->id])->expectsOutputToContain('was already deactivated')->assertSuccessful();
+    $this->artisan('shop:set-pin', ['person' => $first->id, '--pin' => '9999'])->expectsOutputToContain('is deactivated')->assertFailed();
+
+    // Now only one active Musa is left, so the name is enough.
+    $this->artisan('shop:deactivate-user', ['person' => 'musa'])->assertSuccessful();
+    expect($second->fresh()?->isActive())->toBeFalse();
+
+    $this->artisan('shop:deactivate-user', ['person' => 'Nobody'])->expectsOutputToContain('There is no active person called Nobody')->assertFailed();
+    $this->artisan('shop:deactivate-user', ['person' => 'Halima'])->expectsOutputToContain('last active owner')->assertFailed();
 });

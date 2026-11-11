@@ -33,6 +33,8 @@ use Illuminate\Support\Facades\DB;
  * - A return undoes some lines, found by the receipt number. It needs a manager's PIN, a reason and a
  *   disposition, and refunds by cash, transfer or POS. Each line is locked while it is checked, so no line is
  *   returned beyond what was sold, even from two counters at once. With no receipt, only the owner returns.
+ * - A void and a return of the same sale take the same lock, and the database refuses the second of the two
+ *   kinds, so a sale is never both voided and returned (D73).
  * - Both are idempotent: the counter's request ID is the sale's idempotency key, so a retry gives the first.
  */
 final readonly class Reversals
@@ -104,7 +106,7 @@ final readonly class Reversals
         $this->ready($terminal);
 
         $id = $this->transaction($terminal, $requestId, function () use ($terminal, $actor, $saleId, $reason, $requestId, $approvalToken): string {
-            DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['reverse-sale:'.$saleId]);
+            self::lockSale($saleId);
             /** @var object{id: string, kind: string, shift_id: string, receipt_number: string, customer_type: string, total_kobo: int, branch_id: string}|null $sale */
             $sale = DB::table('sales')->where('id', $saleId)->first(['id', 'kind', 'shift_id', 'receipt_number', 'customer_type', 'total_kobo', 'branch_id']);
             if ($sale === null || $sale->branch_id !== $terminal->branch_id) {
@@ -230,6 +232,9 @@ final readonly class Reversals
         if ($sale === null || ! in_array($sale->kind, ['sale', 'back_entry'], true)) {
             throw new SaleRefused("There is no sale {$receiptNumber} at this branch. Check the number on the receipt.");
         }
+        // The lock a void of this sale takes, before the void is looked for: a void and a return of one sale
+        // queue, and the second sees the first, so the sale is never refunded twice (D73, QA finding P14).
+        self::lockSale($sale->id);
         if (DB::table('sales')->where('reverses_sale_id', $sale->id)->where('kind', 'void')->exists()) {
             throw new SaleRefused("{$sale->receipt_number} was voided, so there is nothing to return.");
         }
@@ -352,6 +357,15 @@ final readonly class Reversals
         }
 
         return null;
+    }
+
+    /**
+     * Holds a sale's reversal lock until the transaction ends. A void and a return of the same sale take it
+     * first, and the database's own rule on sales takes the same lock (D73), so it is held once per sale.
+     */
+    private static function lockSale(string $saleId): void
+    {
+        DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['reverse-sale:'.$saleId]);
     }
 
     private function withinWindow(string $businessDay): bool

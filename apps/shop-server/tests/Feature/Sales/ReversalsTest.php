@@ -7,6 +7,7 @@ use App\Identity\ApprovalAction;
 use App\Identity\Approvals;
 use App\Identity\Enrolment;
 use App\Identity\Role;
+use App\Platform\Ulid;
 use App\Printing\PrinterConnection;
 use App\Reports\DailySummary;
 use App\Reports\Flags;
@@ -17,6 +18,7 @@ use App\Sales\Finish;
 use App\Sales\Reversals;
 use App\Sales\SaleRefused;
 use App\Shifts\Drawer;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\Support\Counter;
@@ -157,4 +159,24 @@ it('works over HTTP: find the receipt, ask for the manager, then return', functi
     // A retry after a lost answer gives the same return.
     $as()->postJson('/api/counter/returns', [...$body, 'approval_token' => $approved])->assertOk()->assertJsonPath('sale.retried', true);
     expect(DB::table('sales')->where('kind', 'return')->count())->toBe(1);
+});
+
+it('holds in the database that a sale is never both voided and returned, whatever writes it (D73, QA finding P14)', function () {
+    $other = app(Finish::class)->finish($this->t1, $this->cashier, Counter::request(Counter::cashSale([$this->a->id => [1, 150_000]])));
+    // A reversing row written straight into the table, past every check the app makes.
+    $straight = function (array $sale, string $kind): void {
+        $row = (array) DB::table('sales')->where('id', $sale['id'])->first();
+        $no = random_int(900_000, 999_999);
+        DB::transaction(fn () => DB::table('sales')->insert([...$row, 'id' => Ulid::generate(), 'kind' => $kind, 'reverses_sale_id' => $sale['id'],
+            'receipt_no' => $no, 'receipt_number' => "T01-E1-{$no}", 'idempotency_key' => (string) Str::uuid(), 'total_kobo' => -150_000]));
+    };
+
+    $this->reversals->void($this->t1, $this->manager, $this->sale['id'], 'Rang twice', (string) Str::uuid(), null);
+    expect(fn () => $straight($this->sale, 'return'))->toThrow(QueryException::class, 'is already voided, so it cannot be returned');
+
+    $this->reversals->return($this->t2, $this->manager, returnOf(['receipt_number' => $other['receipt_number'], 'lines' => [['line_id' => lineOf($other, $this->a->id), 'qty' => 1]]]));
+    expect(fn () => $straight($other, 'void'))->toThrow(QueryException::class, 'is already partly returned, so it cannot be voided');
+
+    // A return with no receipt names no sale, so the rule never stands in its way.
+    expect(DB::table('sales')->where('kind', 'return')->whereNull('reverses_sale_id')->count())->toBe(0);
 });

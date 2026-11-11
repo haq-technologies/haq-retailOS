@@ -47,6 +47,8 @@ docker compose exec app php artisan shop:enrol-terminal T01                # a o
 
 A cashier's or storekeeper's PIN is 4 to 6 digits; a manager's or owner's is 6, because it also approves (D24).
 
+On a shop's server, HAQ support lists, re-PINs and deactivates people with `sudo haq users`, `sudo haq pin "Amina"` and `sudo haq deactivate "Amina"` (D74; in development, `php artisan shop:list-users`, `shop:set-pin` and `shop:deactivate-user`). Nobody is ever deleted.
+
 The owner's phone or laptop reaches the back office as a back-office device (D29): list it in the profile with a code such as D01 and `"kind": "back_office"` (or use `shop:make-profile --back-office=1`), then enrol it like a counter. It signs in the same way and never sells.
 
 ## Install a shop's server
@@ -57,7 +59,7 @@ The official steps, from a bare server to the first sale, are in [docs/operation
 sudo apps/shop-server/deploy/install.sh --ip 192.168.1.10 --backup-dir /mnt/backup --tag <release>
 ```
 
-It installs Docker if the server has none, asks for the read-only GHCR token (hidden as it is typed) and, with no `--profile`, asks the shop's details and makes the profile. It makes every secret on the server, pulls the images, starts the stack (the roles, migration and certificate jobs run first and exit), applies the profile and loads the starter catalogue. Then `sudo haq` does the everyday work: `add-user`, `enrol T01` (a code for 30 minutes, D58), `certificate`, `check`, `backup`, `export`, `update` and `offsite-key`. Each new device opens `http://<server>/setup` to trust the shop's certificate and register. It also adds smartmontools and a systemd timer, haq-host-health, that writes the server's own report (SSD health and its time source) for the health page every 15 minutes (`deploy/host-health.sh`, D45). It is safe to run again. A rehearsal with no printer adds `--standin-printer`; `sudo haq receipts` then shows each receipt.
+It installs Docker if the server has none, asks for the read-only GHCR token (hidden as it is typed) and, with no `--profile`, asks the shop's details and makes the profile. It makes every secret on the server, pulls the images, starts the stack (the roles, migration and certificate jobs run first and exit), applies the profile and loads the starter catalogue. Then `sudo haq` does the everyday work: `add-user`, `users`, `pin` and `deactivate` (D74), `enrol T01` (a code for 30 minutes, D58), `certificate`, `check`, `backup`, `export`, `update` and `offsite-key`. Each new device opens `http://<server>/setup` to trust the shop's certificate and register. It also adds smartmontools and a systemd timer, haq-host-health, that writes the server's own report (SSD health and its time source) for the health page every 15 minutes (`deploy/host-health.sh`, D45). It is safe to run again. A rehearsal with no printer adds `--standin-printer`; `sudo haq receipts` then shows each receipt.
 
 Then check the install (gate G2; spec section 14, checks D and E):
 
