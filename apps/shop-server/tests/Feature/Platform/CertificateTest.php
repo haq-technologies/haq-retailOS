@@ -75,6 +75,32 @@ it('makes a new certificate when the server\'s IP changes', function () {
     expect($server['extensions']['subjectAltName'])->toContain('IP Address:192.168.1.20');
 });
 
+it('issues a new certificate when the authority is replaced, as a restore onto a spare does (D69)', function () {
+    makeCertificate($this->dir)->expectsOutputToContain('as a trusted root on every counter')->assertSuccessful();
+    $spare = (string) file_get_contents($this->dir.'/tls/server.crt');
+
+    // The restore puts the shop's authority in place of the one this spare made for itself.
+    $shop = storage_path('framework/testing/tls-shop-'.getmypid());
+    makeCertificate($shop)->assertSuccessful();
+    copy($shop.'/ca/ca.key', $this->dir.'/ca/ca.key');
+    copy($shop.'/ca/ca.crt', $this->dir.'/ca/ca.crt');
+    $authority = (string) file_get_contents($shop.'/ca/ca.crt');
+    foreach (glob($shop.'/{ca,tls}/*', GLOB_BRACE) ?: [] as $file) {
+        @unlink($file);
+    }
+    @rmdir($shop.'/ca');
+    @rmdir($shop.'/tls');
+    @rmdir($shop);
+
+    makeCertificate($this->dir)->expectsOutputToContain('the counters already trust')->doesntExpectOutputToContain('still good')->assertSuccessful();
+    $server = (string) file_get_contents($this->dir.'/tls/server.crt');
+    expect($server)->not->toBe($spare);
+    expect(openssl_x509_verify($server, $authority))->toBe(1);
+    expect(file_get_contents($this->dir.'/tls/ca.crt'))->toBe($authority);
+    // From then on it is still good.
+    makeCertificate($this->dir)->expectsOutputToContain('still good')->assertSuccessful();
+});
+
 it('refuses without a name and a valid IP', function () {
     $this->artisan('shop:make-certificate', ['--name' => 'x', '--ip' => 'not-an-ip'])->assertExitCode(2);
 });

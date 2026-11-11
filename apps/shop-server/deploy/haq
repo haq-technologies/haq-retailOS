@@ -7,6 +7,7 @@
 #   sudo haq check                       check the whole install
 #   sudo haq status                      what is running
 #   sudo haq backup                      a full backup now
+#   sudo haq backups                     the last backups and the last test restore
 #   sudo haq export [file.zip]           the shop's whole record for the owner (it holds cost)
 #   sudo haq update [options]            take a signed release (docs/operations/releases.md)
 #   sudo haq offsite-key                 make the off-site key and its three shares, once
@@ -82,6 +83,8 @@ TEXT
     check) exec "$dir/bin/check-install.sh" --dir "$dir" --project "$PROJECT" "$@" ;;
     status) compose ps --format 'table {{.Service}}\t{{.State}}\t{{.Status}}' ;;
     backup) compose exec -T backup haq-backup.sh full ;;
+    # The scheduler sees the backup disk's status folder; the app container does not.
+    backups) compose exec -T scheduler php artisan backups:status ;;
     export)
         file="${1:-haq-shop-data-$(date +%Y-%m-%d).zip}"
         (umask 077 && compose exec -T app php artisan shop:export - > "$file")
@@ -95,7 +98,8 @@ TEXT
             exit 1
         fi
         echo "Receipts from the stand-in printer, as they print (Ctrl+C to stop):"
-        compose logs -f --no-log-prefix --tail 60 printer
+        # Its own file, not Docker's log: a hard power-off can cut Docker's log short, and it then stops there.
+        compose exec -T printer tail -n 60 -F storage/logs/fake-printer.log
         ;;
     logs) compose logs -f --tail 100 "$@" ;;
     artisan) compose exec ${interactive[@]+"${interactive[@]}"} app php artisan "$@" ;;

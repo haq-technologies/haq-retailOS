@@ -6,9 +6,9 @@ How a shop's server is restored from its backup disk, on the same box or on the 
 
 - pgBackRest archives every WAL segment to the second internal disk as it fills, and at least every 15 minutes in a quiet shop (D35).
 - The backup service takes a full backup each week and an incremental each day, in the night window from 01:00, or at the next quiet moment if the box was off (catch-up). It keeps four weeks.
-- Each week it also restores the latest backup into a temporary database, and the scheduler checks its row counts and every audit chain. `php artisan backups:status` shows the last backups and the last test restore.
+- Each week it also restores the latest backup into a temporary database, and the scheduler checks its row counts and every audit chain. `sudo haq backups` shows the last backups and the last test restore.
 - CI runs the same round trip on every pull request and every Monday: `tools/backup/restore-drill.sh` makes a shop with sales, takes a full backup, restores it and has the app verify the copy (D65). It runs as its own Compose project with its own volumes, so on the development computer it never touches the development database.
-- The scheduler keeps a copy of the branch's signing key and each counter's highest epoch beside the backups, so a restore elsewhere carries on both.
+- The scheduler keeps a copy of the branch's signing key, the shop's certificate authority, the app key and each counter's highest epoch beside the backups, so a restore elsewhere carries them on: the counters trust the spare and stay enrolled, with no new code or certificate (D69). A key's copy is written once and never replaced, and the epoch file keeps the higher value, so the spare's own install cannot overwrite the shop's before the restore.
 - The cloud copy and the encrypted flash drives come with the MVP (spec section 9).
 
 ## Before the drill
@@ -33,9 +33,9 @@ How a shop's server is restored from its backup disk, on the same box or on the 
    sudo apps/shop-server/deploy/restore.sh
    ```
 
-   It stops the stack, restores the latest backup and replays every archived WAL segment, gives the database roles this machine's own secrets, brings back the branch key, starts a new signed epoch on every counter (receipts number from 1,001), then starts everything and verifies the audit chains and the grants.
+   It stops the stack, restores the latest backup and replays every archived WAL segment, gives the database roles this machine's own secrets, brings back the shop's app key, branch key and certificate authority and issues the server's certificate from that authority, starts a new signed epoch on every counter (receipts number from 1,001), then starts everything and verifies the audit chains and the grants. It says if a key was missing from the backup disk.
 4. Move the server's fixed IP to the spare, or give the spare the old server's IP, so the counters find it.
-5. On each counter, open the counter page. It reports its journal (the last seven days of its sales) by itself before anyone signs in, and it sells again only once it has; a counter that was left open reports when it reconnects. If its journal shows sales newer than the restored copy, its epoch moves past them. The first receipt is, for example, T01-E2-001001 (D44).
+5. On each counter, open the counter page. It needs no new code and no new certificate: the spare has the shop's own (D69). If a counter shows **Enrol this counter**, or Chrome warns about the certificate, the restore said a key was missing: give that counter a code (`sudo haq enrol T01`) and trust the certificate from the setup page (`sudo haq certificate`), as at install. The counter page reports its journal (the last seven days of its sales) by itself before anyone signs in, and it sells again only once it has; a counter that was left open reports when it reconnects. If its journal shows sales newer than the restored copy, its epoch moves past them. The first receipt is, for example, T01-E2-001001 (D44).
 6. In the back office, a manager or the owner opens Lost sales. It shows which counters have reported, and every sale a counter's journal holds and the restored copy lacks. Re-enter each one: it keeps the receipt number the customer holds, prints nothing, and is flagged as re-entered. If a line names an item the copy lacks (one made at the counter after the last backup), choose the item to record it under; the line keeps its printed name.
 7. Compare the last receipt each counter printed with the restored sales and the re-entered ones.
 8. Stop the clock and write down the time and the result.

@@ -96,7 +96,7 @@ pgBackRest archives WAL to the backup volume (in a shop, the second internal dis
 ```
 docker compose exec backup haq-backup.sh full            # a full backup now
 docker compose exec backup haq-backup.sh test-restore    # the test restore now (the scheduler verifies it)
-docker compose exec scheduler php artisan backups:status
+docker compose exec scheduler php artisan backups:status    # on a shop server: sudo haq backups
 docker compose exec scheduler php artisan health:check   # what Server health shows (the scheduler runs it every minute)
 ```
 

@@ -20,6 +20,9 @@ beforeEach(function () {
     $this->dir = storage_path('framework/testing/backups-'.Str::random(8));
     mkdir($this->dir, 0o777, true);
     config(['backups.status_dir' => $this->dir]);
+    // This machine's own certificate authority and server certificate, as the certificate job makes them.
+    config(['organisation.ca_dir' => $this->dir.'/machine-ca']);
+    $this->tls = $this->dir.'/machine-tls';
     $this->counter = Counter::ready(items: 1);
     [$this->t1, $this->t2] = $this->counter['terminals'];
     [$this->a] = $this->counter['items'];
@@ -29,7 +32,9 @@ afterEach(function () {
     foreach (glob($this->dir.'/{,*/}*', GLOB_BRACE) ?: [] as $f) {
         is_file($f) && unlink($f);
     }
-    @rmdir($this->dir.'/keys');
+    foreach (['keys', 'machine-ca', 'machine-tls'] as $sub) {
+        @rmdir($this->dir.'/'.$sub);
+    }
     @rmdir($this->dir);
 });
 
@@ -37,7 +42,9 @@ it('starts a new signed epoch on every counter after a restore, numbering from 1
     app(Finish::class)->finish($this->t1, $this->counter['cashier'], Counter::request(Counter::cashSale([$this->a->id => [1, 5000]])));
     expect(DB::table('sales')->value('receipt_number'))->toBe('T01-E1-000001');
 
-    $this->artisan('shop:after-restore')->expectsOutputToContain('T01 now numbers receipts T01-E2-001001 onwards.')->assertSuccessful();
+    // This backup disk holds no keys yet (the scheduler never ran here): the restore says what that costs.
+    $this->artisan('shop:after-restore')->expectsOutputToContain('T01 now numbers receipts T01-E2-001001 onwards.')
+        ->expectsOutputToContain('There is no certificate authority on the backup disk')->assertSuccessful();
     $epoch = DB::table('epochs')->where('terminal_id', $this->t1->id)->orderByDesc('epoch')->first();
     expect($epoch)->epoch->toBe(2)->reason->toBe('restore');
     expect($epoch->signature)->not->toBe('');
@@ -59,18 +66,77 @@ it('starts a new signed epoch on every counter after a restore, numbering from 1
     expect(DB::table('audit_log')->where('action', 'backup.epochs_started')->count())->toBe(2);
 });
 
-it('keeps the branch key and the epochs on the backup disk, and brings the key back to a new machine', function () {
+function machineCertificate(): void
+{
+    test()->artisan('shop:make-certificate', ['--name' => 'haq-server.local', '--ip' => '192.168.1.10', '--tls-dir' => test()->tls])->assertSuccessful();
+}
+
+it('keeps the branch key, the shop\'s authority, the app key and the epochs on the backup disk, and brings them back to a new machine (D69)', function () {
     app(Finish::class)->finish($this->t1, $this->counter['cashier'], Counter::request(Counter::cashSale([$this->a->id => [1, 5000]])));
+    machineCertificate();
     $this->artisan('backups:tick')->assertSuccessful();
     $key = app(BranchKey::class)->path();
+    $ca = $this->dir.'/machine-ca';
     expect(file_get_contents($this->dir.'/keys/branch.key'))->toBe(file_get_contents($key));
+    expect(file_get_contents($this->dir.'/keys/ca.key'))->toBe(file_get_contents($ca.'/ca.key'));
+    expect(file_get_contents($this->dir.'/keys/ca.crt'))->toBe(file_get_contents($ca.'/ca.crt'));
+    expect(file_get_contents($this->dir.'/keys/app.key'))->toBe(config('app.key')."\n");
+    expect(decoct(fileperms($this->dir.'/keys/app.key') & 0o777))->toBe('600');
     expect(json_decode((string) file_get_contents($this->dir.'/epochs.json'), true)['epochs'])->toBe(['T01' => 1]);
 
-    // A spare machine has no key of its own yet; the restore brings the branch's key back.
-    $original = (string) file_get_contents($key);
+    // A spare machine has no branch key of its own yet, and made its own authority and certificate at install.
+    $branch = (string) file_get_contents($key);
+    $shopAuthority = (string) file_get_contents($ca.'/ca.crt');
     unlink($key);
-    $this->artisan('shop:after-restore')->expectsOutputToContain('The branch key came back from the backup disk.')->assertSuccessful();
-    expect(file_get_contents($key))->toBe($original);
+    foreach ([...glob($ca.'/*') ?: [], ...glob($this->tls.'/*') ?: []] as $file) {
+        unlink($file);
+    }
+    machineCertificate();
+    expect(file_get_contents($ca.'/ca.crt'))->not->toBe($shopAuthority);
+
+    // The restore brings back both, so the counters trust this server as before.
+    $this->artisan('shop:after-restore')
+        ->expectsOutputToContain('The branch key came back from the backup disk.')
+        ->expectsOutputToContain('The shop\'s certificate authority came back from the backup disk')
+        ->doesntExpectOutputToContain('app key differs')
+        ->assertSuccessful();
+    expect(file_get_contents($key))->toBe($branch);
+    expect(file_get_contents($ca.'/ca.crt'))->toBe($shopAuthority);
+    expect(decoct(fileperms($ca.'/ca.key') & 0o777))->toBe('600');
+
+    // The certificate job then issues the server's certificate from the shop's authority.
+    $this->artisan('shop:make-certificate', ['--name' => 'haq-server.local', '--ip' => '192.168.1.10', '--tls-dir' => $this->tls])
+        ->expectsOutputToContain('the counters already trust')->assertSuccessful();
+    expect(openssl_x509_verify((string) file_get_contents($this->tls.'/server.crt'), $shopAuthority))->toBe(1);
+    expect(file_get_contents($this->tls.'/ca.crt'))->toBe($shopAuthority);
+});
+
+it('leaves a shop\'s keys and epochs alone on a spare installed beside its backups, until the restore (D69)', function () {
+    // The shop's server kept these before it failed; the spare is a fresh install with its own.
+    mkdir($this->dir.'/keys', 0o700);
+    $shop = ['branch.key' => base64_encode(sodium_crypto_sign_keypair()), 'ca.key' => "the shop's authority key\n", 'ca.crt' => "the shop's authority\n", 'app.key' => "base64:the-shop's-app-key\n"];
+    foreach ($shop as $name => $contents) {
+        file_put_contents($this->dir.'/keys/'.$name, $contents);
+    }
+    file_put_contents($this->dir.'/epochs.json', json_encode(['epochs' => ['T01' => 4, 'T02' => 2]]));
+    machineCertificate();
+
+    // The spare's scheduler runs every five minutes before anyone starts the restore.
+    $this->artisan('backups:tick')->expectsOutputToContain('Left as they are, for the restore')->assertSuccessful();
+    foreach ($shop as $name => $contents) {
+        expect(file_get_contents($this->dir.'/keys/'.$name))->toBe($contents);
+    }
+    expect(json_decode((string) file_get_contents($this->dir.'/epochs.json'), true)['epochs'])->toBe(['T01' => 4, 'T02' => 2]);
+
+    // The restore brings the authority back. The app key lives in .env, which deploy/restore.sh sets
+    // first; run without it, the command says the counters would have to enrol again.
+    $this->artisan('shop:after-restore')
+        ->expectsOutputToContain('The shop\'s certificate authority came back from the backup disk')
+        ->expectsOutputToContain('app key differs from the one on the backup disk')
+        ->assertSuccessful();
+    expect(file_get_contents($this->dir.'/machine-ca/ca.crt'))->toBe($shop['ca.crt']);
+    // The new epochs go above the ones the shop's server knew.
+    expect(json_decode((string) file_get_contents($this->dir.'/epochs.json'), true)['epochs'])->toBe(['T01' => 5, 'T02' => 3]);
 });
 
 it('verifies a test restore the backup service made ready: row counts and every audit chain', function () {

@@ -6,22 +6,23 @@ namespace App\Backups\Console;
 
 use App\Audit\AuditEntry;
 use App\Audit\AuditLog;
+use App\Backups\KeptKeys;
 use App\Backups\RestoreCheck;
 use App\Backups\Status;
-use App\Organisation\BranchKey;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Every five minutes, beside the backup service (spec section 9) [S14, F24]: keeps a copy of the branch key
- * and the highest epoch of each counter on the backup disk, so a restore elsewhere can carry on both, and
- * verifies a test restore that the backup service has made ready.
+ * Every five minutes, beside the backup service (spec section 9) [S14, F24]: keeps the keys a restore
+ * elsewhere needs (the branch key, the shop's certificate authority and the app key; D69) and the highest
+ * epoch of each counter on the backup disk, so a restore elsewhere carries them on, and verifies a test
+ * restore that the backup service has made ready.
  */
 final class TickCommand extends Command
 {
     protected $signature = 'backups:tick';
 
-    protected $description = 'Keep the key and epochs on the backup disk, and verify a ready test restore';
+    protected $description = 'Keep the keys and epochs on the backup disk, and verify a ready test restore';
 
     public function handle(RestoreCheck $check, AuditLog $audit): int
     {
@@ -30,8 +31,11 @@ final class TickCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->keepKey($status);
-        $status->write('epochs.json', ['written_at' => now()->toIso8601String(), 'epochs' => self::highestEpochs()]);
+        $theirs = KeptKeys::fromConfig()->keep();
+        if ($theirs !== []) {
+            $this->line('Left as they are, for the restore: the backup disk holds another server\'s '.implode(', ', $theirs).'.');
+        }
+        self::keepEpochs($status);
 
         $restore = $status->read('restore.json');
         $label = is_string($restore['label'] ?? null) ? $restore['label'] : null;
@@ -68,21 +72,21 @@ final class TickCommand extends Command
         return $epochs;
     }
 
-    /** The branch key's copy on the backup disk; the same box's database is readable anyway (spec section 9). */
-    private function keepKey(Status $status): void
+    /**
+     * The highest epoch of each counter on the backup disk. Epochs only go up, so the file keeps the higher of
+     * its own and this database's: a spare installed beside a shop's backups, before its restore, cannot lower
+     * them (D69).
+     */
+    public static function keepEpochs(Status $status): void
     {
-        $key = app(BranchKey::class)->path();
-        if (! is_file($key)) {
-            return;
+        $file = $status->read('epochs.json');
+        $epochs = self::highestEpochs();
+        foreach (is_array($file['epochs'] ?? null) ? $file['epochs'] : [] as $code => $epoch) {
+            if (is_string($code) && is_int($epoch)) {
+                $epochs[$code] = max($epochs[$code] ?? 0, $epoch);
+            }
         }
-        $dir = $status->path('keys');
-        if (! is_dir($dir)) {
-            mkdir($dir, 0o700, true);
-        }
-        $copy = $dir.'/branch.key';
-        if (! is_file($copy) || hash_file('sha256', $copy) !== hash_file('sha256', $key)) {
-            copy($key, $copy);
-            chmod($copy, 0o600);
-        }
+        ksort($epochs);
+        $status->write('epochs.json', ['written_at' => now()->toIso8601String(), 'epochs' => $epochs]);
     }
 }

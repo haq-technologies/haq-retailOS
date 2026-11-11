@@ -13,8 +13,10 @@
 # 1. Stops everything, then pgBackRest restores the latest backup and replays every archived WAL segment.
 # 2. Starts PostgreSQL and waits for recovery to finish.
 # 3. Gives the database roles this machine's own secrets (a spare box made its own at install).
-# 4. Starts the scheduler alone, which brings back the branch key from the backup disk and starts a new
-#    signed epoch on every counter, numbering from 1,001, before any counter can sell.
+# 4. Puts back the shop's app key from the backup disk, so the counters' device cookies still open (D69).
+#    Starts the scheduler alone, which brings back the branch key and the shop's certificate authority
+#    and starts a new signed epoch on every counter, numbering from 1,001, before any counter can sell.
+#    Then the server's certificate is issued from that authority, so the counters trust this server.
 # 5. Starts the rest, and checks the audit chains and the grants.
 set -euo pipefail
 
@@ -51,9 +53,27 @@ echo "3. Giving the database roles this machine's secrets"
 compose exec -T db sh -c 'echo "ALTER ROLE postgres PASSWORD :'"'"'pw'"'"';" | psql -q -v ON_ERROR_STOP=1 -h /var/run/postgresql -U postgres -d postgres -v pw="$(cat /run/secrets/postgres_password)"'
 compose run --rm roles
 
-echo "4. The branch key and the new epochs, before any counter can sell"
+echo "4. The shop's keys and the new epochs, before any counter can sell"
+# The app key opens the counters' device cookies: with the shop's own, every counter stays enrolled (D69).
+backup_dir="$(grep '^BACKUP_DIR=' "$dir/.env" | cut -d= -f2- || true)"
+kept="$backup_dir/status/keys/app.key"
+if [ -n "$backup_dir" ] && [ -s "$kept" ]; then
+    key="$(cat "$kept")"
+    if ! printf '%s' "$key" | grep -qE '^base64:[A-Za-z0-9+/]{43}=$'; then
+        echo "   The app key on the backup disk is not one this server can use; each counter must enrol again." >&2
+    elif [ "$key" != "$(grep '^APP_KEY=' "$dir/.env" | cut -d= -f2-)" ]; then
+        { grep -v '^APP_KEY=' "$dir/.env"; echo "APP_KEY=$key"; } > "$dir/.env.new"
+        mv "$dir/.env.new" "$dir/.env"
+        chmod 600 "$dir/.env"
+        echo "   The app key came back from the backup disk: every counter stays enrolled."
+    fi
+else
+    echo "   There is no app key on the backup disk: each counter must enrol again (sudo haq enrol T01)." >&2
+fi
 compose up -d --wait scheduler
 compose exec -T scheduler php artisan shop:after-restore --reason=restore
+# The certificate from the shop's authority, if the restore brought it back in place of this machine's own.
+compose run --rm --no-deps certificate
 
 echo "5. Starting the rest and checking"
 compose up -d --wait
