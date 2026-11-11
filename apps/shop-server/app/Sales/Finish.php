@@ -38,6 +38,9 @@ final class Finish
     /** Tests only: called inside the transaction right after the receipt number is taken (the crash tests). */
     public static ?Closure $afterNumberTaken = null;
 
+    /** The longest a sale's timing can believably be, a held sale included (D72). */
+    public const LONGEST_TIMING_MS = 12 * 60 * 60 * 1000;
+
     public function __construct(
         private readonly Epochs $epochs,
         private readonly Shifts $shifts,
@@ -140,7 +143,7 @@ final class Finish
                     'id' => Ulid::generate(), 'sale_id' => $saleId, 'terminal_id' => $terminal->id,
                     'started_at' => $request->startedAt === null ? null : CarbonImmutable::parse($request->startedAt)->format('Y-m-d H:i:s.uP'),
                     'finished_at' => $at,
-                    'duration_ms' => $request->startedAt === null ? null : (int) max(0, CarbonImmutable::parse($request->startedAt)->diffInMilliseconds($now)),
+                    'duration_ms' => self::durationMs($request->startedAt, $now),
                     'lines' => json_encode(array_column($request->lines, 'added_by'), JSON_THROW_ON_ERROR),
                 ]);
 
@@ -182,6 +185,21 @@ final class Finish
             $this->logFailure($terminal, $cashier, $request, 'failed', $e::class);
             throw $e;
         }
+    }
+
+    /**
+     * How long the sale took, for the speed figures only (D72, QA finding P12). The start comes from the
+     * counter's own clock, which can be days out, so a timing below zero or above 12 hours is not believed and
+     * none is kept: a timing never fails a sale, and it always fits its column.
+     */
+    public static function durationMs(?string $startedAt, CarbonImmutable $now): ?int
+    {
+        if ($startedAt === null) {
+            return null;
+        }
+        $ms = CarbonImmutable::parse($startedAt)->diffInMilliseconds($now);
+
+        return $ms >= 0 && $ms <= self::LONGEST_TIMING_MS ? (int) $ms : null;
     }
 
     private function checkPayments(SaleRequest $request): void

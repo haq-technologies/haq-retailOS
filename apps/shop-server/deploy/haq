@@ -2,6 +2,9 @@
 # The shop server's everyday commands in one place (D59), installed by install.sh as `haq`. Run it with sudo:
 #
 #   sudo haq add-user "Halima" owner     add a person; asks their PIN twice
+#   sudo haq users                       everyone with a name tile: role, status and ID
+#   sudo haq pin "Amina"                 a new PIN for a person (forgotten or seen); asks it twice
+#   sudo haq deactivate "Amina"          someone who leaves: their tile goes and their PIN stops
 #   sudo haq enrol T01                   a one-time code (30 minutes) to register counter T01, or D01 for a phone
 #   sudo haq certificate                 the setup address for new devices, and the certificate's thumbprint
 #   sudo haq check                       check the whole install
@@ -38,7 +41,7 @@ https_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "https://$IP"; else e
 http_url() { if [ "${HTTP_PORT:-80}" = 80 ]; then echo "http://$IP"; else echo "http://$IP:$HTTP_PORT"; fi; }
 setup_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "$(http_url)/setup"; else echo "$(http_url)/setup?https_port=$HTTPS_PORT"; fi; }
 
-usage() { sed -n '2,16p' "$self" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,19p' "$self" | sed 's/^# \{0,1\}//'; }
 
 command="${1:-help}"
 [ $# -gt 0 ] && shift
@@ -47,6 +50,16 @@ case "$command" in
         if [ $# -lt 2 ]; then echo 'Give the name and the role: sudo haq add-user "Halima" owner (cashier, manager, storekeeper or owner).' >&2; exit 2; fi
         name="$1"; role="$2"; shift 2
         compose exec ${interactive[@]+"${interactive[@]}"} app php artisan shop:add-user "$name" --role="$role" "$@"
+        ;;
+    users) compose exec -T app php artisan shop:list-users ;;
+    pin)
+        if [ $# -lt 1 ]; then echo 'Give the name on the tile (or the ID from sudo haq users): sudo haq pin "Amina"' >&2; exit 2; fi
+        person="$1"; shift
+        compose exec ${interactive[@]+"${interactive[@]}"} app php artisan shop:set-pin "$person" "$@"
+        ;;
+    deactivate)
+        if [ $# -lt 1 ]; then echo 'Give the name on the tile (or the ID from sudo haq users): sudo haq deactivate "Amina"' >&2; exit 2; fi
+        compose exec -T app php artisan shop:deactivate-user "$1"
         ;;
     enrol)
         if [ $# -lt 1 ]; then echo 'Give the device: sudo haq enrol T01 (a counter) or sudo haq enrol D01 (a back-office laptop or phone).' >&2; exit 2; fi

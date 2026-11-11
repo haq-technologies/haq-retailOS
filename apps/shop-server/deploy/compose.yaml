@@ -9,8 +9,17 @@
 
 name: haq-retail-os
 
+# Every service's log is capped, so months of trading never fill the server's disk (D75, QA finding P16):
+# at most five files of 10 MB each per container, the oldest dropped first.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 x-app: &app
   image: ${APP_IMAGE}
+  logging: *logging
   environment: &app-env
     APP_KEY: ${APP_KEY}
     APP_URL: https://${SERVER_NAME}
@@ -29,6 +38,7 @@ x-app: &app
 services:
   db:
     image: ${DB_IMAGE}
+    logging: *logging
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
@@ -50,6 +60,7 @@ services:
   # holds the owner's password (spec section 14, check D).
   roles:
     image: ${DB_IMAGE}
+    logging: *logging
     entrypoint: ["/usr/local/bin/haq-roles.sh"]
     environment:
       PGHOST: db
@@ -114,6 +125,7 @@ services:
   # verifies. The updater runs `haq-backup.sh full` here before every update.
   backup:
     image: ${DB_IMAGE}
+    logging: *logging
     user: postgres
     entrypoint: ["/usr/local/bin/haq-backup.sh"]
     environment:
@@ -134,6 +146,7 @@ services:
   # archived WAL segment into the database volume while PostgreSQL is stopped.
   restore:
     image: ${DB_IMAGE}
+    logging: *logging
     profiles: [restore]
     user: postgres
     entrypoint: ["pgbackrest", "--stanza=shop", "--delta", "restore"]
@@ -150,6 +163,7 @@ services:
 
   web:
     image: ${WEB_IMAGE}
+    logging: *logging
     ports:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"

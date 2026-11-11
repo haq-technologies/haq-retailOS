@@ -94,6 +94,7 @@ Each command asks for the PIN twice. A cashier's or storekeeper's PIN is 4 to 6 
 On each counter, once:
 
 1. **Windows:** a standard local account that signs in by itself, Chrome installed, sleep set to Never and the active hours set to the trading hours ([start-up.md](start-up.md), steps 1, 3 and 4).
+   Set the **date and time** to the right day and minute, with the time zone (UTC+01:00) West Central Africa (D72). The counter has no internet to correct its clock, and one that is far behind cannot open the counter. Look again after the first power cut, and change the PC's clock battery if the date went back.
 2. **On the server**, make the counter's code. It works once, for 30 minutes:
 
    ```
@@ -152,6 +153,9 @@ The first takes a full backup now; the owner sees it under **Server health**. Th
 | Command | What it does |
 |---|---|
 | `sudo haq add-user "Name" cashier` | Adds a person (cashier, manager, storekeeper or owner); asks the PIN twice |
+| `sudo haq users` | Everyone with a name tile: role, active or deactivated, when the PIN was set, and ID (D74) |
+| `sudo haq pin "Name"` | A new PIN for a person who forgot theirs or whose PIN someone saw; asks it twice, and the old one stops working at once |
+| `sudo haq deactivate "Name"` | For someone who leaves: their tile goes and their PIN stops working. Nobody is deleted. If two people share the name, give the ID from `sudo haq users` |
 | `sudo haq enrol T01` | A one-time code, for 30 minutes, to register counter T01 (or D01 for a back-office device) |
 | `sudo haq certificate` | The setup page's address, and the certificate's thumbprint to compare with the page's |
 | `sudo haq check` | Checks the whole install |

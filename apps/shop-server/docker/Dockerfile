@@ -85,6 +85,7 @@ ENV APP_NAME="HAQ Retail OS" \
     APP_DEBUG=false \
     APP_VERSION=${APP_VERSION} \
     LOG_CHANNEL=stderr \
+    LOG_LEVEL=info \
     CATALOGUE_SEED=/catalogue/starter-catalogue-v1.1.json
 
 USER www-data

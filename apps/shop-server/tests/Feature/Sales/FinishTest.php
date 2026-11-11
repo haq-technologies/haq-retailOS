@@ -217,3 +217,32 @@ it('tells a counter whether it finished a sale under a key, so an unanswered Fin
     // Keys belong to their counter: another counter's lookup finds nothing.
     $at($this->t2)->getJson("/api/counter/sales/by-key/{$data['idempotency_key']}")->assertNotFound();
 });
+
+it('finishes a sale whatever the counter clock says, keeping a timing only when it is believable (D72, QA finding P12)', function () {
+    $startedAt = fn (CarbonImmutable $at) => Counter::cashSale([$this->a->id => [1, 150_000]], ['started_at' => $at->toIso8601String()]);
+    $now = CarbonImmutable::now();
+    $cases = [
+        'a normal sale' => [$now->subSeconds(40), true],
+        'a counter 30 days behind' => [$now->subDays(30), false],
+        'a counter reset to 2010' => [CarbonImmutable::parse('2010-01-01T00:00:00Z'), false],
+        'a counter an hour ahead' => [$now->addHour(), false],
+        'a held sale finished the next day' => [$now->subHours(13), false],
+    ];
+
+    foreach ($cases as $case => [$at, $timed]) {
+        $sale = sell($this->t1, $startedAt($at));
+        expect($sale['receipt_number'])->toBeString();
+        $timing = DB::table('sale_timings')->where('sale_id', $sale['id'])->first(['started_at', 'duration_ms']);
+        expect($timing)->not->toBeNull();
+        // The counter's own start is kept as it said, for the record; only the duration is judged.
+        expect(CarbonImmutable::parse((string) $timing->started_at)->getTimestamp())->toBe($at->getTimestamp(), $case);
+        if ($timed) {
+            expect((int) $timing->duration_ms)->toBeGreaterThanOrEqual(40_000, $case)->toBeLessThan(Finish::LONGEST_TIMING_MS, $case);
+        } else {
+            expect($timing->duration_ms)->toBeNull($case);
+        }
+    }
+    expect(Finish::durationMs(null, $now))->toBeNull()
+        ->and(Finish::durationMs($now->subMilliseconds(Finish::LONGEST_TIMING_MS)->format('Y-m-d\TH:i:s.uP'), $now))->toBe(Finish::LONGEST_TIMING_MS)
+        ->and(Finish::durationMs($now->subMilliseconds(Finish::LONGEST_TIMING_MS + 1)->format('Y-m-d\TH:i:s.uP'), $now))->toBeNull();
+});
