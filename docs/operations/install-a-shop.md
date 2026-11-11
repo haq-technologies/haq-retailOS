@@ -157,6 +157,7 @@ The first takes a full backup now; the owner sees it under **Server health**. Th
 | `sudo haq check` | Checks the whole install |
 | `sudo haq status` | What is running |
 | `sudo haq backup` | A full backup now |
+| `sudo haq backups` | The last backups and the last test restore |
 | `sudo haq export` | All the shop's records as one ZIP, for the owner only: it holds cost |
 | `sudo haq update` | Takes a signed release ([releases.md](releases.md)) |
 | `sudo haq offsite-key` | Makes the off-site key and its three shares, once |

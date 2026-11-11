@@ -6,8 +6,8 @@ namespace App\Backups\Console;
 
 use App\Audit\AuditEntry;
 use App\Audit\AuditLog;
+use App\Backups\KeptKeys;
 use App\Backups\Status;
-use App\Organisation\BranchKey;
 use App\Organisation\Models\Terminal;
 use App\Platform\Ulid;
 use App\Sales\Epochs;
@@ -20,7 +20,8 @@ use Illuminate\Support\Facades\DB;
  * counter starts a new epoch, one more than the highest known in the restored database or in the epoch
  * file on the backup disk, and its receipt numbers start after 1,000, so no receipt number can repeat.
  * The branch key comes back from the backup disk if this machine has none, so the epochs stay signed by
- * the same key. The restore is recorded: each counter then reports its journal before it sells again, the
+ * the same key, and the shop's certificate authority comes back in place of one a spare made for itself, so
+ * the counters trust this server as before (D69). The restore is recorded: each counter then reports its journal before it sells again, the
  * lost-window screen lists what the journals hold and the restored data lacks, and every counter takes a
  * fresh copy of the catalogue.
  */
@@ -40,7 +41,13 @@ final class AfterRestoreCommand extends Command
         }
 
         $status = Status::fromConfig();
-        $this->bringBackKey($status);
+        $kept = KeptKeys::fromConfig()->bringBack();
+        foreach ($kept['done'] as $line) {
+            $this->line($line);
+        }
+        foreach ($kept['warnings'] as $line) {
+            $this->components->warn($line);
+        }
         $file = $status->read('epochs.json');
         /** @var array<string, int> $known */
         $known = is_array($file['epochs'] ?? null) ? $file['epochs'] : [];
@@ -61,7 +68,7 @@ final class AfterRestoreCommand extends Command
 
         $audit->record(new AuditEntry(action: 'backup.epochs_started', subjectType: 'branch', after: ['reason' => $reason, 'epochs' => $started]));
         if ($status->enabled()) {
-            $status->write('epochs.json', ['written_at' => now()->toIso8601String(), 'epochs' => TickCommand::highestEpochs()]);
+            TickCommand::keepEpochs($status);
         }
 
         foreach ($started as $code => $epoch) {
@@ -70,20 +77,5 @@ final class AfterRestoreCommand extends Command
         $this->components->warn('Each counter reports its journal when it reconnects, before it sells again. A manager then re-enters the sales the journals hold and this copy lacks, on the Lost sales screen of the back office (spec section 9).');
 
         return self::SUCCESS;
-    }
-
-    private function bringBackKey(Status $status): void
-    {
-        $key = app(BranchKey::class)->path();
-        $copy = $status->path('keys/branch.key');
-        if (is_file($key) || ! $status->enabled() || ! is_file($copy)) {
-            return;
-        }
-        if (! is_dir(dirname($key))) {
-            mkdir(dirname($key), 0o700, true);
-        }
-        copy($copy, $key);
-        chmod($key, 0o600);
-        $this->line('The branch key came back from the backup disk.');
     }
 }

@@ -13,7 +13,8 @@ use Symfony\Component\Console\Attribute\AsCommand;
  * Makes the shop's HTTPS certificate (spec section 4) [F24]: a local certificate authority, kept on the
  * server, issues a long-lived certificate for the server's name and fixed IP. Each counter trusts the
  * authority once, at install. The health page warns 60 days before the certificate expires; renewal is
- * this command with --renew.
+ * this command with --renew. A copy of the authority is kept beside the backups; when a restore brings it
+ * back in place of one a spare made for itself, the next run issues a certificate from it (D69).
  */
 #[AsCommand(name: 'shop:make-certificate')]
 class MakeCertificateCommand extends Command
@@ -25,7 +26,7 @@ class MakeCertificateCommand extends Command
     protected $signature = 'shop:make-certificate
         {--name= : The server\'s local name, such as haq-server.local}
         {--ip= : The server\'s fixed IP address}
-        {--ca-dir= : Where the certificate authority lives (default: storage/app/ca)}
+        {--ca-dir= : Where the certificate authority lives (default: organisation.ca_dir, storage/app/ca)}
         {--tls-dir= : Where nginx reads the server certificate (default: storage/app/tls)}
         {--renew : Make a new server certificate even if the current one is still good}';
 
@@ -54,23 +55,27 @@ class MakeCertificateCommand extends Command
 
             return self::INVALID;
         }
-        $caDir = $this->directory('ca-dir', 'app/ca');
-        $tlsDir = $this->directory('tls-dir', 'app/tls');
+        $caDir = $this->directory('ca-dir', config()->string('organisation.ca_dir'));
+        $tlsDir = $this->directory('tls-dir', storage_path('app/tls'));
 
-        if (! $this->option('renew') && $this->stillGood("{$tlsDir}/server.crt", $name, $ip)) {
+        if (! $this->option('renew') && $this->stillGood($tlsDir, $caDir, $name, $ip)) {
             $this->thumbprint($tlsDir);
             $this->components->info('The server certificate is still good; nothing to change.');
 
             return self::SUCCESS;
         }
 
-        [$caKey, $caCert] = $this->authority($caDir);
+        [$caKey, $caCert, $new] = $this->authority($caDir);
         $this->server($tlsDir, $name, $ip, $caKey, $caCert);
         copy("{$caDir}/ca.crt", "{$tlsDir}/ca.crt");
         $this->thumbprint($tlsDir);
 
         $this->components->info("Made the certificate for {$name} ({$ip}), valid for 5 years.");
-        $this->line("Install {$tlsDir}/ca.crt as a trusted root on every counter, once.");
+        if ($new) {
+            $this->line("Install {$tlsDir}/ca.crt as a trusted root on every counter, once.");
+        } else {
+            $this->line('It comes from the shop\'s own authority, which the counters already trust.');
+        }
 
         return self::SUCCESS;
     }
@@ -90,7 +95,9 @@ class MakeCertificateCommand extends Command
     }
 
     /**
-     * @return array{\OpenSSLAsymmetricKey, \OpenSSLCertificate}
+     * The authority, made the first time. The third value is true when it was just made.
+     *
+     * @return array{\OpenSSLAsymmetricKey, \OpenSSLCertificate, bool}
      */
     private function authority(string $dir): array
     {
@@ -98,7 +105,7 @@ class MakeCertificateCommand extends Command
             $key = openssl_pkey_get_private((string) file_get_contents("{$dir}/ca.key"));
             $cert = openssl_x509_read((string) file_get_contents("{$dir}/ca.crt"));
             if ($key !== false && $cert !== false) {
-                return [$key, $cert];
+                return [$key, $cert, false];
             }
         }
 
@@ -115,7 +122,7 @@ class MakeCertificateCommand extends Command
         openssl_x509_export($cert, $pem);
         $this->write("{$dir}/ca.crt", (string) $pem, 0o644);
 
-        return [$key, $cert];
+        return [$key, $cert, true];
     }
 
     private function server(string $dir, string $name, string $ip, \OpenSSLAsymmetricKey $caKey, \OpenSSLCertificate $caCert): void
@@ -136,19 +143,33 @@ class MakeCertificateCommand extends Command
         $this->write("{$dir}/server.key", $this->exportKey($key), 0o644);
     }
 
-    private function stillGood(string $path, string $name, string $ip): bool
+    /**
+     * Still good: for this name and IP, more than 60 days from expiry, and issued by the authority now in the
+     * authority's folder. After a restore brings the shop's authority back in place of the one a spare made
+     * at install, the spare's certificate is not still good, and a new one is issued from the shop's (D69).
+     */
+    private function stillGood(string $tlsDir, string $caDir, string $name, string $ip): bool
     {
+        $path = "{$tlsDir}/server.crt";
         if (! is_file($path)) {
             return false;
         }
-        $parsed = openssl_x509_parse((string) file_get_contents($path));
+        $pem = (string) file_get_contents($path);
+        $parsed = openssl_x509_parse($pem);
         if ($parsed === false) {
             return false;
         }
         $names = (string) ($parsed['extensions']['subjectAltName'] ?? '');
         $expires = CarbonImmutable::createFromTimestamp((int) $parsed['validTo_time_t']);
+        if (! str_contains($names, "DNS:{$name}") || ! str_contains($names, "IP Address:{$ip}") || ! $expires->isAfter(now()->addDays(60))) {
+            return false;
+        }
+        if (! is_file("{$caDir}/ca.crt")) {
+            return true; // No authority here to compare with; keep the certificate the counters already trust.
+        }
+        $authority = (string) file_get_contents("{$caDir}/ca.crt");
 
-        return str_contains($names, "DNS:{$name}") && str_contains($names, "IP Address:{$ip}") && $expires->isAfter(now()->addDays(60));
+        return openssl_x509_verify($pem, $authority) === 1 && @file_get_contents("{$tlsDir}/ca.crt") === $authority;
     }
 
     private function newKey(): \OpenSSLAsymmetricKey
@@ -184,7 +205,7 @@ class MakeCertificateCommand extends Command
     private function directory(string $option, string $default): string
     {
         $value = $this->option($option);
-        $dir = is_string($value) && $value !== '' ? $value : storage_path($default);
+        $dir = is_string($value) && $value !== '' ? $value : $default;
         if (! is_dir($dir) && ! mkdir($dir, 0o750, true) && ! is_dir($dir)) {
             throw new RuntimeException("Cannot create {$dir}.");
         }

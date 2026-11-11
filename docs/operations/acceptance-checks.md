@@ -69,7 +69,7 @@ Status: **Automated** means the tests in CI prove the check. **G3** means a step
 
 | Check | Proved by | Status | Written down |
 |---|---|---|---|
-| E1 Restore onto a clean machine within 1 hour, last receipt and chains verified; needs two key shares; the health page shows WAL, backup and restore | BackupsTest, RestoreRecoveryTest, HealthTest; `haq-offsite.sh selftest`; `tools/backup/restore-drill.sh` in CI (a backup restored and verified, D65); the restore onto the spare virtual machine within the hour (docs/operations/restore-drill.md) | G3 | |
+| E1 Restore onto a clean machine within 1 hour, last receipt and chains verified; needs two key shares; the health page shows WAL, backup and restore | BackupsTest (with the keys a restore elsewhere needs, kept and brought back, D69), CertificateTest, RestoreRecoveryTest, HealthTest; `haq-offsite.sh selftest`; `tools/backup/restore-drill.sh` in CI (a backup restored and verified, D65); the restore onto the spare virtual machine within the hour (docs/operations/restore-drill.md) | G3 | |
 | E2 Profile to first sale under 2 hours; 80mm prints without a dialog; a hard reboot returns to the counter | ProfileTest, RebootRecoveryTest; the timed install and the hard power-off (docs/operations/start-up.md) | G3 | |
 | E3 The clock at the year 2000 does not lock the counter; sales stamped unverified; the owner asked | HealthTest (check E3) | Automated | |
 | E4 Missed backup and test-restore jobs run at the next idle window | HealthTest (check E4) for the nightly checks; the backup service's own catch-up in `haq-backup.sh` | Automated | |

@@ -39,7 +39,7 @@ Done:
 
 - The pilot is gone (D67, 10 November 2026): no shadow pilot and no 14 measured days. The shop goes live with a one-week safety net, and the go-live basics move into the first release (D68).
 
-Next: build the go-live basics (D68; the checklist below), then make and sign the release that goes live (docs/operations/releases.md), then gate G3 on it (docs/operations/g3-software-rehearsal.md; Claude runs a practice on this computer first), then G4, then install at the shop and the safety week (docs/operations/measured-pilot.md).
+Next: make and sign the release that goes live (docs/operations/releases.md), then gate G3 on it (docs/operations/g3-software-rehearsal.md), then G4, then install at the shop and the safety week (docs/operations/measured-pilot.md).
 
 ## Team
 
@@ -154,7 +154,7 @@ Phase 3, the counter and sale core, started on 6 November 2026 at the product ow
 - [x] Playwright 1.65 tests in CI: the counter in Chromium against a fresh test shop in retail_e2e, on every pull request; `apps/shop-server/e2e/run.sh` runs them on this computer (Claude, 6 November 2026)
 - [x] The release manifest, offline signing and the updater: images by digest and the Compose file by hash, signed with an offline Ed25519 key; `update.sh` checks, pulls, backs up, switches, health-checks and rolls back the code only; a signing dry run in CI; rehearsed on staging (Claude, 6 November 2026, D36; docs/operations/releases.md). The product owner makes the real key
 - [x] The rehearsal tooling: `shop:rehearse` (scripted sales on two counters at once, through the print queue) and `shop:rehearsal-check` (gapless numbers, whole sales, receipts, audit chains, grants) (Claude, 6 November 2026). Rehearsed on staging with the database and app killed mid-run; CI's upgrade-path test runs both
-- [ ] Gate G3: the software dress rehearsal on two virtual machines (product owner, Claude; D60; docs/operations/g3-software-rehearsal.md). The signing key and the GHCR token are ready (7 November 2026)
+- [ ] Gate G3: the software dress rehearsal on two virtual machines (product owner, Claude; D60; docs/operations/g3-software-rehearsal.md). The signing key and the GHCR token are ready (7 November 2026). Claude's practice on this computer (11 November 2026, main's images on two Lima machines) passed all five steps: installed in 6 minutes and the first sale at 12; 300 scripted sales in 5 min 19 s, gapless; after a hard power-off the counter sold again 58 s after power returned, with its open sale kept and the cut-off receipt reprinted as DUPLICATE; the restore onto the spare took 2 min 7 s, with the two lost sales re-entered from T01's journal. It found that the restore cost the counters their trust and enrolment (fixed, D69)
 
 ## Phase 4 owner features (started early, D39)
 
@@ -318,3 +318,4 @@ Assumptions:
 | 10 November 2026 | The official install steps, made simple: device codes last 30 minutes (D58); the installer's questions, the `haq` command and the setup page for the certificate (D59) |
 | 10 November 2026 | Software only: the bench test, the hardware checks and the shop-visit checklist removed; G3 is a software dress rehearsal on virtual machines (D60) |
 | 10 November 2026 | No pilot (D67): go-live with a one-week safety net; the go-live basics (voids, returns, the day-end close, paid-outs, drops and top-ups) move into the first release, with checks F1 to F6 (D68) |
+| 11 November 2026 | The G3 practice on this computer passes all five steps; it finds that a restore onto the spare cost the counters their trust and enrolment, fixed by keeping the shop's certificate authority and app key beside the backups (D69) |

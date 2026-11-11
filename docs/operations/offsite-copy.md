@@ -5,7 +5,7 @@ How a shop keeps a copy of its backups away from the shop, so a theft or a fire 
 ## What it is
 
 - Two USB flash drives of 64 GB or more (docs/operations/hardware.md), formatted **exFAT** and labelled **HAQ-OFFSITE-A** and **HAQ-OFFSITE-B**. One is always away from the shop, for example at the owner's home.
-- Plugged into the server, a drive gets an encrypted copy of every backup, with the branch's signing key and the epochs, by itself. The server checks the copy, keeps the newest two copies on the drive, and unmounts it. The health page shows each drive's last copy and warns when no drive has had one for 8 days.
+- Plugged into the server, a drive gets an encrypted copy of every backup, with the branch's signing key, the shop's certificate authority, the app key and the epochs, by itself (D69). The server checks the copy, keeps the newest two copies on the drive, and unmounts it. The health page shows each drive's last copy and warns when no drive has had one for 8 days.
 - The copy is encrypted to a public key. The server cannot read it. The private key is locked with a random key that is split into three shares; **any two** unlock it, one alone cannot. The unlocked key is never stored.
 
 ## At install (once)
