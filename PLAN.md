@@ -39,11 +39,13 @@ Done:
 
 - The pilot is gone (D67, 10 November 2026): no shadow pilot and no 14 measured days. The shop goes live with a one-week safety net, and the go-live basics move into the first release (D68).
 
-Gates G3 and G4 passed on 11 November 2026 on release 2026.11.1, the release that goes live (D71): every acceptance check is written down, with A1 measured in the safety week (docs/operations/acceptance-checks.md).
+Gates G3 and G4 passed on 11 November 2026 on release 2026.11.1 (D71): every acceptance check is written down, with A1 measured in the safety week (docs/operations/acceptance-checks.md).
 
 A readiness QA review on 11 November 2026 (a Claude Doc) passed every suite and found that a counter whose clock is 25 or more days behind could not finish a sale, that a void and a return of one sale could both go through, that no PIN could be changed, and that the server's logs grew without limit. Release 2026.11.2 fixes all four (D72 to D75); its verdict was green for the safety week on three conditions: counter clocks set at install, 2026.11.2 installed before G5 and within 25 days of the install, and nothing merged to main but fixes until G5.
 
-Next: the product owner signs and publishes release 2026.11.2 (docs/operations/releases.md), the shop owner's answers (Open items), then install at the shop with release 2026.11.2 (docs/operations/install-a-shop.md), then the safety week (docs/operations/measured-pilot.md) and G5.
+The product owner signed and published release 2026.11.2 the same day, the release that goes live; each of its images carries the version tag on GHCR, on the digests the manifest signs.
+
+Next: the shop owner's answers (Open items), then install at the shop with release 2026.11.2 (docs/operations/install-a-shop.md), then the safety week (docs/operations/measured-pilot.md) and G5.
 
 ## Team
 
@@ -205,8 +207,8 @@ The measured pilot's tools were built on 10 November 2026 (D56, D57); its Measur
 - [x] The procedure for the safety week (Claude; docs/operations/measured-pilot.md, rewritten for D67)
 - [x] Gate G4: every acceptance check written down, A1 to be measured in the safety week (product owner, 11 November 2026, D71)
 - [x] Release 2026.11.2's fixes from the readiness QA review: a counter's clock never stops a sale (D72), a sale is never both voided and returned (D73), `sudo haq users`, `pin` and `deactivate` (D74), and capped logs (D75) (Claude, 11 November 2026)
-- [ ] Sign and publish release 2026.11.2 (product owner; docs/operations/releases.md)
-- [ ] Install at the shop with release 2026.11.2, setting each counter's date and time (product owner). If 2026.11.1 goes in first, update to 2026.11.2 with `sudo haq update` within 25 days and before G5
+- [x] Sign and publish release 2026.11.2 (product owner, 11 November 2026; docs/operations/releases.md)
+- [ ] Install at the shop with release 2026.11.2 (`install.sh --tag 2026.11.2`), setting each counter's date and time (product owner)
 - [ ] The safety week: the notebook beside the app for seven trading days, compared each evening (shop owner and manager)
 - [ ] Gate G5: the owner confirms the notebook can stop (shop owner, product owner)
 
@@ -329,3 +331,4 @@ Assumptions:
 | 11 November 2026 | Release 2026.11.1 signed and published by the product owner; publishing a release now tags its images with its version on GHCR, so a shop installs it by version (D70) |
 | 11 November 2026 | Gates G3 and G4 pass on release 2026.11.1 (D71); next, the owner's answers and the install at the shop |
 | 11 November 2026 | Readiness QA review: release 2026.11.2 fixes the counter clock that stopped sales, a void racing a return, PIN changes and staff removal, and the log growth (D72 to D75) |
+| 11 November 2026 | Release 2026.11.2 signed and published by the product owner, with its images tagged by version; it is the release that goes live |
