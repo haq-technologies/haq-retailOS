@@ -17,7 +17,7 @@ Go-live needs (spec section 14, Go-live criteria):
 
 ## Status
 
-Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3 is a software dress rehearsal on virtual machines (D60), ready to run; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026. Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39); all five are built and merged (D40 to D46): the fifth, recovery, at the product owner's go the same day (D44 to D46). A review against the spec added the audit log to read and the counter's speed (D47). Phase 5's tools were built on 10 November 2026 at the product owner's go (D56, D57): the measured pilot in the back office and the owner's data export; the 14 measured days themselves follow G4. The same day the plan became software only: no work, check or gate depends on physical hardware (D60).
+Week 1. Phases 0 and 1 are closed and locked: gates G0 and G1 passed on 6 November 2026 (D19). Phase 2, the foundation, was built on 6 November 2026, and the product owner passed gate G2 the same day (D27), so Phase 2 is closed. The pace check changed no date and no scope. Phase 3, the counter and sale core, started on 6 November 2026 at the product owner's go and was built the same day (D30 to D36). Gate G3 is a software dress rehearsal on virtual machines (D60), ready to run; the release signing key and the pilot server's read-only GHCR token were made by the product owner on 7 November 2026. Phase 4's owner features started on 7 November 2026, before G3, at the product owner's go (D39); all five are built and merged (D40 to D46): the fifth, recovery, at the product owner's go the same day (D44 to D46). A review against the spec added the audit log to read and the counter's speed (D47). Phase 5's tools were built on 10 November 2026 at the product owner's go (D56, D57): the measured pilot in the back office and the owner's data export; the 14 measured days themselves follow G4. The same day the plan became software only: no work, check or gate depends on physical hardware (D60). On 11 November 2026 release 2026.11.1 was published, and gates G3 and G4 passed on it (D71).
 
 Done:
 - Spec v1.4 and starter catalogue v1 reviewed, and every decision recorded.
@@ -39,7 +39,9 @@ Done:
 
 - The pilot is gone (D67, 10 November 2026): no shadow pilot and no 14 measured days. The shop goes live with a one-week safety net, and the go-live basics move into the first release (D68).
 
-Next: release 2026.11.1, the release that goes live, was signed and published by the product owner on 11 November 2026; gate G3 on it (docs/operations/g3-software-rehearsal.md), then G4, then install at the shop and the safety week (docs/operations/measured-pilot.md).
+Gates G3 and G4 passed on 11 November 2026 on release 2026.11.1, the release that goes live (D71): every acceptance check is written down, with A1 measured in the safety week (docs/operations/acceptance-checks.md).
+
+Next: the shop owner's answers (Open items), then install at the shop with release 2026.11.1 (docs/operations/install-a-shop.md), then the safety week (docs/operations/measured-pilot.md) and G5.
 
 ## Team
 
@@ -154,7 +156,7 @@ Phase 3, the counter and sale core, started on 6 November 2026 at the product ow
 - [x] Playwright 1.65 tests in CI: the counter in Chromium against a fresh test shop in retail_e2e, on every pull request; `apps/shop-server/e2e/run.sh` runs them on this computer (Claude, 6 November 2026)
 - [x] The release manifest, offline signing and the updater: images by digest and the Compose file by hash, signed with an offline Ed25519 key; `update.sh` checks, pulls, backs up, switches, health-checks and rolls back the code only; a signing dry run in CI; rehearsed on staging (Claude, 6 November 2026, D36; docs/operations/releases.md). The product owner makes the real key
 - [x] The rehearsal tooling: `shop:rehearse` (scripted sales on two counters at once, through the print queue) and `shop:rehearsal-check` (gapless numbers, whole sales, receipts, audit chains, grants) (Claude, 6 November 2026). Rehearsed on staging with the database and app killed mid-run; CI's upgrade-path test runs both
-- [ ] Gate G3: the software dress rehearsal on two virtual machines (product owner, Claude; D60; docs/operations/g3-software-rehearsal.md). The signing key and the GHCR token are ready (7 November 2026). Claude's practice on this computer (11 November 2026, main's images on two Lima machines) passed all five steps: installed in 6 minutes and the first sale at 12; 300 scripted sales in 5 min 19 s, gapless; after a hard power-off the counter sold again 58 s after power returned, with its open sale kept and the cut-off receipt reprinted as DUPLICATE; the restore onto the spare took 2 min 7 s, with the two lost sales re-entered from T01's journal. It found that the restore cost the counters their trust and enrolment (fixed, D69)
+- [x] Gate G3: the software dress rehearsal on two virtual machines (product owner, Claude; D60; docs/operations/g3-software-rehearsal.md). Passed by the product owner on 11 November 2026 on release 2026.11.1, installed by its version tag on two VirtualBox machines with a Windows counter PC; every limit met, times not recorded (D71). The signing key and the GHCR token are ready (7 November 2026). Claude's practice on this computer (11 November 2026, main's images on two Lima machines) passed all five steps: installed in 6 minutes and the first sale at 12; 300 scripted sales in 5 min 19 s, gapless; after a hard power-off the counter sold again 58 s after power returned, with its open sale kept and the cut-off receipt reprinted as DUPLICATE; the restore onto the spare took 2 min 7 s, with the two lost sales re-entered from T01's journal. It found that the restore cost the counters their trust and enrolment (fixed, D69)
 
 ## Phase 4 owner features (started early, D39)
 
@@ -199,7 +201,8 @@ The measured pilot's tools were built on 10 November 2026 (D56, D57); its Measur
 - [x] The measured pilot in the back office: the owner starts the 14 days, a manager or the owner types the notebook's totals each evening and traces each difference to the notebook or the app, the five measures are read live, and the owner records continue or stop with the scorecard as it stood (Claude, 10 November 2026; D56)
 - [x] The owner's data export: the whole record, cost included, as one ZIP of CSV files with each file's SHA-256, from the back office or `shop:export` (Claude, 10 November 2026; D57)
 - [x] The procedure for the safety week (Claude; docs/operations/measured-pilot.md, rewritten for D67)
-- [ ] Install at the shop, after G4 (product owner)
+- [x] Gate G4: every acceptance check written down, A1 to be measured in the safety week (product owner, 11 November 2026, D71)
+- [ ] Install at the shop with release 2026.11.1 (product owner)
 - [ ] The safety week: the notebook beside the app for seven trading days, compared each evening (shop owner and manager)
 - [ ] Gate G5: the owner confirms the notebook can stop (shop owner, product owner)
 
@@ -320,3 +323,4 @@ Assumptions:
 | 10 November 2026 | No pilot (D67): go-live with a one-week safety net; the go-live basics (voids, returns, the day-end close, paid-outs, drops and top-ups) move into the first release, with checks F1 to F6 (D68) |
 | 11 November 2026 | The G3 practice on this computer passes all five steps; it finds that a restore onto the spare cost the counters their trust and enrolment, fixed by keeping the shop's certificate authority and app key beside the backups (D69) |
 | 11 November 2026 | Release 2026.11.1 signed and published by the product owner; publishing a release now tags its images with its version on GHCR, so a shop installs it by version (D70) |
+| 11 November 2026 | Gates G3 and G4 pass on release 2026.11.1 (D71); next, the owner's answers and the install at the shop |
