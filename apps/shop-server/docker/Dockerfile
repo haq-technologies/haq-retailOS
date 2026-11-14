@@ -20,7 +20,12 @@ FROM ${PHP_IMAGE} AS base
 # bcmath for exact arithmetic, zip for the owner's data export (D57). OPcache is built into PHP 8.5. The
 # -dev packages are removed after the build. Debian's security updates are taken at build time, so a fix
 # released after the base image reaches the shop with the next image (CI's image scan checks, D65).
+#
+# SECURITY_UPDATES is the day of the build, given by CI. A cached layer never takes a newer fix, so the
+# updates were only as new as the cache; a new day makes this layer again (D78).
+ARG SECURITY_UPDATES=unset
 RUN set -eux; \
+    echo "Security updates as of ${SECURITY_UPDATES}"; \
     apt-get update; \
     apt-get upgrade -y --no-install-recommends; \
     apt-get install -y --no-install-recommends libpq5 libicu76 libzip5 libpq-dev libicu-dev libzip-dev; \
@@ -93,8 +98,10 @@ USER www-data
 # --- A shop's nginx: HTTPS with the shop's own certificate, and the built assets ------------------------
 FROM ${NGINX_IMAGE} AS web
 
-# Alpine's security updates are taken at build time, as Debian's are in the other images (D65).
-RUN apk upgrade --no-cache
+# Alpine's security updates are taken at build time, as Debian's are in the other images (D65), again
+# each day and not from a cached layer (D78).
+ARG SECURITY_UPDATES=unset
+RUN echo "Security updates as of ${SECURITY_UPDATES}" && apk upgrade --no-cache
 
 COPY apps/shop-server/docker/nginx/shop.conf /etc/nginx/conf.d/default.conf
 # The page a new counter or phone opens at http://<server>/setup to trust the shop's certificate (D59).
@@ -107,8 +114,10 @@ FROM ${POSTGRES_IMAGE} AS db
 # pgBackRest from the PostgreSQL project's own packages, pinned (spec section 9) [S16, R6], jq for the
 # backup loop, and age and ssss for the encrypted off-site copy and its 2-of-3 key shares [S17, D53].
 # /backup is the second disk; a new volume takes its owner from here. Debian's security updates are taken
-# at build time, as in the PHP images (D65).
+# at build time, as in the PHP images (D65), again each day and not from a cached layer (D78).
+ARG SECURITY_UPDATES=unset
 RUN set -eux; \
+    echo "Security updates as of ${SECURITY_UPDATES}"; \
     apt-get update; \
     apt-get upgrade -y --no-install-recommends; \
     apt-get install -y --no-install-recommends pgbackrest=2.60.0-1.pgdg13+1 jq age=1.2.1-1+b5 ssss=0.5-5; \

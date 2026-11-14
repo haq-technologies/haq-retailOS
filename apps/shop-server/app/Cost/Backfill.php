@@ -69,8 +69,9 @@ final readonly class Backfill
     {
         $this->check($itemIds, $unitCostKobo, $basis, $from);
         $now = CarbonImmutable::now();
-        // A cost dated today counts from now; one dated earlier counts from the start of that day.
-        $effective = $asOf->isSameDay($now) || $asOf->isFuture() ? $now : $asOf->startOfDay();
+        // A cost dated today counts from now; one dated earlier counts from the start of that day. The day is
+        // the one in the date's own time zone, the shop's (D77).
+        $effective = $asOf->isSameDay($now->setTimezone($asOf->getTimezone())) || $asOf->isFuture() ? $now : $asOf->startOfDay();
 
         return DB::transaction(function () use ($actor, $itemIds, $unitCostKobo, $effective, $basis, $from, $source, $now): array {
             $resolved = 0;

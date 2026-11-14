@@ -11,6 +11,7 @@ use App\Organisation\Models\Terminal;
 use App\Reports\Profit;
 use App\Sales\Finish;
 use App\Settings\Settings;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\Counter;
 use Tests\Support\People;
@@ -56,6 +57,24 @@ it('previews a cost before saving: sales, revenue, estimated profit, sales below
     expect(DB::table('cost_entries')->count())->toBe(0);
 });
 
+it('takes a cost dated today in the first hour after midnight in Lagos, while UTC is still on the day before (D77)', function () {
+    // 23:30 UTC is 00:30 in Lagos, on the next day. The owner's "today" is that Lagos day.
+    $this->travelTo(CarbonImmutable::now('UTC')->addDay()->setTime(23, 30));
+    $today = CarbonImmutable::now('Africa/Lagos')->toDateString();
+    expect($today)->not->toBe(CarbonImmutable::now('UTC')->toDateString());
+    $body = ['item_ids' => [$this->a->id], 'unit_cost_kobo' => 120_000, 'basis' => 'first_null', 'as_of' => $today];
+
+    ($this->as)('Halima', '135790')->postJson('/api/back-office/costs/preview', $body)->assertOk()->assertJson(['sales' => 3]);
+    ($this->as)('Halima', '135790')->postJson('/api/back-office/costs', $body)->assertOk()->assertJson(['entries' => 1, 'resolved' => 3]);
+    // Dated today, it counts from now, so the next sale takes it.
+    ($this->sell)($this->a->id, 250_000);
+    expect(DB::table('sale_lines')->whereNotNull('cost_snapshot_kobo')->value('cost_snapshot_kobo'))->toBe(120_000);
+
+    // Tomorrow in Lagos is still in the future.
+    $tomorrow = CarbonImmutable::now('Africa/Lagos')->addDay()->toDateString();
+    ($this->as)('Halima', '135790')->postJson('/api/back-office/costs/preview', ['as_of' => $tomorrow] + $body)->assertStatus(422);
+});
+
 it('saves a cost: an estimate beside each earlier sale, no sale changed, later sales take it, all audited with the cost kept apart', function () {
     ($this->as)('Halima', '135790')->postJson('/api/back-office/costs', ['item_ids' => [$this->a->id], 'unit_cost_kobo' => 120_000, 'basis' => 'first_null'])
         ->assertOk()->assertJson(['entries' => 1, 'resolved' => 3]);
@@ -82,7 +101,7 @@ it('saves a cost: an estimate beside each earlier sale, no sale changed, later s
 });
 
 it('gives one cost to several items, each from its own first sale with no cost, or only from a date', function () {
-    ($this->as)('Halima', '135790')->postJson('/api/back-office/costs', ['item_ids' => [$this->a->id, $this->b->id], 'unit_cost_kobo' => 50_000, 'basis' => 'from_date', 'from' => now()->addDay()->toDateString()])
+    ($this->as)('Halima', '135790')->postJson('/api/back-office/costs', ['item_ids' => [$this->a->id, $this->b->id], 'unit_cost_kobo' => 50_000, 'basis' => 'from_date', 'from' => now('Africa/Lagos')->addDay()->toDateString()])
         ->assertOk()->assertJson(['entries' => 2, 'resolved' => 0]);
     ($this->as)('Halima', '135790')->postJson('/api/back-office/costs', ['item_ids' => [$this->a->id, $this->b->id], 'unit_cost_kobo' => 50_000, 'basis' => 'first_null'])
         ->assertOk()->assertJson(['entries' => 2, 'resolved' => 4]);

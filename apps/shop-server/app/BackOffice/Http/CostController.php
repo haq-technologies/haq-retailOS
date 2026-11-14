@@ -10,6 +10,7 @@ use App\Cost\Costs;
 use App\Cost\Undo;
 use App\Reports\NeedsCost;
 use App\Sales\Pricing;
+use App\Settings\Settings;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -120,11 +121,21 @@ final class CostController
         ]);
         /** @var list<string> $items */
         $items = array_values(array_unique(array_map('strval', (array) $data['item_ids'])));
-        $asOf = isset($data['as_of']) ? CarbonImmutable::parse((string) $data['as_of']) : CarbonImmutable::now();
+        // The owner's dates are days in the shop's time zone, not UTC days: read as UTC, "today" in Lagos was
+        // tomorrow for the first hour after midnight, and the cost was refused as dated in the future (D77).
+        $zone = $this->zone();
+        $asOf = isset($data['as_of']) ? CarbonImmutable::parse((string) $data['as_of'], $zone) : CarbonImmutable::now($zone);
         if ($asOf->isFuture() && ! $asOf->isToday()) {
             abort(422, 'A cost cannot be dated in the future.');
         }
 
-        return [$items, (int) $data['unit_cost_kobo'], $asOf, (string) $data['basis'], isset($data['from']) ? CarbonImmutable::parse((string) $data['from']) : null];
+        return [$items, (int) $data['unit_cost_kobo'], $asOf, (string) $data['basis'], isset($data['from']) ? CarbonImmutable::parse((string) $data['from'], $zone) : null];
+    }
+
+    private function zone(): string
+    {
+        $zone = app(Settings::class)->get('business.timezone');
+
+        return is_string($zone) ? $zone : 'Africa/Lagos';
     }
 }
