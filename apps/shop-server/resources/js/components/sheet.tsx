@@ -2,6 +2,10 @@ import { useEffect, useRef } from 'react';
 
 /**
  * A modal sheet over the counter. Esc cancels; Enter confirms the focused dialog (spec section 15).
+ *
+ * Focus moves into the sheet once, when it opens, and never again. The counter redraws every few seconds
+ * as it polls, and each redraw hands the sheet a new onClose; a sheet that took focus again on each one
+ * pulled it out of the field the cashier was typing in (D76).
  */
 interface Props {
     title: string;
@@ -12,20 +16,30 @@ interface Props {
 
 export function Sheet({ title, onClose, children, wide = false }: Props) {
     const ref = useRef<HTMLDivElement>(null);
+    // The newest onClose, read when Esc is pressed, so a redraw above never re-runs the effects below.
+    const close = useRef(onClose);
+    useEffect(() => {
+        close.current = onClose;
+    }, [onClose]);
 
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 event.preventDefault();
-                onClose();
+                close.current();
             }
         };
         window.addEventListener('keydown', onKey);
-        ref.current?.focus();
         return () => {
             window.removeEventListener('keydown', onKey);
         };
-    }, [onClose]);
+    }, []);
+
+    // A field inside that asked for focus (autoFocus) keeps it.
+    useEffect(() => {
+        const dialog = ref.current;
+        if (dialog !== null && !dialog.contains(document.activeElement)) dialog.focus();
+    }, []);
 
     return (
         <div className="fixed inset-0 z-40 flex items-stretch justify-center bg-text/40 medium:items-center medium:p-6" role="presentation">

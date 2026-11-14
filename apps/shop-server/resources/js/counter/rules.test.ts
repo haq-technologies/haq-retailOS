@@ -36,6 +36,30 @@ describe('the scanner', () => {
         expect([d.key('0', 1000), d.key('0', 1010), d.key('Enter', 1500)]).toEqual([{ kind: 'none' }, { kind: 'none' }, { kind: 'none' }]);
     });
 
+    it("reads a receipt's barcode whole: a scanner sends Shift before each capital (D76)", () => {
+        const d = new ScanDetector();
+        let t = 1000;
+        const keys = ['Shift', 'T', '0', '1', '-', 'Shift', 'E', '1', '-', '0', '0', '0', '1', '2', '3'];
+        const events = keys.map((k) => d.key(k, (t += 8)));
+        // Shift is no key of the code: the run starts at T, and is a scan from its fourth key.
+        expect(events[4]).toEqual({ kind: 'burst', leaked: 'T01', first: true });
+        expect(d.key('Enter', (t += 10))).toEqual({ kind: 'scan', code: 'T01-E1-000123' });
+    });
+
+    it('keeps the run alive across a Shift held between two keys, and still ends it on another key', () => {
+        const d = new ScanDetector();
+        // The Shift comes 20 ms after the dash and the capital 20 ms after the Shift: 40 ms apart, still one run.
+        const keys: [string, number][] = [['T', 1000], ['0', 1008], ['1', 1016], ['-', 1024], ['Shift', 1044], ['E', 1064], ['1', 1072]];
+        for (const [k, at] of keys) d.key(k, at);
+        expect(d.key('Enter', 1080)).toEqual({ kind: 'scan', code: 'T01-E1' });
+
+        // A person's capital, typed slowly, is typing; and an arrow key still ends a run.
+        for (const [k, at] of [['Shift', 3000], ['C', 3150], ['a', 3320], ['b', 3500]] as [string, number][]) d.key(k, at);
+        expect(d.key('Enter', 3700)).toEqual({ kind: 'none' });
+        for (const [k, at] of [['1', 5000], ['2', 5008], ['3', 5016], ['4', 5024], ['ArrowLeft', 5032]] as [string, number][]) d.key(k, at);
+        expect(d.key('Enter', 5040)).toEqual({ kind: 'none' });
+    });
+
     it('knows a receipt number', () => {
         expect(isReceiptNumber('T01-E1-000123')).toBe(true);
         expect(isReceiptNumber('6901234567892')).toBe(false);

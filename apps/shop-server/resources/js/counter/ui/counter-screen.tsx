@@ -80,6 +80,8 @@ function junk(code: string, linked: number): boolean {
     return code.length < 6 || /^(.)\1+$/u.test(code) || linked > 5;
 }
 
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
 export function CounterScreen({ session, setToken, terminal, people, settings, cat, catVersion, online, search, sync, cart, update, onLock }: Props) {
     const api = useCounterApi(session.token, setToken);
     const [chosenView, setView] = useState<'sale' | 'pay' | 'after'>('sale');
@@ -106,29 +108,31 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
     // The catalogue changes under us as the feed polls; catVersion tells React to read it again.
     const view_ = useMemo(() => drill(cat, state, cart.customerType), [cat, state, cart.customerType, catVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // An answer the same as the last one keeps the old list, so a poll that found nothing new redraws nothing.
     const refreshParked = useCallback(() => {
         void api
             .get<{ parked: ParkedEntry[] }>('/api/counter/parked')
             .then((a) => {
-                if (a.ok) setParked(a.body.parked);
+                if (a.ok) setParked((old) => (sameJson(old, a.body.parked) ? old : a.body.parked));
             })
             .catch(() => undefined);
     }, [api]);
 
-    // Background checks: waiting sales every 3 s, receipts that did not print every 5 s, the printer every 15 s.
+    // Background checks, on one 3-second timer: waiting sales on every tick (3 s), receipts that did not
+    // print on every second tick (6 s), the printer on every fifth (15 s).
     useEffect(() => {
         let tick = 0;
         const run = () => {
             refreshParked();
-            if (tick % 5 === 0) {
+            if (tick % 2 === 0) {
                 void api
                     .get<{ print_jobs: { id: string; receipt_number: string; kind: string }[] }>('/api/counter/print-jobs')
                     .then((a) => {
-                        if (a.ok) setPending(a.body.print_jobs);
+                        if (a.ok) setPending((old) => (sameJson(old, a.body.print_jobs) ? old : a.body.print_jobs));
                     })
                     .catch(() => undefined);
             }
-            if (tick % 15 === 0) {
+            if (tick % 5 === 0) {
                 void api
                     .get<{ status: string }>('/api/counter/printer')
                     .then((a) => {
@@ -138,7 +142,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                         setPrinter('unknown');
                     });
             }
-            tick += 3;
+            tick += 1;
         };
         run();
         const timer = window.setInterval(run, 3000);
@@ -284,6 +288,11 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
     const handleScan = useCallback(
         (code: string) => {
             if (view === 'after') setView('sale');
+            // An open Returns takes a receipt's barcode, as its field says (D76).
+            if (sheet?.kind === 'returns' && isReceiptNumber(code)) {
+                setSheet({ kind: 'returns', receipt: code });
+                return;
+            }
             if (sheet !== null || view === 'pay') {
                 say('warning', 'Finish what is open first, then scan.');
                 return;

@@ -193,8 +193,14 @@ export function ReturnsSheet({
         void lookup(receipt).then(show);
     };
 
+    // A scanned receipt, when the sheet opens or while it is open: the field shows the whole number, not the
+    // first keys of the scan that reached it as typing.
     useEffect(() => {
-        if (initialReceipt !== null) void lookup(initialReceipt).then(show);
+        if (initialReceipt === null) return;
+        void lookup(initialReceipt).then((found) => {
+            setNumber(initialReceipt);
+            show(found);
+        });
     }, [initialReceipt, lookup, show]);
 
     useEffect(() => {
