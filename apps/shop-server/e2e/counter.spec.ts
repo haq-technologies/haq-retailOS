@@ -35,10 +35,14 @@ async function counter(browser: Browser, terminal: 'T01' | 'T02', name = 'Amina'
     return page;
 }
 
-/** A scanner types the code in a few milliseconds and ends with Enter (spec section 7) [S1]. */
+/**
+ * A scanner types the code in a few milliseconds and ends with Enter (spec section 7) [S1]. As a keyboard
+ * does, it sends Shift before each capital (D76).
+ */
 async function scan(page: Page, code: string): Promise<void> {
     await page.evaluate((text) => {
-        for (const key of [...text.split(''), 'Enter']) {
+        const keys = text.split('').flatMap((key) => (/[A-Z]/.test(key) ? ['Shift', key] : [key]));
+        for (const key of [...keys, 'Enter']) {
             window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
         }
     }, code);
@@ -416,4 +420,78 @@ test('returns an item by its receipt with a manager\'s PIN, then closes the day 
     await expect(close.getByText('Expected', { exact: true })).toBeVisible();
     await expect(close.getByText('Counted', { exact: true })).toBeVisible();
     await expect(close.getByText('The Z-report is printing.')).toBeVisible();
+});
+
+test('keeps focus in the field a cashier is typing in while the counter polls, and in a field that asks for it (D76)', async ({ browser }) => {
+    const page = await counter(browser, 'T01');
+    await page.getByRole('button', { name: 'New item' }).click();
+    const sheet = page.getByRole('dialog', { name: 'New item' });
+    await sheet.getByRole('button', { name: 'Earbuds and earpods', exact: true }).click();
+
+    // A person's typing, across more than one of the counter's 3-second polls: each poll used to pull focus
+    // out of the field, so the rest of the word went nowhere.
+    const brand = sheet.getByLabel('Or type the brand');
+    await brand.click();
+    await page.keyboard.type('Zetasound Pro', { delay: 400 });
+    await expect(brand).toBeFocused();
+    await expect(brand).toHaveValue('Zetasound Pro');
+    await sheet.getByRole('button', { name: 'Cancel' }).click();
+
+    // Hold's label asks for focus as its sheet opens, and keeps it.
+    await addCable(page, '3000');
+    await page.keyboard.press('F4');
+    await expect(page.getByRole('dialog', { name: 'Hold this sale' }).getByPlaceholder('Such as: man in blue')).toBeFocused();
+});
+
+test('takes a receipt scanned into an open Returns, capitals and all (D76)', async ({ browser }) => {
+    const page = await counter(browser, 'T01');
+    await addCable(page, '3000');
+    await page.keyboard.press('F8');
+    await page.getByRole('button', { name: 'Exact' }).click();
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page.getByRole('heading', { name: 'Sale complete' })).toBeVisible();
+    const receipt = ((await page.getByText(/T01-E\d+-\d{6}/).first().textContent()) ?? '').match(/T01-E\d+-\d{6}/)?.[0] ?? '';
+    expect(receipt).not.toBe('');
+    await page.getByRole('button', { name: 'Next customer' }).click();
+
+    // Returns is already open, with the cashier in its field, when the receipt is scanned.
+    await page.getByRole('button', { name: 'Returns and voids' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Returns and voids' });
+    await sheet.getByPlaceholder('T01-E1-000123').click();
+    await scan(page, receipt);
+    await expect(sheet.getByText(receipt)).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'One more Type-C to Lightning Cable 1m back' })).toBeVisible();
+    await expect(page.getByText('Finish what is open first, then scan.')).toHaveCount(0);
+});
+
+test("keeps a manager's PIN typed on the keyboard at Pay out of the cash received (D76)", async ({ browser }) => {
+    const page = await counter(browser, 'T01');
+    // At Finish the server asks for a manager, once, as it does when an approval no longer holds.
+    let asked = false;
+    await page.route('**/api/counter/sales', async (route) => {
+        const request = route.request();
+        if (request.method() !== 'POST' || asked) return route.fallback();
+        asked = true;
+        const line = (request.postDataJSON() as { lines: { client_line_id: string; item_id: string; unit_price_kobo: number }[] }).lines[0];
+        return route.fulfill({
+            status: 422,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                message: 'A manager must approve this price.',
+                approval: { action: 'price_below_floor', subject_id: line?.client_line_id, item_id: line?.item_id, price_kobo: line?.unit_price_kobo },
+            }),
+        });
+    });
+
+    await addCable(page, '3000');
+    await page.keyboard.press('F8');
+    await page.keyboard.type('5000', { delay: 60 });
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page.getByText('A manager must approve this price.')).toBeVisible();
+
+    // The manager types the PIN on the keyboard: every digit is the PIN's, and none joins the ₦5,000.
+    await page.getByRole('button', { name: /^Kemi/ }).click();
+    await page.keyboard.type('246810', { delay: 40 });
+    await expect(page.getByRole('heading', { name: 'Sale complete' })).toBeVisible();
+    await expect(page.getByText('Cash received ₦5,000 for a total of ₦3,000')).toBeVisible();
 });

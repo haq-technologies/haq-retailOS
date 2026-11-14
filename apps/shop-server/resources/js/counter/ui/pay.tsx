@@ -64,6 +64,7 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
     // A Finish the server never answered: it may be sold already, so nothing changes until it answers (D61).
     const pending = cart.pending ?? null;
     const locked = pending !== null;
+    const approving = problem?.kind === 'approval';
 
     const payments = useCallback((): Payment[] | null => {
         const tick = (seen: boolean) => seen || !settings.transferAlertTick;
@@ -190,6 +191,9 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
             if (event.key === 'Escape') {
                 event.preventDefault();
                 if (!locked) onBack();
+            } else if (approving) {
+                // The keys are the manager's PIN and nothing else: they never reach the cash typed here, and
+                // Enter never sends the sale again before the approval is given (D76).
             } else if (event.key === 'Enter') {
                 event.preventDefault();
                 if (ready || locked) void finish(cart);
@@ -205,7 +209,7 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
         return () => {
             window.removeEventListener('keydown', onKey);
         };
-    }, [ready, locked, finish, cart, onBack, typeKey]);
+    }, [ready, locked, approving, finish, cart, onBack, typeKey]);
 
     const tabs: Method[] = onlyTransfer ? ['transfer'] : ['cash', 'transfer', 'pos', 'split'];
     const tendered = digitsToKobo(cash);

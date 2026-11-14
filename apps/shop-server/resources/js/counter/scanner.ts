@@ -10,6 +10,13 @@ export type ScanEvent = { kind: 'none' } | { kind: 'burst'; leaked: string; firs
 
 const PASS_THROUGH = 3;
 
+/**
+ * Keys that type nothing themselves. A scanner sends Shift before each capital, as a keyboard does, so a
+ * receipt's barcode (T01-E1-000123) arrives as Shift, T, 0, 1, -, Shift, E and so on; they are no part of
+ * the code and never end the run (D76).
+ */
+const MODIFIERS = new Set(['Shift', 'CapsLock', 'Control', 'Alt', 'AltGraph', 'Meta']);
+
 export class ScanDetector {
     private buffer = '';
     private last = Number.NEGATIVE_INFINITY;
@@ -25,6 +32,11 @@ export class ScanDetector {
             const fresh = at - this.last < this.gapMs * 4;
             this.reset();
             return code.length >= this.minLength && fresh ? { kind: 'scan', code } : { kind: 'none' };
+        }
+        if (MODIFIERS.has(key)) {
+            // Inside a fast run it keeps the run alive, so the capital after it is still counted as fast.
+            if (this.buffer !== '' && at - this.last < this.gapMs) this.last = at;
+            return { kind: 'none' };
         }
         if (key.length !== 1) {
             this.reset();
