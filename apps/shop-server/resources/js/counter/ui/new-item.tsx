@@ -12,6 +12,11 @@ import type { CounterApi } from '../use-api';
  * pickers, a typed brand or phone model that prints as typed and waits for approval, "Not in the list" for
  * a product word, similar items offered first, and the price. A cashier's new item sells at once and waits
  * in the owner's review queue. Wireframe: NewItem.
+ *
+ * The layout follows the screen (D80). The category is its own first screen. Then, from 600px, two panes:
+ * the details on the left, scrolling by themselves, and on the right the printed name, the price, the
+ * keypad and Add, always in view, so nothing is reached by a long scroll. Under 600px the same two parts
+ * are two steps, Details then Price.
  */
 interface Created {
     item: ItemRow;
@@ -55,6 +60,8 @@ export function NewItem({ cat, api, requestOnly, startCategoryId, onCreated, onP
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [similar, setSimilar] = useState<{ id: string; name: string }[]>([]);
+    // A phone shows the form in two steps; a counter or a tablet shows both at once, side by side (D80).
+    const [step, setStep] = useState<'details' | 'price'>('details');
 
     const template = category === null ? undefined : cat.templates.get(category.id);
     const fields = (template?.facets ?? []).filter((f) => f.type !== 'brand');
@@ -119,226 +126,268 @@ export function NewItem({ cat, api, requestOnly, startCategoryId, onCreated, onP
         .filter((c) => c.parent_id === browse && !c.code.startsWith('_'))
         .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
 
+    const chosen = category !== null || notInList;
+    const printsAs = preview !== '' && (
+        <p className="rounded-xl bg-panel p-4 text-text-secondary">
+            Prints as <strong className="block text-xl text-text">{preview}</strong>
+        </p>
+    );
+
     return (
-        <Sheet title="New item" onClose={onClose} wide>
-            <p className="text-text-secondary">Sellable now; the owner reviews it later.</p>
-
-            {category === null && !notInList && (
-                <section aria-label="Category" className="flex flex-col gap-3">
-                    <p className="text-lg font-semibold">Category</p>
-                    {browse !== null && (
-                        <button
-                            type="button"
-                            className="min-h-touch self-start rounded-xl border-2 border-border px-4"
-                            onClick={() => {
-                                setBrowse(cat.categories.get(browse)?.parent_id ?? null);
-                            }}
-                        >
-                            Back
-                        </button>
-                    )}
-                    <div className="grid grid-cols-2 gap-2 medium:grid-cols-3">
-                        {categories.map((c) => (
+        <Sheet title="New item" onClose={onClose} wide={!chosen} full={chosen} ownScroll={chosen}>
+            {!chosen && (
+                <>
+                    <p className="text-text-secondary">Sellable now; the owner reviews it later.</p>
+                    <section aria-label="Category" className="flex flex-col gap-3">
+                        <p className="text-lg font-semibold">Category</p>
+                        {browse !== null && (
                             <button
-                                key={c.id}
                                 type="button"
-                                className="min-h-touch rounded-xl border-2 border-border px-3 py-2 text-left text-lg"
+                                className="min-h-touch self-start rounded-xl border-2 border-border px-4"
                                 onClick={() => {
-                                    const children = [...cat.categories.values()].some((x) => x.parent_id === c.id);
-                                    if (children || !c.sellable) setBrowse(c.id);
-                                    else setCategory(c);
+                                    setBrowse(cat.categories.get(browse)?.parent_id ?? null);
                                 }}
                             >
-                                {c.name}
+                                Back
                             </button>
-                        ))}
-                        <button
-                            type="button"
-                            className="min-h-touch rounded-xl border-2 border-dashed border-border px-3 py-2 text-left text-lg"
-                            onClick={() => {
-                                setNotInList(true);
-                            }}
-                        >
-                            Not in the list
-                        </button>
-                    </div>
-                </section>
+                        )}
+                        <div className="grid grid-cols-2 gap-2 medium:grid-cols-3 large:grid-cols-4">
+                            {categories.map((c) => (
+                                <button
+                                    key={c.id}
+                                    type="button"
+                                    className="min-h-touch rounded-xl border-2 border-border px-3 py-2 text-left text-lg"
+                                    onClick={() => {
+                                        const children = [...cat.categories.values()].some((x) => x.parent_id === c.id);
+                                        if (children || !c.sellable) setBrowse(c.id);
+                                        else setCategory(c);
+                                    }}
+                                >
+                                    {c.name}
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                className="min-h-touch rounded-xl border-2 border-dashed border-border px-3 py-2 text-left text-lg"
+                                onClick={() => {
+                                    setNotInList(true);
+                                }}
+                            >
+                                Not in the list
+                            </button>
+                        </div>
+                    </section>
+                </>
             )}
 
-            {(category !== null || notInList) && (
-                <p className="flex flex-wrap items-center gap-3 text-lg">
-                    Category <strong>{notInList ? 'Not in the list' : category?.name}</strong>
-                    <button
-                        type="button"
-                        className="min-h-touch rounded-xl border-2 border-border px-4"
-                        onClick={() => {
-                            setCategory(null);
-                            setNotInList(false);
-                            setFacets({});
-                            setSimilar([]);
-                        }}
+            {chosen && (
+                <div className="flex min-h-0 flex-1 flex-col medium:grid medium:grid-cols-[minmax(0,1fr)_340px] medium:grid-rows-[minmax(0,1fr)] large:grid-cols-[minmax(0,1fr)_400px]">
+                    {/* The details: on a counter the left pane, scrolling by itself; on a phone the first step. */}
+                    <section
+                        aria-label="Details"
+                        className={`${step === 'details' ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4 medium:flex medium:px-6 medium:pb-6`}
                     >
-                        Change
-                    </button>
-                </p>
-            )}
-
-            {notInList && (
-                <label className="flex flex-col gap-1 text-lg">
-                    What is it? Type the product word
-                    <input
-                        type="text"
-                        value={word}
-                        maxLength={40}
-                        placeholder="Such as: Solar lamp"
-                        className="min-h-touch rounded-xl border-2 border-border px-4"
-                        onChange={(e) => {
-                            setWord(e.target.value);
-                        }}
-                    />
-                    <span className="text-text-secondary">It prints as you type it. The owner adds a category for it later.</span>
-                </label>
-            )}
-
-            {category !== null && !requestOnly && hasBrand && (
-                <section aria-label="Brand" className="flex flex-col gap-2">
-                    <p className="text-lg font-semibold">Brand</p>
-                    <div className="flex flex-wrap gap-2">
-                        {(more === 'brand' ? brands : brands.slice(0, 8)).map((b) => (
-                            <button
-                                key={b.id}
-                                type="button"
-                                aria-pressed={brandId === b.id}
-                                className={`min-h-touch rounded-xl border-2 px-4 ${brandId === b.id ? 'border-action font-semibold' : 'border-border'}`}
-                                onClick={() => {
-                                    setBrandId(brandId === b.id ? null : b.id);
-                                    setBrandText('');
-                                }}
-                            >
-                                {b.name}
-                            </button>
-                        ))}
-                        {more !== 'brand' && brands.length > 8 && (
+                        <p className="text-text-secondary">Sellable now; the owner reviews it later.</p>
+                        <p className="flex flex-wrap items-center gap-3 text-lg">
+                            Category <strong>{notInList ? 'Not in the list' : category?.name}</strong>
                             <button
                                 type="button"
                                 className="min-h-touch rounded-xl border-2 border-border px-4"
                                 onClick={() => {
-                                    setMore('brand');
+                                    setCategory(null);
+                                    setNotInList(false);
+                                    setFacets({});
+                                    setSimilar([]);
+                                    setStep('details');
                                 }}
                             >
-                                More
+                                Change
+                            </button>
+                        </p>
+
+                        {notInList && (
+                            <label className="flex flex-col gap-1 text-lg">
+                                What is it? Type the product word
+                                <input
+                                    type="text"
+                                    value={word}
+                                    maxLength={40}
+                                    placeholder="Such as: Solar lamp"
+                                    className="min-h-touch rounded-xl border-2 border-border px-4"
+                                    onChange={(e) => {
+                                        setWord(e.target.value);
+                                    }}
+                                />
+                                <span className="text-text-secondary">It prints as you type it. The owner adds a category for it later.</span>
+                            </label>
+                        )}
+
+                        {category !== null && !requestOnly && hasBrand && (
+                            <section aria-label="Brand" className="flex flex-col gap-2">
+                                <p className="text-lg font-semibold">Brand</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {(more === 'brand' ? brands : brands.slice(0, 8)).map((b) => (
+                                        <button
+                                            key={b.id}
+                                            type="button"
+                                            aria-pressed={brandId === b.id}
+                                            className={`min-h-touch rounded-xl border-2 px-4 ${brandId === b.id ? 'border-action font-semibold' : 'border-border'}`}
+                                            onClick={() => {
+                                                setBrandId(brandId === b.id ? null : b.id);
+                                                setBrandText('');
+                                            }}
+                                        >
+                                            {b.name}
+                                        </button>
+                                    ))}
+                                    {more !== 'brand' && brands.length > 8 && (
+                                        <button
+                                            type="button"
+                                            className="min-h-touch rounded-xl border-2 border-border px-4"
+                                            onClick={() => {
+                                                setMore('brand');
+                                            }}
+                                        >
+                                            More
+                                        </button>
+                                    )}
+                                </div>
+                                <input
+                                    type="text"
+                                    aria-label="Or type the brand"
+                                    placeholder="Or type the brand"
+                                    value={brandText}
+                                    maxLength={60}
+                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
+                                    onChange={(e) => {
+                                        setBrandText(e.target.value);
+                                        setBrandId(null);
+                                    }}
+                                />
+                                {brandText.trim() !== '' && !typedBrandKnown && (
+                                    <p className="text-text-secondary">
+                                        {brandText.trim()} is not in the brand list. It prints as typed, and a manager or the owner adds it to the list later.
+                                    </p>
+                                )}
+                            </section>
+                        )}
+
+                        {category !== null &&
+                            !requestOnly &&
+                            fields.map((f) => (
+                                <FacetField
+                                    key={f.key}
+                                    cat={cat}
+                                    definition={f}
+                                    value={facets[f.key] ?? ''}
+                                    showAll={more === f.key}
+                                    typed={f.key === 'phone_model' ? phoneModelText : ''}
+                                    onShowAll={() => {
+                                        setMore(f.key);
+                                    }}
+                                    onChange={(v) => {
+                                        setFacets((x) => ({ ...x, [f.key]: v }));
+                                        if (f.key === 'phone_model') setPhoneModelText('');
+                                    }}
+                                    onTyped={(t) => {
+                                        setPhoneModelText(t);
+                                        setFacets((x) => ({ ...x, phone_model: '' }));
+                                    }}
+                                />
+                            ))}
+
+                        <label className="flex flex-col gap-1 text-lg">
+                            {requestOnly ? 'Describe the item, in at least two words' : 'Anything else'} <span className="text-text-secondary">{requestOnly ? '' : '· optional'}</span>
+                            <input
+                                type="text"
+                                value={freeText}
+                                maxLength={80}
+                                className="min-h-touch rounded-xl border-2 border-border px-4"
+                                onChange={(e) => {
+                                    setFreeText(e.target.value);
+                                }}
+                            />
+                        </label>
+                    </section>
+
+                    {/* A phone only: the name so far, and the way on to the price. */}
+                    {step === 'details' && (
+                        <div className="flex shrink-0 flex-col gap-3 border-t border-border p-4 medium:hidden">
+                            {printsAs}
+                            <button
+                                type="button"
+                                className="min-h-touch rounded-xl bg-action text-lg font-bold text-white"
+                                onClick={() => {
+                                    setStep('price');
+                                }}
+                            >
+                                Next: the price
+                            </button>
+                        </div>
+                    )}
+
+                    {/* The name, the price and Add: on a counter the right pane, always in view; on a phone the second step. */}
+                    <div
+                        role="group"
+                        aria-label="Name and price"
+                        className={`${step === 'price' ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 medium:flex medium:border-l medium:border-border medium:px-6 medium:pb-6`}
+                    >
+                        <button
+                            type="button"
+                            className="min-h-touch self-start rounded-xl border-2 border-border px-4 medium:hidden"
+                            onClick={() => {
+                                setStep('details');
+                            }}
+                        >
+                            Back to the details
+                        </button>
+                        {printsAs}
+
+                        <section aria-label="Price" className="flex flex-col gap-2">
+                            <p className="text-lg font-semibold">Retail price</p>
+                            <output className="flex min-h-touch items-center rounded-xl border-2 border-action px-4 text-3xl font-bold">
+                                {digits === '' ? <span className="text-text-secondary">₦</span> : naira(digitsToKobo(digits))}
+                            </output>
+                            <Keypad
+                                onKey={(key) => {
+                                    setDigits((d) => typeDigits(d, key));
+                                }}
+                            />
+                        </section>
+
+                        {error !== null && <Notice tone={similar.length > 0 ? 'warning' : 'error'}>{error}</Notice>}
+                        {similar.length > 0 && (
+                            <div className="flex flex-col gap-2">
+                                {similar.map((s) => (
+                                    <button
+                                        key={s.id}
+                                        type="button"
+                                        className="min-h-touch rounded-xl border-2 border-border px-4 text-left text-lg font-semibold"
+                                        onClick={() => {
+                                            onPickExisting(s.id);
+                                        }}
+                                    >
+                                        Sell {s.name}
+                                    </button>
+                                ))}
+                                <button type="button" disabled={busy} className="min-h-touch rounded-xl border-2 border-action px-4 text-lg text-action-text" onClick={() => void send(true)}>
+                                    Create the new item anyway
+                                </button>
+                            </div>
+                        )}
+
+                        {similar.length === 0 && (
+                            <button
+                                type="button"
+                                disabled={busy || digits === ''}
+                                className="min-h-touch shrink-0 rounded-xl bg-action text-lg font-bold text-white disabled:opacity-60"
+                                onClick={() => void send(false)}
+                            >
+                                {digits === '' ? 'Type the price' : `Add at ${naira(digitsToKobo(digits))}`}
                             </button>
                         )}
                     </div>
-                    <input
-                        type="text"
-                        aria-label="Or type the brand"
-                        placeholder="Or type the brand"
-                        value={brandText}
-                        maxLength={60}
-                        className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
-                        onChange={(e) => {
-                            setBrandText(e.target.value);
-                            setBrandId(null);
-                        }}
-                    />
-                    {brandText.trim() !== '' && !typedBrandKnown && (
-                        <p className="text-text-secondary">
-                            {brandText.trim()} is not in the brand list. It prints as typed, and a manager or the owner adds it to the list later.
-                        </p>
-                    )}
-                </section>
-            )}
-
-            {category !== null &&
-                !requestOnly &&
-                fields.map((f) => (
-                    <FacetField
-                        key={f.key}
-                        cat={cat}
-                        definition={f}
-                        value={facets[f.key] ?? ''}
-                        showAll={more === f.key}
-                        typed={f.key === 'phone_model' ? phoneModelText : ''}
-                        onShowAll={() => {
-                            setMore(f.key);
-                        }}
-                        onChange={(v) => {
-                            setFacets((x) => ({ ...x, [f.key]: v }));
-                            if (f.key === 'phone_model') setPhoneModelText('');
-                        }}
-                        onTyped={(t) => {
-                            setPhoneModelText(t);
-                            setFacets((x) => ({ ...x, phone_model: '' }));
-                        }}
-                    />
-                ))}
-
-            {(category !== null || notInList) && (
-                <label className="flex flex-col gap-1 text-lg">
-                    {requestOnly ? 'Describe the item, in at least two words' : 'Anything else'} <span className="text-text-secondary">{requestOnly ? '' : '· optional'}</span>
-                    <input
-                        type="text"
-                        value={freeText}
-                        maxLength={80}
-                        className="min-h-touch rounded-xl border-2 border-border px-4"
-                        onChange={(e) => {
-                            setFreeText(e.target.value);
-                        }}
-                    />
-                </label>
-            )}
-
-            {preview !== '' && (
-                <p className="rounded-xl bg-panel p-4 text-text-secondary">
-                    Prints as <strong className="block text-xl text-text">{preview}</strong>
-                </p>
-            )}
-
-            {(category !== null || notInList) && (
-                <section aria-label="Price" className="flex flex-col gap-2">
-                    <p className="text-lg font-semibold">Retail price</p>
-                    <output className="flex min-h-touch items-center rounded-xl border-2 border-action px-4 text-3xl font-bold">
-                        {digits === '' ? <span className="text-text-secondary">₦</span> : naira(digitsToKobo(digits))}
-                    </output>
-                    <Keypad
-                        onKey={(key) => {
-                            setDigits((d) => typeDigits(d, key));
-                        }}
-                    />
-                </section>
-            )}
-
-            {error !== null && <Notice tone={similar.length > 0 ? 'warning' : 'error'}>{error}</Notice>}
-            {similar.length > 0 && (
-                <div className="flex flex-col gap-2">
-                    {similar.map((s) => (
-                        <button
-                            key={s.id}
-                            type="button"
-                            className="min-h-touch rounded-xl border-2 border-border px-4 text-left text-lg font-semibold"
-                            onClick={() => {
-                                onPickExisting(s.id);
-                            }}
-                        >
-                            Sell {s.name}
-                        </button>
-                    ))}
-                    <button type="button" disabled={busy} className="min-h-touch rounded-xl border-2 border-action px-4 text-lg text-action-text" onClick={() => void send(true)}>
-                        Create the new item anyway
-                    </button>
                 </div>
-            )}
-
-            {(category !== null || notInList) && similar.length === 0 && (
-                <button
-                    type="button"
-                    disabled={busy || digits === ''}
-                    className="min-h-touch rounded-xl bg-action text-lg font-bold text-white disabled:opacity-60"
-                    onClick={() => void send(false)}
-                >
-                    {digits === '' ? 'Type the price' : `Add at ${naira(digitsToKobo(digits))}`}
-                </button>
             )}
         </Sheet>
     );

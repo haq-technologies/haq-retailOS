@@ -524,3 +524,40 @@ test("keeps a manager's PIN typed on the keyboard at Pay out of the cash receive
     await expect(page.getByRole('heading', { name: 'Sale complete' })).toBeVisible();
     await expect(page.getByText('Cash received ₦5,000 for a total of ₦3,000')).toBeVisible();
 });
+
+test('lays New item out for the screen: two panes on a counter and a tablet, two steps on a phone (D80)', async ({ browser }) => {
+    const page = await counter(browser, 'T01');
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await page.getByRole('button', { name: 'New item' }).click();
+    const sheet = page.getByRole('dialog', { name: 'New item' });
+    await sheet.getByRole('button', { name: 'Phone pouches and covers', exact: true }).click();
+    const price = sheet.getByRole('region', { name: 'Price' });
+
+    // A counter: the longest form there is, and still the name, the keypad, Add and Cancel are in view
+    // with no scrolling. The details scroll by themselves.
+    await sheet.getByLabel('Or type the brand').fill('Zetacase');
+    for (const [width, height, name] of [[1366, 768, 'large'], [800, 1000, 'medium']] as const) {
+        await page.setViewportSize({ width, height });
+        await expect(sheet.getByRole('group', { name: 'Name and price' }).getByText('Zetacase Pouch')).toBeInViewport({ ratio: 1 });
+        await expect(price.getByRole('button', { name: '0', exact: true })).toBeInViewport({ ratio: 1 });
+        await expect(sheet.getByRole('button', { name: 'Type the price' })).toBeInViewport({ ratio: 1 });
+        await expect(sheet.getByRole('button', { name: 'Cancel' })).toBeInViewport({ ratio: 1 });
+        await expect(sheet.getByRole('button', { name: 'Next: the price' })).toBeHidden();
+        await page.screenshot({ path: `e2e/results/screens/new-item-${name}.png` });
+    }
+
+    // A phone: the details first, with the name so far and the way on; then the price.
+    await page.setViewportSize({ width: 390, height: 780 });
+    await expect(price).toBeHidden();
+    await expect(sheet.getByLabel('Or type the brand')).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Next: the price' })).toBeInViewport({ ratio: 1 });
+    await page.screenshot({ path: 'e2e/results/screens/new-item-compact-details.png' });
+    await sheet.getByRole('button', { name: 'Next: the price' }).click();
+    await expect(sheet.getByLabel('Or type the brand')).toBeHidden();
+    await price.getByRole('button', { name: '5', exact: true }).click();
+    await price.getByRole('button', { name: '00', exact: true }).click();
+    await expect(sheet.getByRole('button', { name: 'Add at ₦500' })).toBeInViewport({ ratio: 1 });
+    await page.screenshot({ path: 'e2e/results/screens/new-item-compact-price.png' });
+    await sheet.getByRole('button', { name: 'Back to the details' }).click();
+    await expect(sheet.getByLabel('Or type the brand')).toHaveValue('Zetacase');
+});
