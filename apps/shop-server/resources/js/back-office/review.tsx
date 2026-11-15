@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { WarningIcon } from '@/components/icons';
 import { Notice } from '@/components/notice';
-import { Sheet } from '@/components/sheet';
 import type { CounterApi } from '@/counter/use-api';
 import { naira, plural, shortDate, whenInline } from './format';
 import { ItemEditor, ItemPicker, MergeConfirm, NamePicker, styles } from './pickers';
+import { NewCategory, Pair } from './review-parts';
+import type { Open, Queue, Tab } from './review-types';
 import type { Can } from './types';
 
 /**
@@ -13,38 +14,6 @@ import type { Can } from './types';
  * keep what they printed. Managers and the owner approve brands and phone models; only the owner creates a
  * category; managers, the storekeeper and the owner do the rest.
  */
-type Named = { id: string; name: string };
-interface Queue {
-    counts: { names: number; items: number; barcodes: number; duplicates: number };
-    brands: { id: string; name: string; typed_by: string | null; sales: number; items: string; first_sold: string | null; looks_like: Named | null }[];
-    models: { id: string; name: string; list: string; family: string | null; typed_by: string | null; sales: number; items: string; looks_like: Named | null }[];
-    words: { word: string; item_ids: string[]; names: string; typed_by: string | null; sales: number; low_kobo: number | null; high_kobo: number | null }[];
-    items: { id: string; name: string; typed_line: boolean; category: string; parts: string; created_by: string | null; created_at: string; sales: number; prices: number[]; brand_waiting: string | null }[];
-    learned: { id: string; code: string; item_id: string; name: string; learned_by: string | null; learned_at: string; confirmations: number }[];
-    conflicts: { code: string; links: { item_id: string; name: string; chosen_by: string | null; sales: number }[] }[];
-    aliases: { id: string; term: string; item_id: string; name: string; hits: number; active: boolean; needed: number }[];
-    duplicates: { keep: Side; merge: Side; reason: string }[];
-    merges: { id: string; item_id: string; name: string; into_id: string; into_name: string; by: string; at: string; sales: number }[];
-}
-interface Side {
-    id: string;
-    name: string;
-    source: string;
-    sales: number;
-    barcodes: number;
-    set_price_kobo: number | null;
-}
-
-type Tab = 'names' | 'items' | 'barcodes' | 'duplicates';
-type Open =
-    | { kind: 'edit'; itemId: string; title: string }
-    | { kind: 'pick-item'; from: Named }
-    | { kind: 'confirm-merge'; from: Named; into: Named }
-    | { kind: 'pick-brand'; brand: Named }
-    | { kind: 'pick-model'; model: Named & { list: string } }
-    | { kind: 'category'; word: string }
-    | null;
-
 const row = 'flex flex-col gap-3 border-b border-border py-4 large:flex-row large:items-center';
 const { button, primary } = styles;
 
@@ -515,95 +484,3 @@ export function Review({ api, can, onChanged }: { api: CounterApi; can: Can; onC
 }
 
 /** Two items that look the same: keep one, merge the other into it, or say they are not the same. */
-function Pair({ pair, busy, answer }: { pair: { keep: Side; merge: Side; reason: string }; busy: boolean; answer: (url: string, body: unknown, done: string) => Promise<void> }) {
-    const [swapped, setSwapped] = useState(false);
-    const keep = swapped ? pair.merge : pair.keep;
-    const merge = swapped ? pair.keep : pair.merge;
-    const describe = (s: Side) =>
-        `${s.source === 'starter' ? 'From the starter catalogue' : s.source === 'owner' ? 'Added in the back office' : 'Added at the counter'} · ${plural(s.sales, 'sale', 'sales')} · ${plural(s.barcodes, 'barcode', 'barcodes')} · ${s.set_price_kobo === null ? 'no set price' : `set price ${naira(s.set_price_kobo)}`}`;
-
-    return (
-        <section aria-label={`${keep.name} and ${merge.name}`} className="flex flex-col gap-4 rounded-2xl border-2 border-border p-5">
-            <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-bold">These look like the same item</h2>
-                <p className="text-text-secondary">{pair.reason}</p>
-            </div>
-            <div className="grid gap-3 large:grid-cols-2">
-                <div className="flex flex-col gap-1 rounded-xl bg-panel p-4">
-                    <span className="text-text-secondary">Keep this one</span>
-                    <span className="text-lg font-semibold">{keep.name}</span>
-                    <span className="text-text-secondary">{describe(keep)}</span>
-                </div>
-                <div className="flex flex-col gap-1 rounded-xl border-2 border-border p-4">
-                    <span className="text-text-secondary">Merges into the one you keep</span>
-                    <span className="text-lg font-semibold">{merge.name}</span>
-                    <span className="text-text-secondary">{describe(merge)}</span>
-                </div>
-            </div>
-            <p className="text-text-secondary">
-                No sale changes, and receipts keep what they printed. Reports count {merge.name}'s {plural(merge.sales, 'sale', 'sales')} under {keep.name}, and scanning its barcode adds {keep.name}. You can undo it later.
-            </p>
-            <div className="flex flex-wrap justify-end gap-2">
-                <button type="button" disabled={busy} className={button} onClick={() => void answer('/api/back-office/review/duplicates/not-same', { item_id: keep.id, other_id: merge.id }, 'Kept apart; they will not be suggested again.')}>
-                    Not the same
-                </button>
-                <button
-                    type="button"
-                    className={button}
-                    onClick={() => {
-                        setSwapped(!swapped);
-                    }}
-                >
-                    Keep the other one
-                </button>
-                <button type="button" disabled={busy} className={primary} onClick={() => void answer(`/api/back-office/review/items/${merge.id}/merge`, { into_id: keep.id }, `${merge.name} now counts under ${keep.name}.`)}>
-                    Merge into {keep.name}
-                </button>
-            </div>
-        </section>
-    );
-}
-
-/** The owner names a new category for a typed product word, and the word its receipts print. */
-function NewCategory({ api, word, busy, onCreate, onClose }: { api: CounterApi; word: string; busy: boolean; onCreate: (body: { typed: string; word: string; name: string; parent_id: string | null }) => void; onClose: () => void }) {
-    const [name, setName] = useState(word);
-    const [printed, setPrinted] = useState(word);
-    const [parent, setParent] = useState('');
-    const [groups, setGroups] = useState<Named[]>([]);
-
-    useEffect(() => {
-        void api.get<Named[]>('/api/back-office/review/groups').then((a) => {
-            if (a.ok) setGroups(a.body);
-        });
-    }, [api]);
-
-    return (
-        <Sheet title={`A category for “${word}”`} onClose={onClose}>
-            <label className="flex flex-col gap-2 text-lg font-semibold">
-                Category name
-                <input value={name} maxLength={60} className="min-h-touch rounded-xl border-2 border-border px-3 text-lg font-normal" onChange={(e) => { setName(e.target.value); }} />
-            </label>
-            <label className="flex flex-col gap-2 text-lg font-semibold">
-                Word the receipt prints
-                <input value={printed} maxLength={40} className="min-h-touch rounded-xl border-2 border-border px-3 text-lg font-normal" onChange={(e) => { setPrinted(e.target.value); }} />
-            </label>
-            <label className="flex flex-col gap-2 text-lg font-semibold">
-                Under
-                <select value={parent} className="min-h-touch rounded-xl border-2 border-border bg-background px-3 text-lg font-normal" onChange={(e) => { setParent(e.target.value); }}>
-                    <option value="">Its own tile at the top</option>
-                    {groups.map((g) => (
-                        <option key={g.id} value={g.id}>
-                            {g.name}
-                        </option>
-                    ))}
-                </select>
-            </label>
-            <p className="text-text-secondary">Every item waiting with “{word}” moves into it. Brands can then be picked for it at the counter. Only the owner creates categories, and it goes in the audit log.</p>
-            <div className="flex justify-end">
-                <button type="button" disabled={busy || name.trim().length < 3 || printed.trim().length < 3} className={styles.primary} onClick={() => { onCreate({ typed: word, word: printed, name, parent_id: parent === '' ? null : parent }); }}>
-                    Create the category
-                </button>
-            </div>
-        </Sheet>
-    );
-}

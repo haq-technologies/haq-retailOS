@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DotIcon, PrinterIcon, WarningIcon } from '@/components/icons';
+import { WarningIcon } from '@/components/icons';
 import { Notice } from '@/components/notice';
 import type { SignedIn, Tile as Person } from '@/components/sign-in-panel';
 import { addLine, emptyCart, removeLine, restoreLine, setColour, setCustomerType, setPrice, setQty, totalKobo, type AddedBy, type Cart, type CartLine, type Payment } from '../cart';
@@ -15,12 +15,17 @@ import type { CounterSettings, CustomerType, ItemPrices, ItemFacetRow, ItemRow, 
 import { useCounterApi } from '../use-api';
 import { AfterPay, PaidSummary } from './after-pay';
 import { CartPanel } from './cart-panel';
-import { CashSheet, CloseDaySheet, ReturnsSheet } from './drawer-sheets';
+import { CashSheet } from './cash-sheet';
+import { CloseDaySheet } from './close-day-sheet';
+import { CounterActions } from './counter-actions';
+import { CounterHeader } from './counter-header';
 import { NewItem } from './new-item';
 import { Pay } from './pay';
 import { PricePad, type PriceChoice } from './price-pad';
+import { ReturnsSheet } from './returns-sheet';
 import { HistorySheet, HoldSheet, NoSaleSheet, PickerSheet, ShiftSheet } from './small-sheets';
 import { newId, type ParkedEntry, type SaleSummary } from './types';
+import { useCounterPolling } from './use-counter-polling';
 import { WaitingSales } from './waiting';
 
 /**
@@ -70,22 +75,13 @@ type SheetState =
     | { kind: 'close' }
     | { kind: 'cart' };
 
-const initials = (name: string) =>
-    name
-        .split(/\s+/)
-        .map((w) => w.charAt(0))
-        .join('')
-        .slice(0, 2)
-        .toUpperCase();
-
 function junk(code: string, linked: number): boolean {
     return code.length < 6 || /^(.)\1+$/u.test(code) || linked > 5;
 }
 
-const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-
 export function CounterScreen({ session, setToken, terminal, people, settings, cat, catVersion, online, search, sync, cart, update, onLock }: Props) {
     const api = useCounterApi(session.token, setToken);
+    const { printer, pending, setPending, parked, refreshParked } = useCounterPolling(api);
     const [chosenView, setView] = useState<'sale' | 'pay' | 'after'>('sale');
     // A Finish the server never answered stays on Pay until it answers, even after the idle lock (D61).
     const view = (cart.pending ?? null) !== null ? 'pay' : chosenView;
@@ -100,58 +96,12 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
     const [notice, setNotice] = useState<{ tone: 'error' | 'warning' | 'info'; text: string } | null>(null);
     const [undo, setUndo] = useState<{ line: CartLine; index: number } | null>(null);
     const [colourFor, setColourFor] = useState<string | null>(null);
-    const [printer, setPrinter] = useState('ready');
-    const [pending, setPending] = useState<{ id: string; receipt_number: string }[]>([]);
-    const [parked, setParked] = useState<ParkedEntry[]>([]);
     const searchRef = useRef<HTMLInputElement>(null);
     const detector = useRef(new ScanDetector());
     const busy = useRef(false);
 
     // The catalogue changes under us as the feed polls; catVersion tells React to read it again.
     const view_ = useMemo(() => drill(cat, state, cart.customerType), [cat, state, cart.customerType, catVersion]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // An answer the same as the last one keeps the old list, so a poll that found nothing new redraws nothing.
-    const refreshParked = useCallback(() => {
-        void api
-            .get<{ parked: ParkedEntry[] }>('/api/counter/parked')
-            .then((a) => {
-                if (a.ok) setParked((old) => (sameJson(old, a.body.parked) ? old : a.body.parked));
-            })
-            .catch(() => undefined);
-    }, [api]);
-
-    // Background checks, on one 3-second timer: waiting sales on every tick (3 s), receipts that did not
-    // print on every second tick (6 s), the printer on every fifth (15 s).
-    useEffect(() => {
-        let tick = 0;
-        const run = () => {
-            refreshParked();
-            if (tick % 2 === 0) {
-                void api
-                    .get<{ print_jobs: { id: string; receipt_number: string; kind: string }[] }>('/api/counter/print-jobs')
-                    .then((a) => {
-                        if (a.ok) setPending((old) => (sameJson(old, a.body.print_jobs) ? old : a.body.print_jobs));
-                    })
-                    .catch(() => undefined);
-            }
-            if (tick % 5 === 0) {
-                void api
-                    .get<{ status: string }>('/api/counter/printer')
-                    .then((a) => {
-                        if (a.ok) setPrinter(a.body.status);
-                    })
-                    .catch(() => {
-                        setPrinter('unknown');
-                    });
-            }
-            tick += 1;
-        };
-        run();
-        const timer = window.setInterval(run, 3000);
-        return () => {
-            window.clearInterval(timer);
-        };
-    }, [api, refreshParked]);
 
     // A shift opens with its counted float; skipping it never blocks a sale [F20].
     useEffect(() => {
@@ -519,59 +469,6 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
         .filter((t): t is Tile => t !== null);
     const tiles = searching ? resultTiles : view_.tiles;
 
-    const printerLabel = printer === 'ready' ? 'Printer ready' : printer === 'not_set' ? 'No printer set' : printer === 'offline' ? 'Printer off' : 'Printer: check it';
-
-    const header = (
-        <header className="flex min-h-[72px] flex-wrap items-center gap-3 border-b border-border px-4">
-            <span className="hidden text-lg font-bold large:inline">HAQ Retail OS</span>
-            <button type="button" className="flex min-h-touch items-center gap-2 rounded-full border-2 border-border px-2 pr-4" onClick={onLock} title="Switch person">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-action font-bold text-white">{initials(session.user.name)}</span>
-                <span className="text-lg font-semibold">{session.user.name}</span>
-            </button>
-            <div role="radiogroup" aria-label="Customer type" className="flex rounded-xl border-2 border-border p-1">
-                {(['retail', 'wholesale'] as const).map((t) => (
-                    <button
-                        key={t}
-                        type="button"
-                        role="radio"
-                        aria-checked={cart.customerType === t}
-                        className={`min-h-12 rounded-lg px-4 text-lg font-semibold ${cart.customerType === t ? 'bg-action text-white' : ''}`}
-                        onClick={() => {
-                            flipType(t);
-                        }}
-                    >
-                        {t === 'retail' ? 'Retail' : 'Wholesale'}
-                    </button>
-                ))}
-            </div>
-            {awaitingCount > 0 && (
-                <button
-                    type="button"
-                    className="flex min-h-12 items-center gap-2 rounded-full bg-warning px-4 font-semibold text-text"
-                    onClick={() => {
-                        setSheet({ kind: 'waiting' });
-                    }}
-                >
-                    <WarningIcon className="h-5 w-5" /> {awaitingCount} awaiting transfer{flaggedCount > 0 ? `, ${String(flaggedCount)} over 30 min` : ''}
-                </button>
-            )}
-            <span className="ml-auto flex items-center gap-2 text-lg">
-                {online ? (
-                    <>
-                        <DotIcon className="h-3 w-3 text-pay" /> Online
-                    </>
-                ) : (
-                    <span className="flex items-center gap-2 font-semibold text-warning-text">
-                        <WarningIcon className="h-5 w-5" /> Reconnecting
-                    </span>
-                )}
-            </span>
-            <span className={`flex items-center gap-2 text-lg ${printer === 'ready' ? '' : 'font-semibold text-warning-text'}`}>
-                {printer === 'ready' ? <PrinterIcon className="h-5 w-5" /> : <WarningIcon className="h-5 w-5" />} {printerLabel}
-            </span>
-        </header>
-    );
-
     const panel = (
         <CartPanel
             cart={cart}
@@ -614,7 +511,19 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
 
     return (
         <div className="flex h-screen flex-col overflow-hidden">
-            {header}
+            <CounterHeader
+                userName={session.user.name}
+                customerType={cart.customerType}
+                awaitingCount={awaitingCount}
+                flaggedCount={flaggedCount}
+                online={online}
+                printer={printer}
+                onType={flipType}
+                onLock={onLock}
+                onWaiting={() => {
+                    setSheet({ kind: 'waiting' });
+                }}
+            />
             <div className="grid min-h-0 flex-1 grid-cols-1 medium:grid-cols-[1fr_360px] large:grid-cols-[1fr_440px]">
                 <main className="flex min-h-0 flex-col gap-4 overflow-y-auto p-4 pb-28 medium:pb-4">
                     {notice !== null &&
@@ -780,72 +689,13 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                                 ))}
                             </div>
 
-                            <div className="mt-auto flex flex-wrap gap-3">
-                                <button
-                                    type="button"
-                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
-                                    onClick={() => {
-                                        setSheet({ kind: 'new-item' });
-                                    }}
-                                >
-                                    New item
-                                </button>
-                                <button
-                                    type="button"
-                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
-                                    onClick={() => {
-                                        setSheet({ kind: 'waiting' });
-                                    }}
-                                >
-                                    Held sales ({heldCount})
-                                </button>
-                                <button
-                                    type="button"
-                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
-                                    onClick={() => {
-                                        setSheetError(null);
-                                        setSheet({ kind: 'no-sale' });
-                                    }}
-                                >
-                                    No sale
-                                </button>
-                                <button
-                                    type="button"
-                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
-                                    onClick={() => {
-                                        setSheet({ kind: 'history' });
-                                    }}
-                                >
-                                    My history
-                                </button>
-                                <button
-                                    type="button"
-                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
-                                    onClick={() => {
-                                        setSheet({ kind: 'returns', receipt: null });
-                                    }}
-                                >
-                                    Returns and voids
-                                </button>
-                                <button
-                                    type="button"
-                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
-                                    onClick={() => {
-                                        setSheet({ kind: 'cash' });
-                                    }}
-                                >
-                                    Cash out or in
-                                </button>
-                                <button
-                                    type="button"
-                                    className="min-h-touch rounded-xl border-2 border-border px-4 text-lg"
-                                    onClick={() => {
-                                        setSheet({ kind: 'close' });
-                                    }}
-                                >
-                                    Close the day
-                                </button>
-                            </div>
+                            <CounterActions
+                                heldCount={heldCount}
+                                onOpen={(kind) => {
+                                    if (kind === 'no-sale') setSheetError(null);
+                                    setSheet(kind === 'returns' ? { kind, receipt: null } : { kind });
+                                }}
+                            />
                         </>
                     )}
                 </main>
