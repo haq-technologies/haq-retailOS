@@ -44,7 +44,11 @@ interface Props {
  * it (S6).
  */
 export default function CounterPage({ terminal, tiles, idleLockMinutes, settings }: Props) {
-    const [runtime] = useState(() => new Runtime());
+    const [runtime] = useState(() => {
+        const made = new Runtime();
+        made.cat.noBrandId = settings.noBrandId;
+        return made;
+    });
     const cat = runtime.cat;
     const [catVersion, setCatVersion] = useState(0);
     const [online, setOnline] = useState(true);

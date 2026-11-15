@@ -43,11 +43,11 @@ Printed names follow each category's name order; blank parts are skipped and No 
 
 | Category | Parent | Category word | Facets, in drill order | Name order | Example printed name |
 | --- | --- | --- | --- | --- | --- |
-| Cables |  | Cable | Connector pair, Length, Brand, Rated power | Brand, Connector pair, [category word], Length, Rated power | Anker Type-C to Lightning Cable 1m |
+| Cables |  | Cable | Brand, Connector pair, Length, Rated power | Brand, Connector pair, [category word], Length, Rated power | Anker Type-C to Lightning Cable 1m |
 | Wall chargers |  | (parent, not sellable) |  |  |  |
-| Charger head | Wall chargers | Charger Head | Wattage, Brand | Brand, [category word], Wattage | Otek Charger Head 20W |
-| Complete charger | Wall chargers | Complete Charger | Connector pair, Wattage, Brand | Brand, Connector pair, [category word], Wattage | Oraimo Type-C to Lightning Complete Charger 20W |
-| Car chargers |  | Car Charger | Wattage, Brand, Model | Brand, Model, [category word], Wattage | KLY Car Charger 12W |
+| Charger head | Wall chargers | Charger Head | Brand, Wattage | Brand, [category word], Wattage | Otek Charger Head 20W |
+| Complete charger | Wall chargers | Complete Charger | Brand, Connector pair, Wattage | Brand, Connector pair, [category word], Wattage | Oraimo Type-C to Lightning Complete Charger 20W |
+| Car chargers |  | Car Charger | Brand, Wattage, Model | Brand, Model, [category word], Wattage | KLY Car Charger 12W |
 | Wireless chargers |  | Wireless Charger | Brand, Model, Wattage | Brand, Model, [category word], Wattage | Baseus Wireless Charger 20W |
 | Power banks |  | Power Bank | Brand, Capacity, Model | Brand, Model, [category word], Capacity | Oraimo Traveler 4 Power Bank 20000mAh |
 | Earbuds and earpods |  | Earbuds | Brand, Model | Brand, Model, [category word] | Oraimo FreePods 3C Earbuds |
@@ -269,6 +269,7 @@ The counter offers these unbranded shapes in search and on the tiles; an item is
 | R1 | Each category has a drill order for the tap-through tiles | Proposed defaults; speed data from the shadow pilot confirms them (D12). |
 | R2 | The 127 stored generated lines became 5 generator rules | The same 127 shapes are offered at the counter and an item is created on its first sale, so there is no prune review at setup. |
 | Shop visit | Catalogue v1.1 confirmed with no changes | 6 November 2026. The six C8 categories show the full brand list, with none first; the 16 brands to confirm and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO are kept; Oraimo Watch prints as "Oraimo Watch Smartwatch"; the phone models stand. |
+| D79 | The brand is asked first in cables, charger heads, complete chargers and car chargers | 15 November 2026, by the product owner. The tiles ask the brand, then the details, as power banks already did: one habit for the cashier. Skip brand sells the item with no brand. Nothing else in these categories changed: the same facets, values, names and generated shapes. |
 
 ## C10. Still open
 

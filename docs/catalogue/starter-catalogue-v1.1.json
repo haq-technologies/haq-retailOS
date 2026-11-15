@@ -4012,9 +4012,9 @@
         }
       ],
       "drill_order": [
+        "brand",
         "connector_pair",
         "length",
-        "brand",
         "rated_power"
       ],
       "name_order": [
@@ -4064,8 +4064,8 @@
         }
       ],
       "drill_order": [
-        "wattage",
-        "brand"
+        "brand",
+        "wattage"
       ],
       "name_order": [
         "brand",
@@ -4111,9 +4111,9 @@
         }
       ],
       "drill_order": [
+        "brand",
         "connector_pair",
-        "wattage",
-        "brand"
+        "wattage"
       ],
       "name_order": [
         "brand",
@@ -4160,8 +4160,8 @@
         }
       ],
       "drill_order": [
-        "wattage",
         "brand",
+        "wattage",
         "model"
       ],
       "name_order": [
@@ -5521,6 +5521,11 @@
       "ref": "Shop visit",
       "change": "Catalogue v1.1 confirmed with no changes",
       "detail": "6 November 2026. The six C8 categories show the full brand list, with none first; the 16 brands to confirm and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO are kept; Oraimo Watch prints as \"Oraimo Watch Smartwatch\"; the phone models stand."
+    },
+    {
+      "ref": "D79",
+      "change": "The brand is asked first in cables, charger heads, complete chargers and car chargers",
+      "detail": "15 November 2026, by the product owner. The tiles ask the brand, then the details, as power banks already did: one habit for the cashier. Skip brand sells the item with no brand. Nothing else in these categories changed: the same facets, values, names and generated shapes."
     }
   ],
   "still_open": [

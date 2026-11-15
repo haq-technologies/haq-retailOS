@@ -80,6 +80,29 @@ it('never overwrites a local rename on a later load', function () {
     expect(DB::table('brands')->where('seed_id', 'brand.oraimo')->value('name'))->toBe('Oraimo Nigeria');
 });
 
+it('asks the brand first in the five generated categories, and moves a shop already installed (D79)', function () {
+    $template = fn (string $code) => CategoryTemplate::query()
+        ->where('category_id', DB::table('categories')->where('code', $code)->value('id'))->firstOrFail();
+    foreach (['cables', 'charger_head', 'complete_charger', 'car_chargers', 'power_banks'] as $code) {
+        expect($template($code)->drill_order[0])->toBe('brand');
+    }
+
+    // A shop installed before: cables as the seed gave them then, and complete chargers in an order the shop
+    // chose for itself.
+    $template('cables')->update(['drill_order' => ['connector_pair', 'length', 'brand', 'rated_power']]);
+    $template('complete_charger')->update(['drill_order' => ['wattage', 'connector_pair', 'brand']]);
+    $migration = require database_path('migrations/2026_11_14_000100_brand_first_drill_orders.php');
+
+    $migration->up();
+    expect($template('cables')->drill_order)->toBe(['brand', 'connector_pair', 'length', 'rated_power']);
+    expect($template('complete_charger')->drill_order)->toBe(['wattage', 'connector_pair', 'brand']);
+    expect($template('charger_head')->drill_order)->toBe(['brand', 'wattage']);
+
+    $migration->down();
+    expect($template('cables')->drill_order)->toBe(['connector_pair', 'length', 'brand', 'rated_power']);
+    expect($template('complete_charger')->drill_order)->toBe(['wattage', 'connector_pair', 'brand']);
+});
+
 it('loads from the command line, twice', function () {
     $this->artisan('catalogue:seed')->expectsOutputToContain('Nothing to change')->assertSuccessful();
 });

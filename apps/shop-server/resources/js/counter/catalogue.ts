@@ -33,6 +33,8 @@ export class Catalogue {
     prices = new Map<string, ItemPrices>();
     shapes: Shape[] = [];
     seq = 0;
+    /** The brand list's "No brand" entry, told by the counter page. An item made by it has no brand (D79). */
+    noBrandId: string | null = null;
 
     private facetIndex = new Map<string, ItemFacetRow>(); // by row id
     private templateIndex = new Map<string, TemplateRow>(); // by row id
@@ -149,10 +151,14 @@ export class Catalogue {
         return this.templates.get(categoryId)?.asks_colour ?? false;
     }
 
-    /** The value of one of an item's facets: brand from the item, the rest from its facet rows. */
+    /**
+     * The value of one of an item's facets: brand from the item, the rest from its facet rows. "No brand" is
+     * no brand, so such an item sits with the unbranded ones at the brand step, under Skip brand.
+     */
     facetValue(itemId: string, key: string): string | null {
         if (key === 'brand') {
-            return this.items.get(itemId)?.brand_id ?? null;
+            const brand = this.items.get(itemId)?.brand_id ?? null;
+            return brand === this.noBrandId ? null : brand;
         }
         const row = this.facets.get(itemId)?.get(key);
         return row === undefined ? null : (row.picklist_value_id ?? row.text_value);
