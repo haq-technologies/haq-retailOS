@@ -203,7 +203,7 @@ final readonly class Feed
     /**
      * Creates the item for a generated shape on its first sale, or finds it; with a brand chosen at the
      * counter's brand step, that brand's item (D54). The brand must be a listed one; a merged brand counts
-     * as the one it was merged into.
+     * as the one it was merged into, and "No brand" as none.
      *
      * @param  array<string, string>  $facets
      */
@@ -217,6 +217,10 @@ final readonly class Feed
             }
             if ($brand === null || $brand->status !== 'approved') {
                 return null;
+            }
+            // "No brand" is no brand: the same item as the shape sold with Skip brand, never a second one (D79).
+            if ($brand->seed_id === config('catalogue.no_brand_seed_id')) {
+                $brand = null;
             }
         }
         $template = CategoryTemplate::query()->where('category_id', $categoryId)->first();

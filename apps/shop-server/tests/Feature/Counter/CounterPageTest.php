@@ -40,7 +40,8 @@ it('opens the counter page from home on an enrolled counter, with what the clien
         ->where('terminal.code', 'T01')->where('terminal.canSell', true)
         ->has('tiles', 2)
         ->where('settings.transferAlertTick', true)->where('settings.floorPercent', 50)->where('settings.cashierItemCreation', 'on')
-        ->where('settings.colours', fn ($c) => count($c) > 3));
+        ->where('settings.colours', fn ($c) => count($c) > 3)
+        ->where('settings.noBrandId', Brand::query()->where('seed_id', 'brand.no-brand')->value('id')));
     expect($page->getContent())->not->toContain('cost');
 
     $this->defaultCookies = []; // a device that was never enrolled
@@ -72,6 +73,10 @@ it('lists the generated shapes, and the first sale of one creates its item', fun
     $branded = ($this->as)()->postJson('/api/counter/shapes', ['category_id' => $cables, 'facets' => $shape['facets'], 'brand_id' => $oraimo->id])->assertOk()->json();
     expect($branded['item']['id'])->not->toBe($first['item']['id'])->and($branded['item']['brand_id'])->toBe($oraimo->id);
     expect($branded['item']['display_name'])->toStartWith('Oraimo ')->toContain('Cable');
+    // "No brand" is no brand: the item sold with Skip brand, never a second one with the same name (D79).
+    $none = Brand::query()->where('seed_id', 'brand.no-brand')->firstOrFail();
+    $unbranded = ($this->as)()->postJson('/api/counter/shapes', ['category_id' => $cables, 'facets' => $shape['facets'], 'brand_id' => $none->id])->assertOk()->json();
+    expect($unbranded['item']['id'])->toBe($first['item']['id'])->and($unbranded['item']['brand_id'])->toBeNull();
     // A brand not yet approved, or not a brand at all, is refused.
     $typed = Brand::query()->create(['name' => 'Typed Brand', 'status' => 'pending', 'aliases' => []]);
     ($this->as)()->postJson('/api/counter/shapes', ['category_id' => $cables, 'facets' => $shape['facets'], 'brand_id' => $typed->id])->assertStatus(422);

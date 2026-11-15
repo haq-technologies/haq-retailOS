@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Catalogue } from './catalogue';
-import { drill, parseShapeId } from './drill';
+import { drill, parseShapeId, shapeAtBrandStep } from './drill';
 
 function cables(): Catalogue {
     const cat = new Catalogue();
@@ -88,10 +88,11 @@ describe('the tiles', () => {
         expect(last.tiles).toEqual([{ kind: 'item', id: 'i2', label: 'Oraimo Type-C to Lightning Cable 1m', priceKobo: 300_000, shape: null }]);
     });
 
-    it('offers a generated shape as an item tile, with no price', () => {
-        const view = drill(cables(), { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2c' }] }, 'retail');
+    it('offers a generated shape as an item tile, with no price, once its brand is answered', () => {
+        const choices = [{ key: 'connector_pair', value: 'p-c2c' }, { key: 'brand', value: null }];
+        const view = drill(cables(), { categoryId: 'c-cables', choices }, 'retail');
         expect(view.tiles).toHaveLength(1);
-        expect(view.tiles[0]).toMatchObject({ kind: 'item', label: 'Type-C to Type-C Cable 2m', priceKobo: null });
+        expect(view.tiles[0]).toMatchObject({ kind: 'item', id: 'shape:c-cables:c2c-2m', label: 'Type-C to Type-C Cable 2m', priceKobo: null });
     });
 
     it('a skipped facet keeps only the items without it', () => {
@@ -163,5 +164,79 @@ describe('the brand step with generated shapes (D54)', () => {
         expect(view.prompt).toBe('Choose capacity');
         expect(view.tiles.find((t) => t.label === '20000mAh')).toMatchObject({ itemId: 'i-o20' });
         expect(view.tiles.find((t) => t.label === '10000mAh')).toMatchObject({ itemId: 'shape:c-pb:capacity=p-10k|brand=b-oraimo' });
+    });
+});
+
+describe('a shape waits for its brand (D79)', () => {
+    it('asks the brand before a lone shape is sold, where the brand comes after the other steps', () => {
+        const cat = cables();
+        // Type-C to Type-C has one shape. Its tile no longer adds it: the brand is still to ask.
+        const first = drill(cat, { categoryId: 'c-cables', choices: [] }, 'retail');
+        expect(first.tiles.find((t) => t.label === 'Type-C to Type-C')).toMatchObject({ kind: 'value', itemId: null });
+
+        const brand = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2c' }] }, 'retail');
+        expect(brand.prompt).toBe('Choose brand');
+        expect(brand.tiles.map((t) => t.label)).toEqual(['Oraimo', 'Anker', 'Skip brand']);
+        // Each answer leaves the one shape, so each adds it in one tap: with the brand, or with none.
+        expect(brand.tiles[0]).toMatchObject({ kind: 'value', itemId: 'shape:c-cables:c2c-2m|brand=b-oraimo' });
+        expect(brand.tiles[2]).toMatchObject({ kind: 'skip', itemId: 'shape:c-cables:c2c-2m' });
+    });
+
+    it('asks the brand first where the catalogue says so, then sells each shape as that brand\'s in one tap', () => {
+        const cat = cables();
+        const template = cat.templates.get('c-cables');
+        if (template === undefined) throw new Error('no template');
+        cat.apply({ category_templates: [{ ...template, drill_order: ['brand', 'connector_pair', 'length'] }] });
+
+        const first = drill(cat, { categoryId: 'c-cables', choices: [] }, 'retail');
+        expect(first.prompt).toBe('Choose brand');
+        expect(first.tiles.map((t) => t.label)).toEqual(['Oraimo', 'Anker', 'Skip brand']);
+        // Several cables are left under any answer, so no tile adds one yet.
+        expect(first.tiles.every((t) => t.kind !== 'category' && t.kind !== 'item' && t.itemId === null)).toBe(true);
+
+        const oraimo = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'brand', value: 'b-oraimo' }] }, 'retail');
+        expect(oraimo.prompt).toBe('Choose connector pair');
+        expect(oraimo.tiles.find((t) => t.label === 'Type-C to Type-C')).toMatchObject({ itemId: 'shape:c-cables:c2c-2m|brand=b-oraimo' });
+
+        // With no brand: the shapes, sold as they are.
+        const none = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'brand', value: null }] }, 'retail');
+        expect(none.tiles.find((t) => t.label === 'Type-C to Type-C')).toMatchObject({ itemId: 'shape:c-cables:c2c-2m' });
+    });
+
+    it('never offers "No brand" as a brand: it is the same answer as Skip brand', () => {
+        const cat = cables();
+        cat.apply({
+            brands: [{ id: 'b-none', name: 'No brand', aliases: [], shown_first_in: [], status: 'approved', merged_into_id: null }],
+            // An item made with "No brand" in New item is the unbranded Type-C to Type-C Cable 2m.
+            items: [{ id: 'i-nb', category_id: 'c-cables', brand_id: 'b-none', item_code: 'A00009', display_name: 'Type-C to Type-C Cable 2m', search_text: '', status: 'active' }],
+            item_facets: [
+                { id: 'f-nb1', item_id: 'i-nb', facet_key: 'connector_pair', picklist_value_id: 'p-c2c', text_value: null },
+                { id: 'f-nb2', item_id: 'i-nb', facet_key: 'length', picklist_value_id: 'p-2m', text_value: null },
+            ],
+        });
+        cat.noBrandId = 'b-none';
+
+        const brand = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2c' }] }, 'retail');
+        expect(brand.tiles.map((t) => t.label)).toEqual(['Oraimo', 'Anker', 'Skip brand']);
+        // Skip brand is the item already made, once, not the shape beside it.
+        expect(brand.tiles[2]).toMatchObject({ kind: 'skip', itemId: 'i-nb' });
+        // The cable sold with no brand can still be sold as Oraimo's: another item, made on its first sale.
+        expect(brand.tiles[0]).toMatchObject({ kind: 'value', itemId: 'shape:c-cables:c2c-2m|brand=b-oraimo' });
+    });
+
+    it('puts a shape found by search at its brand step', () => {
+        const cat = cables();
+        const shape = cat.shapes[0];
+        if (shape === undefined) throw new Error('no shape');
+        const at = shapeAtBrandStep(cat, shape);
+        expect(at).toEqual({ categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2c' }, { key: 'length', value: 'p-2m' }] });
+        if (at === null) throw new Error('no state');
+        const view = drill(cat, at, 'retail');
+        expect(view.prompt).toBe('Choose brand');
+        expect(view.tiles.at(-1)).toMatchObject({ kind: 'skip', itemId: 'shape:c-cables:c2c-2m' });
+
+        // A category that asks no brand sells its shape as it is.
+        cat.apply({ category_templates: [{ id: 't1', category_id: 'c-cables', facets: [{ key: 'connector_pair', label: 'Connector pair', type: 'picklist', list: 'connector_pairs' }], drill_order: ['connector_pair'], name_order: ['{word}', 'connector_pair'], asks_colour: false }] });
+        expect(shapeAtBrandStep(cat, shape)).toBeNull();
     });
 });

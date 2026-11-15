@@ -31,10 +31,11 @@ export class CatalogueSync {
 
     async start(): Promise<void> {
         await this.load();
-        if (this.cat.seq === 0) {
+        const fresh = this.cat.seq === 0;
+        if (fresh) {
             await this.snapshot();
         }
-        await this.fetchShapes();
+        await this.fetchShapes(fresh);
         this.schedule(0);
     }
 
@@ -70,7 +71,7 @@ export class CatalogueSync {
                 this.cat.clear();
                 this.cat.seq = 0;
                 await this.snapshot();
-                await this.fetchShapes();
+                await this.fetchShapes(true);
                 this.schedule(0);
                 return;
             }
@@ -147,7 +148,6 @@ export class CatalogueSync {
                     this.generation = page.generation;
                     await setMeta('seq', page.seq);
                     await setMeta('generation', page.generation);
-                    this.events.onItems(null);
                     return;
                 }
                 cursor = page.next;
@@ -158,17 +158,25 @@ export class CatalogueSync {
         }
     }
 
-    private async fetchShapes(): Promise<void> {
+    /**
+     * The generated shapes. A new snapshot is shown only once they are in too: with the items alone, a tile
+     * took an item for the only thing left under a choice while the shapes beside it were still on their way,
+     * and added it in one tap (D79). If the shapes cannot be fetched, the items still sell, and the shapes
+     * come back with the next change.
+     */
+    private async fetchShapes(afterSnapshot = false): Promise<void> {
+        let fetched = false;
         try {
             const answer = await getJson<{ shapes: Shape[] }>('/api/counter/catalogue/shapes', undefined, 30_000);
             if (answer.ok) {
                 this.cat.shapes = answer.body.shapes;
                 await setMeta('shapes', answer.body.shapes);
-                this.events.onItems(null);
+                fetched = true;
             }
         } catch {
-            // The shapes come back with the next change; the items still sell.
+            // Told below: after a snapshot the items are shown without them.
         }
+        if (fetched || afterSnapshot) this.events.onItems(null);
     }
 
     private async persist(rows: FeedRows, removed: ChangesPage['removed'], prices: ItemPrices[]): Promise<void> {

@@ -90,6 +90,8 @@ final class CounterController
                 'retypeMultiple' => $settings->get('pricing.retype_multiple'),
                 'colours' => $colours,
                 'cashierItemCreation' => $settings->get('catalogue.cashier_item_creation') === 'request_only' ? 'request_only' : 'on',
+                // "No brand" in the brand list is the same answer as Skip brand at the tiles (D79).
+                'noBrandId' => DB::table('brands')->where('seed_id', config('catalogue.no_brand_seed_id'))->value('id'),
             ],
         ]);
     }

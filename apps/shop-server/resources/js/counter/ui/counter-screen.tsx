@@ -6,7 +6,7 @@ import { addLine, emptyCart, removeLine, restoreLine, setColour, setCustomerType
 import type { Catalogue } from '../catalogue';
 import { addToJournal } from '../db';
 import { journalEntry, reportJournal } from '../recovery';
-import { drill, parseShapeId, type DrillState, type Tile } from '../drill';
+import { drill, parseShapeId, shapeAtBrandStep, type DrillState, type Tile } from '../drill';
 import { naira } from '../money';
 import { isReceiptNumber, ScanDetector } from '../scanner';
 import type { SearchClient } from '../search-client';
@@ -30,6 +30,8 @@ import { WaitingSales } from './waiting';
  */
 export interface FullSettings extends CounterSettings {
     cashierItemCreation: 'on' | 'request_only';
+    /** The brand list's "No brand" entry: the same answer as Skip brand (D79). */
+    noBrandId: string | null;
 }
 
 interface Props {
@@ -381,8 +383,21 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
         if (tile.kind === 'category') setState({ categoryId: tile.id, choices: [] });
         else if (tile.kind === 'value' && tile.itemId !== null) void addItem(tile.itemId, { addedBy: learnCode === null ? 'tile' : 'learn', barcode: learnCode }, [...view_.crumbs, tile.label]);
         else if (tile.kind === 'value') setState((s) => ({ ...s, choices: [...s.choices, { key: tile.key, value: tile.value }] }));
+        else if (tile.kind === 'skip' && tile.itemId !== null) void addItem(tile.itemId, { addedBy: learnCode === null ? 'tile' : 'learn', barcode: learnCode }, view_.crumbs);
         else if (tile.kind === 'skip') setState((s) => ({ ...s, choices: [...s.choices, { key: tile.key, value: null }] }));
         else void addItem(tile.id, { addedBy: learnCode === null ? 'tile' : 'learn', barcode: learnCode }, view_.crumbs);
+    };
+
+    /** A search result: an item is added; a shape goes to its brand step first, where its category has one (D79). */
+    const pickResult = (tile: Tile & { kind: 'item' }) => {
+        const at = tile.shape === null ? null : shapeAtBrandStep(cat, tile.shape);
+        if (at === null) {
+            void addItem(tile.id, { addedBy: learnCode === null ? 'search' : 'learn', barcode: learnCode, searchTerm: query });
+            return;
+        }
+        setQuery('');
+        setResults([]);
+        setState(at);
     };
 
     const back = () => {
@@ -708,7 +723,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                                         const first = resultTiles[0];
                                         if (e.key === 'Enter' && first !== undefined && first.kind === 'item') {
                                             e.preventDefault();
-                                            void addItem(first.id, { addedBy: learnCode === null ? 'search' : 'learn', barcode: learnCode, searchTerm: query });
+                                            pickResult(first);
                                         } else if (e.key === 'Escape') {
                                             setQuery('');
                                             setResults([]);
@@ -751,7 +766,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                                         className={`flex min-h-[104px] flex-col items-start justify-between rounded-xl border-2 p-3 text-left ${tile.kind === 'skip' ? 'border-dashed border-border' : 'border-border'}`}
                                         onClick={() => {
                                             if (searching && tile.kind === 'item') {
-                                                void addItem(tile.id, { addedBy: learnCode === null ? 'search' : 'learn', barcode: learnCode, searchTerm: query });
+                                                pickResult(tile);
                                             } else {
                                                 tapTile(tile);
                                             }

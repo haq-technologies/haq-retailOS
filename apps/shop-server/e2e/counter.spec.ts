@@ -48,14 +48,18 @@ async function scan(page: Page, code: string): Promise<void> {
     }, code);
 }
 
-async function addCable(page: Page, price: string): Promise<void> {
+/** The tiles to a cable: the brand first, with every listed brand (D54, D79); these tests sell it with no brand. */
+async function drillToCable(page: Page, connector: RegExp, length: RegExp): Promise<void> {
     await page.getByRole('button', { name: 'Cables', exact: true }).click();
+    await expect(page.getByText('Choose brand')).toBeVisible();
+    await page.getByRole('button', { name: /^Skip brand/ }).click();
     await expect(page.getByText('Choose connector pair')).toBeVisible();
-    await page.getByRole('button', { name: /^Type-C to Lightning/ }).first().click();
-    await page.getByRole('button', { name: /^1m/ }).first().click();
-    // The brand step offers every listed brand (D54); these tests sell the cable with no brand.
-    const skip = page.getByRole('button', { name: /^Skip brand/ });
-    if (await skip.isVisible().catch(() => false)) await skip.click();
+    await page.getByRole('button', { name: connector }).first().click();
+    await page.getByRole('button', { name: length }).first().click();
+}
+
+async function addCable(page: Page, price: string): Promise<void> {
+    await drillToCable(page, /^Type-C to Lightning/, /^1m/);
     const pad = page.getByRole('dialog', { name: 'Price' });
     await expect(pad).toBeVisible();
     await expect(pad.getByText('Prints as')).toBeVisible();
@@ -95,12 +99,7 @@ test('signs in, drills to a cable, types its first price, takes cash and prints 
 
 test('remembers the price it sold at, and asks before an unusual one', async ({ browser }) => {
     const page = await counter(browser, 'T01');
-    await page.getByRole('button', { name: 'Cables', exact: true }).click();
-    await page.getByRole('button', { name: /^Type-C to Lightning/ }).first().click();
-    await page.getByRole('button', { name: /^1m/ }).first().click();
-    // The brand step offers every listed brand (D54); these tests sell the cable with no brand.
-    const skip = page.getByRole('button', { name: /^Skip brand/ });
-    if (await skip.isVisible().catch(() => false)) await skip.click();
+    await drillToCable(page, /^Type-C to Lightning/, /^1m/);
     const pad = page.getByRole('dialog', { name: 'Price' });
     await expect(pad.getByText('Filled in from the last sale')).toBeVisible();
     await page.screenshot({ path: 'e2e/results/screens/price-pad.png' });
@@ -207,6 +206,40 @@ test('offers every brand for a power bank in a fresh shop, and the receipt name 
     await expect(pad).toContainText('Oraimo Power Bank 20000mAh');
 });
 
+test('asks the brand for a cable and a charger head in a fresh shop, at the tiles and from search (D79)', async ({ browser }) => {
+    const page = await counter(browser, 'T02');
+    const pad = page.getByRole('dialog', { name: 'Price' });
+
+    // Cables: the brand, then the connector pair, then the length. The last tap adds it as Oraimo's.
+    await page.getByRole('button', { name: 'Cables', exact: true }).click();
+    await expect(page.getByText('Choose brand')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'No brand', exact: true })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Oraimo', exact: true }).click();
+    await expect(page.getByText('Choose connector pair')).toBeVisible();
+    await page.getByRole('button', { name: /^Type-C to Type-C/ }).first().click();
+    await page.getByRole('button', { name: /^2m/ }).first().click();
+    await expect(pad).toContainText('Oraimo Type-C to Type-C Cable 2m');
+    await pad.getByRole('button', { name: 'Back' }).click();
+
+    // A charger head: its only other step is the wattage, and the brand is still asked before it.
+    await page.getByRole('button', { name: 'All', exact: true }).click();
+    await page.getByRole('button', { name: 'Wall chargers', exact: true }).click();
+    await page.getByRole('button', { name: 'Charger head', exact: true }).click();
+    await expect(page.getByText('Choose brand')).toBeVisible();
+    await page.getByRole('button', { name: /^Skip brand/ }).click();
+    await page.getByRole('button', { name: /^20W/ }).first().click();
+    await expect(pad).toContainText('Charger Head 20W');
+    await expect(pad).not.toContainText('Oraimo');
+    await pad.getByRole('button', { name: 'Back' }).click();
+
+    // A cable found by search that nobody has sold yet: its brand is asked before it is added.
+    await page.getByPlaceholder('Search or scan').fill('type-c to type-c 0.25m');
+    await page.getByRole('button', { name: /^Type-C to Type-C Cable 0\.25m/ }).first().click();
+    await expect(page.getByText('Choose brand')).toBeVisible();
+    await page.getByRole('button', { name: 'Anker', exact: true }).click();
+    await expect(pad).toContainText('Anker Type-C to Type-C Cable 0.25m');
+});
+
 test('shows an item made at one counter in the other counter\'s search within 5 seconds, and warns of a near-duplicate there (check A9)', async ({ browser }) => {
     const a = await counter(browser, 'T01');
     const b = await counter(browser, 'T02');
@@ -245,11 +278,7 @@ test('shows an item made at one counter in the other counter\'s search within 5 
 
 test('keeps a manager\'s approval of a price below the floor through a slow transfer, and the other counter finishes it (check D4)', async ({ browser }) => {
     const one = await counter(browser, 'T01');
-    await one.getByRole('button', { name: 'Cables', exact: true }).click();
-    await one.getByRole('button', { name: /^USB-A to Micro-USB/ }).first().click();
-    await one.getByRole('button', { name: /^3m/ }).first().click();
-    const skip = one.getByRole('button', { name: /^Skip brand/ });
-    if (await skip.isVisible().catch(() => false)) await skip.click();
+    await drillToCable(one, /^USB-A to Micro-USB/, /^3m/);
     // A set price adds the cable at ₦3,000 in one tap; the cashier changes the line's price.
     const sale = one.getByRole('complementary', { name: 'Sale' });
     await sale.getByRole('button', { name: 'Change the price of USB-A to Micro-USB Cable 3m' }).click();

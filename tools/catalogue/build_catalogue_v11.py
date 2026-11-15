@@ -231,20 +231,20 @@ WATT = pl("wattage", "Wattage", "wattages")
 categories = [
     cat("cables", "Cables", "Cable",
         [BRAND, CP, pl("length", "Length", "cable_lengths"), pl("rated_power", "Rated power", "cable_rated_power")],
-        ["connector_pair", "length", "brand", "rated_power"], ["brand", "connector_pair", W, "length", "rated_power"],
+        ["brand", "connector_pair", "length", "rated_power"], ["brand", "connector_pair", W, "length", "rated_power"],  # D79
         {"brand": "brand.anker", "connector_pair": "connector_pairs.type-c-to-lightning", "length": "cable_lengths.1m"},
         "Anker Type-C to Lightning Cable 1m"),
     parent("wall_chargers", "Wall chargers"),
-    cat("charger_head", "Charger head", "Charger Head", [BRAND, WATT], ["wattage", "brand"], ["brand", W, "wattage"],
+    cat("charger_head", "Charger head", "Charger Head", [BRAND, WATT], ["brand", "wattage"], ["brand", W, "wattage"],  # D79
         {"brand": "brand.otek", "wattage": "wattages.20w"}, "Otek Charger Head 20W", parent="wall_chargers",
         aliases=["charger head", "wall charger without cable", "adapter"]),
     cat("complete_charger", "Complete charger", "Complete Charger", [BRAND, CP, WATT],
-        ["connector_pair", "wattage", "brand"], ["brand", "connector_pair", W, "wattage"],
+        ["brand", "connector_pair", "wattage"], ["brand", "connector_pair", W, "wattage"],  # D79
         {"brand": "brand.oraimo", "connector_pair": "connector_pairs.type-c-to-lightning", "wattage": "wattages.20w"},
         "Oraimo Type-C to Lightning Complete Charger 20W", parent="wall_chargers",
         aliases=["complete charger", "charger and cable", "full charger"]),
     cat("car_chargers", "Car chargers", "Car Charger", [BRAND, tx("model", "Model"), WATT],
-        ["wattage", "brand", "model"], ["brand", "model", W, "wattage"],
+        ["brand", "wattage", "model"], ["brand", "model", W, "wattage"],  # D79
         {"brand": "brand.kly", "wattage": "wattages.12w"}, "KLY Car Charger 12W"),
     cat("wireless_chargers", "Wireless chargers", "Wireless Charger", [BRAND, tx("model", "Model"), WATT],
         ["brand", "model", "wattage"], ["brand", "model", W, "wattage"],
@@ -431,6 +431,10 @@ changelog.append(("Shop visit", "Catalogue v1.1 confirmed with no changes",
                   "6 November 2026. The six C8 categories show the full brand list, with none first; the 16 brands "
                   "to confirm and the short codes HF, AI, LP, BM, DV, JZ, EX and UWO are kept; Oraimo Watch prints "
                   "as \"Oraimo Watch Smartwatch\"; the phone models stand."))
+changelog.append(("D79", "The brand is asked first in cables, charger heads, complete chargers and car chargers",
+                  "15 November 2026, by the product owner. The tiles ask the brand, then the details, as power banks "
+                  "already did: one habit for the cashier. Skip brand sells the item with no brand. Nothing else in "
+                  "these categories changed: the same facets, values, names and generated shapes."))
 still_open = [
     "Drill orders are proposals until speed data from the shadow pilot confirms them (D12).",
 ]

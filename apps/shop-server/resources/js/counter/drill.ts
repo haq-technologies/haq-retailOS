@@ -9,6 +9,12 @@ import type { CustomerType, FacetDefinition, Shape } from './types';
  * A brand is never multiplied into the generated shapes (catalogue v1.1), so the brand step offers the full
  * brand list wherever a shape could still be chosen, as agreed at the shop visit; a shape chosen after a
  * brand becomes that brand's item on its first sale (D54).
+ *
+ * A shape is never the last answer while its brand is still to ask (D79). Until then a category that asks
+ * the brand after its other steps never reached the brand step: one shape was left, and the one-tap rule
+ * (D34) added it with no brand. Now the brand step comes first, with every listed brand and Skip brand, and
+ * Skip adds the item with no brand in one tap. "No brand" in the brand list is the same answer as Skip, so
+ * it is not offered as a brand.
  */
 export interface DrillState {
     categoryId: string | null;
@@ -18,7 +24,7 @@ export interface DrillState {
 export type Tile =
     | { kind: 'category'; id: string; label: string }
     | { kind: 'value'; key: string; value: string; label: string; itemId: string | null; priceKobo: number | null }
-    | { kind: 'skip'; key: string; label: string; hint: string }
+    | { kind: 'skip'; key: string; label: string; hint: string; itemId: string | null }
     | { kind: 'item'; id: string; label: string; priceKobo: number | null; shape: Shape | null };
 
 export interface DrillView {
@@ -37,6 +43,21 @@ export function brandedShapeId(shapeId: string, brandId: string): string {
 export function parseShapeId(id: string): { shapeId: string; brandId: string | null } {
     const [shapeId = id, brand] = id.split('|brand=');
     return { shapeId, brandId: brand ?? null };
+}
+
+/**
+ * Where the tiles stand for a shape found by search: every step but the brand answered as the shape has
+ * it, so the brand step shows next and the shape is sold with its brand or with Skip brand (D79). Null
+ * where the category asks no brand; the shape is then sold as it is.
+ */
+export function shapeAtBrandStep(cat: Catalogue, shape: Shape): DrillState | null {
+    const template = cat.templates.get(shape.category_id);
+    const brandKey = template?.drill_order.find((key) => template.facets.find((f) => f.key === key)?.type === 'brand');
+    if (template === undefined || brandKey === undefined) return null;
+    return {
+        categoryId: shape.category_id,
+        choices: template.drill_order.filter((key) => key !== brandKey).map((key) => ({ key, value: shape.facets[key] ?? null })),
+    };
 }
 
 interface Candidate {
@@ -66,18 +87,26 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
 
     const template = cat.templates.get(node.id);
     const facets = template?.facets ?? [];
-    let candidates = candidatesFor(cat, node.id);
+    // The pool: every item and every shape the choices so far allow. A shape stays in it under any brand,
+    // even when it has been sold with another brand or with none, so it can still be sold under this one.
+    let pool = candidatesFor(cat, node.id);
     let brand: string | null = null;
     for (const choice of state.choices) {
         const definition = facets.find((f) => f.key === choice.key);
         if (definition?.type === 'brand' && choice.value !== null) brand = choice.value;
-        candidates = candidates.filter((c) => matches(c, definition, choice.key, choice.value));
+        pool = pool.filter((c) => matches(c, definition, choice.key, choice.value));
         crumbs.push(choice.value === null ? `No ${definition?.label.toLowerCase() ?? choice.key}` : valueLabel(cat, definition, choice.value));
     }
-    candidates = distinct(candidates, facets, brand);
+    // What shows now: the pool, with each shape that is already an item under the brand so far shown once.
+    const candidates = distinct(pool, facets, brand);
 
     const chosen = new Set(state.choices.map((c) => c.key));
-    if (template !== undefined && candidates.length > 1) {
+    // The brand step, while it is still to ask. A shape waits for it: with a brand it is another item (D79).
+    const brandKey = template?.drill_order.find((key) => facets.find((f) => f.key === key)?.type === 'brand');
+    const brandOpen = brandKey !== undefined && !chosen.has(brandKey);
+    const shapeInPool = pool.some((c) => c.shape !== null);
+    const shapeWaits = brandOpen && shapeInPool;
+    if (template !== undefined && (candidates.length > 1 || shapeWaits)) {
         for (const key of template.drill_order) {
             if (chosen.has(key)) continue;
             const definition = template.facets.find((f) => f.key === key);
@@ -89,37 +118,42 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
                 else values.add(v);
             }
             // While a shape could still be chosen, every listed brand is offered, not only those already sold.
-            if (definition?.type === 'brand' && candidates.some((c) => c.shape !== null)) {
+            if (definition?.type === 'brand' && shapeInPool) {
                 for (const b of cat.brands.values()) {
-                    if (b.status === 'approved') values.add(b.id);
+                    if (b.status === 'approved' && b.id !== cat.noBrandId) values.add(b.id);
                 }
             }
             // One value and no blanks, or nothing at all: there is nothing to choose at this step.
             if (values.size === 0 || (values.size === 1 && blanks === 0)) continue;
 
             const label = definition?.label ?? key;
-            // A value that leaves one item is that item: the tile shows its price and adds it in one tap.
+            const isBrand = definition?.type === 'brand';
+            // What a tile leaves is worked out as the next step would: under a brand, the shapes not yet sold
+            // as that brand's items stay too, so a brand with one item sold still offers the rest (a power
+            // bank's other capacities, a cable's other lengths). A tile that leaves one thing to sell is that
+            // thing: it adds it in one tap. A shape is not yet a thing to sell while its brand is to ask.
+            const leaves = (value: string | null): { itemId: string | null; priceKobo: number | null } => {
+                const brandAfter = isBrand ? value : brand;
+                const left = distinct(
+                    pool.filter((c) => matches(c, definition, key, value)),
+                    facets,
+                    brandAfter,
+                );
+                const only = left.length === 1 ? left[0] : undefined;
+                if (only === undefined || (only.shape !== null && brandOpen && !isBrand)) return { itemId: null, priceKobo: null };
+                if (only.shape !== null) {
+                    // A shape left after a brand was chosen is added as that brand's item (D54).
+                    return { itemId: brandAfter !== null ? brandedShapeId(only.id, brandAfter) : only.id, priceKobo: null };
+                }
+                const price = cat.priceFor(only.id, type);
+                return { itemId: only.id, priceKobo: price.setPrice ?? price.prefill };
+            };
             const tiles: Tile[] = [...values]
                 .map((v) => ({ v, label: valueLabel(cat, definition, v), order: valueOrder(cat, definition, v, node.code) }))
                 .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
-                .map(({ v, label: text }) => {
-                    // What the tile leaves is worked out as the next step would: under a brand, the shapes not
-                    // yet sold as that brand's items stay too, so a brand with one item sold still offers the
-                    // rest (a power bank's other capacities, a cable's other lengths).
-                    const brandAfter = definition?.type === 'brand' ? v : brand;
-                    const left = distinct(
-                        candidates.filter((c) => matches(c, definition, key, v)),
-                        facets,
-                        brandAfter,
-                    );
-                    const only = left.length === 1 ? left[0] : undefined;
-                    const price = only === undefined || only.shape !== null ? null : cat.priceFor(only.id, type);
-                    // A shape left after a brand was chosen is added as that brand's item (D54).
-                    const itemId = only === undefined ? null : only.shape !== null && brandAfter !== null ? brandedShapeId(only.id, brandAfter) : only.id;
-                    return { kind: 'value' as const, key, value: v, label: text, itemId, priceKobo: price === null ? null : (price.setPrice ?? price.prefill) };
-                });
+                .map(({ v, label: text }) => ({ kind: 'value' as const, key, value: v, label: text, ...leaves(v) }));
             if (blanks > 0) {
-                tiles.push({ kind: 'skip', key, label: `Skip ${label.toLowerCase()}`, hint: `Prints without a ${label.toLowerCase()}` });
+                tiles.push({ kind: 'skip', key, label: `Skip ${label.toLowerCase()}`, hint: `Prints without a ${label.toLowerCase()}`, itemId: leaves(null).itemId });
             }
             return { crumbs, prompt: `Choose ${label.toLowerCase()}`, tiles };
         }
@@ -162,16 +196,18 @@ function distinct(candidates: Candidate[], facets: FacetDefinition[], brand: str
     );
 }
 
+/**
+ * A category's items and all its shapes. A shape already sold stays: distinct() shows it once, as its item,
+ * under the brand it was sold with, and it is still there to sell under another brand.
+ */
 function candidatesFor(cat: Catalogue, categoryId: string): Candidate[] {
     const out: Candidate[] = [];
-    const taken = new Set<string>();
     for (const item of cat.items.values()) {
         if (item.category_id !== categoryId || !cat.sellable(item)) continue;
         out.push({ id: item.id, label: item.display_name, shape: null, value: (key) => cat.facetValue(item.id, key) });
-        taken.add(item.display_name.toLowerCase());
     }
     for (const shape of cat.shapes) {
-        if (shape.category_id !== categoryId || taken.has(shape.display_name.toLowerCase())) continue;
+        if (shape.category_id !== categoryId) continue;
         out.push({ id: shape.id, label: shape.display_name, shape, value: (key) => (key === 'brand' ? null : (shape.facets[key] ?? null)) });
     }
     return out;
