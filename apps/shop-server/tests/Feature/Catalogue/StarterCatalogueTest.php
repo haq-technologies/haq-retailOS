@@ -91,7 +91,7 @@ it('asks the brand first in the five generated categories, and moves a shop alre
     // chose for itself.
     $template('cables')->update(['drill_order' => ['connector_pair', 'length', 'brand', 'rated_power']]);
     $template('complete_charger')->update(['drill_order' => ['wattage', 'connector_pair', 'brand']]);
-    $migration = require database_path('migrations/2026_11_15_000100_brand_first_drill_orders.php');
+    $migration = require database_path('migrations/2026_11_14_000100_brand_first_drill_orders.php');
 
     $migration->up();
     expect($template('cables')->drill_order)->toBe(['brand', 'connector_pair', 'length', 'rated_power']);
