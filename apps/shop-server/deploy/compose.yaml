@@ -28,6 +28,8 @@ x-app: &app
     DB_USERNAME: retail_app
     DB_PASSWORD: ${RETAIL_APP_PASSWORD}
     SESSION_SECURE_COOKIE: "true"
+    # The release installed, written by the installer and the updater; server health shows it (D81).
+    RELEASE_VERSION: ${RELEASE_VERSION:-}
   volumes:
     - storage:/app/storage
   depends_on:

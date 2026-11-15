@@ -48,7 +48,12 @@ jobs:
           gh release download "$VERSION" --repo "$GITHUB_REPOSITORY" --dir "release/$VERSION" \
             --pattern manifest.json --pattern manifest.json.sig --pattern compose.yaml
 
+      # The release's tag, its manifest and its images are one commit's (D81): a manifest that names its
+      # commit must name the commit the tag is on.
       - name: Check the release and tag its images
         env:
+          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ github.event.release.tag_name || inputs.version }}
-        run: tools/release/tag-images.sh --release "release/$VERSION"
+        run: |
+          tagged="$(gh api "repos/$GITHUB_REPOSITORY/commits/$VERSION" --jq .sha)"
+          tools/release/tag-images.sh --release "release/$VERSION" --tag-commit "$tagged"

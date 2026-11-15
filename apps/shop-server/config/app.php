@@ -25,12 +25,13 @@ return [
     | Application Version
     |--------------------------------------------------------------------------
     |
-    | The release version, stamped into the production image when it is built
-    | from a release tag. Development shows "dev".
+    | The release installed, written by the installer and the updater as
+    | RELEASE_VERSION (D81). An image that is not installed as a release shows
+    | the commit it was built from, and development shows "dev".
     |
     */
 
-    'version' => env('APP_VERSION', 'dev'),
+    'version' => env('RELEASE_VERSION') ?: env('APP_VERSION', 'dev'),
 
     /*
     |--------------------------------------------------------------------------

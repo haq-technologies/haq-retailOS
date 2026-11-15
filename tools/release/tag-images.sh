@@ -6,7 +6,10 @@
 # with no rebuild. A version tag that already names another image is never moved: a published version always
 # means the same images.
 #
-#   tools/release/tag-images.sh --release release/2026.11.1 [--check-only] [--public-key file.pem]
+#   tools/release/tag-images.sh --release release/2026.11.1 [--check-only] [--public-key file.pem] [--tag-commit <commit>]
+#
+# --tag-commit is the commit the release's git tag points at. A manifest that names its commit (D81) must
+# name that one: the release's tag, its manifest and its images are then all one commit's.
 #
 # The Release workflow runs it when a release is published, and on request for one published earlier, with
 # push rights to GHCR. With --check-only it checks the release and lists the tags it would make, without
@@ -16,11 +19,13 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 release=""
 check_only=0
 public_key="$root/apps/shop-server/deploy/release-public.pem"
+tag_commit=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --release) release="$2"; shift 2 ;;
         --check-only) check_only=1; shift ;;
         --public-key) public_key="$2"; shift 2 ;;
+        --tag-commit) tag_commit="$2"; shift 2 ;;
         *) echo "Unknown option $1" >&2; exit 2 ;;
     esac
 done
@@ -43,6 +48,12 @@ fi
 version="$(json "$release/manifest.json" version)"
 if ! printf '%s' "$version" | grep -Eq '^[0-9]{4}\.[0-9]{1,2}\.[0-9]+$'; then
     echo "The release's version ($version) is not YEAR.MONTH.N, so no image was tagged." >&2
+    exit 1
+fi
+commit="$(json "$release/manifest.json" commit 2>/dev/null || true)"
+if [ -n "$tag_commit" ] && [ -n "$commit" ] && [ "$tag_commit" != "$commit" ]; then
+    echo "The release's tag is on commit $tag_commit, and its manifest names $commit, so no image was tagged." >&2
+    echo "Publish the release on the manifest's commit: gh release create $version ... --target $commit" >&2
     exit 1
 fi
 echo "Release $version is signed and checks out."

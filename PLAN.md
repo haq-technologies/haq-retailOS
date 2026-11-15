@@ -45,7 +45,7 @@ A readiness QA review on 11 November 2026 (a Claude Doc) passed every suite and 
 
 The product owner signed and published release 2026.11.2 the same day, the release that goes live; each of its images carries the version tag on GHCR, on the digests the manifest signs.
 
-A review on 14 and 15 November 2026, asked for by the product owner after New item's fields lost focus, found five faults at the counter in release 2026.11.2 (D76): a field in any sheet lost focus within 3 seconds, a receipt's barcode would not scan on a real scanner, a manager's PIN typed at Pay joined the cash received, an open Returns refused a scanned receipt, and unprinted receipts were checked every 15 seconds. All five are fixed with tests. Two more faults showed while fixing them: a cost dated today was refused in the first hour after midnight in Lagos (D77), and the images' security updates were only as new as CI's build cache (D78). The tiles now ask the brand in every category with generated shapes, and ask it first (D79); until now only power banks did. New item is laid out for the screen, with no long scroll (D80), at the product owner's word before G5. So release 2026.11.2 does not go live: release 2026.11.3 does, once the product owner signs it and the G3 rehearsal passes on it.
+A review on 14 and 15 November 2026, asked for by the product owner after New item's fields lost focus, found five faults at the counter in release 2026.11.2 (D76): a field in any sheet lost focus within 3 seconds, a receipt's barcode would not scan on a real scanner, a manager's PIN typed at Pay joined the cash received, an open Returns refused a scanned receipt, and unprinted receipts were checked every 15 seconds. All five are fixed with tests. Two more faults showed while fixing them: a cost dated today was refused in the first hour after midnight in Lagos (D77), and the images' security updates were only as new as CI's build cache (D78). The tiles now ask the brand in every category with generated shapes, and ask it first (D79); until now only power banks did. New item is laid out for the screen, with no long scroll (D80), at the product owner's word before G5. The releases now reach shops in stages, by channel, and each names its commit (D81). So release 2026.11.2 does not go live: release 2026.11.3 does, once the product owner signs it and the G3 rehearsal passes on it.
 
 Next: the shop owner's answers (Open items), then release 2026.11.3 signed and rehearsed, then install at the shop with it (docs/operations/install-a-shop.md), then the safety week (docs/operations/measured-pilot.md) and G5.
 
@@ -92,14 +92,14 @@ There is no pilot (D67): the shadow-pilot row is gone, and go-live follows G4, w
 
 Every change runs the full test suite against a real PostgreSQL before it can merge, and every release reaches a shop as Docker images pulled from GitHub and checked against a signed release manifest [D1, D2].
 
-1. **Branch and pull request.** Short-lived branches off main; green CI to merge, with no review while one person builds it (D6, D15); no direct pushes.
+1. **Branch and pull request.** One long branch, main; short-lived branches off it; green CI to merge, with no review while one person builds it (D6, D15); no direct pushes. No develop branch and no branch per stage: a release passes through its stages as the same images (D81; docs/operations/releases.md).
 2. **CI on every pull request.** Lint and static analysis (Pint, PHPStan, ESLint); unit tests (Pest, Vitest); concurrency, crash and restore tests on a real PostgreSQL; counter flows in Playwright on Docker Compose; the previous release's code against the new schema, and an upgrade from two versions back; the seed validator, the cost-leak scan, the dependency audits, an image scan, a coverage floor and the restore drill. The same run happens every Monday, with third-party actions pinned by commit (D65).
 3. **Merge to main.** Docker images are built once and pushed to GHCR, pinned by digest.
 4. **Staging.** The product owner's computer, with the stand-in printer and 5,000 test items, deploys from main (D16, D60).
-5. **Tag a release.** A semantic version, weekly in the pilot, with notes generated from the merged pull requests.
-6. **Release manifest.** Image digests, the compose file and the migrations, in one file the updater trusts.
+5. **Tag a release.** A version, YEAR.MONTH.N, on one commit of main; its tag, its manifest and its images all name that commit (D81). A fix for a release already out, when main cannot be released, comes from a short release branch cut from that release's tag.
+6. **Release manifest.** The commit, its image digests and its Compose file's hash, in one file the updater trusts.
 7. **Offline signing.** A person signs the manifest with a hardware key; CI never holds the release key. Publishing the signed release tags its images with its version on GHCR, after the same checks the updater makes (D70).
-8. **The shop pulls from GitHub.** Over a phone hotspot where the shop has no internet; a MiFi is optional [D3].
+8. **The shop pulls from GitHub.** Over a phone hotspot where the shop has no internet; a MiFi is optional [D3]. A release goes to the beta shop first, as a pre-release, then to every shop once it is marked the latest; each shop is on the stable, beta or pinned channel (D81).
 9. **The updater on the shop server.** Verifies the signature, pulls every image, backs up, migrates, runs the health check, and rolls back the code only if the check fails.
 
 | Phase | CI/CD work | Owner |
@@ -262,7 +262,9 @@ Assumptions:
 | Busy-day sales volume | Product owner, from the notebook | Install | Measured in the first live week |
 | Make the repository private and move the organisation to GitHub Team (US$4 per member per month) | Product owner | When the product owner chooses; application code is public from Phase 2 (D22) | Public (D10) |
 | A read-only GHCR token for each shop server's updater: the image packages are private. Staging on this computer already pulls from GHCR | Product owner, Claude | Install (week 13) | The pilot server's token was made by the product owner on 7 November 2026 (classic, read:packages only); it is given to install.sh on the pilot server, which keeps it in secrets/ |
-| Tile (drill) order per category | Speed data from the first live weeks (D12, D67) | A month after go-live | The v1.1 proposal |
+| Tile (drill) order per category | Speed data from the first live weeks (D12, D67) | A month after go-live | The v1.1 proposal, with the brand first in the five generated categories (D79) |
+| The updater and the other tools in a shop's install folder come from the release it was installed from; a fix to the updater itself needs `install.sh` run again. Carry the tools in each signed release | Claude | Before the second shop | `install.sh` is run again from a newer release |
+| Which shop runs which release: today `sudo haq version` and the server health page, shop by shop. A list kept outside this public repository, then a fleet view | Product owner, Claude | Before the third shop | Asked shop by shop |
 | The pilot shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install (week 13) | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Week 13 | The paper-pad downtime procedure (spec section 9) |
 | Whether the shop's notebook records how each sale was paid (cash, transfer or POS), which the safety week's totals compare | Product owner, from the shop owner | The safety week | The cashiers add a payment column for the 14 days (docs/operations/measured-pilot.md) |
