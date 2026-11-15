@@ -594,7 +594,7 @@ Every practice below is here because it serves one of the six problems (P1 to P6
 |---|---|---|
 | Clarity and deference | The counter shows only the sale: items, price field, total. No dashboards or menus in the way. | P2 |
 | Touch first | Counters are touchscreens; keyboard and mouse are full fallbacks. [Q5] | P2 |
-| Responsive | Every screen works from phone width to large monitors. Breakpoints: compact under 600px (one column; the cart becomes a bottom sheet with a sticky Pay bar), medium 600 to 1023px, and large from 1024px (tiles and cart side by side). Touch targets stay at least 56px at every size. [D5] | P2, P5 |
+| Responsive | Every screen works from phone width to large monitors. Breakpoints: compact under 600px (one column; the cart becomes a bottom sheet with a sticky Pay bar), medium 600 to 1023px, and large from 1024px (tiles and cart side by side). Touch targets stay at least 56px at every size. [D5] A sheet keeps its title bar, with Cancel, in view, and only its middle scrolls. New item shows two panes from 600px (the details; and the printed name, the price, the keypad and Add, always in view) and two steps under 600px (Details, then Price), so nothing is reached by a long scroll. [D80] | P2, P5 |
 | Large touch targets | At least 56px, with clear gaps between a primary and a destructive button. | P2 |
 | Immediate feedback | Every local interaction responds within 100 ms. Scan success and failure have distinct sounds. | P2, P3 |
 | Forgiveness over confirmation | Undo for line removal and held sales. Confirm only for irreversible actions, with verb labels (“Void sale”, not “OK”). | P2, P4 |
