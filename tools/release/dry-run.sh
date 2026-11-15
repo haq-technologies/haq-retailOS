@@ -67,4 +67,37 @@ release "$tmp/odd" 2026.11
 "$root/tools/release/sign.sh" "$tmp/odd/manifest.json" "$tmp/key/release-private.pem" >/dev/null
 expect fail "a release whose version is not YEAR.MONTH.N is never tagged" tag "$tmp/odd"
 
+# A release names the commit it is made from, and its tag is on that commit (D81).
+add() { # $1: folder, $2: a field to put in the manifest, as "name": "value"
+    sed -i.bak "s/\"schema\": 1,/\"schema\": 1, $2,/" "$1/manifest.json"
+    "$root/tools/release/sign.sh" "$1/manifest.json" "$tmp/key/release-private.pem" >/dev/null
+}
+release "$tmp/named" 2026.11.2
+add "$tmp/named" '"commit": "1111111111111111111111111111111111111111"'
+expect pass "a release that names its commit checks out" check "$tmp/named"
+tag_at() { "$root/tools/release/tag-images.sh" --release "$1" --public-key "$tmp/key/release-public.pem" --check-only --tag-commit "$2"; }
+expect pass "a release tagged on the commit its manifest names is tagged" tag_at "$tmp/named" 1111111111111111111111111111111111111111
+expect fail "a release tagged on another commit than its manifest names is never tagged" tag_at "$tmp/named" 2222222222222222222222222222222222222222
+expect pass "a release from before manifests named a commit is still tagged" tag_at "$tmp/good" 2222222222222222222222222222222222222222
+
+# A release that finishes a change an earlier one began names the oldest release that can go straight to it.
+release "$tmp/far" 2026.12.1
+add "$tmp/far" '"upgrade_from": "2026.11.3"'
+expect fail "a shop too far behind is sent to the release in between first" check "$tmp/far"
+echo '{"version": "2026.11.3"}' > "$tmp/shop/release.json"
+expect pass "a shop on that release goes straight to it" check "$tmp/far"
+echo '{"version": "2026.11.1"}' > "$tmp/shop/release.json"
+
+# Channels (D81): a pinned shop stays where it is on a plain update, and still takes a release it is given.
+echo pinned > "$tmp/shop/channel"
+pinned() { local said; said="$("$root/apps/shop-server/deploy/update.sh" --dir "$tmp/shop" --check-only)" && [[ "$said" == *"pinned to release 2026.11.1"* ]]; }
+expect pass "a pinned shop's plain update changes nothing, and says so" pinned
+expect pass "a pinned shop still takes a release it is given" check "$tmp/good"
+echo sideways > "$tmp/shop/channel"
+plain() { "$root/apps/shop-server/deploy/update.sh" --dir "$tmp/shop" --check-only; }
+expect fail "a channel that is not stable, beta or pinned is refused" plain
+rm -f "$tmp/shop/channel"
+named() { "$root/apps/shop-server/deploy/update.sh" --dir "$tmp/shop" --check-only --version "$1"; }
+expect fail "a version that is not YEAR.MONTH.N is refused before anything is fetched" named main
+
 [ "$failures" = 0 ] && echo "The signing dry run passed." || { echo "The signing dry run failed ($failures)."; exit 1; }

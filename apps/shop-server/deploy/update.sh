@@ -12,23 +12,32 @@
 #   5. Health check: the app answers and the grants match the matrix. If not, roll back the code only;
 #      the database stays, because sales may already have been made on it.
 #
-#   sudo /opt/haq-retail-os/bin/update.sh                          # the latest release on GitHub
+#   sudo /opt/haq-retail-os/bin/update.sh                          # the release this shop's channel gives
+#   sudo /opt/haq-retail-os/bin/update.sh --version 2026.11.3      # this release, whatever the channel
 #   sudo /opt/haq-retail-os/bin/update.sh --release /media/usb/2026.11.1
 #
-# Options: --dir, --project, --url (a release's download folder), --release (a local folder),
-# --skip-pull (staging: the images are already on this machine), --check-only (check the release and stop).
+# Which release a plain update takes is the shop's channel (the file `channel` in the install folder, set
+# with `sudo haq channel`; D81): stable takes the latest release, beta the newest one, a pre-release too,
+# and pinned stays where it is until it is given a --version.
+#
+# Options: --dir, --project, --version (a published release), --url (a release's download folder),
+# --release (a local folder), --skip-pull (staging: the images are already on this machine), --check-only
+# (check the release and stop).
 set -euo pipefail
 
 dir=/opt/haq-retail-os
 project=haq-retail-os
-url=https://github.com/haq-technologies/haq-retailOS/releases/latest/download
+repo=haq-technologies/haq-retailOS
+url=""
 release=""
+version_wanted=""
 skip_pull=0
 check_only=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --dir) dir="$2"; shift 2 ;;
         --project) project="$2"; shift 2 ;;
+        --version) version_wanted="$2"; shift 2 ;;
         --url) url="$2"; shift 2 ;;
         --release) release="$2"; shift 2 ;;
         --skip-pull) skip_pull=1; shift ;;
@@ -45,6 +54,38 @@ env_value() { grep -E "^$1=" "$dir/.env" | head -1 | cut -d= -f2-; }
 json() { python3 -I -c 'import json,sys; d=json.load(open(sys.argv[1])); 
 for k in sys.argv[2].split("."): d=d[k]
 print(d)' "$1" "$2"; }
+is_version() { printf '%s' "$1" | grep -Eq '^[0-9]{4}\.[0-9]{1,2}\.[0-9]+$'; }
+# True when release $1 comes before release $2.
+older() { [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -1)" = "$1" ]; }
+
+installed="$(json "$dir/release.json" version 2>/dev/null || echo 0)"
+
+# Where the release comes from: a folder, a download address, a named release, or the shop's channel.
+channel=stable
+if [ -f "$dir/channel" ]; then channel="$(tr -d '[:space:]' < "$dir/channel")"; fi
+channel="${channel:-stable}"
+if [ -z "$release" ] && [ -z "$url" ]; then
+    if [ -n "$version_wanted" ]; then
+        is_version "$version_wanted" || { echo "Give the release as YEAR.MONTH.N, such as 2026.11.3." >&2; exit 2; }
+        url="https://github.com/$repo/releases/download/$version_wanted"
+    else
+        case "$channel" in
+            stable) url="https://github.com/$repo/releases/latest/download" ;;
+            beta)
+                newest="$(curl -fsSL --retry 3 "https://api.github.com/repos/$repo/releases?per_page=1" \
+                    | python3 -I -c 'import json,sys; r=json.load(sys.stdin); print(r[0]["tag_name"] if r else "")' 2>/dev/null || true)"
+                is_version "$newest" || { echo "Could not read the newest release from GitHub. Try again, or name one: --version 2026.11.3. Nothing was changed." >&2; exit 1; }
+                url="https://github.com/$repo/releases/download/$newest"
+                ;;
+            pinned)
+                echo "This shop is pinned to release $installed, so a plain update changes nothing."
+                echo "To move it to a release: sudo haq update --version 2026.11.3. To follow releases again: sudo haq channel stable."
+                exit 0
+                ;;
+            *) echo "This shop's channel is \"$channel\", which is not stable, beta or pinned. Set it: sudo haq channel stable." >&2; exit 2 ;;
+        esac
+    fi
+fi
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
@@ -54,7 +95,8 @@ for f in manifest.json manifest.json.sig compose.yaml; do
     if [ -n "$release" ]; then
         cp "$release/$f" "$work/$f"
     else
-        curl -fsSL --retry 3 -o "$work/$f" "$url/$f"
+        curl -fsSL --retry 3 -o "$work/$f" "$url/$f" \
+            || { echo "Could not fetch $f from $url. Check the connection, and that the release exists. Nothing was changed." >&2; exit 1; }
     fi
 done
 openssl base64 -d -A -in "$work/manifest.json.sig" -out "$work/signature.bin"
@@ -66,15 +108,28 @@ fi
 version="$(json "$work/manifest.json" version)"
 [ "$(openssl dgst -sha256 -r "$work/compose.yaml" | cut -d' ' -f1)" = "$(json "$work/manifest.json" compose_sha256)" ] \
     || { echo "The release's Compose file is not the one its manifest names. Nothing was changed." >&2; exit 1; }
-installed="$(json "$dir/release.json" version 2>/dev/null || echo 0)"
+is_version "$version" || { echo "The release's version ($version) is not YEAR.MONTH.N. Nothing was changed." >&2; exit 1; }
+if [ -n "$version_wanted" ] && [ "$version" != "$version_wanted" ]; then
+    echo "Release $version_wanted was asked for, and the release found is $version. Nothing was changed." >&2
+    exit 1
+fi
 if [ "$installed" = "$version" ]; then
     echo "Release $version is already installed."
     exit 0
 fi
-if [ "$(printf '%s\n%s\n' "$installed" "$version" | sort -V | tail -1)" != "$version" ]; then
+if [ "$installed" != 0 ] && older "$version" "$installed"; then
     echo "Release $version is older than the installed $installed. Nothing was changed." >&2
     exit 1
 fi
+# A release may name the oldest release that can go straight to it, when it finishes a change an earlier
+# one began (expand, then contract). A shop further behind takes that release first (D81).
+upgrade_from="$(json "$work/manifest.json" upgrade_from 2>/dev/null || true)"
+if [ -n "$upgrade_from" ] && [ "$installed" != 0 ] && older "$installed" "$upgrade_from"; then
+    echo "Release $version needs release $upgrade_from or a newer one first, and this shop runs $installed. Nothing was changed." >&2
+    echo "Take that one first: sudo haq update --version $upgrade_from" >&2
+    exit 1
+fi
+commit="$(json "$work/manifest.json" commit 2>/dev/null || true)"
 app="$(json "$work/manifest.json" images.app)"
 web="$(json "$work/manifest.json" images.web)"
 db="$(json "$work/manifest.json" images.db)"
@@ -109,8 +164,9 @@ fi
 echo "4. Switching to release $version"
 cp "$dir/.env" "$dir/.env.previous"
 cp "$dir/compose.yaml" "$dir/compose.yaml.previous"
-grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE)=' "$dir/.env.previous" > "$dir/.env"
-printf 'APP_IMAGE=%s\nWEB_IMAGE=%s\nDB_IMAGE=%s\n' "$app" "$web" "$db" >> "$dir/.env"
+grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|RELEASE_VERSION)=' "$dir/.env.previous" > "$dir/.env"
+# RELEASE_VERSION is what the back office's server health page shows as the version.
+printf 'APP_IMAGE=%s\nWEB_IMAGE=%s\nDB_IMAGE=%s\nRELEASE_VERSION=%s\n' "$app" "$web" "$db" "$version" >> "$dir/.env"
 chmod 600 "$dir/.env"
 cp "$work/compose.yaml" "$dir/compose.yaml"
 
@@ -144,7 +200,31 @@ if ! compose exec -T app php artisan db:mutability --check >/dev/null; then
     rollback "The grants no longer match the mutability matrix."
 fi
 
-printf '{"version": "%s", "images": {"app": "%s", "web": "%s", "db": "%s"}, "installed_at": "%s"}\n' \
-    "$version" "$app" "$web" "$db" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$dir/release.json"
+# What is installed, and the release before it. The images of the release before that are removed, so
+# months of weekly releases never fill the disk; this one and the one before stay (D81).
+unused="$(python3 -I - "$dir/release.json" "$version" "$app" "$web" "$db" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$commit" <<'PY'
+import json, sys
+
+path, version, app, web, db, at, commit = sys.argv[1:8]
+try:
+    with open(path) as f:
+        old = json.load(f)
+except (OSError, ValueError):
+    old = {}
+new = {"version": version, "images": {"app": app, "web": web, "db": db}, "installed_at": at}
+if commit:
+    new["commit"] = commit
+if old.get("version"):
+    new["previous"] = {"version": old["version"], "images": old.get("images") or {}}
+with open(path, "w") as f:
+    json.dump(new, f, indent=4)
+    f.write("\n")
+keep = {app, web, db} | set((old.get("images") or {}).values())
+for image in ((old.get("previous") or {}).get("images") or {}).values():
+    if image not in keep:
+        print(image)
+PY
+)"
+for image in $unused; do docker image rm "$image" >/dev/null 2>&1 || true; done
 rm -f "$dir/.env.previous" "$dir/compose.yaml.previous"
 echo "Release $version is installed."

@@ -62,10 +62,12 @@ The last line shows the disk's size at /mnt/backup.
 ## 4. Install HAQ Retail OS
 
 ```
-git clone https://github.com/haq-technologies/haq-retailOS.git
+git clone --branch <release> --depth 1 https://github.com/haq-technologies/haq-retailOS.git
 cd haq-retailOS
 sudo apps/shop-server/deploy/install.sh --ip 192.168.1.10 --backup-dir /mnt/backup --tag <release>
 ```
+
+`<release>` is the release to install, such as 2026.11.3, in both lines: the first takes the installer, the Compose file and the updater from that release's own commit, and the second installs its images (D81). The shop then follows the stable channel; add `--channel beta` for a shop that takes each release first, or `--channel pinned` for one that stays where it is ([releases.md](releases.md)).
 
 The installer:
 

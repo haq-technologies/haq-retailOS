@@ -13,6 +13,7 @@
 #
 # Options: --profile (a profile made before the visit with shop:make-profile), --name (default
 # haq-server.local), --dir (default /opt/haq-retail-os), --tag (a release, or main before the first one),
+# --channel (stable, beta or pinned: which releases `haq update` takes later; kept as it is if not given),
 # --http-port, --https-port, --project (Compose project name), --backup-dir (the second internal disk's
 # folder for backups), --standin-printer (a rehearsal with no printer only: receipts go to `haq receipts`).
 set -euo pipefail
@@ -29,6 +30,7 @@ https_port=443
 project=haq-retail-os
 registry=ghcr.io/haq-technologies
 backup_dir=
+channel=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -37,6 +39,7 @@ while [ $# -gt 0 ]; do
         --ip) ip="$2"; shift 2 ;;
         --dir) dir="$2"; shift 2 ;;
         --tag) tag="$2"; shift 2 ;;
+        --channel) channel="$2"; shift 2 ;;
         --http-port) http_port="$2"; shift 2 ;;
         --https-port) https_port="$2"; shift 2 ;;
         --project) project="$2"; shift 2 ;;
@@ -47,6 +50,10 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+case "$channel" in
+    ""|stable|beta|pinned) ;;
+    *) echo "The channel is stable, beta or pinned." >&2; exit 2 ;;
+esac
 if [ -z "$ip" ]; then
     echo "Give the server's fixed IP address: --ip 192.168.1.10 (docs/operations/install-a-shop.md, step 2)." >&2
     exit 2
@@ -104,11 +111,26 @@ if [ ! -f "$dir/.env" ]; then
     } > "$dir/.env"
 fi
 # The image tags, name and ports may change on a rerun; the secrets never do.
-grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|SERVER_NAME|SERVER_IP|HTTP_PORT|HTTPS_PORT|BACKUP_DIR)=' "$dir/.env" > "$dir/.env.new" || true
+# A release's tag is its version, YEAR.MONTH.N; anything else (main, local) is not a release.
+is_release=0
+if printf '%s' "$tag" | grep -Eq '^[0-9]{4}\.[0-9]{1,2}\.[0-9]+$'; then is_release=1; fi
+# A release is installed from its own commit, so the installer, the Compose file and the updater are the
+# release's too (D81). A checkout of another commit still installs, with a warning.
+if [ "$is_release" = 1 ] && command -v git >/dev/null; then
+    at="$(git -C "$here" rev-parse HEAD 2>/dev/null || true)"
+    want="$(git -C "$here" rev-parse --verify --quiet "refs/tags/$tag^{commit}" 2>/dev/null || true)"
+    if [ -n "$at" ] && [ -n "$want" ] && [ "$at" != "$want" ]; then
+        echo "WARNING: this checkout is not release $tag's commit, so its installer and Compose file may not be that release's." >&2
+        echo "         Install from the release itself: git clone --branch $tag --depth 1 https://github.com/haq-technologies/haq-retailOS.git" >&2
+    fi
+fi
+grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|RELEASE_VERSION|SERVER_NAME|SERVER_IP|HTTP_PORT|HTTPS_PORT|BACKUP_DIR)=' "$dir/.env" > "$dir/.env.new" || true
 {
     echo "APP_IMAGE=$registry/retail-os-app:$tag"
     echo "WEB_IMAGE=$registry/retail-os-web:$tag"
     echo "DB_IMAGE=$registry/retail-os-db:$tag"
+    # What the back office's server health page shows as the version.
+    if [ "$is_release" = 1 ]; then echo "RELEASE_VERSION=$tag"; fi
     echo "SERVER_NAME=$name"
     echo "SERVER_IP=$ip"
     echo "HTTP_PORT=$http_port"
@@ -274,6 +296,20 @@ ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="HAQ-OFFSITE-[AB]", TAG+="s
 RULE
     systemctl daemon-reload
     udevadm control --reload 2>/dev/null || true
+fi
+
+# What is installed, for the updater: it refuses an older release, and it knows where a shop starts from
+# (D81). An install from main or from local images is not a release, and leaves any record as it is.
+if [ "$is_release" = 1 ]; then
+    printf '{\n    "version": "%s",\n    "images": {"app": "%s", "web": "%s", "db": "%s"},\n    "installed_at": "%s"\n}\n' \
+        "$tag" "$registry/retail-os-app:$tag" "$registry/retail-os-web:$tag" "$registry/retail-os-db:$tag" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$dir/release.json"
+fi
+# Which releases a plain `haq update` takes: stable unless told otherwise, and never changed by a rerun
+# that does not name one.
+if [ -n "$channel" ]; then
+    printf '%s\n' "$channel" > "$dir/channel"
+elif [ ! -f "$dir/channel" ]; then
+    echo stable > "$dir/channel"
 fi
 
 # The everyday commands (D59): `sudo haq …`, which reads where this install is from haq.conf.

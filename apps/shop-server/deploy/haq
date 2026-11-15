@@ -13,6 +13,8 @@
 #   sudo haq backups                     the last backups and the last test restore
 #   sudo haq export [file.zip]           the shop's whole record for the owner (it holds cost)
 #   sudo haq update [options]            take a signed release (docs/operations/releases.md)
+#   sudo haq version                     the release installed, the one before it, and the channel
+#   sudo haq channel [stable|beta|pinned]  which releases a plain update takes; with no word, shows it
 #   sudo haq offsite-key                 make the off-site key and its three shares, once
 #   sudo haq receipts                    a rehearsal's stand-in printer: the receipts as they print
 #   sudo haq logs [service]              follow a service's log
@@ -41,7 +43,7 @@ https_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "https://$IP"; else e
 http_url() { if [ "${HTTP_PORT:-80}" = 80 ]; then echo "http://$IP"; else echo "http://$IP:$HTTP_PORT"; fi; }
 setup_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "$(http_url)/setup"; else echo "$(http_url)/setup?https_port=$HTTPS_PORT"; fi; }
 
-usage() { sed -n '2,19p' "$self" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,21p' "$self" | sed 's/^# \{0,1\}//'; }
 
 command="${1:-help}"
 [ $# -gt 0 ] && shift
@@ -104,6 +106,27 @@ TEXT
         echo "The shop's data is in $file. It holds cost: give it to the owner only."
         ;;
     update) exec "$dir/bin/update.sh" --dir "$dir" --project "$PROJECT" "$@" ;;
+    version)
+        if [ -f "$dir/release.json" ]; then
+            python3 -I -c 'import json,sys
+r = json.load(open(sys.argv[1]))
+print("Release " + r["version"] + ", installed " + r.get("installed_at", "at install"))
+if r.get("previous"): print("Before it: release " + r["previous"]["version"])' "$dir/release.json"
+        else
+            echo "No release is recorded here: this server runs images that are not a release."
+        fi
+        echo "Channel: $( [ -f "$dir/channel" ] && tr -d '[:space:]' < "$dir/channel" || echo stable)"
+        ;;
+    channel)
+        if [ $# -eq 0 ]; then
+            echo "$( [ -f "$dir/channel" ] && tr -d '[:space:]' < "$dir/channel" || echo stable)"
+        else
+            case "$1" in
+                stable|beta|pinned) printf '%s\n' "$1" > "$dir/channel"; echo "This shop is now on the $1 channel." ;;
+                *) echo "The channel is stable (the latest release), beta (the newest, a pre-release too) or pinned (stays where it is)." >&2; exit 2 ;;
+            esac
+        fi
+        ;;
     offsite-key) HAQ_DIR="$dir" HAQ_PROJECT="$PROJECT" exec "$dir/bin/offsite.sh" key "$@" ;;
     receipts)
         if [ -z "$(compose ps --status running -q printer 2>/dev/null)" ]; then
