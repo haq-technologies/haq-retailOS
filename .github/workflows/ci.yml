@@ -89,6 +89,76 @@ jobs:
           $findings | Format-Table -AutoSize RuleName, ScriptName, Line, Message -Wrap | Out-String -Width 200 | Write-Host
           if ($findings -or $failed) { exit 1 }
 
+  # The HAQ Helper, in Go (D88): the print bridge and what the setup needs to choose a printer (D87). Its tests
+  # run here with the race detector, against a stand-in printer; the Windows code is vetted and built here too.
+  windows-helper:
+    name: windows helper
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/windows/helper
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: apps/windows/helper/go.mod
+          cache-dependency-path: apps/windows/helper/go.sum
+
+      - name: gofmt
+        run: test -z "$(gofmt -l . | tee /dev/stderr)"
+
+      - name: go vet, for Linux and for Windows
+        run: go vet ./... && GOOS=windows go vet ./...
+
+      - name: Tests, with the race detector
+        run: go test -race -count=1 ./...
+
+      - name: Known vulnerabilities (govulncheck)
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
+      - name: Build for Windows
+        run: GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o haq-helper.exe ./cmd/haq-helper
+
+  # On Windows itself: a print queue on a file port stands in for a USB receipt printer's queue, and a RAW
+  # job must reach it byte for byte (D87).
+  windows-helper-on-windows:
+    name: windows helper on Windows
+    runs-on: windows-2025
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/windows/helper
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: apps/windows/helper/go.mod
+          cache-dependency-path: apps/windows/helper/go.sum
+
+      - name: A print queue on a file port
+        shell: pwsh
+        run: |
+          Start-Service Spooler
+          $file = Join-Path $env:RUNNER_TEMP 'haq-queue.prn'
+          Add-PrinterDriver -Name 'Generic / Text Only'
+          Add-PrinterPort -Name $file
+          Add-Printer -Name 'HAQ Test Queue' -DriverName 'Generic / Text Only' -PortName $file
+          "HAQ_TEST_QUEUE=HAQ Test Queue" >> $env:GITHUB_ENV
+          "HAQ_TEST_QUEUE_FILE=$file" >> $env:GITHUB_ENV
+
+      - name: Tests, on Windows
+        run: go test -count=1 -v ./...
+
+      - name: The printer list, as the setup reads it
+        shell: pwsh
+        run: |
+          go build -trimpath -o haq-helper.exe ./cmd/haq-helper
+          ./haq-helper.exe printers
+          ./haq-helper.exe printers --json
+
   shop-server-php:
     name: shop-server PHP
     runs-on: ubuntu-24.04
