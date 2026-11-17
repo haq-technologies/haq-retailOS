@@ -1,9 +1,11 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Notice } from '@/components/notice';
+import { codeFromHash } from '@/lib/enrol-code';
 
-// Enrols this PC as a counter with the one-time code from `php artisan shop:enrol-terminal`.
+// Enrols this PC as a counter with the one-time code from `php artisan shop:enrol-terminal`. A link from
+// `haq enrol` or the Windows setup fills the code in (/enrol#code=...); the person still taps Enrol (D86).
 export default function Enrol() {
-    const form = useForm({ code: '' });
+    const form = useForm({ code: typeof window === 'undefined' ? '' : codeFromHash(window.location.hash) });
 
     return (
         <>

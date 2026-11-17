@@ -8,6 +8,8 @@
 #   sudo /opt/haq-retail-os/bin/offsite.sh key            once, at install: the key and its three shares
 #   sudo /opt/haq-retail-os/bin/offsite.sh copy /dev/sdb1  what the plugged-in drive starts (or by hand)
 #   sudo /opt/haq-retail-os/bin/offsite.sh unpack /dev/sdb1   on a spare box, before deploy/restore.sh
+#   sudo /opt/haq-retail-os/bin/offsite.sh copy-windows E: A  on a Windows PC's server, from the HAQ Helper (D86)
+#   sudo /opt/haq-retail-os/bin/offsite.sh unpack-windows E: A
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -41,32 +43,68 @@ unmount_drive() {
     rmdir "$mnt" 2>/dev/null || true
 }
 
+# On a Windows PC's server (D86) the server runs in WSL2, where the drive is not a device but a Windows
+# drive letter. The HAQ Helper reads its label in Windows and gives the letter with A or B; WSL mounts the
+# letter with drvfs, owned by PostgreSQL's user as on Linux.
+mount_windows_drive() {
+    letter="$(printf '%s' "$1" | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+    case "$letter" in
+        [A-Z]) ;;
+        *) echo "Give the drive's letter, such as E:." >&2; exit 2 ;;
+    esac
+    case "$2" in
+        A | B) drive="$2" ;;
+        *) echo "Give which off-site drive it is: A (HAQ-OFFSITE-A) or B (HAQ-OFFSITE-B)." >&2; exit 2 ;;
+    esac
+    mnt="/run/haq-offsite/$drive"
+    mkdir -p "$mnt"
+    mountpoint -q "$mnt" && umount "$mnt"
+    mount -t drvfs "${letter}:" "$mnt" -o uid=999,gid=999,umask=077
+}
+
+# The copy onto a mounted drive, the same on Linux and on Windows.
+copy_to_drive() {
+    trap unmount_drive EXIT
+    status=0
+    compose run --rm --no-deps -T --user root -e "HAQ_OFFSITE_DRIVE=$drive" -v "$mnt:/offsite" --entrypoint haq-offsite.sh backup copy /offsite || status=$?
+    unmount_drive
+    trap - EXIT
+    if [ "$status" = 0 ]; then
+        echo "Drive $drive has its copy and is safe to remove. Take it away from the shop."
+    else
+        echo "The copy to drive $drive failed; the health page says why." >&2
+    fi
+    exit "$status"
+}
+
+unpack_drive() {
+    trap unmount_drive EXIT
+    # Asks for two of the three shares on this terminal.
+    compose run --rm --no-deps --user root -v "$mnt:/offsite" --entrypoint haq-offsite.sh backup unpack /offsite
+}
+
 case "${1:-}" in
     key)
         compose run --rm --no-deps -T --user root --entrypoint haq-offsite.sh backup key "${2:-}"
         ;;
     copy)
         mount_drive "${2:?Give the drive, such as /dev/sdb1}"
-        trap unmount_drive EXIT
-        status=0
-        compose run --rm --no-deps -T --user root -e "HAQ_OFFSITE_DRIVE=$drive" -v "$mnt:/offsite" --entrypoint haq-offsite.sh backup copy /offsite || status=$?
-        unmount_drive
-        trap - EXIT
-        if [ "$status" = 0 ]; then
-            echo "Drive $drive has its copy and is safe to remove. Take it away from the shop."
-        else
-            echo "The copy to drive $drive failed; the health page says why." >&2
-        fi
-        exit "$status"
+        copy_to_drive
+        ;;
+    copy-windows)
+        mount_windows_drive "${2:?Give the drive letter, such as E:}" "${3:?Give A or B}"
+        copy_to_drive
         ;;
     unpack)
         mount_drive "${2:?Give the drive, such as /dev/sdb1}"
-        trap unmount_drive EXIT
-        # Asks for two of the three shares on this terminal.
-        compose run --rm --no-deps --user root -v "$mnt:/offsite" --entrypoint haq-offsite.sh backup unpack /offsite
+        unpack_drive
+        ;;
+    unpack-windows)
+        mount_windows_drive "${2:?Give the drive letter, such as E:}" "${3:?Give A or B}"
+        unpack_drive
         ;;
     *)
-        echo "Usage: offsite.sh key | copy <device> | unpack <device>" >&2
+        echo "Usage: offsite.sh key | copy <device> | unpack <device> | copy-windows <letter> <A|B> | unpack-windows <letter> <A|B>" >&2
         exit 2
         ;;
 esac

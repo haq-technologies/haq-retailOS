@@ -47,7 +47,7 @@ docker compose exec app php artisan shop:enrol-terminal T01                # a o
 
 A cashier's or storekeeper's PIN is 4 to 6 digits; a manager's or owner's is 6, because it also approves (D24).
 
-On a shop's server, HAQ support lists, re-PINs and deactivates people with `sudo haq users`, `sudo haq pin "Amina"` and `sudo haq deactivate "Amina"` (D74; in development, `php artisan shop:list-users`, `shop:set-pin` and `shop:deactivate-user`). Nobody is ever deleted.
+On a shop's server, HAQ support lists, re-PINs and deactivates people with `sudo haq users`, `sudo haq pin "Amina"` and `sudo haq deactivate "Amina"` (D74; in development, `php artisan shop:list-users`, `shop:set-pin` and `shop:deactivate-user`). Nobody is ever deleted. `sudo haq printer T02 192.168.1.22` points a counter at its printer, or at the Windows PC whose print bridge has its USB printer, and keeps it in the shop's profile (D87).
 
 The owner's phone or laptop reaches the back office as a back-office device (D29): list it in the profile with a code such as D01 and `"kind": "back_office"` (or use `shop:make-profile --back-office=1`), then enrol it like a counter. It signs in the same way and never sells.
 

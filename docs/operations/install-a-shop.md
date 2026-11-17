@@ -158,7 +158,8 @@ The first takes a full backup now; the owner sees it under **Server health**. Th
 | `sudo haq users` | Everyone with a name tile: role, active or deactivated, when the PIN was set, and ID (D74) |
 | `sudo haq pin "Name"` | A new PIN for a person who forgot theirs or whose PIN someone saw; asks it twice, and the old one stops working at once |
 | `sudo haq deactivate "Name"` | For someone who leaves: their tile goes and their PIN stops working. Nobody is deleted. If two people share the name, give the ID from `sudo haq users` |
-| `sudo haq enrol T01` | A one-time code, for 30 minutes, to register counter T01 (or D01 for a back-office device) |
+| `sudo haq enrol T01` | A one-time code, for 30 minutes, to register counter T01 (or D01 for a back-office device), and a link that fills the code in |
+| `sudo haq printer T02 192.168.1.22` | Where a counter prints: a network printer's address, or the Windows PC whose print bridge has its USB printer; `none` for no printer. It is kept in the shop's profile, so a later install keeps it (D87) |
 | `sudo haq certificate` | The setup page's address, and the certificate's thumbprint to compare with the page's |
 | `sudo haq check` | Checks the whole install |
 | `sudo haq status` | What is running |
