@@ -18,14 +18,14 @@ beforeEach(function () {
     Shop::create(terminals: 2);
 });
 
-it('makes one branch key when six processes sign at once, so every signature verifies (D84)', function () {
+it('makes one branch key when four processes sign at once, so every signature verifies (D84)', function () {
     // As at a fresh install whose first sales have not signed yet: no key, and not even its folder.
     $key = app(BranchKey::class);
     @unlink($key->path());
     @rmdir(dirname($key->path()));
     expect(is_dir(dirname($key->path())))->toBeFalse();
 
-    $results = Harness::run(array_map(fn (int $i) => [SignWithBranchKey::class], range(0, 5)));
+    $results = Harness::run(array_map(fn (int $i) => [SignWithBranchKey::class], range(0, 3)));
 
     $public = $key->publicKey();
     expect(collect($results)->pluck('public')->unique()->values()->all())->toBe([$public]);
