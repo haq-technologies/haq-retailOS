@@ -35,3 +35,13 @@ updates:
     schedule:
       interval: weekly
       day: monday
+
+  # The HAQ Helper's Go module (D88).
+  - package-ecosystem: gomod
+    directory: /apps/windows/helper
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      go:
+        update-types: [minor, patch]

@@ -6,7 +6,7 @@ The Windows parts of HAQ Retail OS (D86 to D88). One setup program installs the 
 |---|---|---|
 | [spike/](spike/README.md) | A throwaway test on real Windows: the server hidden in WSL2, started at power-on, reached through the PC's address, and printing to a stand-in bridge | Ready to run |
 | distro/ | The haq-server distribution, built by CI from each commit | To be built |
-| helper/ | The HAQ Helper, in Go: it keeps the server running, is the print bridge, reports the PC's disk and clock, and starts the off-site copy | To be built |
+| [helper/](helper/README.md) | The HAQ Helper, in Go: it keeps the server running, is the print bridge, reports the PC's disk and clock, and starts the off-site copy | The print bridge and the printer list are built; the rest follows the spike |
 | setup/ | The setup program, in Inno Setup | To be built |
 
 The order and the checks are in PLAN.md, in the Windows setup checklist.
