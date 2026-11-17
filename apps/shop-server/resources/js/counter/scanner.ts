@@ -54,6 +54,17 @@ export class ScanDetector {
     }
 }
 
+/** The longest code a barcode keeps, as on the server. A longer QR text is read but never learned (D83). */
+export const MAX_CODE = 120;
+
+/**
+ * Junk codes never learn (spec section 6) [F13]: shorter than 6 characters, one character repeated (000000),
+ * already linked to more than 5 items, or longer than a barcode keeps (D83).
+ */
+export function isJunkCode(code: string, linked: number): boolean {
+    return code.length < 6 || code.length > MAX_CODE || /^(.)\1+$/u.test(code) || linked > 5;
+}
+
 /** A receipt number, read from a receipt's barcode: T01-E1-000123 (spec section 4). */
 export function isReceiptNumber(code: string): boolean {
     return /^[A-Z]\d{2}-E\d+-\d{6}$/.test(code);

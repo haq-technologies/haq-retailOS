@@ -8,7 +8,7 @@ import { addToJournal } from '../db';
 import { journalEntry, reportJournal } from '../recovery';
 import { drill, parseShapeId, shapeAtBrandStep, type DrillState, type Tile } from '../drill';
 import { naira } from '../money';
-import { isReceiptNumber, ScanDetector } from '../scanner';
+import { isJunkCode, isReceiptNumber, MAX_CODE, ScanDetector } from '../scanner';
 import type { SearchClient } from '../search-client';
 import type { CatalogueSync } from '../sync';
 import type { CounterSettings, CustomerType, ItemPrices, ItemFacetRow, ItemRow, PriceRange } from '../types';
@@ -75,9 +75,6 @@ type SheetState =
     | { kind: 'close' }
     | { kind: 'cart' };
 
-function junk(code: string, linked: number): boolean {
-    return code.length < 6 || /^(.)\1+$/u.test(code) || linked > 5;
-}
 
 export function CounterScreen({ session, setToken, terminal, people, settings, cat, catVersion, online, search, sync, cart, update, onLock }: Props) {
     const api = useCounterApi(session.token, setToken);
@@ -260,7 +257,10 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                 void addItem(candidates[0].item_id, { addedBy: 'scan', barcode: code });
             } else if (candidates.length > 1) {
                 setSheet({ kind: 'picker', code, options: candidates.map((b) => ({ id: b.item_id, name: cat.items.get(b.item_id)?.display_name ?? '' })) });
-            } else if (junk(code, all.length)) {
+            } else if (code.length > MAX_CODE) {
+                // A long QR text: read, but too long to learn or to search with (D83).
+                say('info', 'This code is too long for the counter to learn. Find the item by search or the tiles.');
+            } else if (isJunkCode(code, all.length)) {
                 setQuery(code);
                 say('info', `Code ${code} is not one the counter learns. Find the item by search or the tiles.`);
             } else {
