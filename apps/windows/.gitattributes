@@ -1,0 +1,5 @@
+# Scripts that run inside Linux keep Linux line endings, even in a checkout made on Windows;
+# PowerShell scripts keep Windows ones.
+*.sh   text eol=lf
+*.ps1  text eol=crlf
+*.iss  text eol=crlf

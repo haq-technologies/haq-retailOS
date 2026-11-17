@@ -56,6 +56,39 @@ jobs:
       - name: Release signing dry run (a throwaway key; the updater's own checks)
         run: tools/release/dry-run.sh
 
+  # The Windows setup's scripts (D86): ShellCheck for what runs inside Linux, and PowerShell's own parser and
+  # PSScriptAnalyzer for what runs on Windows. The scripts themselves run on Windows, in the spike.
+  windows-scripts:
+    name: windows scripts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: ShellCheck
+        run: find apps/windows -name '*.sh' -print0 | xargs -0 --no-run-if-empty shellcheck
+
+      - name: PowerShell parser and PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -RequiredVersion 1.23.0 -Scope CurrentUser -Force
+          $failed = $false
+          foreach ($file in Get-ChildItem apps/windows -Recurse -Filter *.ps1) {
+            $tokens = $null; $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            foreach ($e in $errors) { Write-Host ("{0}:{1}: {2}" -f $file.FullName, $e.Extent.StartLineNumber, $e.Message); $failed = $true }
+            # Windows PowerShell 5.1 reads a file with no byte-order mark as ANSI, so the scripts stay ASCII.
+            $text = [System.IO.File]::ReadAllText($file.FullName)
+            if ($text -match '[^\x00-\x7F]') { Write-Host "$($file.FullName): not ASCII"; $failed = $true }
+          }
+          # Write-Host and the spike's one-time password handling are deliberate; the parameters are used by functions.
+          $findings = Invoke-ScriptAnalyzer -Path apps/windows -Recurse -Severity Warning, Error -ExcludeRule `
+            PSAvoidUsingWriteHost, PSAvoidUsingPlainTextForPassword, PSAvoidUsingConvertToSecureStringWithPlainText, `
+            PSUseShouldProcessForStateChangingFunctions, PSReviewUnusedParameter, PSUseBOMForUnicodeEncodedFile
+          $findings | Format-Table -AutoSize RuleName, ScriptName, Line, Message -Wrap | Out-String -Width 200 | Write-Host
+          if ($findings -or $failed) { exit 1 }
+
   shop-server-php:
     name: shop-server PHP
     runs-on: ubuntu-24.04
