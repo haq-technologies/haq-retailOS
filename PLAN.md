@@ -210,7 +210,7 @@ Built on main in apps/windows/, one short pull request per step, each with its o
 
 - [x] A scanned code never blocks a sale, however long it is (Claude, 17 November 2026; D83)
 - [x] The branch key is made once, even when two counters need it at once (Claude, 17 November 2026; D84)
-- [ ] The spike on a Windows 11 and a Windows 10 22H2 virtual machine: the server starts at power-on with nobody logged in, stays up for 24 hours, is reachable from another machine through the port forward, reaches a print bridge on the PC, survives a hard power-off during `shop:rehearse`, and fits an 8 GB PC. A part that fails takes its fallback, and this plan is updated before the build (product owner runs it, Claude prepares it)
+- [ ] The spike on a Windows 11 and a Windows 10 22H2 virtual machine: the server starts at power-on with nobody logged in, stays up for 24 hours, is reachable from another machine through the port forward, reaches a print bridge on the PC, survives a hard power-off during `shop:rehearse`, and fits an 8 GB PC. A part that fails takes its fallback, and this plan is updated before the build (product owner runs it; Claude prepared it on 17 November 2026: [apps/windows/spike/](apps/windows/spike/README.md), with a CI job for the Windows scripts)
 - [ ] The server's small changes: install.sh's Windows mode, `haq printer` to point a counter at its bridge, the off-site copy from a mounted folder, the setup page taking its one-time code, and the PC's disk and clock report read by the health page (Claude)
 - [ ] The haq-server distribution, built by CI from each commit (Claude)
 - [ ] The HAQ Helper in Go: keeps the server running, the print bridge, the health report, the off-site drives; tested in CI on Linux and on a Windows runner (Claude)
