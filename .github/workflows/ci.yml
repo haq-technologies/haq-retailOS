@@ -155,7 +155,8 @@ jobs:
         run: npm ci
 
       - name: npm audit (known advisories in the JavaScript packages)
-        run: npm audit --audit-level=high
+        # Fails on any high or critical advisory except those in npm-audit-allow.json, each with its reason (D85).
+        run: node ../../tools/ci/npm-audit.mjs
 
       - name: ESLint
         run: npm run lint
