@@ -6,6 +6,7 @@
 #   sudo haq pin "Amina"                 a new PIN for a person (forgotten or seen); asks it twice
 #   sudo haq deactivate "Amina"          someone who leaves: their tile goes and their PIN stops
 #   sudo haq enrol T01                   a one-time code (30 minutes) to register counter T01, or D01 for a phone
+#   sudo haq printer T02 192.168.1.22    where a counter prints: a network printer, or the PC whose print bridge has its USB printer
 #   sudo haq certificate                 the setup address for new devices, and the certificate's thumbprint
 #   sudo haq check                       check the whole install
 #   sudo haq status                      what is running
@@ -43,7 +44,7 @@ https_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "https://$IP"; else e
 http_url() { if [ "${HTTP_PORT:-80}" = 80 ]; then echo "http://$IP"; else echo "http://$IP:$HTTP_PORT"; fi; }
 setup_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "$(http_url)/setup"; else echo "$(http_url)/setup?https_port=$HTTPS_PORT"; fi; }
 
-usage() { sed -n '2,21p' "$self" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,22p' "$self" | sed 's/^# \{0,1\}//'; }
 
 command="${1:-help}"
 [ $# -gt 0 ] && shift
@@ -78,9 +79,44 @@ case "$command" in
 
   It works once, for 30 minutes. On that device, in Chrome:
     - the first time, open $(setup_url) and follow step 1 (the certificate);
-    - then open $(https_url)/enrol and type the code.
+    - then open $(https_url)/enrol and type the code,
+      or open $(https_url)/enrol#code=$code, which fills it in.
 
 TEXT
+        ;;
+    printer)
+        # A counter's receipt printer (D87): a network printer's address, or the address of the Windows PC
+        # whose print bridge serves its USB printer. It is kept in the shop's profile, so a later install.sh
+        # keeps it too, and applied at once.
+        if [ $# -lt 2 ]; then echo 'Give the counter and its printer: sudo haq printer T02 192.168.1.22 (or 192.168.1.22:9100, or none).' >&2; exit 2; fi
+        device="$(echo "$1" | tr '[:lower:]' '[:upper:]')"
+        profile="$dir/shop.profile.json"
+        if [ ! -f "$profile" ]; then echo "There is no shop profile in $dir: run install.sh first." >&2; exit 1; fi
+        python3 -I - "$profile" "$device" "$2" <<'PY'
+import json, os, re, sys
+path, device, address = sys.argv[1:4]
+with open(path) as f:
+    profile = json.load(f)
+terminal = next((t for t in profile.get("terminals", []) if t.get("code") == device), None)
+if terminal is None or terminal.get("kind", "counter") != "counter":
+    sys.exit(device + " is not a counter in this shop's profile.")
+if address.lower() == "none":
+    terminal["printer"] = None
+else:
+    match = re.fullmatch(r"([A-Za-z0-9.-]{1,64})(?::([0-9]{1,5}))?", address)
+    if match is None or not 1 <= int(match.group(2) or 9100) <= 65535:
+        sys.exit("Type an address such as 192.168.1.22 or 192.168.1.22:9100, or none.")
+    terminal["printer"] = {"host": match.group(1), "port": int(match.group(2) or 9100)}
+with open(path + ".new", "w") as f:
+    json.dump(profile, f, indent=4)
+    f.write("\n")
+os.chmod(path + ".new", 0o600)
+os.replace(path + ".new", path)
+PY
+        # As install.sh applies it: through stdin, removed straight after, since the profile holds shop data.
+        compose exec -T app sh -c 'cat > /tmp/shop.profile.json' < "$profile"
+        # shellcheck disable=SC2016 # $? and $status are the container's
+        compose exec -T app sh -c 'php artisan shop:apply-profile /tmp/shop.profile.json; status=$?; rm -f /tmp/shop.profile.json; exit $status'
         ;;
     certificate)
         if [ "${1:-}" = "--file" ]; then compose exec -T web cat /etc/haq/tls/ca.crt; exit 0; fi
@@ -94,6 +130,21 @@ TEXT
   (The setup page shows the same; Windows shows it under the certificate's Details as Thumbprint.)
 
 TEXT
+        ;;
+    host-report)
+        # On a Windows PC's server (D86) WSL cannot see the PC's disks, so the HAQ Helper reports them and the
+        # clock from Windows, in the report host-health.sh writes on Linux: JSON on stdin, kept as host.json in
+        # the backup disk's status folder for the health page.
+        if [ -z "${STATUS_DIR:-}" ] || [ ! -d "$STATUS_DIR" ]; then echo "This install has no status folder yet: run install.sh again." >&2; exit 1; fi
+        python3 -I -c 'import json, os, sys
+report = json.load(sys.stdin)
+if not isinstance(report, dict) or not isinstance(report.get("disks"), list) or not isinstance(report.get("written_at"), int):
+    sys.exit("The report needs written_at and disks, as host-health.sh writes them.")
+path = sys.argv[1]
+with open(path + ".tmp", "w") as f:
+    json.dump(report, f, indent=2)
+os.chmod(path + ".tmp", 0o644)
+os.replace(path + ".tmp", path)' "$STATUS_DIR/host.json"
         ;;
     check) exec "$dir/bin/check-install.sh" --dir "$dir" --project "$PROJECT" "$@" ;;
     status) compose ps --format 'table {{.Service}}\t{{.State}}\t{{.Status}}' ;;

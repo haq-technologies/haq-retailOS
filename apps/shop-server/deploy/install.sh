@@ -15,7 +15,9 @@
 # haq-server.local), --dir (default /opt/haq-retail-os), --tag (a release, or main before the first one),
 # --channel (stable, beta or pinned: which releases `haq update` takes later; kept as it is if not given),
 # --http-port, --https-port, --project (Compose project name), --backup-dir (the second internal disk's
-# folder for backups), --standin-printer (a rehearsal with no printer only: receipts go to `haq receipts`).
+# folder for backups), --standin-printer (a rehearsal with no printer only: receipts go to `haq receipts`),
+# --windows (the server hidden in WSL2 on a Windows PC, D86: the Windows setup gives it; the HAQ Helper then
+# reports the disks and the clock and starts the off-site copy from Windows, so neither is set up here).
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -31,6 +33,7 @@ project=haq-retail-os
 registry=ghcr.io/haq-technologies
 backup_dir=
 channel=""
+windows=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -46,6 +49,7 @@ while [ $# -gt 0 ]; do
         --registry) registry="$2"; shift 2 ;;
         --backup-dir) backup_dir="$2"; shift 2 ;;
         --standin-printer) standin=1; shift ;;
+        --windows) windows=1; shift ;;
         *) echo "Unknown option $1" >&2; exit 2 ;;
     esac
 done
@@ -66,8 +70,9 @@ if [ "$(id -u)" != 0 ] && [ ! -w "$(dirname "$dir")" ]; then
     echo "Run it with sudo: sudo $0 $*" >&2
     exit 1
 fi
-# The counters reach the server at this address, so it must be the server's own, and fixed.
-if command -v ip >/dev/null && ! ip -o -4 addr show | grep -q " ${ip}/"; then
+# The counters reach the server at this address, so it must be the server's own, and fixed. On a Windows PC
+# it is the PC's own address, which Windows forwards to the server inside WSL.
+if [ "$windows" = 0 ] && command -v ip >/dev/null && ! ip -o -4 addr show | grep -q " ${ip}/"; then
     echo "WARNING: this server does not have the address $ip. Give it that fixed address first, or the counters cannot reach it." >&2
 fi
 # A rehearsal with no printer prints to a stand-in that writes each receipt to its log; a shop never runs it.
@@ -251,10 +256,12 @@ if [ -n "$backup_dir" ]; then
 else
     status_dir="$(docker volume inspect -f '{{ .Mountpoint }}' "${project}_backup-repo" 2>/dev/null || true)/status"
 fi
-if ! command -v smartctl >/dev/null && command -v apt-get >/dev/null; then
+# On a Windows PC (D86) the HAQ Helper writes this report from Windows, through `haq host-report`, since
+# WSL cannot see the PC's disks.
+if [ "$windows" = 0 ] && ! command -v smartctl >/dev/null && command -v apt-get >/dev/null; then
     apt-get install -y -qq smartmontools >/dev/null 2>&1 || echo "WARNING: smartmontools did not install, so the health page cannot show SSD health. Install it when the server is online." >&2
 fi
-if command -v systemctl >/dev/null && [ -d /etc/systemd/system ] && [ "$status_dir" != "/status" ]; then
+if [ "$windows" = 0 ] && command -v systemctl >/dev/null && [ -d /etc/systemd/system ] && [ "$status_dir" != "/status" ]; then
     cat > /etc/systemd/system/haq-host-health.service <<UNIT
 [Unit]
 Description=HAQ Retail OS: the server's SSD and clock report for the health page
@@ -279,8 +286,9 @@ UNIT
 fi
 
 # The off-site copy (spec section 4) [S16, S17, D53]: plugging in a flash drive labelled HAQ-OFFSITE-A or
-# HAQ-OFFSITE-B starts the haq-offsite@ service, which writes an encrypted copy of every backup onto it.
-if command -v systemctl >/dev/null && [ -d /etc/udev/rules.d ]; then
+# HAQ-OFFSITE-B starts the haq-offsite@ service, which writes an encrypted copy of every backup onto it. On a
+# Windows PC the HAQ Helper sees the drive in Windows and runs `offsite.sh copy-windows` instead (D86).
+if [ "$windows" = 0 ] && command -v systemctl >/dev/null && [ -d /etc/udev/rules.d ]; then
     cat > /etc/systemd/system/haq-offsite@.service <<UNIT
 [Unit]
 Description=HAQ Retail OS: the off-site copy onto the flash drive %I
@@ -320,6 +328,8 @@ IP=$ip
 HTTP_PORT=$http_port
 HTTPS_PORT=$https_port
 PROFILES=${COMPOSE_PROFILES:-}
+STATUS_DIR=$status_dir
+WINDOWS=$windows
 CONF
 cp "$here/haq" "$dir/bin/haq"
 chmod 755 "$dir/bin/haq"
