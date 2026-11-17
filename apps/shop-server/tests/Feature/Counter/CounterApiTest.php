@@ -125,7 +125,14 @@ it('never learns a junk code', function (string $code) {
     expect(Learning::isJunk($code))->toBeTrue();
     expect(app(Learning::class)->linkBarcode($code, $this->a->id, $this->cashier->id))->toBeFalse();
     expect(DB::table('barcodes')->count())->toBe(0);
-})->with(['short' => '12345', 'repeated' => '000000', 'repeated letters' => 'AAAAAAAA']);
+})->with(['short' => '12345', 'repeated' => '000000', 'repeated letters' => 'AAAAAAAA', 'longer than a barcode keeps (D83)' => 'https://verify.example.com/p?id='.str_repeat('Ab3', 40)]);
+
+it('answers a code too long to keep as junk, and learns nothing from it (D83)', function () {
+    $code = 'https://verify.example.com/p?id='.str_repeat('Ab3', 40);
+    ($this->as)()->getJson('/api/counter/barcodes/'.rawurlencode($code))->assertOk()->assertJsonPath('junk', true);
+    ($this->as)()->postJson('/api/counter/barcodes', ['code' => $code, 'item_id' => $this->a->id])->assertOk()->assertJsonPath('learned', false);
+    expect(DB::table('barcodes')->count())->toBe(0);
+});
 
 it('stops learning a code linked to more than five items', function () {
     $items = [$this->a, $this->b];

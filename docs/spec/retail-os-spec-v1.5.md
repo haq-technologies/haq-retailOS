@@ -262,8 +262,8 @@ Every printed name is built by one routine in this order: Brand, Model or connec
 - A barcode points to one or more candidate items, never a guaranteed single item.
 - One match adds the item instantly. Several matches open a picker of at most 5 items, most recently chosen first, that remembers the last choice. No match starts the learning step.
 - A learned link works at once but is unconfirmed. It appears in a review list for the manager or storekeeper with a one-tap undo. It becomes confirmed after two further sales that chose the same item, and it is flagged as conflicted if a different cashier picks a different item for the same code. Undoing a link changes no sale. [F13]
-- Junk codes never learn. The ignore list covers codes shorter than 6 characters, repeated-digit codes such as 000000, and any code already linked to more than 5 items. Scanning one opens search with no learning step. [F13]
-- QR codes work the same way, because the scanner types the text.
+- Junk codes never learn. The ignore list covers codes shorter than 6 characters, repeated-digit codes such as 000000, any code already linked to more than 5 items, and any code longer than the 120 characters a barcode keeps. Scanning one opens search with no learning step; a code too long to learn leaves the search empty. [F13, D83]
+- QR codes work the same way, because the scanner types the text. However long a scanned code or a search term is, it never refuses a sale: neither is part of the sale, so the server drops a barcode over 120 characters and a search term over 60. [D83]
 - The starter catalogue ships no barcodes. They are learned only from each shop’s own sales.
 ## Aliases
 - A search term is stored as a candidate alias when a cashier picks an item after searching it. It becomes active only after the same term has led to the same item three times (a setting). Terms shorter than 3 characters are never stored, and the owner (or a manager or the storekeeper, who review aliases) can remove any alias; a removed alias never learns again. [F13, D42]

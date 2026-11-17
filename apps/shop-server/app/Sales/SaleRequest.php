@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Sales;
 
 use App\Audit\Hasher;
+use App\Catalogue\Learning;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -47,8 +48,9 @@ final readonly class SaleRequest
             'lines.*.approval_token' => ['nullable', 'string', 'max:64'],
             'lines.*.confirmed_outside_range' => ['sometimes', 'boolean'],
             'lines.*.retyped' => ['sometimes', 'boolean'],
-            'lines.*.barcode' => ['nullable', 'string', 'max:120'],
-            'lines.*.search_term' => ['nullable', 'string', 'max:60'],
+            // How a line was found is not part of the sale, so its length never refuses one: too long, it is dropped (D83).
+            'lines.*.barcode' => ['nullable', 'string'],
+            'lines.*.search_term' => ['nullable', 'string'],
             'payments' => ['required', 'array', 'min:1', 'max:5'],
             'payments.*.method' => ['required', 'in:cash,transfer,pos'],
             'payments.*.amount_kobo' => ['required', 'integer', 'min:1'],
@@ -81,8 +83,8 @@ final readonly class SaleRequest
                 'approval_token' => $l['approval_token'] ?? null,
                 'confirmed_outside_range' => (bool) ($l['confirmed_outside_range'] ?? false),
                 'retyped' => (bool) ($l['retyped'] ?? false),
-                'barcode' => isset($l['barcode']) && trim($l['barcode']) !== '' ? trim($l['barcode']) : null,
-                'search_term' => isset($l['search_term']) && trim($l['search_term']) !== '' ? trim($l['search_term']) : null,
+                'barcode' => self::kept($l['barcode'] ?? null, Learning::MAX_CODE),
+                'search_term' => self::kept($l['search_term'] ?? null, Learning::MAX_TERM),
             ];
         }
         $payments = [];
@@ -105,6 +107,14 @@ final readonly class SaleRequest
             parkedSaleId: isset($data['parked_sale_id']) ? strtolower($data['parked_sale_id']) : null,
             startedAt: $data['started_at'] ?? null,
         );
+    }
+
+    /** A line's trimmed barcode or search term, or null when it is empty or longer than learning keeps (D83). */
+    private static function kept(?string $value, int $max): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' || mb_strlen($value) > $max ? null : $value;
     }
 
     /**

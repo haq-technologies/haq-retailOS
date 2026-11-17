@@ -20,12 +20,18 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class Learning
 {
+    /** The longest code a barcode keeps (the barcodes table). A longer QR text is read but never learned (D83). */
+    public const MAX_CODE = 120;
+
+    /** The longest search term an alias keeps. */
+    public const MAX_TERM = 60;
+
     public function __construct(private Settings $settings, private AuditLog $audit) {}
 
     public static function isJunk(string $code): bool
     {
         $code = trim($code);
-        if (mb_strlen($code) < 6) {
+        if (mb_strlen($code) < 6 || mb_strlen($code) > self::MAX_CODE) {
             return true;
         }
         if (preg_match('/^(.)\1+$/u', $code) === 1) {
@@ -194,7 +200,7 @@ final readonly class Learning
     public function recordSearch(string $term, string $itemId): void
     {
         $term = NameBuilder::normalise($term);
-        if (mb_strlen($term) < 3 || mb_strlen($term) > 60) {
+        if (mb_strlen($term) < 3 || mb_strlen($term) > self::MAX_TERM) {
             return;
         }
         $activation = $this->settings->get('catalogue.alias_activation');

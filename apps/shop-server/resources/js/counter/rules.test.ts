@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkPrice } from './price-rules';
-import { isReceiptNumber, ScanDetector } from './scanner';
+import { isJunkCode, isReceiptNumber, MAX_CODE, ScanDetector } from './scanner';
 import { buildIndex, search, tokenize } from './search';
 
 describe('the price checks', () => {
@@ -58,6 +58,30 @@ describe('the scanner', () => {
         expect(d.key('Enter', 3700)).toEqual({ kind: 'none' });
         for (const [k, at] of [['1', 5000], ['2', 5008], ['3', 5016], ['4', 5024], ['ArrowLeft', 5032]] as [string, number][]) d.key(k, at);
         expect(d.key('Enter', 5040)).toEqual({ kind: 'none' });
+    });
+
+    it("reads a QR code's text whole, with the Shift a scanner sends before capitals and signs (spec section 6)", () => {
+        const d = new ScanDetector();
+        let t = 1000;
+        const text = 'https://Verify.example.com/p?id=Ab3';
+        // As a scanner types it: Shift before each capital and before : and ?, as a keyboard does.
+        const keys = text.split('').flatMap((k) => (/[A-Z:?]/.test(k) ? ['Shift', k] : [k]));
+        for (const k of keys) d.key(k, (t += 6));
+        expect(d.key('Enter', (t += 6))).toEqual({ kind: 'scan', code: text });
+
+        // A long one too: the detector keeps every character, and the counter decides what it learns (D83).
+        const long = `https://verify.example.com/p?id=${'ab3'.repeat(60)}`;
+        for (const k of long) d.key(k, (t += 6));
+        expect(d.key('Enter', t + 6)).toEqual({ kind: 'scan', code: long });
+    });
+
+    it('never learns a junk code: short, one character repeated, linked to more than five items, or too long to keep (D83)', () => {
+        expect(isJunkCode('12345', 0)).toBe(true);
+        expect(isJunkCode('000000', 0)).toBe(true);
+        expect(isJunkCode('INVOICE-0001', 6)).toBe(true);
+        expect(isJunkCode('x'.repeat(MAX_CODE) + 'y', 0)).toBe(true);
+        expect(isJunkCode('6901234567892', 0)).toBe(false);
+        expect(isJunkCode(`https://verify.example.com/p?id=${'ab3'.repeat(29)}`, 0)).toBe(false); // 119 characters: kept
     });
 
     it('knows a receipt number', () => {

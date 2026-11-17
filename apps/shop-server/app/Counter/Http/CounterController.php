@@ -116,7 +116,8 @@ final class CounterController
     /** The cashier matched an unknown code to an item: the link works at once, unconfirmed [F13]. */
     public function learn(Request $request, Learning $learning): JsonResponse
     {
-        $data = $request->validate(['code' => ['required', 'string', 'max:120'], 'item_id' => ['required', 'string', 'size:26', 'exists:items,id']]);
+        // A code longer than a barcode keeps is junk, so it learns nothing rather than being refused (D83).
+        $data = $request->validate(['code' => ['required', 'string'], 'item_id' => ['required', 'string', 'size:26', 'exists:items,id']]);
         $learned = $learning->linkBarcode((string) $data['code'], (string) $data['item_id'], $this->actor($request)->id);
 
         return response()->json(['learned' => $learned]);

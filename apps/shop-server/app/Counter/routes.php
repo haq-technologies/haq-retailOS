@@ -19,7 +19,8 @@ Route::middleware(['web', EnrolledTerminal::class])->group(function (): void {
 });
 
 Route::middleware(['web', EnrolledTerminal::class, ActingUser::class])->prefix('/api/counter')->group(function (): void {
-    Route::get('/barcodes/{code}', [CounterController::class, 'barcode'])->where('code', '.{1,120}');
+    // Any length: a code longer than a barcode keeps is answered as junk (D83).
+    Route::get('/barcodes/{code}', [CounterController::class, 'barcode'])->where('code', '.+');
     Route::post('/barcodes', [CounterController::class, 'learn']);
     Route::post('/items', [CounterController::class, 'createItem']);
     Route::post('/shapes', [CounterController::class, 'sellShape']);

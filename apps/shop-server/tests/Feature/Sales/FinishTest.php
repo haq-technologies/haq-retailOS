@@ -51,6 +51,19 @@ it('finishes a cash sale with a receipt number, change and a pending print job',
     expect(DB::table('shifts')->where('unattributed', true)->count())->toBe(1);
 });
 
+it('never refuses a sale for a long scanned code or search term, and keeps neither (D83)', function () {
+    // A QR code's text can run past the 120 characters a barcode keeps; neither it nor the search is part of the sale.
+    $qr = 'https://verify.example.com/p?id='.str_repeat('Ab3', 40);
+    $data = Counter::cashSale([$this->a->id => [1, 5000]]);
+    $data['lines'][0] = [...$data['lines'][0], 'added_by' => 'learn', 'barcode' => $qr, 'search_term' => str_repeat('earpiece ', 8)];
+
+    $sale = sell($this->t1, $data);
+
+    expect($sale['receipt_number'])->toBe('T01-E1-000001');
+    $flags = json_decode((string) DB::table('sale_lines')->where('sale_id', $sale['id'])->value('flags'), true);
+    expect($flags)->not->toHaveKey('barcode')->not->toHaveKey('search_term');
+});
+
 it('numbers receipts gaplessly per terminal', function () {
     expect(sell($this->t1, Counter::cashSale([$this->a->id => [1, 1000]]))['receipt_number'])->toBe('T01-E1-000001');
     expect(sell($this->t1, Counter::cashSale([$this->a->id => [1, 1000]]))['receipt_number'])->toBe('T01-E1-000002');
