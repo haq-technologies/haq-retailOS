@@ -47,7 +47,11 @@ The product owner signed and published release 2026.11.2 the same day, the relea
 
 A review on 14 and 15 November 2026, asked for by the product owner after New item's fields lost focus, found five faults at the counter in release 2026.11.2 (D76): a field in any sheet lost focus within 3 seconds, a receipt's barcode would not scan on a real scanner, a manager's PIN typed at Pay joined the cash received, an open Returns refused a scanned receipt, and unprinted receipts were checked every 15 seconds. All five are fixed with tests. Two more faults showed while fixing them: a cost dated today was refused in the first hour after midnight in Lagos (D77), and the images' security updates were only as new as CI's build cache (D78). The tiles now ask the brand in every category with generated shapes, and ask it first (D79); until now only power banks did. New item is laid out for the screen, with no long scroll (D80), at the product owner's word before G5. The releases now reach shops in stages, by channel, and each names its commit (D81). The largest front-end files are split by what they do, with nothing redesigned (D82). So release 2026.11.2 does not go live: release 2026.11.3 does, once the product owner signs it and the G3 rehearsal passes on it.
 
-Next: the shop owner's answers (Open items), then release 2026.11.3 signed and rehearsed, then install at the shop with it (docs/operations/install-a-shop.md), then the safety week (docs/operations/measured-pilot.md) and G5.
+The product owner signed and published release 2026.11.3 on 15 November 2026, as a pre-release.
+
+On 17 November 2026 the product owner asked for a simpler install: a small shop may have only one Windows desktop, a scanner and a USB receipt printer. So a shop's server may now be a Windows 10 or 11 PC, installed by one setup program that hides the server in Windows' own Linux, WSL2 (D86). USB receipt printers work through the HAQ print bridge (D87), and the Windows parts are written in Go with an Inno Setup installer (D88). The Ubuntu mini-PC install stays as it is, and every release carries both ways. Go-live waits for the Windows setup: the first shop installs with the first release that carries it, once G3 passes on it (D89). While planning it, a scanned QR code longer than 120 characters was found to refuse the whole sale (D83), and two counters making their first sales at once could each make a branch key, so one's signed epochs no longer verified (D84); both are fixed.
+
+Next: the Windows setup (the checklist below), starting with the spike on Windows virtual machines; the shop owner's answers (Open items); then the release that carries the Windows setup, signed and rehearsed (G3), the install at the shop with it (docs/operations/install-a-shop.md), the safety week (docs/operations/measured-pilot.md) and G5.
 
 ## Team
 
@@ -200,6 +204,20 @@ Built before go-live, because the app is the shop's record from day one (D67):
 - [x] The day-end close: the blind count, the variance against expected cash, the flag above the threshold, the Z-report with the audit code (check F5) (Claude, 10 November 2026)
 - [x] Paid-outs, drops and top-ups, with a reason and a manager above the set amount (check F6) (Claude, 10 November 2026). The owner sets three new things in Shop settings: the cash limit without a manager (₦0 until set), the drawer difference that is flagged (₦1,000 until set) and the return window (no limit until set); see Open items
 
+## Windows setup (D86 to D89)
+
+Built on main in apps/windows/, one short pull request per step, each with its own CI jobs; the Ubuntu install stays as it is. About 5 to 6 developer-weeks.
+
+- [x] A scanned code never blocks a sale, however long it is (Claude, 17 November 2026; D83)
+- [x] The branch key is made once, even when two counters need it at once (Claude, 17 November 2026; D84)
+- [ ] The spike on a Windows 11 and a Windows 10 22H2 virtual machine: the server starts at power-on with nobody logged in, stays up for 24 hours, is reachable from another machine through the port forward, reaches a print bridge on the PC, survives a hard power-off during `shop:rehearse`, and fits an 8 GB PC. A part that fails takes its fallback, and this plan is updated before the build (product owner runs it, Claude prepares it)
+- [ ] The server's small changes: install.sh's Windows mode, `haq printer` to point a counter at its bridge, the off-site copy from a mounted folder, the setup page taking its one-time code, and the PC's disk and clock report read by the health page (Claude)
+- [ ] The haq-server distribution, built by CI from each commit (Claude)
+- [ ] The HAQ Helper in Go: keeps the server running, the print bridge, the health report, the off-site drives; tested in CI on Linux and on a Windows runner (Claude)
+- [ ] The setup program in Inno Setup: "This PC runs the shop" and "This PC is a counter"; built in CI; each release carries it and the distribution, with their hashes in the signed manifest (Claude)
+- [ ] The documents: install-a-shop.md's Windows section first, the Windows path in g3-software-rehearsal.md (Claude)
+- [ ] The release that carries it, signed (product owner), and G3 on it for both ways (product owner, Claude)
+
 ## Phase 5: go-live and the safety week (D67)
 
 The measured pilot's tools were built on 10 November 2026 (D56, D57); its Measured pilot section is kept, for comparing the notebook with the app in the safety week.
@@ -210,7 +228,7 @@ The measured pilot's tools were built on 10 November 2026 (D56, D57); its Measur
 - [x] Gate G4: every acceptance check written down, A1 to be measured in the safety week (product owner, 11 November 2026, D71)
 - [x] Release 2026.11.2's fixes from the readiness QA review: a counter's clock never stops a sale (D72), a sale is never both voided and returned (D73), `sudo haq users`, `pin` and `deactivate` (D74), and capped logs (D75) (Claude, 11 November 2026)
 - [x] Sign and publish release 2026.11.2 (product owner, 11 November 2026; docs/operations/releases.md)
-- [ ] Install at the shop with release 2026.11.2 (`install.sh --tag 2026.11.2`), setting each counter's date and time (product owner)
+- [ ] Install at the shop with the first release that carries the Windows setup (D89), by the setup program or `install.sh --tag <version>`, setting each counter's date and time (product owner)
 - [ ] The safety week: the notebook beside the app for seven trading days, compared each evening (shop owner and manager)
 - [ ] Gate G5: the owner confirms the notebook can stop (shop owner, product owner)
 
@@ -233,7 +251,8 @@ About 40 developer-weeks to gate G4 in week 20. The plan was made for two develo
 | CI/CD pipeline and the updater | 4 |
 | Acceptance checks and hardening | 4 |
 | Go-live basics (D68) in the place of pilot support (D67) | 2 |
-| **Total** | **40** |
+| The Windows setup and USB printers (D86 to D89), before go-live | 6 |
+| **Total** | **46** |
 
 Assumptions:
 - The work is sized for developers experienced with Laravel, React and PostgreSQL. One person covers it, working extra hours with Claude writing much of the code (D15); G2 shows whether that pace holds.
@@ -276,6 +295,8 @@ Assumptions:
 | Bank statement formats | Product owner, from the pilot shop's banks | MVP | One CSV mapping per bank |
 | Whether the storekeeper may also add brands | Product owner | MVP | Managers and the owner only |
 | Monthly prices for Core and Pro, and the standby kit | Product owner | Before the first paid shop | A proposal after shop cost discovery |
+| Where the Windows spike and rehearsal virtual machines run: Hyper-V on Windows Pro, VirtualBox with nested virtualisation, or a cloud Windows machine; and which edition the product owner's Windows PC is | Product owner | The spike | Asked when the spike is ready |
+| A code-signing certificate for the setup program, or a cloud signing service (D88) | Product owner | Before shops download the setup themselves | Unsigned: Windows asks to run it anyway, acceptable while only HAQ's team installs |
 | Trademark status of HAQ (classes 9 and 42) | Product owner, trademark agent | Before the first paid install | Proceed with the name and register |
 | Say-it-aloud test of HAQ with five shop owners | Product owner | Before launch | Proceed unless owners object |
 
@@ -336,3 +357,4 @@ Assumptions:
 | 11 November 2026 | Gates G3 and G4 pass on release 2026.11.1 (D71); next, the owner's answers and the install at the shop |
 | 11 November 2026 | Readiness QA review: release 2026.11.2 fixes the counter clock that stopped sales, a void racing a return, PIN changes and staff removal, and the log growth (D72 to D75) |
 | 11 November 2026 | Release 2026.11.2 signed and published by the product owner, with its images tagged by version; it is the release that goes live |
+| 17 November 2026 | A scanned code never blocks a sale (D83); the branch key is made once (D84); CI's JavaScript audit allows the picomatch advisory by ID, with its reason (D85). A shop's server may be a Windows PC, installed by one setup program with the server hidden in WSL2 (D86); USB printers through the print bridge (D87); Go and Inno Setup for the Windows parts (D88); go-live waits for the Windows setup, and the GHCR token is typed once in the setup (D89) |
