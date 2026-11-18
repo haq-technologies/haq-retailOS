@@ -386,7 +386,7 @@ function Remove-Spike {
     Get-ChildItem Cert:\LocalMachine\Root | Where-Object { $_.Subject -like '*HAQ Retail OS shop authority*' } | Remove-Item
     if (Get-LocalUser -Name $Account -ErrorAction SilentlyContinue) {
         try { Revoke-AccountRight "$env:COMPUTERNAME\$Account" $BatchRight } catch { Say "The account's right: $_" }
-        Get-CimInstance Win32_UserProfile | Where-Object { $_.LocalPath -like "*\$Account" } | Remove-CimInstance
+        Remove-AccountProfile "$env:COMPUTERNAME\$Account"
         Remove-LocalUser -Name $Account
     }
     Remove-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\SpecialAccounts\UserList' -Name $Account -ErrorAction SilentlyContinue

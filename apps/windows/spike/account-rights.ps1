@@ -2,8 +2,8 @@
 User rights for the spike's hidden account (D86). A scheduled task that runs as an account with a stored
 password signs that account in as a batch job, and Windows refuses the sign-in (status 0xC000015B) unless the
 account holds "Log on as a batch job" (SeBatchLogonRight). Task Scheduler does not grant it by itself, so the
-spike does, through Windows' own LSA policy calls, and removes it again. haq-spike.ps1 dot-sources this file,
-and so does CI's test of it on a Windows runner (test-account-rights.ps1).
+spike does, through Windows' own LSA policy calls, and removes it again, with the account's profile.
+haq-spike.ps1 dot-sources this file, and so does CI's test of it on a Windows runner (test-account-rights.ps1).
 #>
 
 function Initialize-AccountRight {
@@ -185,4 +185,26 @@ function Revoke-AccountRight([string] $Account, [string] $Right) {
 function Get-AccountRight([string] $Account) {
     Initialize-AccountRight
     return [HaqSpike.AccountRights]::Held((Get-AccountSid $Account))
+}
+
+# Removes a local account's profile, found by its SID, before the account goes. Windows keeps a profile loaded
+# for a few seconds after the account's last task ends, and refuses to remove it meanwhile, so this tries for up
+# to a minute, then leaves it and says so.
+function Remove-AccountProfile([string] $Account) {
+    $sid = Get-AccountSid $Account
+    $deadline = (Get-Date).AddSeconds(60)
+    while ($true) {
+        $found = @(Get-CimInstance Win32_UserProfile | Where-Object { $_.SID -eq $sid })
+        if ($found.Count -eq 0) { return }
+        try {
+            $found | Remove-CimInstance -ErrorAction Stop
+            return
+        } catch {
+            if ((Get-Date) -gt $deadline) {
+                Write-Host "The profile of $Account is still in use, so it stays: $_"
+                return
+            }
+            Start-Sleep -Seconds 3
+        }
+    }
 }

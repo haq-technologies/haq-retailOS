@@ -20,7 +20,7 @@ function Remove-TestAccount {
     if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) { Unregister-ScheduledTask -TaskName $taskName -Confirm:$false }
     if (Get-LocalUser -Name $name -ErrorAction SilentlyContinue) {
         try { Revoke-AccountRight $account $right } catch { Write-Host "Cleaning up the right: $_" }
-        Get-CimInstance Win32_UserProfile | Where-Object { $_.LocalPath -like "*\$name" } | Remove-CimInstance
+        Remove-AccountProfile $account
         Remove-LocalUser -Name $name
     }
     if (Test-Path $folder) { Remove-Item $folder -Recurse -Force }
