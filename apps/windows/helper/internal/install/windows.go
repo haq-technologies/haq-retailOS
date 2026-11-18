@@ -35,14 +35,17 @@ func run(ctx context.Context, out io.Writer, name string, args ...string) error 
 // ps runs a PowerShell script. Values go in through the environment, never on the command line, which
 // other programs can read; the script itself is encoded, so no quoting can break it.
 func ps(ctx context.Context, out io.Writer, script string, env map[string]string) error {
-	units := utf16.Encode([]rune("$ErrorActionPreference = 'Stop'\n$ProgressPreference = 'SilentlyContinue'\n" + script))
+	// Errors as plain text: PowerShell writes them in its own XML when its error output is not a console.
+	wrapped := "$ErrorActionPreference = 'Stop'\n$ProgressPreference = 'SilentlyContinue'\ntry {\n" + script +
+		"\n} catch { [Console]::Error.WriteLine(($_ | Out-String).Trim()); exit 1 }"
+	units := utf16.Encode([]rune(wrapped))
 	raw := make([]byte, len(units)*2)
 	for i, u := range units {
 		binary.LittleEndian.PutUint16(raw[i*2:], u)
 	}
 	cmd := exec.CommandContext(ctx, "powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
 		"-EncodedCommand", base64.StdEncoding.EncodeToString(raw))
-	cmd.Env = os.Environ()
+	cmd.Env = windowsPowerShellEnv()
 	for k, v := range env {
 		cmd.Env = append(cmd.Env, k+"="+v)
 	}
@@ -53,6 +56,18 @@ func ps(ctx context.Context, out io.Writer, script string, env map[string]string
 		return fmt.Errorf("%w: %s", err, strings.TrimSpace(errOut.String()))
 	}
 	return nil
+}
+
+// windowsPowerShellEnv is this program's environment for Windows PowerShell, without PowerShell 7's module
+// path: started from PowerShell 7, Windows PowerShell would look for its own modules there and fail.
+func windowsPowerShellEnv() []string {
+	var env []string
+	for _, kv := range os.Environ() {
+		if !strings.HasPrefix(strings.ToUpper(kv), "PSMODULEPATH=") {
+			env = append(env, kv)
+		}
+	}
+	return env
 }
 
 func psOutput(ctx context.Context, script string, env map[string]string) (string, error) {
