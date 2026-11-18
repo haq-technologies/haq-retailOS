@@ -254,6 +254,8 @@ jobs:
           Write-Host "The runner ran as $who"
           & $exe as-server cmd.exe /c 'exit 7'
           if ($LASTEXITCODE -ne 7) { throw "the runner gave code $LASTEXITCODE, not 7" }
+          Write-Host 'The runner gave back the exit code, 7'
+          exit 0
 
       # A whole counter install, against a stand-in shop server on 127.0.0.2 that serves its certificate and
       # thumbprint as nginx does: the certificate trusted, the bridge for a file printer letting in only the
