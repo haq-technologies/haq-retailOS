@@ -71,6 +71,8 @@ func main() {
 		err = printHealth(os.Args[2:])
 	case "drives":
 		err = listDrives()
+	case "addresses":
+		err = listAddresses()
 	case "printers":
 		err = printers(os.Args[2:])
 	case "test-print":
@@ -107,7 +109,8 @@ func usage() {
   haq-helper keepalive                     keeps the hidden server running; run by its task as HAQServer
   haq-helper health [--write]              the PC's disks and clock, as the server's health page reads them
   haq-helper drives                        the drives, and which are off-site drives
-  haq-helper printers [--json]             the printers on this PC, and how each is reached
+  haq-helper addresses                     this PC's own addresses, for its fixed address
+  haq-helper printers [--json|--names]             the printers on this PC, and how each is reached
   haq-helper test-print --printer <name>   the test receipt, with its barcode and QR code
   haq-helper bridge --printer <name> [--listen :9100] [--allow <address or network>,...]
   haq-helper version
@@ -197,6 +200,17 @@ func printHealth(args []string) error {
 	return enc.Encode(r)
 }
 
+func listAddresses() error {
+	list, err := install.Addresses()
+	if err != nil {
+		return err
+	}
+	for _, a := range list {
+		fmt.Println(a)
+	}
+	return nil
+}
+
 func listDrives() error {
 	list, err := drives.List()
 	if err != nil {
@@ -216,11 +230,20 @@ func listDrives() error {
 
 func printers(args []string) error {
 	fs := flag.NewFlagSet("printers", flag.ExitOnError)
-	asJSON := fs.Bool("json", false, "the list as JSON, for the setup")
+	asJSON := fs.Bool("json", false, "the list as JSON")
+	names := fs.Bool("names", false, "the receipt printers there now, a name a line, for the setup program")
 	_ = fs.Parse(args)
 	list, err := printer.List()
 	if err != nil {
 		return err
+	}
+	if *names {
+		for _, f := range list {
+			if f.Present && !printer.Virtual(f) {
+				fmt.Println(f.Name)
+			}
+		}
+		return nil
 	}
 	if *asJSON {
 		if list == nil {

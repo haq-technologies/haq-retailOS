@@ -94,8 +94,8 @@ jobs:
         run: pwsh -NoProfile -File tools/ci/powershell-names.ps1 apps/windows
 
   # The haq-server distribution (D86): Ubuntu with systemd, Docker and this commit's shop server installer, as
-  # the tar the Windows setup imports into WSL2. Built and checked on every pull request; the one built on main
-  # or a release branch is kept for 90 days, for the release made from that commit to carry.
+  # the tar the Windows setup imports into WSL2. Built and checked on every pull request, and handed to the
+  # setup's job; the one built on main or a release branch is kept for 90 days, for that commit's release.
   windows-distro:
     name: windows distro
     runs-on: ubuntu-24.04
@@ -108,15 +108,14 @@ jobs:
       - name: Build and check the distribution
         run: apps/windows/distro/build.sh --out "$RUNNER_TEMP/distro"
 
-      - name: Keep it for the release
-        if: github.event_name == 'push'
+      - name: Keep it for the setup, and from main for the release
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: haq-server-distro
           path: |
             ${{ runner.temp }}/distro/haq-server.tar.gz
             ${{ runner.temp }}/distro/haq-server.tar.gz.sha256
-          retention-days: 90
+          retention-days: ${{ github.event_name == 'push' && 90 || 3 }}
           compression-level: 0
           if-no-files-found: error
 
@@ -354,6 +353,125 @@ jobs:
       - name: A task runs as a new local account once it holds the batch sign-in right
         shell: powershell
         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File apps\windows\spike\test-account-rights.ps1
+
+  # The setup program (D86, D88), made by Inno Setup on Windows with this commit's HAQ Helper and haq-server
+  # distribution. It installs a counter silently against a stand-in server, runs again as an update, and is
+  # uninstalled. The one built on main or a release branch is kept for 90 days, to try on a PC.
+  windows-setup:
+    name: windows setup
+    needs: windows-distro
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: apps/windows/helper/go.mod
+          cache-dependency-path: apps/windows/helper/go.sum
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: haq-server-distro
+          path: ${{ runner.temp }}/distro
+
+      - name: Inno Setup 6.7.4, checked against its SHA-256
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'innosetup-6.7.4.exe'
+          Invoke-WebRequest https://github.com/jrsoftware/issrc/releases/download/is-6_7_4/innosetup-6.7.4.exe -OutFile $installer
+          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
+          if ($hash -ne 'a549929319f9120716677c685535ca4671e4b937b5fdc87e2585f32d8eb30e8c') { throw "Inno Setup's download is not the one pinned: $hash" }
+          $dir = Join-Path $env:RUNNER_TEMP 'inno'
+          Start-Process $installer -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=$dir" -Wait
+          if (-not (Test-Path "$dir\ISCC.exe")) { throw 'Inno Setup did not install' }
+          "INNO=$dir" >> $env:GITHUB_ENV
+
+      - name: Build the setup
+        shell: pwsh
+        run: |
+          $version = 'main-' + '${{ github.sha }}'.Substring(0, 7)
+          $helper = Join-Path $env:RUNNER_TEMP 'haq-helper.exe'
+          go build -C apps/windows/helper -trimpath -ldflags "-s -w -X main.version=$version" -o $helper ./cmd/haq-helper
+          if ($LASTEXITCODE) { throw 'the helper did not build' }
+          $out = Join-Path $env:RUNNER_TEMP 'setup'
+          & "$env:INNO\ISCC.exe" /Qp "/DAppVersion=$version" /DTag=main "/DHelper=$helper" `
+            "/DDistro=$env:RUNNER_TEMP\distro\haq-server.tar.gz" "/O$out" apps\windows\setup\haq-setup.iss
+          if ($LASTEXITCODE) { throw 'ISCC failed' }
+          Get-ChildItem $out | Format-Table Name, @{ n = 'MB'; e = { [math]::Round($_.Length / 1MB) } } | Out-String | Write-Host
+
+      - name: The setup installs a counter silently, updates it, then uninstalls
+        shell: pwsh
+        run: |
+          $setup = (Get-ChildItem "$env:RUNNER_TEMP\setup\*.exe").FullName
+          $site = Join-Path $env:RUNNER_TEMP 'shop-site'
+          New-Item -ItemType Directory -Force $site | Out-Null
+          $ca = New-SelfSignedCertificate -Subject 'CN=HAQ Retail OS shop authority' -CertStoreLocation Cert:\CurrentUser\My `
+            -KeyUsage CertSign, CRLSign -TextExtension @('2.5.29.19={critical}{text}ca=1')
+          $pem = "-----BEGIN CERTIFICATE-----`n" + [Convert]::ToBase64String($ca.RawData, 'InsertLineBreaks') + "`n-----END CERTIFICATE-----`n"
+          [IO.File]::WriteAllText((Join-Path $site 'ca.crt'), $pem)
+          [IO.File]::WriteAllText((Join-Path $site 'ca.thumbprint'), (($ca.Thumbprint -split '(.{4})' | Where-Object { $_ }) -join ' ') + "`n")
+          Remove-Item "Cert:\CurrentUser\My\$($ca.Thumbprint)"
+          $shop = Start-Job -ArgumentList $site -ScriptBlock {
+            param($site)
+            $listener = [Net.HttpListener]::new(); $listener.Prefixes.Add('http://127.0.0.2:80/'); $listener.Start()
+            while ($listener.IsListening) {
+              $context = $listener.GetContext()
+              $file = Join-Path $site $context.Request.Url.AbsolutePath.TrimStart('/')
+              if (Test-Path $file -PathType Leaf) { $body = [IO.File]::ReadAllBytes($file) } else { $body = [byte[]]@(); $context.Response.StatusCode = 404 }
+              $context.Response.OutputStream.Write($body, 0, $body.Length); $context.Response.Close()
+            }
+          }
+          $deadline = (Get-Date).AddSeconds(30)
+          while ($true) {
+            try { Invoke-WebRequest http://127.0.0.2/ca.thumbprint -UseBasicParsing | Out-Null; break }
+            catch { if ((Get-Date) -gt $deadline) { Receive-Job $shop; throw 'the stand-in server never answered' }; Start-Sleep 1 }
+          }
+
+          $answers = Join-Path $env:RUNNER_TEMP 'answers.json'
+          $receipts = Join-Path $env:RUNNER_TEMP 'setup-receipts.bin'
+          @{ mode = 'counter'; address = '127.0.0.1'; server = '127.0.0.2'; counter = 'T02'; code = '4827-1093'; printer = "file:$receipts" } |
+            ConvertTo-Json | Set-Content $answers -Encoding ascii
+          $app = Join-Path $env:ProgramFiles 'HAQ Retail OS'
+          function Run-Setup([string] $log, [string[]] $more) {
+            $p = Start-Process $setup -ArgumentList (@('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$log") + $more) -Wait -PassThru
+            Get-Content $log -Tail 15 | Write-Host
+            Get-Content C:\ProgramData\HAQ\logs\setup.log -Tail 15 -ErrorAction SilentlyContinue | Write-Host
+            if ($p.ExitCode) { throw "the setup gave code $($p.ExitCode)" }
+          }
+          Run-Setup "$env:RUNNER_TEMP\install.log" @('/MODE=counter', "/ANSWERS=$answers")
+          if (Test-Path $answers) { throw 'the setup left the answers file' }
+          if (-not (Test-Path "$app\haq-helper.exe")) { throw 'the helper is not installed' }
+          if (-not (Test-Path C:\ProgramData\HAQ\installed)) { throw 'the counter is not marked installed' }
+          if ((& "$app\haq-helper.exe" service state) -ne 'running') { throw 'the service is not running' }
+          if (-not (Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq $ca.Thumbprint)) { throw 'the certificate is not trusted' }
+          $link = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\StartUp\HAQ Retail OS.lnk'
+          if (-not (Test-Path $link)) { throw 'there is no start-up shortcut' }
+
+          # A second run is an update: it asks nothing, and the service runs again from the new files.
+          Run-Setup "$env:RUNNER_TEMP\update.log" @('/MODE=counter')
+          if ((& "$app\haq-helper.exe" service state) -ne 'running') { throw 'the service is not running after the update' }
+
+          $uninstaller = Get-ChildItem $app -Filter 'unins*.exe' | Select-Object -First 1
+          Start-Process $uninstaller.FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
+          $deadline = (Get-Date).AddSeconds(60)
+          while (Test-Path "$app\haq-helper.exe") { if ((Get-Date) -gt $deadline) { throw 'the uninstall left the helper' }; Start-Sleep 1 }
+          if ((Get-Service HAQHelper -ErrorAction SilentlyContinue)) { throw 'the service is still there' }
+          if (Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq $ca.Thumbprint) { throw 'the certificate is still trusted' }
+          if (Test-Path $link) { throw 'the shortcut is still there' }
+          if (-not (Test-Path C:\ProgramData\HAQ\helper.json)) { throw "the uninstall took the shop's settings" }
+          Stop-Job $shop; Remove-Job $shop -Force
+          Write-Host 'Installed, updated and uninstalled; the shop''s folder is kept.'
+
+      - name: Keep the setup, from main
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: haq-retail-os-setup
+          path: ${{ runner.temp }}/setup/*.exe
+          retention-days: 90
+          compression-level: 0
+          if-no-files-found: error
 
   shop-server-php:
     name: shop-server PHP

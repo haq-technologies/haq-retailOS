@@ -9,7 +9,7 @@ The Windows side of HAQ Retail OS, in Go (D88): one small program with no runtim
 
 ## The install engine
 
-The setup program asks the questions; `haq-helper setup` does the install, in a window the person installing watches, numbering each step. The answers come in a file it reads once and deletes, since it holds the GHCR token and the owner's PIN.
+The setup program ([../setup/README.md](../setup/README.md)) asks the questions; `haq-helper setup` does the install, in a window the person installing watches, numbering each step, and keeps the same in `C:\ProgramData\HAQ\logs\setup.log`. The answers come in a file it reads once and deletes, since it holds the GHCR token and the owner's PIN.
 
 **This PC runs the shop** (`setup server --answers <file> --distro haq-server.tar.gz`), as the spike proved:
 1. checks the PC: an administrator, Windows 10 22H2 or 11, WSL turned on, 8 GB of memory, 30 GB free, the fixed address on an adapter, and no spike left installed
@@ -70,7 +70,9 @@ haq-helper service [run|install|start|stop|remove|state]   the service; the setu
 haq-helper keepalive                         keeps the hidden server running; its task runs it as HAQServer
 haq-helper health [--write]                  the PC's disks and clock, as the server reads them
 haq-helper drives                            the drives, and which are off-site drives
-haq-helper printers [--json]                 the printers on this PC, and how each is reached
+haq-helper addresses                         this PC's own addresses, which the setup offers as its fixed one
+haq-helper printers [--json|--names]         the printers on this PC, and how each is reached; --names lists
+                                             the receipt printers there now, not Windows' own (PDF, OneNote, Fax)
 haq-helper test-print --printer "XP-80C"     the test receipt, with a barcode and a QR code for the scanner check
 haq-helper bridge --printer "XP-80C" --allow 192.168.1.10
 haq-helper version

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -80,6 +81,11 @@ func Counter(ctx context.Context, a Answers, out io.Writer) (Result, error) {
 		return Result{}, err
 	}
 	neverSleep(ctx)
+	// A newer setup run here later updates the Windows parts and asks nothing.
+	mark := fmt.Sprintf("counter %s of %s, %s\n", a.Counter, a.Server, time.Now().UTC().Format(time.RFC3339))
+	if err := config.WriteFile(filepath.Join(config.Dir(), installedMark), []byte(mark)); err != nil {
+		return Result{}, err
+	}
 	fmt.Fprintf(out, "\nThis PC is ready to be counter %s.\n", a.Counter)
 	if result.PrinterLine != "" {
 		fmt.Fprintf(out, "On the server's PC, in Terminal (Admin), point %s at this PC's printer:\n  %s\n", a.Counter, result.PrinterLine)

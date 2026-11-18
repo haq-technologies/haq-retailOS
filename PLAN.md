@@ -215,7 +215,9 @@ Built on main in apps/windows/, one short pull request per step, each with its o
 - [x] The haq-server distribution, built by CI from each commit (Claude, 18 November 2026; [apps/windows/distro/](apps/windows/distro/README.md)): Ubuntu 24.04 with systemd, Docker and the commit's installer, about 170 MB; kept 90 days from main for the release to carry
 - [ ] The HAQ Helper in Go: keeps the server running, the print bridge, the health report, the off-site drives; tested in CI on Linux and on a Windows runner (Claude). The print bridge, the printer list and the test receipt are built (17 November 2026; [apps/windows/helper/](apps/windows/helper/README.md)). The service, the keep-alive, the PC's report and the off-site drives are built (18 November 2026); the bridge on the server's PC lets in only WSL's own network
 - [x] The install engine in the HAQ Helper (`haq-helper setup`): the server's install as the spike proved it, a counter's install, update, stop and remove; CI tries the account, the runner and a whole counter install on a Windows runner (Claude, 18 November 2026)
-- [ ] The setup program in Inno Setup: "This PC runs the shop" and "This PC is a counter"; built in CI; each release carries it and the distribution, with their hashes in the signed manifest (Claude)
+- [x] The setup program in Inno Setup: "This PC runs the shop" and "This PC is a counter", a second run as an update, and uninstall keeping the shop; built in CI with the commit's helper and distribution, and tried silently as a counter on a Windows runner; the one from main is kept 90 days to try on a PC (Claude, 19 November 2026; [apps/windows/setup/](apps/windows/setup/README.md))
+- [ ] The setup tried on the product owner's own PC, from main's build, before the release (product owner; D90)
+- [ ] Each release carries the setup and the distribution, with their hashes in the signed manifest (Claude)
 - [ ] The documents: install-a-shop.md's Windows section first, the Windows path in g3-software-rehearsal.md (Claude)
 - [ ] The release that carries it, signed (product owner), and G3 on it for both ways (product owner, Claude)
 

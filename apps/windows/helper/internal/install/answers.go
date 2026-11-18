@@ -75,6 +75,8 @@ func ReadAnswers(path string) (Answers, error) {
 		return Answers{}, err
 	}
 	removeErr := os.Remove(path)
+	// The setup program writes UTF-8 with a byte-order mark, which JSON does not allow.
+	raw = bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf"))
 	var a Answers
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.DisallowUnknownFields()
