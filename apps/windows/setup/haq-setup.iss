@@ -571,7 +571,8 @@ begin
       'From now on the counter opens full screen whenever Windows starts.';
     if PrinterLine <> '' then
       Text := Text + #13#10#13#10 + 'One more thing, on the server''s PC, in Terminal (Admin):' + #13#10 + PrinterLine;
-    if EnrolURL <> '' then
+    { Silent, nobody is there to enrol: the page is the installer's to open. }
+    if (EnrolURL <> '') and not WizardSilent() then
       ShellExecAsOriginalUser('open', EnrolURL, '', '', SW_SHOWNORMAL, ewNoWait, Code);
   end;
   WizardForm.FinishedLabel.Caption := Text;

@@ -433,10 +433,17 @@ jobs:
           @{ mode = 'counter'; address = '127.0.0.1'; server = '127.0.0.2'; counter = 'T02'; code = '4827-1093'; printer = "file:$receipts" } |
             ConvertTo-Json | Set-Content $answers -Encoding ascii
           $app = Join-Path $env:ProgramFiles 'HAQ Retail OS'
+          # Waits for the setup itself, not for whatever it started, at most 5 minutes; the logs say how far it got.
           function Run-Setup([string] $log, [string[]] $more) {
-            $p = Start-Process $setup -ArgumentList (@('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$log") + $more) -Wait -PassThru
-            Get-Content $log -Tail 15 | Write-Host
-            Get-Content C:\ProgramData\HAQ\logs\setup.log -Tail 15 -ErrorAction SilentlyContinue | Write-Host
+            $p = Start-Process $setup -ArgumentList (@('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$log") + $more) -PassThru
+            $finished = $p.WaitForExit(300000)
+            Get-Content $log -Tail 25 -ErrorAction SilentlyContinue | Write-Host
+            Get-Content C:\ProgramData\HAQ\logs\setup.log -Tail 25 -ErrorAction SilentlyContinue | Write-Host
+            if (-not $finished) {
+              Get-CimInstance Win32_Process | Where-Object Name -match 'haq|setup|\.tmp|powershell|msedge|chrome' |
+                Format-Table ProcessId, ParentProcessId, Name, CommandLine -Wrap | Out-String -Width 200 | Write-Host
+              throw 'the setup did not finish within 5 minutes'
+            }
             if ($p.ExitCode) { throw "the setup gave code $($p.ExitCode)" }
           }
           Run-Setup "$env:RUNNER_TEMP\install.log" @('/MODE=counter', "/ANSWERS=$answers")
@@ -453,7 +460,7 @@ jobs:
           if ((& "$app\haq-helper.exe" service state) -ne 'running') { throw 'the service is not running after the update' }
 
           $uninstaller = Get-ChildItem $app -Filter 'unins*.exe' | Select-Object -First 1
-          Start-Process $uninstaller.FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
+          Start-Process $uninstaller.FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
           $deadline = (Get-Date).AddSeconds(60)
           while (Test-Path "$app\haq-helper.exe") { if ((Get-Date) -gt $deadline) { throw 'the uninstall left the helper' }; Start-Sleep 1 }
           if ((Get-Service HAQHelper -ErrorAction SilentlyContinue)) { throw 'the service is still there' }
