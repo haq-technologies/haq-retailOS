@@ -7,6 +7,34 @@ The Windows side of HAQ Retail OS, in Go (D88): one small program with no runtim
 | The HAQ Helper service (`haq-helper service`) | The system account, from Windows' start; Windows starts it again 5, 10 and 30 seconds after a failure | Every PC with a USB receipt printer, and the PC that runs the server | The print bridge for the PC's receipt printer; on the server's PC, the report of its disks and clock every 15 minutes |
 | The keep-alive (`haq-helper keepalive`) | The hidden HAQServer account, from Windows' start, before anyone signs in (proved by the spike, [../spike/README.md](../spike/README.md)) | The PC that runs the server | Holds the haq-server distribution open and starts it again if it stops; passes the PC's report into the server; starts the off-site copy when an off-site drive is plugged in |
 
+## The install engine
+
+The setup program asks the questions; `haq-helper setup` does the install, in a window the person installing watches, numbering each step. The answers come in a file it reads once and deletes, since it holds the GHCR token and the owner's PIN.
+
+**This PC runs the shop** (`setup server --answers <file> --distro haq-server.tar.gz`), as the spike proved:
+1. checks the PC: an administrator, Windows 10 22H2 or 11, WSL turned on, 8 GB of memory, 30 GB free, the fixed address on an adapter, and no spike left installed
+2. makes the hidden HAQServer account with a new random password, its one right ("Log on as a batch job"), `C:\ProgramData\HAQ` with its permissions, and two tasks as HAQServer: the runner, and the keep-alive from Windows' start
+3. imports the distribution as HAQServer, starts it, and waits for Docker inside
+4. runs the distribution's `windows-install.sh`, which installs the server with `install.sh --windows` and adds the owner
+5. forwards the PC's ports 80 and 443 to the server, and opens them to the shop's network
+6. trusts the shop's certificate on this PC, starts the HAQ Helper service, and makes this PC counter T01: the start-up shortcut, never sleeping on the mains, and a one-time code. The setup then opens the enrol page with the code filled in
+
+**This PC is a counter** (`setup counter --answers <file>`): fetches the shop's certificate from the server and trusts it if its thumbprint is the one the server names; starts the bridge for its own USB printer, letting in only the server; makes the start-up shortcut; and gives the enrol page and the line to run on the server's PC for its printer.
+
+The setup runs as an administrator, but WSL belongs to a Windows user, so commands for the distribution go through **the runner**: a queue only administrators can write, and a task that runs it as HAQServer and writes its output back. A task that never starts is reported within a minute, with Windows' reason.
+
+```
+haq-helper setup check [--mode server|counter] [--address <address>]   exit 20 means WSL is not turned on
+haq-helper setup wsl                         turns on WSL; Windows restarts after it
+haq-helper setup update                      after a newer setup: the Windows parts again, the shop kept
+haq-helper setup stop                        before a newer setup copies its files
+haq-helper setup remove [--delete-shop-and-sales]
+haq-helper server enrol T02                  the shop server's own haq commands, on the server's PC
+haq-helper server printer T02 192.168.1.21   point counter T02 at the bridge on its PC
+```
+
+`setup remove` takes away the Windows parts (the service, the tasks, the port forwarding, the firewall rules, the shortcut and the trusted certificate) and keeps the shop, with its sales, so a setup run again finds it. Only `--delete-shop-and-sales` deletes the distribution, the HAQServer account and `C:\ProgramData\HAQ`.
+
 ## The PC's report
 
 The server inside WSL cannot read Windows' disks, so the service writes the report `deploy/host-health.sh` writes on the mini-PC, field for field, into `C:\ProgramData\HAQ\status\host.json`:
@@ -65,5 +93,7 @@ CI runs the tests with the race detector, vets the Windows code, checks for know
 - makes a print queue on a file port and checks that a RAW job reaches it byte for byte
 - installs the service twice, starts it, sends a receipt through its bridge from the server's address and compares the bytes, then stops and removes it
 - reads the runner's disks and clock as the server would
+- makes the HAQServer account and its tasks, and runs a command as HAQServer through the runner
+- installs a counter against a stand-in server: its certificate trusted, its bridge letting in only the server, its shortcut and its enrol page; then removes it all
 
 GitHub's runners cannot run WSL2, so the keep-alive itself is tried on a real Windows PC (D90). A real USB printer is first met at an install: the setup's test receipt confirms it (D60).

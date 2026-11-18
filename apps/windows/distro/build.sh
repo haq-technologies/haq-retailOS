@@ -34,7 +34,7 @@ fail() { echo "The distribution is not right: $*" >&2; exit 1; }
 listing="$(tar -tf "$tar" | sed 's#^\./##')"
 for path in etc/wsl.conf etc/haq-server-release etc/apt/apt.conf.d/20auto-upgrades usr/lib/systemd/systemd \
     usr/bin/dockerd usr/bin/docker etc/systemd/system/multi-user.target.wants/docker.service \
-    opt/haq-install/install.sh opt/haq-install/haq opt/haq-install/update.sh opt/haq-install/offsite.sh \
+    opt/haq-install/install.sh opt/haq-install/windows-install.sh opt/haq-install/haq opt/haq-install/update.sh opt/haq-install/offsite.sh \
     opt/haq-install/compose.yaml opt/haq-install/release-public.pem; do
     grep -qx -- "$path" <<<"$listing" || fail "$path is missing"
 done

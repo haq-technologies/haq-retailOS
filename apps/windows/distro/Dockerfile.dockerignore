@@ -3,6 +3,7 @@
 *
 !apps/windows/distro/wsl.conf
 !apps/windows/distro/20auto-upgrades
+!apps/windows/distro/windows-install.sh
 !apps/shop-server/deploy/
 apps/shop-server/deploy/secrets/
 apps/shop-server/deploy/staging.sh

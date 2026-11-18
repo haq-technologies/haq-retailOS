@@ -35,6 +35,7 @@ import (
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/drives"
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/escpos"
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/health"
+	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/install"
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/keepalive"
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/logfile"
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/printer"
@@ -54,6 +55,14 @@ func main() {
 	}
 	var err error
 	switch os.Args[1] {
+	case "setup":
+		err = runSetup(os.Args[2:])
+	case "server":
+		err = runServerCommand(os.Args[2:])
+	case "as-server":
+		err = runAsServer(os.Args[2:])
+	case "run-queued":
+		os.Exit(install.RunQueued(install.RunnerDir()))
 	case "service":
 		err = runService(os.Args[2:])
 	case "keepalive":
@@ -85,6 +94,15 @@ func main() {
 
 func usage() {
 	fmt.Fprint(os.Stderr, `Usage:
+  haq-helper setup check [--mode server|counter] [--address <this PC's address>]
+  haq-helper setup wsl                     turns on Windows' Linux; Windows restarts after it
+  haq-helper setup server --answers <file> --distro <haq-server.tar.gz> [--result <file>]
+  haq-helper setup counter --answers <file> [--result <file>]
+  haq-helper setup update | stop | prepare
+  haq-helper setup remove [--delete-shop-and-sales]
+  haq-helper server <haq command>          the shop server's own commands: enrol T02, printer T02 <address>,
+                                           certificate, check, update, users ...
+  haq-helper as-server <program> [args]    runs a program as HAQServer, which owns the server's Linux
   haq-helper service [run|install|start|stop|remove|state]
   haq-helper keepalive                     keeps the hidden server running; run by its task as HAQServer
   haq-helper health [--write]              the PC's disks and clock, as the server's health page reads them

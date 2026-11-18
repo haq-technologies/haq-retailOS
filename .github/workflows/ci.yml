@@ -239,6 +239,81 @@ jobs:
           if ($report.written_at -le 0 -or $null -eq $report.disks) { throw 'the report is not as host-report needs it' }
           ./haq-helper.exe drives
 
+      # The install engine's first part for the server's PC, which needs no WSL: the hidden HAQServer account
+      # with its one right, its folders and its tasks; then a command run as HAQServer through the runner task.
+      - name: The setup's hidden account and its runner
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP 'haq-helper.exe'
+          go build -trimpath -o $exe ./cmd/haq-helper
+          & $exe setup prepare; if ($LASTEXITCODE) { throw 'setup prepare failed' }
+          Get-ScheduledTask -TaskPath '\HAQ Retail OS\' | Format-Table TaskName, State, @{ n = 'User'; e = { $_.Principal.UserId } } | Out-String | Write-Host
+          $who = (& $exe as-server cmd.exe /c whoami) -join ''
+          if ($LASTEXITCODE) { throw "as-server failed: $who" }
+          if ($who.Trim() -ne "$env:COMPUTERNAME\HAQServer") { throw "the runner ran as $who, not HAQServer" }
+          Write-Host "The runner ran as $who"
+          & $exe as-server cmd.exe /c 'exit 7'
+          if ($LASTEXITCODE -ne 7) { throw "the runner gave code $LASTEXITCODE, not 7" }
+
+      # A whole counter install, against a stand-in shop server on 127.0.0.2 that serves its certificate and
+      # thumbprint as nginx does: the certificate trusted, the bridge for a file printer letting in only the
+      # server, the start-up shortcut, and the page that registers it. Then removed.
+      - name: The setup's counter install, then its removal
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP 'haq-helper.exe'
+          $site = Join-Path $env:RUNNER_TEMP 'shop-site'
+          New-Item -ItemType Directory -Force $site | Out-Null
+          $ca = New-SelfSignedCertificate -Subject 'CN=HAQ Retail OS shop authority' -CertStoreLocation Cert:\CurrentUser\My `
+            -KeyUsage CertSign, CRLSign -TextExtension @('2.5.29.19={critical}{text}ca=1')
+          $pem = "-----BEGIN CERTIFICATE-----`n" + [Convert]::ToBase64String($ca.RawData, 'InsertLineBreaks') + "`n-----END CERTIFICATE-----`n"
+          [IO.File]::WriteAllText((Join-Path $site 'ca.crt'), $pem)
+          [IO.File]::WriteAllText((Join-Path $site 'ca.thumbprint'), (($ca.Thumbprint -split '(.{4})' | Where-Object { $_ }) -join ' ') + "`n")
+          Remove-Item "Cert:\CurrentUser\My\$($ca.Thumbprint)"
+          $shop = Start-Process python -ArgumentList '-m', 'http.server', '80', '--bind', '127.0.0.2', '--directory', $site -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 3
+
+          $receipts = Join-Path $env:RUNNER_TEMP 'counter-receipts.bin'
+          $answers = Join-Path $env:RUNNER_TEMP 'answers.json'
+          $result = Join-Path $env:RUNNER_TEMP 'result.json'
+          @{ mode = 'counter'; address = '127.0.0.1'; server = '127.0.0.2'; counter = 'T02'; code = '4827-1093'; printer = "file:$receipts" } |
+            ConvertTo-Json | Set-Content $answers -Encoding ascii
+          & $exe setup counter --answers $answers --result $result; if ($LASTEXITCODE) { throw 'setup counter failed' }
+          if (Test-Path $answers) { throw 'the answers were not deleted' }
+          $r = Get-Content $result -Raw | ConvertFrom-Json
+          if ($r.enrol_url -ne 'https://127.0.0.2/enrol#code=4827-1093') { throw "enrol URL $($r.enrol_url)" }
+          if ($r.printer_line -ne 'haq-helper server printer T02 127.0.0.1') { throw "printer line $($r.printer_line)" }
+          if (-not (Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq $ca.Thumbprint)) { throw 'the certificate is not trusted' }
+          $rule = Get-NetFirewallRule -Group 'HAQ Retail OS' | Get-NetFirewallAddressFilter
+          if ($rule.RemoteAddress -ne '127.0.0.2') { throw "the bridge's rule lets in $($rule.RemoteAddress)" }
+          $link = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\StartUp\HAQ Retail OS.lnk'
+          $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
+          if ($shortcut.Arguments -notlike '--kiosk https://127.0.0.2/counter*') { throw "the shortcut opens $($shortcut.TargetPath) $($shortcut.Arguments)" }
+
+          # The bridge lets in the server, 127.0.0.2, and nobody else.
+          function Send([string] $from, [byte[]] $bytes) {
+            $client = [Net.Sockets.TcpClient]::new([Net.IPEndPoint]::new([Net.IPAddress]::Parse($from), 0))
+            $client.Connect('127.0.0.1', 9100); $client.GetStream().Write($bytes, 0, $bytes.Length); $client.Close()
+          }
+          $job = [byte[]]((0x1b, 0x40) + [Text.Encoding]::ASCII.GetBytes("From the server`n"))
+          $deadline = (Get-Date).AddSeconds(30)
+          while ($true) { try { Send '127.0.0.2' $job; break } catch { if ((Get-Date) -gt $deadline) { throw 'the bridge never listened' }; Start-Sleep 1 } }
+          try { Send '127.0.0.1' ([byte[]]((0x1b, 0x40) + [Text.Encoding]::ASCII.GetBytes("From someone else`n"))) } catch { Write-Host "Refused: $_" }
+          while (-not ((Test-Path $receipts) -and (Get-Item $receipts).Length -ge $job.Length)) {
+            if ((Get-Date) -gt $deadline) { throw 'the server''s receipt never printed' }; Start-Sleep -Milliseconds 200
+          }
+          Start-Sleep -Seconds 2
+          if ((Get-Item $receipts).Length -ne $job.Length) { throw 'someone other than the server printed' }
+
+          & $exe setup remove; if ($LASTEXITCODE) { throw 'setup remove failed' }
+          if ((& $exe service state) -ne 'not installed') { throw 'the service is still there' }
+          if (Get-NetFirewallRule -Group 'HAQ Retail OS' -ErrorAction SilentlyContinue) { throw 'the firewall rules are still there' }
+          if (Test-Path $link) { throw 'the shortcut is still there' }
+          if (Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq $ca.Thumbprint) { throw 'the certificate is still trusted' }
+          if (Get-ScheduledTask -TaskPath '\HAQ Retail OS\' -ErrorAction SilentlyContinue) { throw 'the tasks are still there' }
+          Get-Content C:\ProgramData\HAQ\logs\service.log -Tail 5
+          Stop-Process -Id $shop.Id
+
   # The spike's scripts on a real Windows, in Windows PowerShell 5.1 as they run at a shop (D86): its parser,
   # and the hidden account's right to sign in as a batch job, without which its scheduled tasks never start.
   windows-scripts-on-windows:

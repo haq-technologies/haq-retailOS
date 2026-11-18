@@ -21,6 +21,7 @@ COPY apps/windows/distro/20auto-upgrades /etc/apt/apt.conf.d/20auto-upgrades
 # The release's installer, updater and Compose file, as install.sh expects them beside it. The setup runs
 # /opt/haq-install/install.sh --windows; nothing is cloned or downloaded for it at the shop.
 COPY apps/shop-server/deploy/ /opt/haq-install/
+COPY apps/windows/distro/windows-install.sh /opt/haq-install/windows-install.sh
 ARG COMMIT=unknown
 RUN chmod 0755 /opt/haq-install/*.sh /opt/haq-install/haq \
     && printf 'HAQ Retail OS server distribution\ncommit=%s\n' "$COMMIT" > /etc/haq-server-release
