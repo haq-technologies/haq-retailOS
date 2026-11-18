@@ -190,6 +190,55 @@ jobs:
           ./haq-helper.exe printers
           ./haq-helper.exe printers --json
 
+      # The service as Windows runs it, as the system account: a counter whose server is this runner itself,
+      # its receipt printer a file. Installed twice (an update keeps the one service), started, a receipt sent
+      # through its bridge from the server's address, then stopped and removed.
+      - name: The HAQ Helper service, as Windows runs it
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP 'haq-helper.exe'
+          go build -trimpath -o $exe ./cmd/haq-helper
+          $receipts = Join-Path $env:RUNNER_TEMP 'bridge-receipts.bin'
+          New-Item -ItemType Directory -Force C:\ProgramData\HAQ | Out-Null
+          @{ mode = 'counter'; address = '127.0.0.1'; server = '127.0.0.1'; printer = "file:$receipts"; listen = '127.0.0.1:9101' } |
+            ConvertTo-Json | Set-Content C:\ProgramData\HAQ\helper.json -Encoding ascii
+          function Helper { & $exe @args; if ($LASTEXITCODE) { throw "haq-helper $args failed" } }
+          Helper service install
+          Helper service install
+          Helper service start
+          if ((Helper service state) -ne 'running') { throw 'the service is not running' }
+          sc.exe qfailure HAQHelper | Write-Host
+
+          $job = [byte[]]((0x1b, 0x40) + [Text.Encoding]::ASCII.GetBytes("A receipt through the service`n"))
+          $deadline = (Get-Date).AddSeconds(30)
+          while ($true) {
+            try { $client = [Net.Sockets.TcpClient]::new('127.0.0.1', 9101); break }
+            catch { if ((Get-Date) -gt $deadline) { throw 'the bridge never listened' }; Start-Sleep -Milliseconds 500 }
+          }
+          $stream = $client.GetStream(); $stream.Write($job, 0, $job.Length); $client.Close()
+          while (-not ((Test-Path $receipts) -and ((Get-Item $receipts).Length -eq $job.Length))) {
+            if ((Get-Date) -gt $deadline) { throw 'the receipt never reached the printer' }
+            Start-Sleep -Milliseconds 200
+          }
+          if (Compare-Object $job ([IO.File]::ReadAllBytes($receipts)) -SyncWindow 0) { throw 'the receipt changed on the way' }
+
+          Helper service stop
+          if ((Helper service state) -ne 'stopped') { throw 'the service did not stop' }
+          Helper service remove
+          if ((Helper service state) -ne 'not installed') { throw 'the service is still there' }
+          Get-Content C:\ProgramData\HAQ\logs\service.log
+
+      - name: The PC's report and drives, as the server reads them
+        shell: pwsh
+        run: |
+          go build -trimpath -o haq-helper.exe ./cmd/haq-helper
+          $raw = ./haq-helper.exe health
+          if ($LASTEXITCODE) { throw 'health failed' }
+          $raw | Write-Host
+          $report = ($raw -join "`n") | ConvertFrom-Json
+          if ($report.written_at -le 0 -or $null -eq $report.disks) { throw 'the report is not as host-report needs it' }
+          ./haq-helper.exe drives
+
   # The spike's scripts on a real Windows, in Windows PowerShell 5.1 as they run at a shop (D86): its parser,
   # and the hidden account's right to sign in as a batch job, without which its scheduled tasks never start.
   windows-scripts-on-windows:
