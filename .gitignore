@@ -37,3 +37,6 @@ apps/shop-server/deploy/secrets/
 
 # The release signing key never enters the repository (D36); only release-public.pem is committed.
 release-private.pem
+
+# The Windows distribution, built by apps/windows/distro/build.sh
+apps/windows/distro/dist/
