@@ -381,7 +381,7 @@ jobs:
   shop-server-browser:
     name: shop-server browser
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35 # 20, and up to 15 waiting for a new day in Lagos (e2e/global-setup.ts)
     defaults:
       run:
         working-directory: apps/shop-server
