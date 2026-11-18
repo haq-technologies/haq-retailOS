@@ -34,11 +34,27 @@ const (
 type Config struct {
 	Listen  string          // ":9100"
 	Printer printer.Printer //
-	// Allow is the servers that may print; empty lets in whoever the firewall lets in.
-	Allow []netip.Addr
+	// Allow says who may print: the shop server. Nil lets in whoever the firewall lets in.
+	Allow Allow
 	// Probe is how often it looks whether the printer is there.
 	Probe time.Duration
 	Logf  func(format string, args ...any)
+}
+
+// Allow says whether a connection from ip may print. It is asked for each connection, so it can follow an
+// address that changes, such as WSL's own network on the PC that runs the server.
+type Allow func(ip netip.Addr) bool
+
+// Only lets in the given addresses and networks; an address is a network of one.
+func Only(prefixes ...netip.Prefix) Allow {
+	return func(ip netip.Addr) bool {
+		for _, p := range prefixes {
+			if p.Contains(ip) {
+				return true
+			}
+		}
+		return false
+	}
 }
 
 // Bridge passes a server's jobs and status queries to one printer, one at a time.
@@ -269,7 +285,7 @@ func (b *Bridge) cached() []byte {
 }
 
 func (b *Bridge) allowed(addr net.Addr) bool {
-	if len(b.cfg.Allow) == 0 {
+	if b.cfg.Allow == nil {
 		return true
 	}
 	tcp, ok := addr.(*net.TCPAddr)
@@ -280,13 +296,7 @@ func (b *Bridge) allowed(addr net.Addr) bool {
 	if !ok {
 		return false
 	}
-	ip = ip.Unmap()
-	for _, a := range b.cfg.Allow {
-		if a.Unmap() == ip {
-			return true
-		}
-	}
-	return false
+	return b.cfg.Allow(ip.Unmap())
 }
 
 func sleep(ctx context.Context, d time.Duration) bool {

@@ -91,7 +91,15 @@ func start(t *testing.T, p printer.Printer, allow ...netip.Addr) (string, *Bridg
 	}
 	addr := ln.Addr().String()
 	ln.Close()
-	b := New(Config{Listen: addr, Printer: p, Allow: allow, Probe: 50 * time.Millisecond, Logf: t.Logf})
+	var only Allow
+	if len(allow) > 0 {
+		prefixes := make([]netip.Prefix, 0, len(allow))
+		for _, a := range allow {
+			prefixes = append(prefixes, netip.PrefixFrom(a, a.BitLen()))
+		}
+		only = Only(prefixes...)
+	}
+	b := New(Config{Listen: addr, Printer: p, Allow: only, Probe: 50 * time.Millisecond, Logf: t.Logf})
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() { _ = b.Run(ctx); close(done) }()
@@ -264,4 +272,19 @@ func TestAPrintQueueAnswersFromItsState(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitFor(t, func() bool { b, _ := os.ReadFile(path); return len(b) == 4 })
+}
+
+func TestOnlyLetsInItsAddressesAndNetworks(t *testing.T) {
+	allow := Only(netip.MustParsePrefix("10.92.139.200/32"), netip.MustParsePrefix("172.24.16.0/20"))
+	for ip, want := range map[string]bool{
+		"10.92.139.200": true,  // the shop server, by its address
+		"172.24.20.7":   true,  // the server inside WSL, on WSL's own network
+		"172.24.32.1":   false, // just past WSL's network
+		"10.92.139.201": false, // another device on the shop's network
+		"192.168.1.10":  false,
+	} {
+		if got := allow(netip.MustParseAddr(ip)); got != want {
+			t.Errorf("%s: allowed %v, want %v", ip, got, want)
+		}
+	}
 }
