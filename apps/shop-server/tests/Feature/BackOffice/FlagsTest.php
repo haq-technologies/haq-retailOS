@@ -129,6 +129,9 @@ it('flags transfers with no reference, discards, and drawer openings with no sal
 });
 
 it('flags a transfer still waiting after 30 minutes, then the wait once it is finished', function () {
+    // Clear of midnight in Lagos: "today" is the shop's local day, and begun between 23:26 and 23:30, the
+    // flag's 30-minute mark and the look at it at 34 minutes fell on different days (CI, 18 November 2026).
+    $this->travelTo(now('Africa/Lagos')->setTime(10, 0));
     $id = app(Parked::class)->park($this->t1, $this->cashier, 'awaiting_transfer', 'Blue cap', ['lines' => []], 1_500_000);
     $this->travel(20)->minutes();
     expect(($this->owns)()->getJson('/api/back-office/flags?period=today&kind=transfer_waited')->json('flags'))->toBe([]);
