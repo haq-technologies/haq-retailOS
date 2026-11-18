@@ -12,23 +12,20 @@ Write down a pass or a fail for each, with the check reports. The build waits fo
 |---|---|---|
 | 1 | The server starts at power-on with nobody signed in | Restart Windows and wait 5 minutes at the sign-in screen. Then sign in and run `check`: "Server ready" must be earlier than your "Signed in" time |
 | 2 | It stays up | Run `check` again after a day: the distribution's "since" time is unchanged, and `/up` answers 200 |
-| 3 | Other devices reach it | From another machine on the same network, open `https://<the PC's address>/up` and accept the certificate warning: the page loads and says the application is up |
+| 3 | Other devices reach it | From your phone (it is on its own hotspot) or another device on the same network, open `https://<the PC's address>/up` and accept the certificate warning: the page loads and says the application is up |
 | 4 | It reaches a program on its own PC | Make a sale on the counter (step 5 below); `check` counts one more receipt at the bridge |
-| 5 | It survives a power cut | On a virtual machine only (see below): power it off hard while scripted sales run, start it again, and `inside "haq artisan shop:rehearsal-check"` passes |
+| 5 | It survives a power cut | Optional, since it is a real power cut on your PC: save your work, hold the power button while scripted sales run until the PC switches off, start it again, and `inside "haq artisan shop:rehearsal-check"` passes |
 | 6 | It fits an 8 GB PC | Note "WSL memory" from `check` while scripted sales run, against the machine's memory |
 
-Run it twice: on Windows 11, and on Windows 10 22H2.
+Run it on your PC, whichever Windows it has. If a PC with the other version (10 or 11) is to hand, run it there too.
 
 ## The machine
 
-A virtual machine is best, because check 5 needs a hard power-off, and only a virtual machine can be powered off in software (D60). Give it:
-- 4 cores, 8 GB of memory and 80 GB of disk
-- nested virtualisation, since WSL2 is itself a small virtual machine:
-  - Hyper-V (Windows Pro): `Set-VMProcessor -VMName <name> -ExposeVirtualizationExtensions $true` while it is off
-  - VirtualBox: Settings, System, Processor, "Enable Nested VT-x/AMD-V"
-- a network that the other machine for check 3 can reach: Hyper-V's external switch, or VirtualBox's bridged adapter
+Your own Windows PC, as a shop's would be: there is no virtual machine to make (D90). WSL2 is part of Windows, and the spike's first command turns it on. The PC needs:
+- virtualisation turned on in its firmware: Task Manager, Performance, CPU shows "Virtualization: Enabled"
+- 8 GB of memory or more, and 30 GB of free disk
 
-A real PC works for every check except 5.
+Everything the spike adds, `remove` takes away again.
 
 ## Steps
 
@@ -37,7 +34,11 @@ All commands run in an Administrator PowerShell (right-click Start, then Termina
 1. **The files and a fixed address.**
    - Get the repository onto the machine: on its GitHub page, choose Code, then Download ZIP, and unzip it.
    - Open `apps\windows\spike` in the Administrator PowerShell.
-   - Give the machine a fixed IPv4 address: Settings, Network, your adapter, IP assignment, Manual.
+   - Give the PC a fixed IPv4 address on the network it is connected to, such as your phone's hotspot:
+     1. Run `ipconfig`. Under the adapter that is connected ("Wireless LAN adapter Wi-Fi" for a hotspot), note its IPv4 address, subnet mask and default gateway. The gateway is the phone.
+     2. Pick a free address near the top of that range: on an Android hotspot of 192.168.43.x, 192.168.43.200; on an iPhone's, 172.20.10.14 (its range is only .2 to .14).
+     3. In Settings, Network & internet, Wi-Fi, open the hotspot's properties, then IP assignment, Edit, Manual, and turn IPv4 on. Give that address, the subnet mask (Windows 10 asks the prefix length instead: 24 for 255.255.255.0, 28 for 255.255.255.240), and the phone's address as the gateway and as the DNS. Windows keeps it for that network only.
+     4. Some Android phones give the hotspot a new range each time it starts. Keep the hotspot on for the spike. If the range changes, run `remove`, set the address again, and `install` again: the server's certificate is made for its address.
 
 2. **WSL.** Run the first command below. If Windows asks for one, restart.
 
@@ -48,7 +49,7 @@ All commands run in an Administrator PowerShell (right-click Start, then Termina
 3. **Install**, with the machine's fixed address. It asks for the read-only GHCR token once, and takes 10 to 30 minutes.
 
    ```
-   powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 install -Ip 192.168.56.20
+   powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 install -Ip 192.168.43.200
    ```
 
 4. **Check it.** Each report is also saved in `C:\ProgramData\HAQSpike`, to paste back.
@@ -70,7 +71,7 @@ All commands run in an Administrator PowerShell (right-click Start, then Termina
    ```
 
    - For check 6, run `check` in a second Administrator PowerShell while the sales run, and note "WSL memory".
-   - For check 5, run them again, power the virtual machine off hard part-way (Hyper-V: Turn Off; VirtualBox: Close, then Power off the machine), start it, wait 5 minutes, and run:
+   - For check 5, if you choose to do it: save your work, run them again, hold the power button part-way until the PC switches off, start it, wait 5 minutes, and run:
 
    ```
    powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 inside "haq artisan shop:rehearsal-check"

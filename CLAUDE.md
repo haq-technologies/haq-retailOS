@@ -43,7 +43,7 @@ compose.yaml       the development stack for the shop server
 - Ask, do not assume. Shop practice, prices and what a catalogue entry means come from the user or the shop owner, so ask.
 - When there is a better way than the spec, recommend it with its tradeoffs. Never change the design silently.
 - Build for the people who use it: cashiers in a busy queue on a touchscreen, owners who are often away, a small support team.
-- Software only (D60): never plan work, a check or a gate that needs physical hardware. Virtual machines stand in for the shop server, and the stand-in printer for receipt printers.
+- Software only (D60): never plan work, a check or a gate that needs physical hardware. Virtual machines stand in for the shop server, and the stand-in printer for receipt printers. The Windows setup is the exception: it is tried on the product owner's own Windows PC, never in a virtual machine (D90).
 - Record every new decision in docs/decisions.md (next ID, date, source), then update the spec and PLAN.md if they are affected.
 - Scope follows the swap rule: a feature enters a phase only if something of equal size leaves (spec section 16). The never-cut list in spec section 13 is never traded away.
 - Write documents in plain British English (colour, catalogue), in short sentences. Show money as ₦ in text and store it as integer kobo in data; write dates like 5 November 2026.
