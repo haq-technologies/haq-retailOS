@@ -272,8 +272,22 @@ jobs:
           [IO.File]::WriteAllText((Join-Path $site 'ca.crt'), $pem)
           [IO.File]::WriteAllText((Join-Path $site 'ca.thumbprint'), (($ca.Thumbprint -split '(.{4})' | Where-Object { $_ }) -join ' ') + "`n")
           Remove-Item "Cert:\CurrentUser\My\$($ca.Thumbprint)"
-          $shop = Start-Process python -ArgumentList '-m', 'http.server', '80', '--bind', '127.0.0.2', '--directory', $site -PassThru -WindowStyle Hidden
-          Start-Sleep -Seconds 3
+          # Through Windows' own HTTP service, which holds port 80 on the runner, as nginx would answer.
+          $shop = Start-Job -ArgumentList $site -ScriptBlock {
+            param($site)
+            $listener = [Net.HttpListener]::new(); $listener.Prefixes.Add('http://127.0.0.2:80/'); $listener.Start()
+            while ($listener.IsListening) {
+              $context = $listener.GetContext()
+              $file = Join-Path $site $context.Request.Url.AbsolutePath.TrimStart('/')
+              if (Test-Path $file -PathType Leaf) { $body = [IO.File]::ReadAllBytes($file) } else { $body = [byte[]]@(); $context.Response.StatusCode = 404 }
+              $context.Response.OutputStream.Write($body, 0, $body.Length); $context.Response.Close()
+            }
+          }
+          $deadline = (Get-Date).AddSeconds(30)
+          while ($true) {
+            try { Invoke-WebRequest http://127.0.0.2/ca.thumbprint -UseBasicParsing | Out-Null; break }
+            catch { if ((Get-Date) -gt $deadline) { Receive-Job $shop; throw 'the stand-in server never answered' }; Start-Sleep 1 }
+          }
 
           $receipts = Join-Path $env:RUNNER_TEMP 'counter-receipts.bin'
           $answers = Join-Path $env:RUNNER_TEMP 'answers.json'
@@ -314,7 +328,7 @@ jobs:
           if (Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq $ca.Thumbprint) { throw 'the certificate is still trusted' }
           if (Get-ScheduledTask -TaskPath '\HAQ Retail OS\' -ErrorAction SilentlyContinue) { throw 'the tasks are still there' }
           Get-Content C:\ProgramData\HAQ\logs\service.log -Tail 5
-          Stop-Process -Id $shop.Id
+          Stop-Job $shop; Remove-Job $shop -Force
 
   # The spike's scripts on a real Windows, in Windows PowerShell 5.1 as they run at a shop (D86): its parser,
   # and the hidden account's right to sign in as a batch job, without which its scheduled tasks never start.

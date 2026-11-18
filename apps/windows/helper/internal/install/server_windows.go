@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -67,6 +68,10 @@ func Server(ctx context.Context, a Answers, distro string, out io.Writer) (Resul
 	}
 
 	s.next("Opening the shop to its network")
+	removeForward(ctx, a.Address) // a first install that stopped may have made it; the ports are checked without it
+	if err := portsFree(a.Address); err != nil {
+		return Result{}, err
+	}
 	bridgeFrom := ""
 	if a.Printer != "" {
 		bridgeFrom = "LocalSubnet" // the server inside WSL; the bridge itself lets in only WSL's own network
@@ -157,6 +162,19 @@ func importDistribution(ctx context.Context, out io.Writer, distro, dist string)
 	}
 	if code != 0 {
 		return fmt.Errorf("WSL could not import the server's Linux (code %d); the output above says why", code)
+	}
+	return nil
+}
+
+// portsFree checks no other program holds the PC's ports 80 and 443, which the shop's forward needs: IIS,
+// another web server, or a program that took them.
+func portsFree(address string) error {
+	for _, port := range []string{"80", "443"} {
+		ln, err := net.Listen("tcp", net.JoinHostPort(address, port))
+		if err != nil {
+			return fmt.Errorf("another program on this PC holds port %s, which the shop needs (%v): stop it, or ask HAQ support", port, err)
+		}
+		ln.Close()
 	}
 	return nil
 }
