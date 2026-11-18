@@ -88,7 +88,7 @@ if (Get-LocalUser -Name $env:HAQ_ACCOUNT -ErrorAction SilentlyContinue) {
     Enable-LocalUser -Name $env:HAQ_ACCOUNT
 } else {
     New-LocalUser -Name $env:HAQ_ACCOUNT -Password $secure -PasswordNeverExpires -UserMayNotChangePassword -AccountNeverExpires `+"`"+`
-        -Description 'HAQ Retail OS: runs the hidden shop server. Nobody signs in as it.' | Out-Null
+        -Description 'HAQ Retail OS: runs the hidden shop server' | Out-Null
 }`, map[string]string{"HAQ_ACCOUNT": account, "HAQ_PASSWORD": password})
 	if err != nil {
 		return fmt.Errorf("making the %s account: %w", account, err)
