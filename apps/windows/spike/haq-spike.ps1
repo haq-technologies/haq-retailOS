@@ -6,7 +6,7 @@ never use it for a shop. README.md beside it has the steps and what to write dow
 In an Administrator PowerShell, in this folder:
 
   powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 wsl
-  powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 install -Ip 192.168.56.20 [-Tag 2026.11.3] [-Mode Hidden|Logon]
+  powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 install -Ip 192.168.43.200 [-Tag 2026.11.3] [-Mode Hidden|Logon]
   powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 check
   powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 inside "haq check"
   powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 remove
@@ -126,7 +126,7 @@ function New-Password {
 
 function Install-Spike {
     Assert-Admin
-    if ($Ip -eq '') { throw 'Give this PC''s fixed address: -Ip 192.168.56.20' }
+    if ($Ip -eq '') { throw 'Give this PC''s fixed address: -Ip 192.168.43.200' }
     if (-not (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -eq $Ip })) {
         throw "This PC does not have the address $Ip. Give it that fixed address first (README.md, step 1)."
     }

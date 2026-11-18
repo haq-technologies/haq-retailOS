@@ -51,7 +51,7 @@ The product owner signed and published release 2026.11.3 on 15 November 2026, as
 
 On 17 November 2026 the product owner asked for a simpler install: a small shop may have only one Windows desktop, a scanner and a USB receipt printer. So a shop's server may now be a Windows 10 or 11 PC, installed by one setup program that hides the server in Windows' own Linux, WSL2 (D86). USB receipt printers work through the HAQ print bridge (D87), and the Windows parts are written in Go with an Inno Setup installer (D88). The Ubuntu mini-PC install stays as it is, and every release carries both ways. Go-live waits for the Windows setup: the first shop installs with the first release that carries it, once G3 passes on it (D89). While planning it, a scanned QR code longer than 120 characters was found to refuse the whole sale (D83), and two counters making their first sales at once could each make a branch key, so one's signed epochs no longer verified (D84); both are fixed.
 
-Next: the Windows setup (the checklist below), starting with the spike on Windows virtual machines; the shop owner's answers (Open items); then the release that carries the Windows setup, signed and rehearsed (G3), the install at the shop with it (docs/operations/install-a-shop.md), the safety week (docs/operations/measured-pilot.md) and G5.
+Next: the Windows setup (the checklist below), starting with the spike on the product owner's own Windows PC (D90); the shop owner's answers (Open items); then the release that carries the Windows setup, signed and rehearsed (G3), the install at the shop with it (docs/operations/install-a-shop.md), the safety week (docs/operations/measured-pilot.md) and G5.
 
 ## Team
 
@@ -210,7 +210,7 @@ Built on main in apps/windows/, one short pull request per step, each with its o
 
 - [x] A scanned code never blocks a sale, however long it is (Claude, 17 November 2026; D83)
 - [x] The branch key is made once, even when two counters need it at once (Claude, 17 November 2026; D84)
-- [ ] The spike on a Windows 11 and a Windows 10 22H2 virtual machine: the server starts at power-on with nobody logged in, stays up for 24 hours, is reachable from another machine through the port forward, reaches a print bridge on the PC, survives a hard power-off during `shop:rehearse`, and fits an 8 GB PC. A part that fails takes its fallback, and this plan is updated before the build (product owner runs it; Claude prepared it on 17 November 2026: [apps/windows/spike/](apps/windows/spike/README.md), with a CI job for the Windows scripts)
+- [ ] The spike on the product owner's own Windows PC, with no virtual machine (D90): the server starts at power-on with nobody logged in, stays up for 24 hours, is reachable from another machine through the port forward, reaches a print bridge on the PC, survives a hard power-off during `shop:rehearse` (optional: a real power cut), and fits an 8 GB PC. A part that fails takes its fallback, and this plan is updated before the build (product owner runs it; Claude prepared it on 17 November 2026: [apps/windows/spike/](apps/windows/spike/README.md), with a CI job for the Windows scripts)
 - [x] The server's small changes: install.sh's Windows mode (`--windows`), `haq printer` to point a counter at its bridge, the off-site copy from a drive Windows has mounted (`offsite.sh copy-windows`), the enrol page taking its one-time code from a link (`/enrol#code=`), and `haq host-report` for the PC's disk and clock report (Claude, 17 November 2026)
 - [ ] The haq-server distribution, built by CI from each commit (Claude)
 - [ ] The HAQ Helper in Go: keeps the server running, the print bridge, the health report, the off-site drives; tested in CI on Linux and on a Windows runner (Claude). The print bridge, the printer list and the test receipt are built (17 November 2026; [apps/windows/helper/](apps/windows/helper/README.md)); the rest waits for the spike
@@ -295,7 +295,6 @@ Assumptions:
 | Bank statement formats | Product owner, from the pilot shop's banks | MVP | One CSV mapping per bank |
 | Whether the storekeeper may also add brands | Product owner | MVP | Managers and the owner only |
 | Monthly prices for Core and Pro, and the standby kit | Product owner | Before the first paid shop | A proposal after shop cost discovery |
-| Where the Windows spike and rehearsal virtual machines run: Hyper-V on Windows Pro, VirtualBox with nested virtualisation, or a cloud Windows machine; and which edition the product owner's Windows PC is | Product owner | The spike | Asked when the spike is ready |
 | A code-signing certificate for the setup program, or a cloud signing service (D88) | Product owner | Before shops download the setup themselves | Unsigned: Windows asks to run it anyway, acceptable while only HAQ's team installs |
 | Trademark status of HAQ (classes 9 and 42) | Product owner, trademark agent | Before the first paid install | Proceed with the name and register |
 | Say-it-aloud test of HAQ with five shop owners | Product owner | Before launch | Proceed unless owners object |
@@ -358,3 +357,4 @@ Assumptions:
 | 11 November 2026 | Readiness QA review: release 2026.11.2 fixes the counter clock that stopped sales, a void racing a return, PIN changes and staff removal, and the log growth (D72 to D75) |
 | 11 November 2026 | Release 2026.11.2 signed and published by the product owner, with its images tagged by version; it is the release that goes live |
 | 17 November 2026 | A scanned code never blocks a sale (D83); the branch key is made once (D84); CI's JavaScript audit allows the picomatch advisory by ID, with its reason (D85). A shop's server may be a Windows PC, installed by one setup program with the server hidden in WSL2 (D86); USB printers through the print bridge (D87); Go and Inno Setup for the Windows parts (D88); go-live waits for the Windows setup, and the GHCR token is typed once in the setup (D89) |
+| 18 November 2026 | The Windows setup is tried on the product owner's own Windows PC, never in a virtual machine (D90) |
