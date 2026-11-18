@@ -1,0 +1,8 @@
+# The build context is the repository root. The distribution needs only its own settings and the shop
+# server's installer.
+*
+!apps/windows/distro/wsl.conf
+!apps/windows/distro/20auto-upgrades
+!apps/shop-server/deploy/
+apps/shop-server/deploy/secrets/
+apps/shop-server/deploy/staging.sh

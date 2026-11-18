@@ -36,6 +36,13 @@ updates:
       interval: weekly
       day: monday
 
+  # The Ubuntu the haq-server distribution is built from (D86).
+  - package-ecosystem: docker
+    directory: /apps/windows/distro
+    schedule:
+      interval: weekly
+      day: monday
+
   # The HAQ Helper's Go module (D88).
   - package-ecosystem: gomod
     directory: /apps/windows/helper

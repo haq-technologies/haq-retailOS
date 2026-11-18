@@ -93,6 +93,33 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File tools/ci/powershell-names.ps1 apps/windows
 
+  # The haq-server distribution (D86): Ubuntu with systemd, Docker and this commit's shop server installer, as
+  # the tar the Windows setup imports into WSL2. Built and checked on every pull request; the one built on main
+  # or a release branch is kept for 90 days, for the release made from that commit to carry.
+  windows-distro:
+    name: windows distro
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      - name: Build and check the distribution
+        run: apps/windows/distro/build.sh --out "$RUNNER_TEMP/distro"
+
+      - name: Keep it for the release
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: haq-server-distro
+          path: |
+            ${{ runner.temp }}/distro/haq-server.tar.gz
+            ${{ runner.temp }}/distro/haq-server.tar.gz.sha256
+          retention-days: 90
+          compression-level: 0
+          if-no-files-found: error
+
   # The HAQ Helper, in Go (D88): the print bridge and what the setup needs to choose a printer (D87). Its tests
   # run here with the race detector, against a stand-in printer; the Windows code is vetted and built here too.
   windows-helper:

@@ -1,0 +1,3 @@
+// Ubuntu's security updates, every day, as on the mini-PC.
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
