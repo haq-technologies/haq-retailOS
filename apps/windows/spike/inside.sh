@@ -38,7 +38,7 @@ CONF
             exit 1
         fi
         export DEBIAN_FRONTEND=noninteractive
-        echo "Updating Ubuntu…"
+        echo "Updating Ubuntu..."
         apt-get update -qq
         apt-get -y -qq upgrade >/dev/null
         apt-get install -y -qq git ca-certificates curl >/dev/null
