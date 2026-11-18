@@ -45,6 +45,9 @@ $TaskRunner = 'HAQ Spike Runner'
 $TaskServer = 'HAQ Spike Server'
 $TaskBridge = 'HAQ Spike Bridge'
 $RulePrefix = 'HAQ Spike'
+$BatchRight = 'SeBatchLogonRight'
+
+. (Join-Path $Here 'account-rights.ps1')
 
 function Say([string] $Text) { Write-Host $Text }
 
@@ -65,6 +68,28 @@ function Get-Setting([string] $Name) {
     return ''
 }
 
+# Why a task that should run as the server's account did not: Windows logs each sign-in it refuses.
+function Get-RefusedSignIn([datetime] $Since) {
+    $reasons = @{
+        '0xc000015b' = 'it may not sign in as a batch job, which a scheduled task needs'
+        '0xc000006a' = 'its password is wrong'
+        '0xc0000072' = 'it is disabled'
+        '0xc0000234' = 'it is locked out'
+    }
+    $events = @(Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4625; StartTime = $Since } -MaxEvents 50 -ErrorAction SilentlyContinue)
+    foreach ($e in $events) {
+        $data = @{}
+        foreach ($d in ([xml]$e.ToXml()).Event.EventData.Data) { $data[$d.GetAttribute('Name')] = $d.InnerText }
+        if ($data['TargetUserName'] -eq $Account) {
+            $status = "$($data['Status'])".ToLower()
+            $why = $reasons[$status]
+            if (-not $why) { $why = "status $status" }
+            return "Windows refused $Account's sign-in: $why."
+        }
+    }
+    return ''
+}
+
 # Runs PowerShell as the account that owns the distribution (WSL belongs to a Windows user), through the
 # runner task, and shows its output as it comes. Only Administrators can write the queue it runs.
 function Invoke-AsServer([string] $Script, [int] $Minutes = 30) {
@@ -75,8 +100,9 @@ function Invoke-AsServer([string] $Script, [int] $Minutes = 30) {
     $offset = 0
     if (Test-Path $log) { $offset = (Get-Item $log).Length }
     Write-Utf8 $queue ("`$env:WSL_UTF8 = '1'`r`n" + $Script + "`r`nexit `$LASTEXITCODE`r`n")
+    $began = Get-Date
     Start-ScheduledTask -TaskName $TaskRunner
-    $deadline = (Get-Date).AddMinutes($Minutes)
+    $deadline = $began.AddMinutes($Minutes)
     while ($true) {
         Start-Sleep -Seconds 2
         if (Test-Path $log) {
@@ -94,6 +120,13 @@ function Invoke-AsServer([string] $Script, [int] $Minutes = 30) {
             }
         }
         if (Test-Path $done) { break }
+        # A task that never starts leaves no log and no end: say why after a minute, not at the deadline.
+        if (((Get-Date) - $began).TotalSeconds -gt 60 -and "$((Get-ScheduledTask -TaskName $TaskRunner).State)" -ne 'Running') {
+            Start-Sleep -Seconds 3
+            if (Test-Path $done) { break }
+            $result = (Get-ScheduledTaskInfo -TaskName $TaskRunner).LastTaskResult
+            throw ("The runner task is not running and did not finish (Windows' result 0x{0:X8}). {1}" -f $result, (Get-RefusedSignIn $began.AddSeconds(-5))).Trim()
+        }
         if ((Get-Date) -gt $deadline) { throw "No end within $Minutes minutes; the log is $log." }
     }
     $code = "$(Get-Content $done -Raw)".Trim()
@@ -154,6 +187,9 @@ function Install-Spike {
         New-Item -Path $list -Force | Out-Null
         New-ItemProperty -Path $list -Name $Account -Value 0 -PropertyType DWord -Force | Out-Null
         $owner = "$env:COMPUTERNAME\$Account"
+        # Its tasks sign it in as a batch job, which Windows refuses (0xC000015B) to an account without this
+        # right; Task Scheduler does not grant it by itself. It is the only right the account is given.
+        Grant-AccountRight $owner $BatchRight
     } else {
         $owner = [Security.Principal.WindowsIdentity]::GetCurrent().Name
     }
@@ -277,6 +313,11 @@ function Show-Check {
     $wsl = (& wsl.exe --version 2>$null | Select-Object -First 2) -join '; '
     & $add "WSL:          $wsl"
     & $add "Mode:         $(Get-Setting 'mode'), run as $(Get-Setting 'owner')"
+    if ((Get-Setting 'mode') -eq 'Hidden' -and (Get-LocalUser -Name $Account -ErrorAction SilentlyContinue)) {
+        $rights = @(Get-AccountRight "$env:COMPUTERNAME\$Account")
+        if ($rights.Count -eq 0) { $rights = @('none') }
+        & $add "Its rights:   $($rights -join ', ')"
+    }
     & $add "Windows on:   $($os.LastBootUpTime.ToString('yyyy-MM-dd HH:mm:ss'))"
     $sessions = Get-CimInstance Win32_LogonSession | Where-Object { $_.LogonType -in 2, 10, 11 }
     foreach ($session in $sessions) {
@@ -344,7 +385,8 @@ function Remove-Spike {
     Get-NetFirewallRule -DisplayName "$RulePrefix*" -ErrorAction SilentlyContinue | Remove-NetFirewallRule
     Get-ChildItem Cert:\LocalMachine\Root | Where-Object { $_.Subject -like '*HAQ Retail OS shop authority*' } | Remove-Item
     if (Get-LocalUser -Name $Account -ErrorAction SilentlyContinue) {
-        Get-CimInstance Win32_UserProfile | Where-Object { $_.LocalPath -like "*\$Account" } | Remove-CimInstance
+        try { Revoke-AccountRight "$env:COMPUTERNAME\$Account" $BatchRight } catch { Say "The account's right: $_" }
+        Remove-AccountProfile "$env:COMPUTERNAME\$Account"
         Remove-LocalUser -Name $Account
     }
     Remove-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\SpecialAccounts\UserList' -Name $Account -ErrorAction SilentlyContinue
