@@ -159,6 +159,31 @@ jobs:
           ./haq-helper.exe printers
           ./haq-helper.exe printers --json
 
+  # The spike's scripts on a real Windows, in Windows PowerShell 5.1 as they run at a shop (D86): its parser,
+  # and the hidden account's right to sign in as a batch job, without which its scheduled tasks never start.
+  windows-scripts-on-windows:
+    name: windows scripts on Windows
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Windows PowerShell 5.1's parser
+        shell: powershell
+        run: |
+          $failed = $false
+          foreach ($file in Get-ChildItem apps\windows -Recurse -Filter *.ps1) {
+            $tokens = $null; $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            foreach ($e in $errors) { Write-Host ("{0}:{1}: {2}" -f $file.FullName, $e.Extent.StartLineNumber, $e.Message); $failed = $true }
+          }
+          Write-Host "Windows PowerShell $($PSVersionTable.PSVersion)"
+          if ($failed) { exit 1 }
+
+      - name: A task runs as a new local account once it holds the batch sign-in right
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File apps\windows\spike\test-account-rights.ps1
+
   shop-server-php:
     name: shop-server PHP
     runs-on: ubuntu-24.04

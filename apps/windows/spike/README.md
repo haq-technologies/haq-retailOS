@@ -1,6 +1,6 @@
 # The Windows spike
 
-Before the Windows setup is built (D86), this spike shows on real Windows that the shop server can run hidden in WSL2: Windows' own Linux, with no Ubuntu to install by hand. It installs release 2026.11.3 the way the setup program will. The server runs as a hidden local account, HAQServer, from Windows' start, before anyone signs in. Its ports are forwarded from the PC's fixed address, and a stand-in print bridge on port 9100 keeps each receipt instead of printing it.
+Before the Windows setup is built (D86), this spike shows on real Windows that the shop server can run hidden in WSL2: Windows' own Linux, with no Ubuntu to install by hand. It installs release 2026.11.3 the way the setup program will. The server runs as a hidden local account, HAQServer, from Windows' start, before anyone signs in. The account gets one right, "Log on as a batch job", because Windows signs in a scheduled task's account that way and refuses it otherwise. Its ports are forwarded from the PC's fixed address, and a stand-in print bridge on port 9100 keeps each receipt instead of printing it.
 
 It is throwaway. Its sales are rehearsal records, so remove it afterwards, and never use it for a shop.
 
@@ -77,7 +77,7 @@ All commands run in an Administrator PowerShell (right-click Start, then Termina
    powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 inside "haq artisan shop:rehearsal-check"
    ```
 
-7. **Remove it** when every check is written down. This removes the distribution, the tasks, the port forwards, the firewall rules, the HAQServer account and the trusted certificate:
+7. **Remove it** when every check is written down. This removes the distribution, the tasks, the port forwards, the firewall rules, the HAQServer account and its right to sign in as a batch job, and the trusted certificate:
 
    ```
    powershell -ExecutionPolicy Bypass -File .\haq-spike.ps1 remove
@@ -96,6 +96,6 @@ Check 1 then asks whether the server is ready within 5 minutes of Windows' start
 
 - The pass or fail of each check, and on which Windows.
 - The check reports from `C:\ProgramData\HAQSpike`.
-- If something stopped, the last lines of `C:\ProgramData\HAQSpike\logs\runner.log` and `keepalive.log`.
+- If something stopped, what the script said, and the last lines of `C:\ProgramData\HAQSpike\logs\runner.log` and `keepalive.log`. If a task never started, the script says so within a minute or two, with Windows' reason.
 
 None of these holds the GHCR token: the server keeps that in its own secrets folder, and the spike deletes the copy it handed over.
