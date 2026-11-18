@@ -89,6 +89,10 @@ jobs:
           $findings | Format-Table -AutoSize RuleName, ScriptName, Line, Message -Wrap | Out-String -Width 200 | Write-Host
           if ($findings -or $failed) { exit 1 }
 
+      - name: No function hides a script-level variable
+        shell: pwsh
+        run: pwsh -NoProfile -File tools/ci/powershell-names.ps1 apps/windows
+
   # The HAQ Helper, in Go (D88): the print bridge and what the setup needs to choose a printer (D87). Its tests
   # run here with the race detector, against a stand-in printer; the Windows code is vetted and built here too.
   windows-helper:

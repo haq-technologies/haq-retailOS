@@ -99,7 +99,9 @@ function Invoke-AsServer([string] $Script, [int] $Minutes = 30) {
     if (Test-Path $done) { Remove-Item $done }
     $offset = 0
     if (Test-Path $log) { $offset = (Get-Item $log).Length }
-    Write-Utf8 $queue ("`$env:WSL_UTF8 = '1'`r`n" + $Script + "`r`nexit `$LASTEXITCODE`r`n")
+    # WSL and Ubuntu write UTF-8; the console's own code page would garble anything beyond ASCII.
+    $prelude = "`$env:WSL_UTF8 = '1'`r`ntry { [Console]::OutputEncoding = New-Object Text.UTF8Encoding `$false } catch { }`r`n"
+    Write-Utf8 $queue ($prelude + $Script + "`r`nexit `$LASTEXITCODE`r`n")
     $began = Get-Date
     Start-ScheduledTask -TaskName $TaskRunner
     $deadline = $began.AddMinutes($Minutes)
@@ -201,8 +203,9 @@ function Install-Spike {
         & icacls.exe (Join-Path $Root $folder) /grant "${owner}:(OI)(CI)M" | Out-Null
     }
 
-    $inside = (Get-Content (Join-Path $Here 'inside.sh') -Raw) -replace "`r`n", "`n"
-    Write-Utf8 (Join-Path $Root 'inside.sh') $inside
+    # Not $inside: PowerShell's names ignore case, so that would hide $Inside, the script's path inside WSL.
+    $insideText = (Get-Content (Join-Path $Here 'inside.sh') -Raw) -replace "`r`n", "`n"
+    Write-Utf8 (Join-Path $Root 'inside.sh') $insideText
     Copy-Item (Join-Path $Here 'bridge.ps1') (Join-Path $Root 'bridge.ps1') -Force
     Write-Utf8 (Join-Path $Root 'runner.ps1') @'
 $ErrorActionPreference = 'Continue'
@@ -272,7 +275,9 @@ try {
     $password = $null
 
     Say 'Importing the distribution as its owner...'
-    Invoke-AsServer "wsl.exe --import $Distro `"$Root\wsl`" `"$tar`" --version 2"
+    # A second install, after one that stopped later on, keeps the distribution it already imported.
+    Invoke-AsServer ("`$names = @(wsl.exe --list --quiet | ForEach-Object { `"`$_`".Trim() })`r`n" +
+        "if (`$names -contains '$Distro') { 'The distribution is already imported.' } else { wsl.exe --import $Distro `"$Root\wsl`" `"$tar`" --version 2 }")
     Invoke-AsServer "wsl.exe -d $Distro -u root -- bash $Inside prepare; wsl.exe --terminate $Distro"
     Start-ScheduledTask -TaskName $TaskServer
     Start-Sleep -Seconds 20
@@ -299,7 +304,7 @@ try {
 
 function Show-Check {
     Assert-Admin
-    $ip = Get-Setting 'ip'
+    $address = Get-Setting 'ip'
     $lines = New-Object Collections.Generic.List[string]
     $add = { param($text) $lines.Add($text); Write-Host $text }
 
@@ -340,9 +345,9 @@ function Show-Check {
             & $add "Task:         $name is missing"
         }
     }
-    if ($ip -ne '') {
-        $up = & curl.exe -sk -o NUL -m 10 -w '%{http_code} in %{time_total} s' "https://$ip/up"
-        & $add "From this PC: https://$ip/up answered $up"
+    if ($address -ne '') {
+        $up = & curl.exe -sk -o NUL -m 10 -w '%{http_code} in %{time_total} s' "https://$address/up"
+        & $add "From this PC: https://$address/up answered $up"
     }
     $memory = (Get-Process -Name vmmem, vmmemWSL -ErrorAction SilentlyContinue | Measure-Object -Property WorkingSet64 -Sum).Sum
     & $add ('WSL memory:   {0:N1} GB in use' -f ($memory / 1GB))
@@ -378,9 +383,9 @@ function Remove-Spike {
         try { Invoke-AsServer "wsl.exe --terminate $Distro; wsl.exe --unregister $Distro" -Minutes 5 } catch { Say "The distribution: $_" }
         Unregister-ScheduledTask -TaskName $TaskRunner -Confirm:$false
     }
-    $ip = Get-Setting 'ip'
-    if ($ip -ne '') {
-        foreach ($port in 80, 443) { & netsh.exe interface portproxy delete v4tov4 listenaddress=$ip listenport=$port 2>$null | Out-Null }
+    $address = Get-Setting 'ip'
+    if ($address -ne '') {
+        foreach ($port in 80, 443) { & netsh.exe interface portproxy delete v4tov4 listenaddress=$address listenport=$port 2>$null | Out-Null }
     }
     Get-NetFirewallRule -DisplayName "$RulePrefix*" -ErrorAction SilentlyContinue | Remove-NetFirewallRule
     Get-ChildItem Cert:\LocalMachine\Root | Where-Object { $_.Subject -like '*HAQ Retail OS shop authority*' } | Remove-Item
