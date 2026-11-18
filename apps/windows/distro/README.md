@@ -6,7 +6,7 @@ It is Ubuntu 24.04's own file system with:
 - **systemd**, which WSL starts (`wsl.conf`): it starts Docker, and the stack's restart policies bring the shop back after a power cut.
 - **Docker and Compose** from Ubuntu's packages, as `install.sh` installs them on the mini-PC.
 - **Ubuntu's security updates every day** (`20auto-upgrades`), as on the mini-PC.
-- **This commit's shop server installer** in `/opt/haq-install`: `install.sh`, `haq`, the updater, the restore, the off-site copy, the Compose file and the release public key. The setup runs `/opt/haq-install/install.sh --windows`, so nothing is cloned at the shop. Only the images are pulled, with the shop's read-only token (D89).
+- **This commit's shop server installer** in `/opt/haq-install`: `install.sh`, `haq`, the updater, the restore, the off-site copy, the Compose file and the release public key. The setup runs `/opt/haq-install/windows-install.sh`, which reads the token and the owner's PIN the setup left, deletes them, keeps the shop's profile with the stack (where `haq printer` changes it later), runs `install.sh --windows` and adds the owner. Nothing is cloned at the shop. Only the images are pulled, with the shop's read-only token (D89).
 - **No Windows programs from inside** (`[interop] enabled=false`): Windows drives the server through `wsl.exe`, never the other way.
 
 `/etc/haq-server-release` names the commit it was built from.

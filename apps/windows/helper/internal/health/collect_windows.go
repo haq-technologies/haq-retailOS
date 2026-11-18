@@ -4,7 +4,9 @@ package health
 
 import (
 	"context"
+	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -28,8 +30,15 @@ func Collect(ctx context.Context) Report {
 	disksCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 	var disks []Disk
-	out, err := exec.CommandContext(disksCtx, "powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-		"-Command", disksScript).Output()
+	cmd := exec.CommandContext(disksCtx, "powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+		"-Command", disksScript)
+	// Without PowerShell 7's module path, in case it started this program: Windows PowerShell would look there.
+	for _, kv := range os.Environ() {
+		if !strings.HasPrefix(strings.ToUpper(kv), "PSMODULEPATH=") {
+			cmd.Env = append(cmd.Env, kv)
+		}
+	}
+	out, err := cmd.Output()
 	if err == nil {
 		disks, err = ParseDisks(out)
 	}
