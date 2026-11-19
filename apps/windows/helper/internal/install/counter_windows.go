@@ -82,6 +82,7 @@ func Counter(ctx context.Context, a Answers, out io.Writer) (Result, error) {
 		return Result{}, err
 	}
 	neverSleep(ctx)
+	activeHours(out)
 	// A newer setup run here later updates the Windows parts and asks nothing.
 	mark := fmt.Sprintf("counter %s of %s, %s\n", a.Counter, a.Server, time.Now().UTC().Format(time.RFC3339))
 	if err := config.WriteFile(filepath.Join(config.Dir(), installedMark), []byte(mark)); err != nil {

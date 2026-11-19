@@ -55,6 +55,7 @@ func Update(ctx context.Context, out io.Writer) error {
 			}
 		}
 	}
+	activeHours(out)
 	s.next("Starting the HAQ Helper")
 	if cfg.Printer != "" || cfg.Mode == config.Server {
 		if err := startService(); err != nil {
@@ -93,7 +94,7 @@ func Remove(ctx context.Context, out io.Writer, deleteShop bool) error {
 			left = append(left, fmt.Errorf("%s: %w", what, err))
 		}
 	}
-	fmt.Fprintln(out, "Removing the HAQ Helper service, the tasks, the firewall rules, the shortcut and the certificate...")
+	fmt.Fprintln(out, "Removing the HAQ Helper service, the tasks, the firewall rules, the shortcut, the certificate and the active hours...")
 	try("the HAQ Helper service", service.Remove())
 	if deleteShop && cfgErr == nil && cfg.Mode == config.Server {
 		fmt.Fprintln(out, "Deleting the shop server and every sale in it...")
@@ -117,6 +118,7 @@ func Remove(ctx context.Context, out io.Writer, deleteShop bool) error {
 		try("the start-up shortcut", err)
 	}
 	untrust(ctx)
+	try("Windows Update's active hours", removeActiveHours())
 	if deleteShop {
 		if cfgErr == nil && cfg.Mode == config.Server {
 			try("the account's right", changeRight(qualified(account), batchRight, false))

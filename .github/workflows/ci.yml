@@ -306,6 +306,11 @@ jobs:
           $link = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\StartUp\HAQ Retail OS.lnk'
           $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
           if ($shortcut.Arguments -notlike '--kiosk https://127.0.0.2/counter*') { throw "the shortcut opens $($shortcut.TargetPath) $($shortcut.Arguments)" }
+          # Windows Update never restarts a shop PC from 6:00 to 23:00 (D98): the setting and the policy.
+          $hours = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings'
+          if ($hours.ActiveHoursStart -ne 6 -or $hours.ActiveHoursEnd -ne 23 -or $hours.SmartActiveHoursState -ne 0) { throw "the active hours are not 6:00 to 23:00: $($hours | Out-String)" }
+          $policy = Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate'
+          if ($policy.SetActiveHours -ne 1 -or $policy.ActiveHoursStart -ne 6 -or $policy.ActiveHoursEnd -ne 23) { throw "the active hours policy is not set: $($policy | Out-String)" }
 
           # The bridge lets in the server, 127.0.0.2, and nobody else.
           function Send([string] $from, [byte[]] $bytes) {
@@ -328,6 +333,7 @@ jobs:
           if (Test-Path $link) { throw 'the shortcut is still there' }
           if (Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq $ca.Thumbprint) { throw 'the certificate is still trusted' }
           if (Get-ScheduledTask -TaskPath '\HAQ Retail OS\' -ErrorAction SilentlyContinue) { throw 'the tasks are still there' }
+          if ((Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -ErrorAction SilentlyContinue).SetActiveHours) { throw 'the active hours policy is still there' }
           Get-Content C:\ProgramData\HAQ\logs\service.log -Tail 5
           Stop-Job $shop; Remove-Job $shop -Force
 
@@ -461,6 +467,11 @@ jobs:
           if (-not (Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq $ca.Thumbprint)) { throw 'the certificate is not trusted' }
           $link = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\StartUp\HAQ Retail OS.lnk'
           if (-not (Test-Path $link)) { throw 'there is no start-up shortcut' }
+          # Windows Update never restarts a shop PC from 6:00 to 23:00 (D98): the setting and the policy.
+          $hours = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings'
+          if ($hours.ActiveHoursStart -ne 6 -or $hours.ActiveHoursEnd -ne 23 -or $hours.SmartActiveHoursState -ne 0) { throw "the active hours are not 6:00 to 23:00: $($hours | Out-String)" }
+          $policy = Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate'
+          if ($policy.SetActiveHours -ne 1 -or $policy.ActiveHoursStart -ne 6 -or $policy.ActiveHoursEnd -ne 23) { throw "the active hours policy is not set: $($policy | Out-String)" }
 
           # A second run is an update: it asks nothing, and the service runs again from the new files.
           Run-Setup "$env:RUNNER_TEMP\update.log" @('/MODE=counter')
@@ -474,6 +485,7 @@ jobs:
           if ((Get-Service HAQHelper -ErrorAction SilentlyContinue)) { throw 'the service is still there' }
           if (Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq $ca.Thumbprint) { throw 'the certificate is still trusted' }
           if (Test-Path $link) { throw 'the shortcut is still there' }
+          if ((Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -ErrorAction SilentlyContinue).SetActiveHours) { throw 'the active hours policy is still there' }
           if (-not (Test-Path C:\ProgramData\HAQ\helper.json)) { throw "the uninstall took the shop's settings" }
           # The uninstaller ends after its files go, so the PATH is waited for.
           $deadline = (Get-Date).AddSeconds(30)
