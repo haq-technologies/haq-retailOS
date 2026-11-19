@@ -16,14 +16,15 @@ use function Laravel\Prompts\password;
 /**
  * Gives a person a new PIN, for HAQ support (D74, QA finding P15): when a PIN is forgotten or someone else
  * has seen it. The PIN is asked for twice without echoing, as at install; --pin exists only for scripted
- * test installs. The old PIN stops working at once, and the change is audited. `sudo haq pin` runs it.
+ * test installs, and the Windows helper sends it on standard input with --pin-stdin (D99). The old PIN stops working at once, and the change is audited. `sudo haq pin` runs it.
  */
 #[AsCommand(name: 'shop:set-pin')]
 class SetPinCommand extends Command
 {
     use FindsPerson;
+    use GivenPin;
 
-    protected $signature = 'shop:set-pin {person : The name on the tile, or the person\'s ID} {--pin= : Scripted installs, and the Windows helper, which asks it itself: the new PIN}';
+    protected $signature = 'shop:set-pin {person : The name on the tile, or the person\'s ID} {--pin= : Scripted installs: the new PIN} {--pin-stdin : The Windows helper: the new PIN, as the first line of standard input}';
 
     protected $description = 'Give a person a new PIN; the old one stops working';
 
@@ -39,8 +40,8 @@ class SetPinCommand extends Command
             return self::FAILURE;
         }
 
-        $pin = $this->option('pin');
-        if (! is_string($pin) || $pin === '') {
+        $pin = $this->givenPin();
+        if ($pin === null) {
             [$min, $max] = $user->role->pinLength();
             $hint = $min === $max ? "{$min} digits" : "{$min} to {$max} digits";
             $pin = password("New PIN for {$user->name} ({$hint})", required: true);

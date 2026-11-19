@@ -247,10 +247,15 @@ var ErrNoWSL = errors.New("Windows' Linux (WSL) is not turned on yet")
 
 // AsServer runs argv as HAQServer through the runner, for support: the server's own commands inside it.
 func AsServer(ctx context.Context, out io.Writer, argv ...string) (int, error) {
+	return AsServerWithInput(ctx, out, "", argv...)
+}
+
+// AsServerWithInput is AsServer with input given to the command on its standard input: a PIN (D99).
+func AsServerWithInput(ctx context.Context, out io.Writer, input string, argv ...string) (int, error) {
 	if !windows.GetCurrentProcessToken().IsElevated() {
 		return -1, errors.New("run it in Terminal (Admin)")
 	}
-	return asServerHere(ctx, out, argv...)
+	return asServerWithInput(ctx, RunnerDir(), taskRunner{}, out, input, argv...)
 }
 
 // Prepare makes HAQServer, its folders and its tasks, without WSL: the first part of the server's install,

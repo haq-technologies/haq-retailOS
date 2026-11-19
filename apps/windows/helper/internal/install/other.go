@@ -39,5 +39,10 @@ func InstallWSL(context.Context, io.Writer) error { return errWindows }
 // AsServer is Windows only.
 func AsServer(context.Context, io.Writer, ...string) (int, error) { return -1, errWindows }
 
+// AsServerWithInput is Windows only.
+func AsServerWithInput(context.Context, io.Writer, string, ...string) (int, error) {
+	return -1, errWindows
+}
+
 // Prepare is Windows only.
 func Prepare(context.Context, io.Writer) error { return errWindows }

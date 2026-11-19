@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Identity\Console\AddUserCommand;
+use App\Identity\Console\SetPinCommand;
 use App\Identity\Enrolment;
 use App\Identity\Models\User;
 use App\Identity\Pins;
@@ -114,6 +116,31 @@ it('gives a person a new PIN by the name on their tile, and the old one stops wo
         app(Throttle::class)->record($this->shop['terminals'][0]->id, $kemi->id, 'sign_in', false);
     }
     $this->artisan('shop:set-pin', ['person' => $kemi->id, '--pin' => '864200'])->expectsOutputToContain('still locked after wrong PINs')->assertSuccessful();
+});
+
+it('takes a PIN on standard input, so it never stands in a command line (AU9, D99)', function () {
+    $input = tempnam(sys_get_temp_dir(), 'pin');
+    $pins = app(Pins::class);
+    try {
+        file_put_contents($input, "8642\n");
+        AddUserCommand::$pinInput = $input;
+        $this->artisan('shop:add-user', ['name' => 'Bisi', '--role' => 'cashier', '--pin-stdin' => true])->assertSuccessful();
+        $bisi = User::query()->where('name', 'Bisi')->firstOrFail();
+        expect($pins->check('8642', $bisi->pin_hash))->toBeTrue();
+
+        file_put_contents($input, "9753\n");
+        SetPinCommand::$pinInput = $input;
+        $this->artisan('shop:set-pin', ['person' => 'Bisi', '--pin-stdin' => true])->expectsOutputToContain("Bisi's PIN is changed")->assertSuccessful();
+        expect($pins->check('9753', $bisi->fresh()?->pin_hash))->toBeTrue();
+
+        // Nothing given is a PIN that is not right, never a prompt with no one to answer it.
+        file_put_contents($input, '');
+        $this->artisan('shop:set-pin', ['person' => 'Bisi', '--pin-stdin' => true])->assertFailed();
+        expect($pins->check('9753', $bisi->fresh()?->pin_hash))->toBeTrue();
+    } finally {
+        AddUserCommand::$pinInput = SetPinCommand::$pinInput = 'php://stdin';
+        unlink($input);
+    }
 });
 
 it('deactivates someone who leaves by name, and asks for the ID when two share the name (D74, QA finding P15)', function () {
