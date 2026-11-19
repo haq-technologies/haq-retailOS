@@ -31,6 +31,10 @@ func Counter(ctx context.Context, a Answers, out io.Writer) (Result, error) {
 	}
 
 	s.next("Trusting the shop's certificate")
+	// The folders first: on a new counter nothing else has made them.
+	if err := folders(ctx, out, false); err != nil {
+		return Result{}, err
+	}
 	ca, err := fetch(ctx, "http://"+a.Server+"/ca.crt")
 	if err != nil {
 		return Result{}, fmt.Errorf("could not reach the server at %s: %w. Is it on, and is this PC on the shop's network?", a.Server, err)
@@ -54,9 +58,6 @@ func Counter(ctx context.Context, a Answers, out io.Writer) (Result, error) {
 	fmt.Fprintln(out, "The shop's certificate:", thumb, "- the server's PC shows the same with: haq-helper server certificate")
 
 	s.next("Starting the HAQ Helper")
-	if err := folders(ctx, out, false); err != nil {
-		return Result{}, err
-	}
 	cfg := config.Config{Mode: config.Counter, Address: a.Address, Server: a.Server, Printer: a.Printer}
 	if err := config.Save(config.Path(), cfg); err != nil {
 		return Result{}, err

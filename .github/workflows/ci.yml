@@ -288,6 +288,8 @@ jobs:
             catch { if ((Get-Date) -gt $deadline) { Receive-Job $shop; throw 'the stand-in server never answered' }; Start-Sleep 1 }
           }
 
+          # As on a new counter: nothing of HAQ's on the PC yet.
+          Remove-Item C:\ProgramData\HAQ -Recurse -Force -ErrorAction SilentlyContinue
           $receipts = Join-Path $env:RUNNER_TEMP 'counter-receipts.bin'
           $answers = Join-Path $env:RUNNER_TEMP 'answers.json'
           $result = Join-Path $env:RUNNER_TEMP 'result.json'
