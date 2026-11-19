@@ -12,6 +12,7 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+	"golang.org/x/sys/windows/registry"
 
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/config"
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/service"
@@ -137,18 +138,26 @@ Remove-LocalUser -Name $env:HAQ_ACCOUNT -ErrorAction SilentlyContinue`, map[stri
 	return nil
 }
 
-// Preflight checks the PC can take the install, and says what to do about anything that stops it.
-func Preflight(ctx context.Context, out io.Writer, mode config.Mode, address string) error {
+// Preflight checks the PC can take the install, and says what to do about anything that stops it (D92). A
+// counter installs no Linux, so it needs only Windows 10 or 11 and a browser. The server's stops are all
+// checked before Windows' Linux is turned on, so nobody restarts the PC only to be refused. Less memory than
+// the server is tested with is a LowMemoryError when warn is set, for the setup's wizard to ask about;
+// otherwise it is written as a warning and the install goes on.
+func Preflight(ctx context.Context, out io.Writer, mode config.Mode, address string, warn bool) error {
 	if !windows.GetCurrentProcessToken().IsElevated() {
 		return errors.New("run the setup as an administrator")
 	}
-	if v := windows.RtlGetVersion(); v.MajorVersion < 10 || v.BuildNumber < 19045 {
-		return fmt.Errorf("this is Windows build %d: the setup needs Windows 10 22H2 (19045) or Windows 11", v.BuildNumber)
+	v := windows.RtlGetVersion()
+	if v.MajorVersion < 10 {
+		return errors.New(tooOldWindows)
 	}
 	if address != "" {
 		if err := hasAddress(address); err != nil {
 			return err
 		}
+	}
+	if _, _, err := browser(""); err != nil {
+		return err
 	}
 	if mode != config.Server {
 		return nil
@@ -156,21 +165,70 @@ func Preflight(ctx context.Context, out io.Writer, mode config.Mode, address str
 	if _, err := os.Stat(filepath.Join(os.Getenv("ProgramData"), "HAQSpike")); err == nil {
 		return errors.New("the Windows spike is still installed: run its remove command first (apps/windows/spike/README.md, step 7)")
 	}
-	if !wslInstalled(ctx) {
-		return ErrNoWSL
+	revision, version := windowsRevision()
+	if p := serverWindowsProblem(v.BuildNumber, revision, version); p != "" {
+		return errors.New(p)
 	}
-	mem := memoryStatusEx{}
-	mem.Length = uint32(unsafe.Sizeof(mem))
-	if ok, _, _ := procGlobalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&mem))); ok != 0 && mem.TotalPhys < 7<<30 {
-		return fmt.Errorf("this PC has %.1f GB of memory: the server needs 8 GB at the least", float64(mem.TotalPhys)/(1<<30))
+	if armPC() {
+		return errors.New(armProcessor)
+	}
+	if virtualisationTurnedOff(ctx) {
+		return errors.New(virtualisationOff)
 	}
 	var free uint64
 	root, _ := windows.UTF16PtrFromString(filepath.VolumeName(config.Dir()) + `\`)
 	if err := windows.GetDiskFreeSpaceEx(root, &free, nil, nil); err == nil && free < 30<<30 {
 		return fmt.Errorf("drive %s has %d GB free: the server needs 30 GB", filepath.VolumeName(config.Dir()), free>>30)
 	}
+	mem := memoryStatusEx{}
+	mem.Length = uint32(unsafe.Sizeof(mem))
+	if ok, _, _ := procGlobalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&mem))); ok != 0 && mem.TotalPhys < lowMemoryGB<<30 {
+		low := LowMemoryError{GB: float64(mem.TotalPhys) / (1 << 30)}
+		if warn {
+			return low
+		}
+		fmt.Fprintln(out, "Warning:", low.Error())
+	}
+	if !wslInstalled(ctx) {
+		return ErrNoWSL
+	}
 	fmt.Fprintln(out, "This PC can run the shop.")
 	return nil
+}
+
+// windowsRevision is Windows' update revision (the 2311 of 19045.2311) and its version name, such as 22H2.
+func windowsRevision() (uint32, string) {
+	key, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, registry.QUERY_VALUE)
+	if err != nil {
+		return 0, ""
+	}
+	defer key.Close()
+	revision, _, _ := key.GetIntegerValue("UBR")
+	version, _, err := key.GetStringValue("DisplayVersion")
+	if err != nil {
+		version, _, _ = key.GetStringValue("ReleaseId") // before 20H2
+	}
+	return uint32(revision), version
+}
+
+// armPC says whether the PC's own processor is ARM, under which this x64 helper runs emulated: WSL there runs
+// only ARM Linux, and the server's Linux and images are x64.
+func armPC() bool {
+	var process, native uint16
+	return windows.IsWow64Process2(windows.CurrentProcess(), &process, &native) == nil && native == imageFileMachineARM64
+}
+
+const imageFileMachineARM64 = 0xAA64
+
+// virtualisationTurnedOff says whether the firmware keeps the processor's virtualisation from Windows, which
+// WSL 2's virtual machine needs. A hypervisor already running hides the processor's own answer, and is
+// proof enough. When Windows cannot say, it is not taken as off: WSL then says so itself.
+func virtualisationTurnedOff(ctx context.Context) bool {
+	answer, err := psOutput(ctx, `
+$hypervisor = (Get-CimInstance Win32_ComputerSystem).HypervisorPresent
+$firmware = (Get-CimInstance Win32_Processor | Select-Object -First 1).VirtualizationFirmwareEnabled
+"$hypervisor $firmware"`, nil)
+	return err == nil && answer == "False False"
 }
 
 // memoryStatusEx is Windows' MEMORYSTATUSEX.
@@ -184,11 +242,6 @@ var procGlobalMemoryStatusEx = windows.NewLazySystemDLL("kernel32.dll").NewProc(
 
 // ErrNoWSL says Windows' Linux is not turned on yet: `haq-helper setup wsl` does it, with a restart.
 var ErrNoWSL = errors.New("Windows' Linux (WSL) is not turned on yet")
-
-// InstallWSL turns on Windows' Linux, with no distribution of its own. Windows needs a restart after it.
-func InstallWSL(ctx context.Context, out io.Writer) error {
-	return run(ctx, out, "wsl.exe", "--install", "--no-distribution")
-}
 
 // AsServer runs argv as HAQServer through the runner, for support: the server's own commands inside it.
 func AsServer(ctx context.Context, out io.Writer, argv ...string) (int, error) {

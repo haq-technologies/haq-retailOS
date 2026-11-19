@@ -12,7 +12,7 @@ The Windows side of HAQ Retail OS, in Go (D88): one small program with no runtim
 The setup program ([../setup/README.md](../setup/README.md)) asks the questions; `haq-helper setup` does the install, in a window the person installing watches, numbering each step, and keeps the same in `C:\ProgramData\HAQ\logs\setup.log`. The answers come in a file it reads once and deletes, since it holds the GHCR token and the owner's PIN.
 
 **This PC runs the shop** (`setup server --answers <file> --distro haq-server.tar.gz`), as the spike proved:
-1. checks the PC: an administrator, Windows 10 22H2 or 11, WSL turned on, 8 GB of memory, 30 GB free, the fixed address on an adapter, and no spike left installed
+1. checks the PC, before WSL is turned on so nobody restarts only to be refused (D92): an administrator; Windows 10 20H2 to 22H2 updated since November 2022, or Windows 11; not an ARM processor; virtualisation on in the firmware; 30 GB free; Chrome or Edge; the fixed address on an adapter; and no spike left installed. Less than 8 GB of memory is a warning, not a stop. Then WSL turned on. A counter's check is only Windows 10 or 11, the browser and the address
 2. makes the hidden HAQServer account with a new random password, its one right ("Log on as a batch job"), `C:\ProgramData\HAQ` with its permissions, and two tasks as HAQServer: the runner, and the keep-alive from Windows' start
 3. imports the distribution as HAQServer, starts it, and waits for Docker inside
 4. runs the distribution's `windows-install.sh`, which installs the server with `install.sh --windows` and adds the owner
@@ -24,8 +24,11 @@ The setup program ([../setup/README.md](../setup/README.md)) asks the questions;
 The setup runs as an administrator, but WSL belongs to a Windows user, so commands for the distribution go through **the runner**: a queue only administrators can write, and a task that runs it as HAQServer and writes its output back. A task that never starts is reported within a minute, with Windows' reason.
 
 ```
-haq-helper setup check [--mode server|counter] [--address <address>]   exit 20 means WSL is not turned on
-haq-helper setup wsl                         turns on WSL; Windows restarts after it
+haq-helper setup check [--mode server|counter] [--address <address>] [--warned]
+                                             exit 20: WSL is not turned on; exit 21: less memory than
+                                             tested, which --warned goes past once the person has seen it
+haq-helper setup wsl                         turns on WSL: Windows' two features, then Microsoft's WSL
+                                             installer, pinned by version and SHA-256; Windows restarts after it
 haq-helper setup update                      after a newer setup: the Windows parts again, the shop kept
 haq-helper setup stop                        before a newer setup copies its files
 haq-helper setup remove [--delete-shop-and-sales]

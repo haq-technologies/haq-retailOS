@@ -96,7 +96,7 @@ func main() {
 
 func usage() {
 	fmt.Fprint(os.Stderr, `Usage:
-  haq-helper setup check [--mode server|counter] [--address <this PC's address>]
+  haq-helper setup check [--mode server|counter] [--address <this PC's address>] [--warned]
   haq-helper setup wsl                     turns on Windows' Linux; Windows restarts after it
   haq-helper setup server --answers <file> --distro <haq-server.tar.gz> [--result <file>]
   haq-helper setup counter --answers <file> [--result <file>]

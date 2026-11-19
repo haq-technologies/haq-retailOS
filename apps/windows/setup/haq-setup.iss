@@ -1,5 +1,6 @@
-; The HAQ Retail OS setup program (D86, D88). One file that installs the whole shop on a Windows 10 (22H2) or
-; 11 PC ("This PC runs the shop"), or makes a PC a counter of a shop whose server is another PC. It only asks
+; The HAQ Retail OS setup program (D86, D88). One file that installs the whole shop on a 64-bit Windows 10 or
+; 11 PC ("This PC runs the shop"), or makes a PC a counter of a shop whose server is another PC. Which
+; Windows each needs is checked by the PC's own answers, not a version number (D92). It only asks
 ; the questions; the HAQ Helper's install engine (haq-helper setup) does the install, in a window the person
 ; installing watches. A second run on a PC that has it updates the Windows parts and keeps the shop.
 ;
@@ -38,9 +39,9 @@ DefaultDirName={autopf}\HAQ Retail OS
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
-ArchitecturesAllowed=x64compatible
+; No ArchitecturesAllowed or MinVersion: Inno's own refusal for either says only "does not support the
+; version of Windows". InitializeSetup says which in plain words, and the helper checks the rest (D92).
 ArchitecturesInstallIn64BitMode=x64compatible
-MinVersion=10.0.19045
 OutputBaseFilename=HAQ-Retail-OS-Setup-{#AppVersion}
 Compression=lzma2
 SolidCompression=no
@@ -70,6 +71,7 @@ Filename: "{app}\haq-helper.exe"; Parameters: "setup remove"; Flags: runhidden w
 [Code]
 const
   NeedsWSL = 20;
+  LowMemory = 21;
   EnvironmentKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
 
 var
@@ -83,8 +85,32 @@ var
   PrinterPage: TInputOptionWizardPage;
   PrinterHostPage: TInputQueryWizardPage;
   Printers: TArrayOfString;
-  Updating, Failed, ForceClose: Boolean;
+  Updating, Failed, ForceClose, MemoryWarned: Boolean;
   EnrolURL, PrinterLine: String;
+
+{ --- Before anything --- }
+
+{ 64-bit Windows 10 or 11, for the server and for a counter, said in plain words (D92). Whether this PC can
+  run the shop's server is the helper's check, once the person installing has chosen. }
+function InitializeSetup(): Boolean;
+var
+  Version: TWindowsVersion;
+begin
+  Result := True;
+  GetWindowsVersionEx(Version);
+  if Version.Major < 10 then
+  begin
+    SuppressibleMsgBox('HAQ Retail OS needs Windows 10 or 11. This PC has an older Windows.', mbCriticalError, MB_OK, IDOK);
+    Result := False;
+  end
+  else if not IsX64Compatible() then
+  begin
+    SuppressibleMsgBox('This PC runs 32-bit Windows. HAQ Retail OS needs 64-bit Windows 10 or 11, on the shop''s ' +
+      'server and on every counter.' + #13#10#13#10 + 'Settings, then System, then About shows it, under System type.',
+      mbCriticalError, MB_OK, IDOK);
+    Result := False;
+  end;
+end;
 
 { --- Small helpers --- }
 
@@ -144,6 +170,31 @@ begin
   Output := '';
   if LoadStringFromFile(OutFile, Lines) then
     Output := Trim(String(Lines));
+end;
+
+{ Runs a helper step in a window the person installing watches. Silent, it is hidden; watched, the window
+  stays open on a failure until a key is pressed, so its last lines can be read. }
+function RunWatched(const Exe, Params: String): Integer;
+var
+  Code: Integer;
+begin
+  if WizardSilent() then
+  begin
+    if not Exec(Exe, Params, '', SW_HIDE, ewWaitUntilTerminated, Code) then
+      Code := -1;
+  end
+  else if not Exec(ExpandConstant('{cmd}'), '/c ""' + Exe + '" ' + Params + ' || (echo. & echo It stopped: the lines above say why. & pause & exit /b 1)"',
+    '', SW_SHOW, ewWaitUntilTerminated, Code) then
+    Code := -1;
+  Result := Code;
+end;
+
+{ The check goes on past the memory warning once the person installing has seen it. }
+function Warned(): String;
+begin
+  Result := '';
+  if MemoryWarned then
+    Result := ' --warned';
 end;
 
 function IsServer(): Boolean;
@@ -369,15 +420,28 @@ begin
   if CurPageID = ModePage.ID then
   begin
     if IsServer() then Mode := 'server' else Mode := 'counter';
-    Code := RunHelper('setup check --mode ' + Mode, Output);
+    Code := RunHelper('setup check --mode ' + Mode + Warned(), Output);
+    if Code = LowMemory then
+    begin
+      { Less memory than the server is tested with is the person's choice until it is measured (D92). }
+      if MsgBox(Output + #13#10#13#10 + 'Install it on this PC anyway?', mbConfirmation, MB_YESNO) = IDNO then
+      begin
+        Result := False;
+        Exit;
+      end;
+      MemoryWarned := True;
+      Code := RunHelper('setup check --mode ' + Mode + Warned(), Output);
+    end;
     if Code = NeedsWSL then
     begin
       if MsgBox('This PC runs the shop in Windows'' own Linux (WSL), which is not turned on yet.' + #13#10#13#10 +
-        'Click OK to turn it on now. Then restart Windows and run this setup again.',
+        'Click OK to turn it on now: it downloads about 370 MB from Microsoft. Then restart Windows and run this setup again.',
         mbConfirmation, MB_OKCANCEL) = IDOK then
       begin
-        Exec(Helper(), 'setup wsl', '', SW_SHOW, ewWaitUntilTerminated, Code);
-        CloseWizard('Windows'' Linux is turned on. Restart Windows now, then run this setup again.');
+        if RunWatched(Helper(), 'setup wsl') = 0 then
+          CloseWizard('Windows'' Linux is turned on. Restart Windows now, then run this setup again.')
+        else
+          MsgBox('Windows'' Linux was not turned on: its window said why. Put that right, then click Next again.', mbError, MB_OK);
       end;
       Result := False;
     end
@@ -390,7 +454,7 @@ begin
   else if CurPageID = AddressPage.ID then
   begin
     if IsServer() then Mode := 'server' else Mode := 'counter';
-    if RunHelper('setup check --mode ' + Mode + ' --address ' + Trim(AddressPage.Values[0]), Output) <> 0 then
+    if RunHelper('setup check --mode ' + Mode + Warned() + ' --address ' + Trim(AddressPage.Values[0]), Output) <> 0 then
     begin
       MsgBox(Output, mbError, MB_OK);
       Result := False;
@@ -537,22 +601,10 @@ begin
     Exec(ExpandConstant('{app}\haq-helper.exe'), 'setup stop', '', SW_HIDE, ewWaitUntilTerminated, Code);
 end;
 
-{ Runs the engine. Watched, its window stays open on a failure until a key is pressed; silent, it is hidden. }
+{ Runs the install engine, the helper the setup has just put in place, watched. }
 function RunEngine(const Params: String): Integer;
-var
-  Exe: String;
-  Code: Integer;
 begin
-  Exe := ExpandConstant('{app}\haq-helper.exe');
-  if WizardSilent() then
-  begin
-    if not Exec(Exe, Params, '', SW_HIDE, ewWaitUntilTerminated, Code) then
-      Code := -1;
-  end
-  else if not Exec(ExpandConstant('{cmd}'), '/c ""' + Exe + '" ' + Params + ' || (echo. & echo The install stopped: the lines above say why. & pause & exit /b 1)"',
-    '', SW_SHOW, ewWaitUntilTerminated, Code) then
-    Code := -1;
-  Result := Code;
+  Result := RunWatched(ExpandConstant('{app}\haq-helper.exe'), Params);
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
