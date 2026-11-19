@@ -561,3 +561,57 @@ test('lays New item out for the screen: two panes on a counter and a tablet, two
     await sheet.getByRole('button', { name: 'Back to the details' }).click();
     await expect(sheet.getByLabel('Or type the brand')).toHaveValue('Zetacase');
 });
+
+test('keeps a code scanned before New item, asks "Made by" and phone models by family, offers the listed models, and asks before it discards (D93)', async ({ browser }) => {
+    const page = await counter(browser, 'T01');
+    const code = `69${String(Date.now()).slice(-11)}`;
+    // Listen for the feed from the scan on, so the learned link cannot arrive unseen.
+    const delivered = page.waitForResponse(async (r) => {
+        if (!r.url().includes('/api/counter/catalogue/changes')) return false;
+        const body = (await r.json()) as { rows: { barcodes?: { code: string }[] } };
+        return body.rows.barcodes?.some((b) => b.code === code) === true;
+    });
+    await scan(page, code);
+    await expect(page.getByRole('status').filter({ hasText: `New code ${code}` })).toBeVisible();
+    await page.getByRole('button', { name: 'New item' }).click();
+    const sheet = page.getByRole('dialog', { name: 'New item' });
+    await expect(sheet.getByText(`Code ${code} is kept for this item`)).toBeVisible();
+
+    // Pouches: "Made by", with No brand until the cashier chooses, and the phone model chosen by its family.
+    await sheet.getByRole('button', { name: 'Phone pouches and covers', exact: true }).click();
+    const madeBy = sheet.getByRole('region', { name: 'Made by' });
+    await expect(madeBy.getByRole('button', { name: 'No brand', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    const phone = sheet.getByRole('region', { name: 'Phone model' });
+    await expect(phone.getByRole('button', { name: 'iPhone 13', exact: true })).toHaveCount(0);
+    await phone.getByRole('button', { name: 'iPhone', exact: true }).click();
+    await phone.getByRole('button', { name: 'iPhone 13', exact: true }).click();
+    const named = sheet.getByRole('group', { name: 'Name and price' });
+    await expect(named).toContainText('iPhone 13 Pouch');
+
+    // Esc with something chosen asks first, and Keep editing keeps it all.
+    await page.keyboard.press('Escape');
+    await expect(sheet.getByText('Discard this new item?')).toBeVisible();
+    await sheet.getByRole('button', { name: 'Keep editing' }).click();
+    await expect(phone.getByRole('button', { name: 'iPhone 13', exact: true })).toHaveAttribute('aria-pressed', 'true');
+
+    // Earbuds: a new category clears the pouch's details; the listed models are offered, and one brings its brand.
+    await sheet.getByRole('button', { name: 'Change', exact: true }).click();
+    await sheet.getByRole('button', { name: 'Earbuds and earpods', exact: true }).click();
+    const brand = sheet.getByRole('region', { name: 'Brand' });
+    await expect(brand.getByRole('button', { name: 'No brand', exact: true })).toHaveCount(0);
+    await expect(named).not.toContainText('iPhone');
+    await sheet.getByRole('button', { name: 'SpaceBuds', exact: true }).click();
+    await expect(brand.getByRole('button', { name: 'Oraimo', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(named).toContainText('Oraimo SpaceBuds Earbuds');
+    const price = sheet.getByRole('region', { name: 'Price' });
+    await expect(price.getByText('Retail price')).toBeVisible();
+    for (const key of ['1', '5', '0', '0', '0']) await price.getByRole('button', { name: key, exact: true }).click();
+    await sheet.getByRole('button', { name: 'Add at ₦15,000' }).click();
+    await expect(sheet).toBeHidden();
+    await expect(page.getByRole('complementary', { name: 'Sale' }).getByText('Oraimo SpaceBuds Earbuds')).toBeVisible();
+
+    // The code was learned with the item, so once it reaches this counter the next scan adds the item at once.
+    await delivered;
+    await scan(page, code);
+    await expect(page.getByRole('dialog', { name: 'Price' })).toContainText('Oraimo SpaceBuds Earbuds');
+});

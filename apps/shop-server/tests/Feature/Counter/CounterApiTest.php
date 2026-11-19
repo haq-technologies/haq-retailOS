@@ -185,6 +185,41 @@ it('takes a typed phone model as pending, where the category allows it', functio
     ($this->as)()->postJson('/api/counter/items', ['category_id' => $earbuds->id, 'phone_model_text' => 'Tecno Spark 40'])->assertStatus(422)->assertJsonPath('message', 'Pick the phone model from the list.');
 });
 
+it('learns a code scanned before New item for the item it makes, and a junk code never refuses the item (D93)', function () {
+    $earbuds = Category::query()->where('code', 'earbuds')->firstOrFail();
+    $code = '6909876543210';
+    $made = ($this->as)()->postJson('/api/counter/items', ['category_id' => $earbuds->id, 'brand_text' => 'Codemax', 'facets' => ['model' => 'C1'], 'barcode' => $code, 'confirm_new' => true])
+        ->assertStatus(201)->assertJsonPath('learned', true)->json('item');
+    ($this->as)()->getJson("/api/counter/barcodes/{$code}")->assertJsonPath('candidates.0.item_id', $made['id'])->assertJsonPath('candidates.0.status', 'unconfirmed');
+
+    // The sale that made the item taught the code, so it does not confirm it: two further sales do [F13].
+    sellLine($made['id'], ['added_by' => 'learn', 'barcode' => $code]);
+    sellLine($made['id'], ['added_by' => 'scan', 'barcode' => $code]);
+    expect(DB::table('barcodes')->where('code', $code)->value('status'))->toBe('unconfirmed');
+
+    ($this->as)()->postJson('/api/counter/items', ['category_id' => $earbuds->id, 'brand_text' => 'Codemax', 'facets' => ['model' => 'C2'], 'barcode' => '000000', 'confirm_new' => true])
+        ->assertStatus(201)->assertJsonPath('learned', false);
+    expect(DB::table('barcodes')->where('code', '000000')->exists())->toBeFalse();
+});
+
+it('makes a new item with "No brand" the item with no brand, follows a merged brand, and refuses a brand that is gone (D93)', function () {
+    $earbuds = Category::query()->where('code', 'earbuds')->firstOrFail();
+    $none = Brand::query()->where('seed_id', 'brand.no-brand')->firstOrFail();
+    $as = ($this->as)();
+
+    $plain = $as->postJson('/api/counter/items', ['category_id' => $earbuds->id, 'facets' => ['model' => 'Q10'], 'confirm_new' => true])->assertStatus(201)->json('item');
+    $same = $as->postJson('/api/counter/items', ['category_id' => $earbuds->id, 'brand_id' => $none->id, 'facets' => ['model' => 'Q10'], 'confirm_new' => true])->assertStatus(200)->json('item');
+    expect($same['id'])->toBe($plain['id'])->and($same['brand_id'])->toBeNull()->and($same['display_name'])->toBe('Q10 Earbuds');
+
+    $oraimo = Brand::query()->where('seed_id', 'brand.oraimo')->firstOrFail();
+    $old = Brand::query()->create(['name' => 'Oraimoo', 'status' => 'merged', 'merged_into_id' => $oraimo->id, 'aliases' => []]);
+    $item = $as->postJson('/api/counter/items', ['category_id' => $earbuds->id, 'brand_id' => $old->id, 'facets' => ['model' => 'Merged 1'], 'confirm_new' => true])->assertStatus(201)->json('item');
+    expect($item['brand_id'])->toBe($oraimo->id)->and($item['display_name'])->toBe('Oraimo Merged 1 Earbuds');
+
+    $as->postJson('/api/counter/items', ['category_id' => $earbuds->id, 'brand_id' => '01HZZZZZZZZZZZZZZZZZZZZZZZ', 'facets' => ['model' => 'Gone 1'], 'confirm_new' => true])
+        ->assertStatus(422)->assertJsonPath('message', 'That brand is no longer in the list. Choose the brand again.');
+});
+
 it('prints a "Not in the list" item with the cashier\'s word, never "Others"', function () {
     $as = ($this->as)();
     $as->postJson('/api/counter/items', ['not_in_list_word' => 'Others'])->assertStatus(422);

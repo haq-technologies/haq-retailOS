@@ -35,6 +35,8 @@ export class Catalogue {
     seq = 0;
     /** The brand list's "No brand" entry, told by the counter page. An item made by it has no brand (D79). */
     noBrandId: string | null = null;
+    /** A category's default brand, by category ID, told by the counter page: "Made by" is No brand on pouches (D93). */
+    brandDefaults = new Map<string, string>();
 
     private facetIndex = new Map<string, ItemFacetRow>(); // by row id
     private templateIndex = new Map<string, TemplateRow>(); // by row id
@@ -145,6 +147,25 @@ export class Catalogue {
     priceFor(itemId: string, type: CustomerType): { setPrice: number | null; prefill: number | null; source: 'set_price' | 'last_price' | 'median' | null } {
         const info = this.prices.get(itemId)?.[type];
         return { setPrice: info?.set_price ?? null, prefill: info?.prefill ?? null, source: info?.prefill_source ?? null };
+    }
+
+    /**
+     * The brands that belong to a category (D93): those the catalogue shows first there, and any brand with
+     * an item in it, so a typed brand sold in earbuds is one of the earbuds' brands. "No brand" is none, and
+     * a merged brand is gone. A category with none of its own offers the whole list, as the shop visit agreed.
+     */
+    brandsOf(categoryId: string): Set<string> {
+        const code = this.categories.get(categoryId)?.code;
+        const own = new Set<string>();
+        for (const b of this.brands.values()) {
+            if (b.status !== 'merged' && code !== undefined && b.shown_first_in.includes(code)) own.add(b.id);
+        }
+        for (const item of this.items.values()) {
+            if (item.category_id !== categoryId || item.brand_id === null || !this.sellable(item)) continue;
+            if (this.brands.get(item.brand_id)?.status !== 'merged') own.add(item.brand_id);
+        }
+        if (this.noBrandId !== null) own.delete(this.noBrandId);
+        return own;
     }
 
     asksColour(categoryId: string): boolean {

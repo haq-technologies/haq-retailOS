@@ -364,3 +364,4 @@ Assumptions:
 | 18 November 2026 | The Windows setup is tried on the product owner's own Windows PC, never in a virtual machine (D90) |
 | 19 November 2026 | One PC shares its counter: Open the back office on the name tiles, and on a Windows server `haq-helper server add-user` asks the PIN itself (D91) |
 | 19 November 2026 | The Windows setup checks the PC itself, not its version: any 64-bit Windows 10 or 11 as a counter, the server on Windows 10 updated since November 2022 or Windows 11 (D92) |
+| 19 November 2026 | A review of the sale path (the 18 browser tests of sales pass): New item keeps a scanned code, makes no second item with "No brand", asks "Made by" on pouches, shows the category's own brands first, chooses phone models by family and offers the listed models (D93) |

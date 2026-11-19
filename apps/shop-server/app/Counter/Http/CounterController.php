@@ -6,6 +6,7 @@ namespace App\Counter\Http;
 
 use App\Audit\History;
 use App\Catalogue\Learning;
+use App\Catalogue\Models\CategoryTemplate;
 use App\Catalogue\NewItemRefused;
 use App\Catalogue\NewItems;
 use App\Counter\Feed;
@@ -92,8 +93,33 @@ final class CounterController
                 'cashierItemCreation' => $settings->get('catalogue.cashier_item_creation') === 'request_only' ? 'request_only' : 'on',
                 // "No brand" in the brand list is the same answer as Skip brand at the tiles (D79).
                 'noBrandId' => DB::table('brands')->where('seed_id', config('catalogue.no_brand_seed_id'))->value('id'),
+                'brandDefaults' => $this->brandDefaults(),
             ],
         ]);
+    }
+
+    /**
+     * Each category's default brand, where its template names one, as New item chooses it first: "Made by"
+     * is No brand on pouches, screen protectors and batteries (C3, Q16; D93).
+     *
+     * @return object Category ID => brand ID, an object even when empty.
+     */
+    private function brandDefaults(): object
+    {
+        $defaults = [];
+        foreach (CategoryTemplate::query()->get(['category_id', 'facets']) as $template) {
+            foreach ($template->facets as $facet) {
+                if ($facet['type'] !== 'brand' || ! isset($facet['default'])) {
+                    continue;
+                }
+                $brandId = DB::table('brands')->where('seed_id', $facet['default'])->where('status', '!=', 'merged')->value('id');
+                if (is_string($brandId)) {
+                    $defaults[$template->category_id] = $brandId;
+                }
+            }
+        }
+
+        return (object) $defaults;
     }
 
     public function prices(Request $request, Feed $feed): JsonResponse
@@ -123,7 +149,11 @@ final class CounterController
         return response()->json(['learned' => $learned]);
     }
 
-    public function createItem(Request $request, NewItems $newItems, Feed $feed): JsonResponse
+    /**
+     * A new item at the counter. A code the cashier scanned before making it is learned for it in the same
+     * step, as a code matched to a found item is (D93); a junk code learns nothing and never refuses the item.
+     */
+    public function createItem(Request $request, NewItems $newItems, Feed $feed, Learning $learning): JsonResponse
     {
         $data = $request->validate([
             'category_id' => ['nullable', 'string', 'size:26'],
@@ -135,18 +165,25 @@ final class CounterController
             'phone_model_text' => ['nullable', 'string', 'max:60'],
             'free_text' => ['nullable', 'string', 'max:80'],
             'confirm_new' => ['sometimes', 'boolean'],
+            // Any length: a code longer than a barcode keeps is junk and learns nothing (D83).
+            'barcode' => ['nullable', 'string'],
         ]);
+        $barcode = $data['barcode'] ?? null;
+        unset($data['barcode']);
+        $actor = $this->actor($request);
 
         try {
             /** @var array{category_id?: ?string, not_in_list_word?: ?string, facets?: array<string, string>, brand_id?: ?string, brand_text?: ?string, phone_model_text?: ?string, free_text?: ?string, confirm_new?: bool} $data */
-            $item = $newItems->create($data, $this->actor($request));
+            $item = $newItems->create($data, $actor);
         } catch (NewItemRefused $e) {
             return response()->json(['message' => $e->getMessage(), 'similar' => $e->similar], 422);
         }
+        $learned = is_string($barcode) && trim($barcode) !== '' && $learning->linkBarcode($barcode, $item->id, $actor->id);
 
         return response()->json([
             'item' => DB::table('items')->where('id', $item->id)->first(['id', 'category_id', 'brand_id', 'item_code', 'display_name', 'search_text', 'status']),
             'prices' => $feed->prices([$item->id]),
+            'learned' => $learned,
         ], $item->wasRecentlyCreated ? 201 : 200);
     }
 
