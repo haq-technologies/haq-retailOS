@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 /**
- * A stand-in network receipt printer for development and staging, until the pilot's printer arrives. It
+ * A stand-in network receipt printer for development, staging and rehearsals; a shop prints to a real one. It
  * listens like a printer on port 9100, answers status queries as ready, and writes each receipt as text.
  */
 #[AsCommand(name: 'printing:fake-printer')]

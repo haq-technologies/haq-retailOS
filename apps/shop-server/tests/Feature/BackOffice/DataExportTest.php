@@ -37,9 +37,6 @@ beforeEach(function () {
     $this->first = $sell($this->a->id, 250_000);
     ($this->as)('Halima', '135790')->postJson('/api/back-office/costs', ['item_ids' => [$this->a->id], 'unit_cost_kobo' => 987_654, 'basis' => 'first_null'])->assertOk();
     $sell($this->b->id, 150_000);
-    $this->day = (string) DB::table('sales')->value('business_day');
-    ($this->as)('Halima', '135790')->postJson('/api/back-office/pilot/start', ['first_day' => $this->day])->assertOk();
-    ($this->as)('Kemi', '246810')->postJson('/api/back-office/pilot/notebook', ['day' => $this->day, 'cash_kobo' => 400_000, 'transfer_kobo' => 0, 'pos_kobo' => 0])->assertOk();
 });
 
 /**
@@ -76,14 +73,12 @@ it('gives the owner the whole record as one ZIP of CSV files, cost included, and
     unlink($path);
 
     expect(array_keys($files))->toBe(['README.txt', 'receipts.csv', 'sales-lines.csv', 'payments.csv', 'items.csv', 'set-prices.csv', 'costs.csv', 'shifts.csv',
-        'drawer-log.csv', 'flags.csv', 'people.csv', 'audit-log.csv', 'pilot-days.csv', 'pilot-notebook.csv', 'pilot-traces.csv']);
+        'drawer-log.csv', 'flags.csv', 'people.csv', 'audit-log.csv']);
     // Each opens in Excel: a byte-order mark, then the header.
     expect($files['receipts.csv'])->toStartWith("\u{FEFF}\"Receipt\"")->toContain($this->first['receipt_number'])->toContain('"2500.00"');
     expect($files['sales-lines.csv'])->toContain('Unit cost (NGN)')->toContain('9876.54');
     expect($files['costs.csv'])->toContain('9876.54')->toContain('Halima');
-    expect($files['pilot-notebook.csv'])->toContain('"4000.00"')->toContain('Kemi');
-    expect($files['pilot-days.csv'])->toContain('Started the 14 days');
-    expect($files['audit-log.csv'])->toContain('sale.finished')->toContain('pilot.notebook_entered');
+    expect($files['audit-log.csv'])->toContain('sale.finished')->toContain('cost.entered');
     // Names and roles, never PINs or device secrets.
     expect($files['people.csv'])->toContain('"Amina","Cashier","Yes"');
     $hashes = DB::table('users')->whereNotNull('pin_hash')->pluck('pin_hash')->all();

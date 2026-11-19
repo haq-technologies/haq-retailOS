@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Catalogue health (spec section 12) [v1.3; wireframe CatalogueHealth]: the share of revenue with a cost
- * against the pilot's goal (80% by day 14), what waits in review, how many items sold have a barcode, and
+ * against its goal (80% by the 14th day from the first sale), what waits in review, how many items sold have a barcode, and
  * the best sellers the counter has not learned a barcode for yet. Percentages and counts only: no money,
  * so everyone who reviews the catalogue may see it.
  */

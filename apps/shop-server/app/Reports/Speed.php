@@ -7,7 +7,7 @@ namespace App\Reports;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Counter speed for a business day (spec sections 7 and 14; check A1 and the pilot's speed threshold)
+ * Counter speed for a business day (spec sections 7 and 14; check A1 and the speed targets)
  * [S8, D47], from the counter's own timing of every sale: for each cashier, how many sales were timed,
  * the median time of a 3-item sale and how many took under 30 seconds, and the median time of a sale of
  * one scanned item and how many took under 8 seconds. A sale resumed from hold or finished after a slow

@@ -418,7 +418,6 @@ After any restore or server replacement, the system starts a new epoch, and the 
 - CSV export of items and sales, opening cleanly in Excel. Exports never contain cost for roles that cannot see it. [F10]
 - First-sale prices: one tap makes a typed price the set price, and Undo puts back the one before, or none. [S4, D43]
 - Counter speed on the daily summary screen: each cashier's sales timed, typical sale, 3-item sales under 30 seconds and one scanned item under 8 seconds, from the counter's own timing. [S8, D47]
-- The measured pilot: the 14 days beside the notebook, each day's totals per payment method against the notebook's with every difference traced to the notebook or the app, the five success measures read live, and the owner's decision with the scorecard as it stood (section 14). [D56]
 - The owner's data export: the shop's whole record, cost included, as one ZIP of CSV files that open in Excel, with each file's SHA-256 and the audit code it was made at. Only the owner downloads it; HAQ can make it on the server. [D57]
 ## MVP
 - Weekly and monthly views, and top items by revenue. These move here from the pilot (see the swap in section 16). [F12]
@@ -445,7 +444,7 @@ After any restore or server replacement, the system starts a new epoch, and the 
 | Server printing to network printers, with drawer kick and drawer log where a drawer is fitted [R3, S21] | Bank statement CSV import and matching | Analytics, scheduled exports |
 | Three database roles, append-only triggers, grant-drift check, restore epochs, counter journal and lost-window recovery | Per-cashier reports, weekly and monthly views, top items | Billing automation |
 | pgBackRest backups with 2-of-3 key shares, restore drill, health page, Docker install and the updater pulling from GHCR, reboot recovery, catch-up scheduling [S16, S17, D2] | Staged rollout, fleet dashboard, standby kit option | Receipt by WhatsApp or SMS |
-| Daily summary printout, flag list, catalogue health, CSV export, speed instrumentation, the measured pilot's scorecard and the owner's data export [S8, D56, D57] | Back-entry screen with paper receipt numbers | Scheduled export |
+| Daily summary printout, flag list, catalogue health, CSV export, speed instrumentation and the owner's data export [S8, D57] | Back-entry screen with paper receipt numbers | Scheduled export |
 | Starter catalogue v1.1 seed with phone models; typed brands, product words and phone models through the review queue [C2] | Phone models moved to the pilot [C2] | No change |
 
 There is no pilot (D67): the first shop goes live with a one-week safety net, so the go-live basics move from the MVP into the first release, in the place of the pilot weeks. They are voids, returns refunded by cash, transfer or POS, the day-end close with its blind count and Z-report, and paid-outs, drops and top-ups. Drawer handover counts, store credit, cash-out services, the one-step exchange screen and paper back-entry stay in the MVP. [D68]
@@ -535,7 +534,7 @@ There is no pilot: the app is the shop's record from install, with a one-week sa
 | Checks | Every acceptance check passes and is written down (gate G4), the go-live basics' included [D68] |
 | Rehearsal | Gate G3, the software dress rehearsal, passes on the release that goes live |
 | Receipts | Every receipt tuple used once, and no committed sale without either a printed or a pending-print record. No sale lost to a crash or power cut |
-| Safety week | For the first week the shop also writes each sale in the notebook, and each evening a manager compares the notebook's totals per payment method with the app's in the back office's Measured pilot section, tracing every difference. A difference traced to the app is fixed before the notebook stops |
+| Safety week | For the first week the shop also writes each sale in the notebook, as a backup; the app keeps no comparison with it [D95]. A fault found in the app is fixed before the notebook stops |
 | Speed | A trained cashier rings a 3-item sale in under 30 seconds on typical days, read from the daily summary in the first live week. A miss is fixed in a weekly release; it does not stop trading |
 | Owner's go | At the end of the week the owner confirms the notebook can stop. The owner may download the shop's data export at any time [D57] |
 
@@ -748,7 +747,7 @@ Phases, gates and the timeline live in PLAN.md at the repository root, so the sc
 | Code structure | A modular monolith: modules by business area with one-way dependencies, one database, one ordered set of migrations [D23] |
 | Spec and records | Markdown in Git; the JSON seed is the catalogue master; decisions in docs/decisions.md [R8, Q9] |
 | Owner remote view | Not in Core for now [S13] |
-| Measured pilot | The 14 days are measured in the back office against the notebook, each difference traced to the notebook or the app; the owner's decision keeps the scorecard as it stood [D56] |
+| Measured pilot | Removed: there is no pilot (D67), and the safety week keeps no comparison in the app [D95] |
 | Owner's data | The owner downloads the whole record, cost included, as one ZIP of CSV files at any time; HAQ can make it on the server [D57] |
 
 # Appendix A. Change register

@@ -282,7 +282,7 @@ export function DailySummary({ api, go }: { api: CounterApi; go: (section: strin
                     <h2 id="sum-speed" className="text-xl font-bold">
                         Counter speed
                     </h2>
-                    <p className="text-text-secondary">From each counter's own timing. The pilot's goals: a 3-item sale under 30 seconds, one scanned item under 8 seconds.</p>
+                    <p className="text-text-secondary">From each counter's own timing. The targets: a 3-item sale under 30 seconds, one scanned item under 8 seconds.</p>
                     <div className="overflow-x-auto rounded-2xl border-2 border-border">
                         <table className="w-full min-w-[640px] text-left text-lg tabular-nums">
                             <thead className="text-base text-text-secondary">

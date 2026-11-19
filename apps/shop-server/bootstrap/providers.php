@@ -11,7 +11,6 @@ use App\Counter\CounterServiceProvider;
 use App\Health\HealthServiceProvider;
 use App\Identity\IdentityServiceProvider;
 use App\Organisation\OrganisationServiceProvider;
-use App\Pilot\PilotServiceProvider;
 use App\Platform\PlatformServiceProvider;
 use App\Printing\PrintingServiceProvider;
 use App\Providers\AppServiceProvider;
@@ -37,6 +36,5 @@ return [
     BackupsServiceProvider::class,
     HealthServiceProvider::class,
     ReportsServiceProvider::class,
-    PilotServiceProvider::class,
     BackOfficeServiceProvider::class,
 ];
