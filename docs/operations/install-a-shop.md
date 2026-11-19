@@ -2,6 +2,8 @@
 
 These are the official steps, from a bare server to the first customer leaving with a receipt (D59). HAQ support follows them at every shop. They take under 2 hours (spec section 14, check E2).
 
+A shop's server is a mini-PC running Ubuntu (steps 1 to 10 below), or a Windows 10 or 11 PC installed with the release's setup program, which is also the shop's first counter ([The Windows way](#the-windows-way-one-setup-program), D86). Either way it is the same shop server, from the same signed release.
+
 The steps use example addresses: the server at 192.168.1.10 and the printers at 192.168.1.21 and up. Use addresses in the shop's own range.
 
 To practise first, follow the same steps on a Windows PC with an Ubuntu virtual machine: see [Rehearse on a Windows PC](#rehearse-on-a-windows-pc) at the end.
@@ -67,7 +69,7 @@ cd haq-retailOS
 sudo apps/shop-server/deploy/install.sh --ip 192.168.1.10 --backup-dir /mnt/backup --tag <release>
 ```
 
-`<release>` is the release to install, such as 2026.11.3, in both lines: the first takes the installer, the Compose file and the updater from that release's own commit, and the second installs its images (D81). The shop then follows the stable channel; add `--channel beta` for a shop that takes each release first, or `--channel pinned` for one that stays where it is ([releases.md](releases.md)).
+`<release>` is the release to install, such as 2026.11.3, in both lines: the first takes the installer and the updater from that release's own commit, and the second installs the release. Before anything is installed, the installer checks the release's signed manifest as the updater does, then installs its Compose file and pulls its images by the digests the manifest signs (D81, D99). The shop then follows the stable channel; add `--channel beta` for a shop that takes each release first, or `--channel pinned` for one that stays where it is ([releases.md](releases.md)).
 
 The installer:
 
@@ -150,6 +152,58 @@ The first takes a full backup now; the owner sees it under **Server health**. Th
 2. Hand over to the owner: their PIN, their key share, Shop settings, and **Your data** in Shop settings, which downloads all the shop's records whenever they want them.
 3. Write down the server's address, each printer's address, the release installed and the date.
 
+## The Windows way: one setup program
+
+A shop whose server is a Windows PC is installed with the release's setup program (D86). It hides the same shop server in Windows' own Linux (WSL2), and makes the PC counter T01. Steps 1, 6.1 and 7 to 10 above still apply; on the server's PC, `haq-helper server` takes the place of `sudo haq`, in **Terminal (Admin)**.
+
+### What to bring for it
+
+- **The PC that runs the shop:** 64-bit Windows 11, or Windows 10 updated since November 2022, with virtualisation turned on, 8 GB of memory and 30 GB free. The setup checks the PC itself and says what to do about anything that stops it (D92).
+- **A UPS for that PC.** A desktop's disk has no protection against a power cut, so the UPS is required (D86).
+- **The release's setup**, `HAQ-Retail-OS-Setup-<release>.exe`, downloaded from the release on GitHub and checked against its signed manifest first ([releases.md](releases.md)):
+
+  ```
+  gh release download <release> --dir release/<release>
+  tools/release/check-windows.sh --release release/<release>
+  ```
+
+- The read-only GHCR token, the shop's details and the two HAQ-OFFSITE drives, as for a mini-PC.
+
+### W1. Install the shop
+
+1. Give the PC its fixed address, as in step 1.
+2. Sign in to Windows as an administrator and run the setup. While it is unsigned, Windows asks first: choose **More info**, then **Run anyway** (D88).
+3. Choose **This PC runs the shop**. If Windows' Linux (WSL) is off, the setup turns it on: restart the PC when it asks, and run the setup again.
+4. Answer its pages: the PC's address, the GitHub user name and the token, the shop and its receipt text, the counters and their drawers, the owner's name and 6-digit PIN (twice), and the receipt printer: one plugged into this PC (it prints a test receipt), a network printer's address, or none yet.
+5. It installs in 15 to 40 minutes, mostly downloading, numbering each step in its window. It checks the release against its signed manifest before anything is installed (D99), keeps the PC awake, and has Windows Update restart the PC only outside 6:00 to 23:00 (D98).
+6. At the end it opens the page that registers this PC as counter T01, with the code filled in. Press **Enrol counter**, then set the PC's date and time as in step 6.1.
+
+### W2. Add the people
+
+The owner was added by the setup. In a new **Terminal (Admin)** on the server's PC:
+
+```
+haq-helper server add-user "Kemi" manager
+haq-helper server add-user "Amina" cashier
+```
+
+Each asks the PIN twice, hidden, and passes it to the server on its standard input, never in a command line (D99).
+
+### W3. Another counter
+
+1. On the server's PC: `haq-helper server enrol T02`.
+2. On the counter PC, run the same setup and choose **This PC is a counter**: the server's address, the counter (T02) and the code. A counter takes any 64-bit Windows 10 or 11.
+3. A counter with a USB receipt printer gets the print bridge. The setup's last page gives the line to run on the server's PC, such as `haq-helper server printer T02 192.168.1.31`.
+4. Set its date and time as in step 6.1.
+
+### W4. Then as on the mini-PC
+
+Steps 7 to 10, with `haq-helper server backup`, `haq-helper server offsite-key` and `haq-helper server check`. The HAQ Helper sees an off-site drive when it is plugged into the server's PC, and the copy is written by itself.
+
+### Each day: the off-site drive
+
+On a Windows server the backups share the PC's disk, so a flash drive is the only copy away from it (D97). At closing, plug the off-site drive into the server's PC. When **Server health** shows its new copy, take it home, and bring the other drive back the next day. The health page and the owner's dashboard warn when no drive has had a copy for 24 hours.
+
 ## The server's everyday commands
 
 | Command | What it does |
@@ -169,6 +223,8 @@ The first takes a full backup now; the owner sees it under **Server health**. Th
 | `sudo haq update` | Takes a signed release ([releases.md](releases.md)) |
 | `sudo haq offsite-key` | Makes the off-site key and its three shares, once |
 | `sudo haq logs app` | Follows a service's log, for HAQ support |
+
+On a Windows server each is `haq-helper server` and the same words, in **Terminal (Admin)**, such as `haq-helper server users`.
 
 ## If something goes wrong
 
