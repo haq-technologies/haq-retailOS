@@ -3,6 +3,7 @@ package install
 import (
 	"fmt"
 	"net/netip"
+	"strings"
 
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/wslnet"
 )
@@ -37,4 +38,29 @@ func addressIn(adapters []wslnet.Adapter, want netip.Addr) error {
 		}
 	}
 	return fmt.Errorf("this PC does not have the address %s; it has %v. Give it that fixed address first", want, have)
+}
+
+// Addresses are this PC's own IPv4 addresses on its networks, not WSL's or the loopback, for the setup
+// program to offer as this PC's fixed address.
+func Addresses() ([]string, error) {
+	adapters, err := wslnet.Adapters()
+	if err != nil {
+		return nil, err
+	}
+	return ownAddresses(adapters), nil
+}
+
+func ownAddresses(adapters []wslnet.Adapter) []string {
+	var list []string
+	for _, a := range adapters {
+		if wslnet.IsWSL(a.Name) || strings.HasPrefix(a.Name, "vEthernet") {
+			continue
+		}
+		for _, p := range a.Prefixes {
+			if ip := p.Addr(); ip.Is4() && !ip.IsLoopback() && !ip.IsLinkLocalUnicast() {
+				list = append(list, ip.String())
+			}
+		}
+	}
+	return list
 }

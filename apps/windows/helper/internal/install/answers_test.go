@@ -136,3 +136,14 @@ func TestANetworkPrinterGoesInTheProfileAsItIs(t *testing.T) {
 		t.Fatalf("got %s", raw)
 	}
 }
+
+func TestAnswersWithAByteOrderMarkAreRead(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "answers.json")
+	raw, _ := json.Marshal(Answers{Mode: config.Counter, Address: "10.92.139.201", Server: "10.92.139.200", Counter: "T02", Code: "4827-1093"})
+	if err := os.WriteFile(path, append([]byte("\xef\xbb\xbf"), raw...), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if a, err := ReadAnswers(path); err != nil || a.Counter != "T02" {
+		t.Fatalf("got %+v, %v", a, err)
+	}
+}

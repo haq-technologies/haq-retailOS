@@ -35,9 +35,11 @@ func run(ctx context.Context, out io.Writer, name string, args ...string) error 
 // ps runs a PowerShell script. Values go in through the environment, never on the command line, which
 // other programs can read; the script itself is encoded, so no quoting can break it.
 func ps(ctx context.Context, out io.Writer, script string, env map[string]string) error {
-	// Errors as plain text: PowerShell writes them in its own XML when its error output is not a console.
+	// Errors as plain text: PowerShell writes them in its own XML when its error output is not a console. And
+	// success said outright: a script whose last command looked for something with -ErrorAction
+	// SilentlyContinue and found nothing would otherwise end with code 1 and no message.
 	wrapped := "$ErrorActionPreference = 'Stop'\n$ProgressPreference = 'SilentlyContinue'\ntry {\n" + script +
-		"\n} catch { [Console]::Error.WriteLine(($_ | Out-String).Trim()); exit 1 }"
+		"\nexit 0\n} catch { [Console]::Error.WriteLine(($_ | Out-String).Trim()); exit 1 }"
 	units := utf16.Encode([]rune(wrapped))
 	raw := make([]byte, len(units)*2)
 	for i, u := range units {

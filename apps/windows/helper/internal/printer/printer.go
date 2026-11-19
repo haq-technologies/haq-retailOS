@@ -93,3 +93,23 @@ type fileDevice struct{ *os.File }
 
 // State: a file never runs out of paper.
 func (fileDevice) State() (paperOut, coverOpen bool) { return false, false }
+
+// virtualPorts are the ports of Windows' own printers that print to files or apps, never to paper.
+var virtualPorts = map[string]bool{"PORTPROMPT:": true, "NUL:": true, "SHRFAX:": true, "XPSPORT:": true, "FILE:": true}
+
+// Virtual says whether a printer is one of Windows' own that never prints on paper: Microsoft Print to PDF,
+// the XPS writer, OneNote and Fax.
+func Virtual(f Found) bool {
+	if f.Kind != KindQueue {
+		return false
+	}
+	if virtualPorts[strings.ToUpper(f.Port)] {
+		return true
+	}
+	for _, name := range []string{"Microsoft Print to PDF", "Microsoft XPS Document Writer", "OneNote", "Send To OneNote", "Fax"} {
+		if strings.HasPrefix(f.Name, name) {
+			return true
+		}
+	}
+	return false
+}

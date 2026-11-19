@@ -23,7 +23,8 @@ const (
 	ruleGroup  = "HAQ Retail OS"
 	// caSubject is the shop's certificate authority, as install.sh names it.
 	caSubject = "HAQ Retail OS shop authority"
-	// installedMark says the server's first install finished, so a later setup only updates the Windows parts.
+	// installedMark says a first install finished, the server's or a counter's, so a later setup only
+	// updates the Windows parts and asks nothing.
 	installedMark = "installed"
 )
 
