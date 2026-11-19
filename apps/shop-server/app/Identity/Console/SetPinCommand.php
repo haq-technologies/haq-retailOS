@@ -23,7 +23,7 @@ class SetPinCommand extends Command
 {
     use FindsPerson;
 
-    protected $signature = 'shop:set-pin {person : The name on the tile, or the person\'s ID} {--pin= : Scripted installs only: the new PIN}';
+    protected $signature = 'shop:set-pin {person : The name on the tile, or the person\'s ID} {--pin= : Scripted installs, and the Windows helper, which asks it itself: the new PIN}';
 
     protected $description = 'Give a person a new PIN; the old one stops working';
 

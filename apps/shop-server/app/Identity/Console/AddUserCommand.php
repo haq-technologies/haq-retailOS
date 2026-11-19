@@ -13,12 +13,13 @@ use function Laravel\Prompts\password;
 
 /**
  * Adds a person with a name tile and PIN, at install (spec section 6, phase 1). The PIN is asked for
- * twice without echoing; --pin exists only for scripted test installs.
+ * twice without echoing. --pin is for scripted installs, and for the Windows helper, which asks the PIN
+ * itself because its runner has no terminal (D91).
  */
 #[AsCommand(name: 'shop:add-user')]
 class AddUserCommand extends Command
 {
-    protected $signature = 'shop:add-user {name : The name on the tile} {--role=cashier : cashier, manager, storekeeper or owner} {--pin= : Scripted installs only: the PIN}';
+    protected $signature = 'shop:add-user {name : The name on the tile} {--role=cashier : cashier, manager, storekeeper or owner} {--pin= : Scripted installs, and the Windows helper, which asks it itself: the PIN}';
 
     protected $description = 'Add a person who signs in with a name tile and PIN';
 

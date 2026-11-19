@@ -11,17 +11,30 @@
 | The download token | The GitHub user name and the read-only token, asked this once; the server keeps it for every update (D89) | - |
 | The shop | The name, and the receipt's heading, address, phone and footer | - |
 | The counters | How many, and which have a cash drawer | - |
-| The owner | The owner's name and 6-digit PIN, typed twice | - |
+| The owner | The owner's name and 6-digit PIN, typed twice. The staff are added after the setup (below) | - |
 | The shop's server | - | The server's address, which counter this is (T02, T03 ...), and the one-time code from `haq-helper server enrol T02` on the server's PC |
 | The receipt printer | A printer plugged into this PC (it prints a test receipt, and asks whether it came out), a network printer's address, or none yet | The same |
 
 Then it installs: 15 to 40 minutes for the shop, most of it downloading, and a minute for a counter. At the end it opens the page that registers the PC as a counter, with the code filled in. A counter's last page also gives the line to run on the server's PC for its printer.
 
+## After it: the staff and the back office
+
+The setup puts its folder on the system PATH, so the shop server's own commands run in a new Terminal (Admin) on the server's PC as `haq-helper server ...`. Until the owner's People screen comes (spec section 3), HAQ support adds each person there, with their role (cashier, manager, storekeeper or owner); the helper asks the PIN, hidden and twice, as `sudo haq add-user` does on Ubuntu:
+
+```
+haq-helper server add-user "Amina" cashier
+haq-helper server users
+haq-helper server pin "Amina"
+haq-helper server deactivate "Amina"
+```
+
+On a shop with one PC, the cashier and the owner share the counter, each with their own name tile. The counter's name tiles have **Open the back office**, for the owner, a manager or the storekeeper; it keeps a sale waiting on the counter. **Open the counter** goes back, and after the idle lock's minutes without use the back office on a counter goes back to the counter's name tiles by itself (D91).
+
 ## Running it again
 
 On a PC that has HAQ Retail OS, a newer setup asks nothing. It stops the HAQ Helper and the keep-alive, puts in its files, and starts them again. The shop and its sales stay as they were; the shop server itself updates with `haq-helper server update`.
 
-**Uninstall** (Settings, Apps) removes the Windows parts: the HAQ Helper, its tasks, the port forwarding, the firewall rules, the start-up shortcut and the trusted certificate. The shop and its sales stay in `C:\ProgramData\HAQ`, and running the setup again brings them back. Only HAQ support deletes them for good: `haq-helper setup remove --delete-shop-and-sales`.
+**Uninstall** (Settings, Apps) removes the Windows parts: the HAQ Helper, its tasks, the port forwarding, the firewall rules, the start-up shortcut, the trusted certificate and its folder on the PATH. The shop and its sales stay in `C:\ProgramData\HAQ`, and running the setup again brings them back. Only HAQ support deletes them for good: `haq-helper setup remove --delete-shop-and-sales`.
 
 ## Building it
 

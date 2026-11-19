@@ -101,6 +101,9 @@ func runServerCommand(args []string) error {
 	if cfg.Mode != config.Server {
 		return fmt.Errorf("the shop server runs on another PC, at %s: run it there", cfg.Server)
 	}
+	if args, err = withPIN(args, readSecret); err != nil {
+		return err
+	}
 	argv := append([]string{"wsl.exe", "-d", cfg.Distribution, "-u", "root", "-e", "/usr/local/bin/haq"}, args...)
 	return exitWith(install.AsServer(context.Background(), os.Stdout, argv...))
 }

@@ -5,6 +5,8 @@ package install
 import (
 	"bytes"
 	"context"
+	"errors"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -41,6 +43,17 @@ func TestACommandRunsThroughTheQueueWithItsOutputAndCode(t *testing.T) {
 	}
 	if got := out.String(); got != "Import in progress\nWSL_UTF8=1\n" {
 		t.Fatalf("output %q", got)
+	}
+}
+
+func TestTheQueueIsGoneOnceTheCommandEnds(t *testing.T) {
+	dir := t.TempDir()
+	// `server add-user` passes the PIN it asked for in the command (D91).
+	if _, err := asServer(context.Background(), dir, taskNow{dir}, &bytes.Buffer{}, "/bin/echo", "--pin=1357"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(queuePath(dir)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("the queue is still there: %v", err)
 	}
 }
 

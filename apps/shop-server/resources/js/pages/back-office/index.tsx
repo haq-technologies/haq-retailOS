@@ -29,7 +29,9 @@ export default function BackOfficePage({ terminal, tiles, idleLockMinutes }: Pro
         const restart = () => {
             window.clearTimeout(idle.current);
             idle.current = window.setTimeout(() => {
-                lock(`Locked after ${String(idleLockMinutes)} minutes without use.`);
+                // On a counter the next person is most likely a cashier, so it locks to the counter's name tiles (D91).
+                if (terminal.canSell) window.location.assign('/counter');
+                else lock(`Locked after ${String(idleLockMinutes)} minutes without use.`);
             }, idleLockMinutes * 60_000);
         };
         restart();
@@ -40,7 +42,7 @@ export default function BackOfficePage({ terminal, tiles, idleLockMinutes }: Pro
             window.removeEventListener('pointerdown', restart);
             window.removeEventListener('keydown', restart);
         };
-    }, [session, idleLockMinutes, lock]);
+    }, [session, idleLockMinutes, lock, terminal.canSell]);
 
     const setToken = useCallback((token: string) => {
         setSession((s) => (s === null ? s : { ...s, token }));
@@ -81,7 +83,7 @@ export default function BackOfficePage({ terminal, tiles, idleLockMinutes }: Pro
                     }}
                 />
                 {terminal.canSell && (
-                    <a href="/counter" className="text-lg font-semibold text-action-text underline">
+                    <a href="/counter" className="flex min-h-touch items-center justify-center rounded-xl border-2 border-border px-4 text-lg font-semibold text-action-text">
                         Back to the counter
                     </a>
                 )}
