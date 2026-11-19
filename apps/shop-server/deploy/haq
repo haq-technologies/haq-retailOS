@@ -20,6 +20,7 @@
 #   sudo haq receipts                    a rehearsal's stand-in printer: the receipts as they print
 #   sudo haq logs [service]              follow a service's log
 #   sudo haq artisan <command>           any server command, for HAQ support
+#   sudo haq restore [options]           restore the server from its backups (docs/operations/restore-drill.md)
 set -euo pipefail
 
 self="$(readlink -f "$0" 2>/dev/null || echo "$0")"
@@ -44,7 +45,7 @@ https_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "https://$IP"; else e
 http_url() { if [ "${HTTP_PORT:-80}" = 80 ]; then echo "http://$IP"; else echo "http://$IP:$HTTP_PORT"; fi; }
 setup_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "$(http_url)/setup"; else echo "$(http_url)/setup?https_port=$HTTPS_PORT"; fi; }
 
-usage() { sed -n '2,22p' "$self" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,23p' "$self" | sed 's/^# \{0,1\}//'; }
 
 command="${1:-help}"
 [ $# -gt 0 ] && shift
@@ -157,6 +158,7 @@ os.replace(path + ".tmp", path)' "$STATUS_DIR/host.json"
         echo "The shop's data is in $file. It holds cost: give it to the owner only."
         ;;
     update) exec "$dir/bin/update.sh" --dir "$dir" --project "$PROJECT" "$@" ;;
+    restore) exec "$dir/bin/restore.sh" --dir "$dir" --project "$PROJECT" "$@" ;;
     version)
         if [ -f "$dir/release.json" ]; then
             python3 -I -c 'import json,sys

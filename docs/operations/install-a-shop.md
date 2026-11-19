@@ -221,6 +221,7 @@ On a Windows server the backups share the PC's disk, so a flash drive is the onl
 | `sudo haq backups` | The last backups and the last test restore |
 | `sudo haq export` | All the shop's records as one ZIP, for the owner only: it holds cost |
 | `sudo haq update` | Takes a signed release ([releases.md](releases.md)) |
+| `sudo haq restore` | Restores the server from its backups, or with `--from-drive` (on Windows `--from-windows-drive E: A`) from an off-site drive ([restore-drill.md](restore-drill.md)) |
 | `sudo haq offsite-key` | Makes the off-site key and its three shares, once |
 | `sudo haq logs app` | Follows a service's log, for HAQ support |
 

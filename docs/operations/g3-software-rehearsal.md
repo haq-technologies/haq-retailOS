@@ -79,7 +79,9 @@ Start the clock. Follow [The Windows way](install-a-shop.md#the-windows-way-one-
 - [ ] Start `shop:rehearse` again and restart Windows while it runs (**Start**, **Power**, **Restart**). The server is ready before anyone signs in; each counter shows Reconnecting and is selling again within 3 minutes, with its open sale kept; `shop:rehearsal-check` passes. A real power cut, holding the power button, is optional, at the product owner's choice (D90).
 - [ ] Plug HAQ-OFFSITE-A into the PC: **Server health** shows its new copy.
 
-The restore is rehearsed the mini-PC way (step 5). Restoring a Windows server from an off-site drive is not yet written down (audit finding AU13).
+### W4. Restore from the off-site drive (check E1, D101)
+
+- [ ] With drive A's copy made in W3, delete the rehearsal shop (`haq-helper setup remove --delete-shop-and-sales`), run the setup again as **This PC runs the shop** with the same details, and follow [Restoring a Windows server from a flash drive](restore-drill.md#restoring-a-windows-server-from-a-flash-drive). The restore asks two shares through `haq-helper`; afterwards each counter sells with no new code and no certificate warning, and `haq-helper server artisan shop:rehearsal-check` passes.
 
 ## 6. After
 

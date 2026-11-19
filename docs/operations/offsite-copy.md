@@ -5,7 +5,7 @@ How a shop keeps a copy of its backups away from the shop, so a theft or a fire 
 ## What it is
 
 - Two USB flash drives of 64 GB or more (docs/operations/hardware.md), formatted **exFAT** and labelled **HAQ-OFFSITE-A** and **HAQ-OFFSITE-B**. One is always away from the shop, for example at the owner's home.
-- Plugged into the server, a drive gets an encrypted copy of every backup, with the branch's signing key, the shop's certificate authority, the app key and the epochs, by itself (D69). The server checks the copy, keeps the newest two copies on the drive, and unmounts it. The health page shows each drive's last copy and warns when no drive has had one for 8 days.
+- Plugged into the server, a drive gets an encrypted copy of every backup, with the branch's signing key, the shop's certificate authority, the app key and the epochs, by itself (D69). The server checks the copy, keeps the newest two copies on the drive, and unmounts it. The health page shows each drive's last copy and warns when no drive has had one for 8 days, or for 24 hours where the backups share the server's disk: a Windows server, or a mini-PC with no second disk (D97).
 - The copy is encrypted to a public key. The server cannot read it. The private key is locked with a random key that is split into three shares; **any two** unlock it, one alone cannot. The unlocked key is never stored.
 
 ## At install (once)
@@ -23,7 +23,11 @@ How a shop keeps a copy of its backups away from the shop, so a theft or a fire 
    - one is sealed in an envelope and kept at the owner's bank.
 3. Plug in drive A and wait for the health page to show "Flash drive A, copied …". Take it away; drive B stays at the shop for next week.
 
-## Every week
+## Each day, where the backups share the server's disk
+
+On a Windows server, or a mini-PC with no second disk, a drive is the only copy away from the server's disk (D97). At closing, plug the drive that is at the shop into the server's PC, wait until the health page shows its new copy, and take it home. Bring the other drive back the next day. On a Windows PC the HAQ Helper sees the drive and writes the copy by itself.
+
+## Every week, on a mini-PC with its second disk
 
 - Bring the away drive to the shop, plug it in, and wait until the health page shows its new copy (a few minutes). Unplug it and take it away; the other drive stays at the shop.
 - If the health page says a copy failed, plug the drive in again; if it fails again, use the other drive and call HAQ support.
@@ -31,7 +35,7 @@ How a shop keeps a copy of its backups away from the shop, so a theft or a fire 
 
 ## Restoring from a drive
 
-When the server and its backup disk are both lost, see docs/operations/restore-drill.md, "Restoring from a flash drive". It needs the newest drive and two of the three shares.
+When the server and its backup disk are both lost, see docs/operations/restore-drill.md, "Restoring from a flash drive", or "Restoring a Windows server from a flash drive" (D101). It needs the newest drive and two of the three shares.
 
 ## Checked
 

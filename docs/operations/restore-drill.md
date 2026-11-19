@@ -63,6 +63,22 @@ When the server and its backup disk are both lost (theft, fire), the newest off-
    It asks for two shares, each on its own line, unpacks the newest copy onto the backup folder (setting aside the empty backups the spare made at install), then restores exactly as from a backup disk.
 4. Carry on from step 4 above. Sales made after that drive's copy are recovered from the counters' journals on Lost sales (D44).
 
+## Restoring a Windows server from a flash drive
+
+A Windows server keeps its backups on its own disk (D97), so when that PC or its disk is lost, the newest off-site drive brings the shop back (D101). It needs two of the three key shares.
+
+1. On the replacement PC, give it the old server's fixed address and run the release's setup as **This PC runs the shop** ([install-a-shop.md](install-a-shop.md#the-windows-way-one-setup-program)), with the same shop details. Add no people and make no sale on it.
+2. Plug in the newest off-site drive. In **Terminal (Admin)**, `haq-helper drives` shows its letter and whether it is HAQ-OFFSITE-A or HAQ-OFFSITE-B.
+3. Restore from it, with that letter and A or B:
+
+   ```
+   haq-helper server restore --from-windows-drive E: A
+   ```
+
+   It asks for two shares, hidden, sends them to the server on its standard input, unpacks the newest copy, then restores exactly as from a backup disk. The HAQ Helper's own copy onto that drive waits until the restore has read it.
+4. The replacement PC enrolled itself in the shop the restore replaced, so it becomes counter T01 again: `haq-helper server enrol T01`, then open the link it gives on that PC.
+5. Carry on from step 5 above: every other counter keeps its enrolment and trusts the server, because the restore brought back the shop's app key and certificate authority (D69). Sales made after that drive's copy are recovered from the counters' journals on Lost sales.
+
 ## A reinstall with no backup
 
 If the server is reinstalled with nothing to restore, run `php artisan shop:after-restore --reason=reinstall` before the counters sell. Each counter's journal then moves its epoch past its last sales when it reports, so no receipt number repeats; its last seven days of sales appear on Lost sales.

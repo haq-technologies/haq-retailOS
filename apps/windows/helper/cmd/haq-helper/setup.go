@@ -111,6 +111,12 @@ func runServerCommand(args []string) error {
 	if err != nil {
 		return err
 	}
+	if input == "" {
+		// A restore from an off-site drive: its two key shares (D101).
+		if input, err = restoreShares(args, readSecret); err != nil {
+			return err
+		}
+	}
 	argv := append([]string{"wsl.exe", "-d", cfg.Distribution, "-u", "root", "-e", "/usr/local/bin/haq"}, args...)
 	return exitWith(install.AsServerWithInput(context.Background(), os.Stdout, input, argv...))
 }
