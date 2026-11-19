@@ -92,6 +92,8 @@ it('merges an item into the one it now matches when a brand merge makes them the
     $yesido = Brand::query()->where('name', 'Yesido')->firstOrFail();
     ($this->manages)()->postJson("/api/back-office/review/brands/{$yesido->id}/approve")->assertOk();
     expect($yesido->fresh()->status)->toBe('approved')->and($other->fresh()->display_name)->toBe('Yesido Y2 Earbuds');
+    // It joins the list as one of the categories it was sold in, so the tiles show it first there (D94).
+    expect($yesido->fresh()->shown_first_in)->toBe(['earbuds']);
     ($this->manages)()->postJson("/api/back-office/review/brands/{$yesido->id}/approve")->assertStatus(422);
 });
 

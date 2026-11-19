@@ -32,8 +32,16 @@ final readonly class Reviews
             throw new MergeRefused("{$brand->name} is not waiting for review.");
         }
         DB::transaction(function () use ($brand, $actor): void {
-            $brand->update(['status' => 'approved']);
-            $this->audit->record(new AuditEntry(action: 'catalogue.brand_approved', actorId: $actor->id, subjectType: 'brand', subjectId: $brand->id, after: ['name' => $brand->name]));
+            // A brand joins the list as one of the categories it was sold in, so the tiles and New item show it
+            // first there (D94), as the starter catalogue's brands are shown first in theirs.
+            /** @var list<string> $sold */
+            $sold = DB::table('items')->join('categories', 'categories.id', '=', 'items.category_id')
+                ->where('items.brand_id', $brand->id)->where('items.status', '!=', 'merged')
+                ->distinct()->orderBy('categories.code')->pluck('categories.code')->all();
+            $shownFirstIn = array_values(array_unique([...$brand->shown_first_in, ...array_filter($sold, fn (string $code) => ! str_starts_with($code, '_'))]));
+            $brand->update(['status' => 'approved', 'shown_first_in' => $shownFirstIn]);
+            $this->audit->record(new AuditEntry(action: 'catalogue.brand_approved', actorId: $actor->id, subjectType: 'brand', subjectId: $brand->id,
+                after: ['name' => $brand->name, 'shown_first_in' => $shownFirstIn]));
         });
     }
 

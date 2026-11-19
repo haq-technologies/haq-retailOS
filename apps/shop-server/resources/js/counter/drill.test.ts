@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { Catalogue } from './catalogue';
-import { drill, parseShapeId, shapeAtBrandStep } from './drill';
+import { drill, jumpTile, parseShapeId, shapeAtBrandStep, type Tile } from './drill';
+
+/** The tile with this label, or a failed test. */
+function tile(tiles: Tile[], label: string): Tile {
+    const found = tiles.find((t) => t.label === label);
+    if (found === undefined) throw new Error(`no tile ${label}`);
+    return found;
+}
 
 function cables(): Catalogue {
     const cat = new Catalogue();
@@ -80,24 +87,29 @@ describe('the tiles', () => {
 
         const third = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2l' }, { key: 'length', value: 'p-1m' }] }, 'retail');
         expect(third.prompt).toBe('Choose brand');
-        expect(third.tiles.map((t) => t.label)).toEqual(['Oraimo', 'Anker']); // shown first in cables
+        // Skip brand first, then the cables' own brands A to Z: Oraimo is shown first there, Anker has an item (D94).
+        expect(third.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo']);
         // Each brand leaves one item, so its tile adds it in one tap and shows its price.
-        expect(third.tiles[0]).toMatchObject({ kind: 'value', itemId: 'i2', priceKobo: 300_000 });
+        expect(tile(third.tiles, 'Oraimo')).toMatchObject({ kind: 'value', itemId: 'i2', priceKobo: 300_000 });
 
         const last = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2l' }, { key: 'length', value: 'p-1m' }, { key: 'brand', value: 'b-oraimo' }] }, 'retail');
-        expect(last.tiles).toEqual([{ kind: 'item', id: 'i2', label: 'Oraimo Type-C to Lightning Cable 1m', priceKobo: 300_000, shape: null }]);
+        expect(last.tiles[0]).toEqual({ kind: 'item', id: 'i2', label: 'Oraimo Type-C to Lightning Cable 1m', priceKobo: 300_000, shape: null });
+        // The items end with New, which opens New item with what the tiles know (D94).
+        expect(last.tiles[1]).toEqual({ kind: 'new', id: 'new-item', label: 'New Oraimo cable', hint: 'Not here? Make it', categoryId: 'c-cables', brandId: 'b-oraimo', facets: { connector_pair: 'p-c2l', length: 'p-1m' } });
     });
 
     it('offers a generated shape as an item tile, with no price, once its brand is answered', () => {
         const choices = [{ key: 'connector_pair', value: 'p-c2c' }, { key: 'brand', value: null }];
         const view = drill(cables(), { categoryId: 'c-cables', choices }, 'retail');
-        expect(view.tiles).toHaveLength(1);
+        expect(view.tiles.map((t) => t.kind)).toEqual(['item', 'new']);
         expect(view.tiles[0]).toMatchObject({ kind: 'item', id: 'shape:c-cables:c2c-2m', label: 'Type-C to Type-C Cable 2m', priceKobo: null });
+        expect(view.tiles[1]).toMatchObject({ kind: 'new', label: 'New cable', brandId: null });
     });
 
-    it('a skipped facet keeps only the items without it', () => {
+    it('a skipped facet keeps only the items without it, and still asks the brand', () => {
         const view = drill(cables(), { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2l' }, { key: 'length', value: null }] }, 'retail');
-        expect(view.tiles.map((t) => t.label)).toEqual(['Oraimo Type-C to Lightning Cable']);
+        expect(view.prompt).toBe('Choose brand');
+        expect(tile(view.tiles, 'Oraimo')).toMatchObject({ kind: 'value', itemId: 'i3' });
         expect(view.crumbs.at(-1)).toBe('No length');
     });
 });
@@ -139,7 +151,8 @@ describe('the brand step with generated shapes (D54)', () => {
     it('offers every listed brand in a fresh shop, not only brands already sold, and a Skip', () => {
         const view = drill(powerBanks(), { categoryId: 'c-pb', choices: [] }, 'retail');
         expect(view.prompt).toBe('Choose brand');
-        expect(view.tiles.map((t) => t.label)).toEqual(['Oraimo', 'Skip brand']);
+        // No brand is the power banks' own here, so the whole listed list shows; a typed brand waits (D94).
+        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Oraimo']);
     });
 
     it('makes a shape chosen after a brand that brand\'s item, named with it', () => {
@@ -148,7 +161,7 @@ describe('the brand step with generated shapes (D54)', () => {
         // One tap on a capacity that leaves one shape adds it as Oraimo's.
         expect(view.tiles.find((t) => t.label === '20000mAh')).toMatchObject({ itemId: 'shape:c-pb:capacity=p-20k|brand=b-oraimo' });
         const item = drill(powerBanks(), { categoryId: 'c-pb', choices: [{ key: 'brand', value: 'b-oraimo' }, { key: 'capacity', value: 'p-20k' }] }, 'retail').tiles;
-        expect(item).toHaveLength(1);
+        expect(item.map((t) => t.kind)).toEqual(['item', 'new']);
         expect(item[0]).toMatchObject({ kind: 'item', id: 'shape:c-pb:capacity=p-20k|brand=b-oraimo', label: 'Oraimo Power Bank 20000mAh' });
         expect(parseShapeId('shape:c-pb:capacity=p-20k|brand=b-oraimo')).toEqual({ shapeId: 'shape:c-pb:capacity=p-20k', brandId: 'b-oraimo' });
         expect(parseShapeId('shape:c-pb:capacity=p-20k')).toEqual({ shapeId: 'shape:c-pb:capacity=p-20k', brandId: null });
@@ -176,10 +189,10 @@ describe('a shape waits for its brand (D79)', () => {
 
         const brand = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2c' }] }, 'retail');
         expect(brand.prompt).toBe('Choose brand');
-        expect(brand.tiles.map((t) => t.label)).toEqual(['Oraimo', 'Anker', 'Skip brand']);
+        expect(brand.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo']);
         // Each answer leaves the one shape, so each adds it in one tap: with the brand, or with none.
-        expect(brand.tiles[0]).toMatchObject({ kind: 'value', itemId: 'shape:c-cables:c2c-2m|brand=b-oraimo' });
-        expect(brand.tiles[2]).toMatchObject({ kind: 'skip', itemId: 'shape:c-cables:c2c-2m' });
+        expect(tile(brand.tiles, 'Oraimo')).toMatchObject({ kind: 'value', itemId: 'shape:c-cables:c2c-2m|brand=b-oraimo' });
+        expect(brand.tiles[0]).toMatchObject({ kind: 'skip', itemId: 'shape:c-cables:c2c-2m' });
     });
 
     it('asks the brand first where the catalogue says so, then sells each shape as that brand\'s in one tap', () => {
@@ -190,9 +203,9 @@ describe('a shape waits for its brand (D79)', () => {
 
         const first = drill(cat, { categoryId: 'c-cables', choices: [] }, 'retail');
         expect(first.prompt).toBe('Choose brand');
-        expect(first.tiles.map((t) => t.label)).toEqual(['Oraimo', 'Anker', 'Skip brand']);
+        expect(first.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo']);
         // Several cables are left under any answer, so no tile adds one yet.
-        expect(first.tiles.every((t) => t.kind !== 'category' && t.kind !== 'item' && t.itemId === null)).toBe(true);
+        expect(first.tiles.every((t) => (t.kind === 'value' || t.kind === 'skip') && t.itemId === null)).toBe(true);
 
         const oraimo = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'brand', value: 'b-oraimo' }] }, 'retail');
         expect(oraimo.prompt).toBe('Choose connector pair');
@@ -217,11 +230,11 @@ describe('a shape waits for its brand (D79)', () => {
         cat.noBrandId = 'b-none';
 
         const brand = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2c' }] }, 'retail');
-        expect(brand.tiles.map((t) => t.label)).toEqual(['Oraimo', 'Anker', 'Skip brand']);
+        expect(brand.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo']);
         // Skip brand is the item already made, once, not the shape beside it.
-        expect(brand.tiles[2]).toMatchObject({ kind: 'skip', itemId: 'i-nb' });
+        expect(brand.tiles[0]).toMatchObject({ kind: 'skip', itemId: 'i-nb' });
         // The cable sold with no brand can still be sold as Oraimo's: another item, made on its first sale.
-        expect(brand.tiles[0]).toMatchObject({ kind: 'value', itemId: 'shape:c-cables:c2c-2m|brand=b-oraimo' });
+        expect(tile(brand.tiles, 'Oraimo')).toMatchObject({ kind: 'value', itemId: 'shape:c-cables:c2c-2m|brand=b-oraimo' });
     });
 
     it('puts a shape found by search at its brand step', () => {
@@ -233,10 +246,90 @@ describe('a shape waits for its brand (D79)', () => {
         if (at === null) throw new Error('no state');
         const view = drill(cat, at, 'retail');
         expect(view.prompt).toBe('Choose brand');
-        expect(view.tiles.at(-1)).toMatchObject({ kind: 'skip', itemId: 'shape:c-cables:c2c-2m' });
+        expect(view.tiles[0]).toMatchObject({ kind: 'skip', itemId: 'shape:c-cables:c2c-2m' });
 
         // A category that asks no brand sells its shape as it is.
         cat.apply({ category_templates: [{ id: 't1', category_id: 'c-cables', facets: [{ key: 'connector_pair', label: 'Connector pair', type: 'picklist', list: 'connector_pairs' }], drill_order: ['connector_pair'], name_order: ['{word}', 'connector_pair'], asks_colour: false }] });
         expect(shapeAtBrandStep(cat, shape)).toBeNull();
+    });
+});
+
+describe('the brand step in every category with a brand (D94)', () => {
+    function earbuds(): Catalogue {
+        const cat = new Catalogue();
+        cat.apply({
+            categories: [{ id: 'c-ear', code: 'earbuds', parent_id: null, name: 'Earbuds and earpods', word: 'Earbuds', sellable: true, aliases: ['earpods'], position: 1 }],
+            category_templates: [
+                {
+                    id: 't-ear',
+                    category_id: 'c-ear',
+                    facets: [
+                        { key: 'brand', label: 'Brand', type: 'brand' },
+                        { key: 'model', label: 'Model', type: 'text' },
+                    ],
+                    drill_order: ['brand', 'model'],
+                    name_order: ['brand', 'model', '{word}'],
+                    asks_colour: false,
+                },
+            ],
+            brands: [
+                { id: 'b-oraimo', name: 'Oraimo', aliases: [], shown_first_in: ['earbuds'], status: 'approved', merged_into_id: null },
+                { id: 'b-hoco', name: 'Hoco', aliases: [], shown_first_in: ['earbuds'], status: 'approved', merged_into_id: null },
+                { id: 'b-jbl', name: 'JBL', aliases: [], shown_first_in: ['bluetooth_speakers'], status: 'approved', merged_into_id: null },
+                { id: 'b-none', name: 'No brand', aliases: [], shown_first_in: [], status: 'approved', merged_into_id: null },
+            ],
+        });
+        cat.noBrandId = 'b-none';
+        return cat;
+    }
+
+    it('asks the brand with no item yet: Skip brand first, the category\'s own brands A to Z, then More brands', () => {
+        const cat = earbuds();
+        const first = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
+        expect(first.prompt).toBe('Choose brand');
+        expect(first.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'More brands']);
+        expect(first.tiles.at(-1)).toMatchObject({ kind: 'more', hint: '1 more in the brand list' });
+
+        const all = drill(cat, { categoryId: 'c-ear', choices: [], allBrands: true }, 'retail');
+        expect(all.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'JBL']);
+    });
+
+    it('ends a brand with nothing sold yet at New, which opens New item with the brand', () => {
+        const view = drill(earbuds(), { categoryId: 'c-ear', choices: [{ key: 'brand', value: 'b-oraimo' }] }, 'retail');
+        expect(view.prompt).toBe('None yet. Make one with New.');
+        expect(view.tiles).toEqual([{ kind: 'new', id: 'new-item', label: 'New Oraimo earbuds', hint: 'Not here? Make it', categoryId: 'c-ear', brandId: 'b-oraimo', facets: {} }]);
+        expect(view.crumbs).toEqual(['Earbuds and earpods', 'Oraimo']);
+    });
+
+    it('counts a brand with an item in the category as its own, even one still waiting, and adds a lone item in one tap', () => {
+        const cat = earbuds();
+        cat.apply({
+            brands: [{ id: 'b-zeta', name: 'Zetasound', aliases: [], shown_first_in: [], status: 'pending', merged_into_id: null }],
+            items: [{ id: 'i-zeta', category_id: 'c-ear', brand_id: 'b-zeta', item_code: 'A00031', display_name: 'Zetasound Zeta Pods 9 Earbuds', search_text: '', status: 'pending_review' }],
+            item_facets: [{ id: 'f-zeta', item_id: 'i-zeta', facet_key: 'model', picklist_value_id: null, text_value: 'Zeta Pods 9' }],
+        });
+        const view = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
+        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'Zetasound', 'More brands']);
+        expect(tile(view.tiles, 'Zetasound')).toMatchObject({ kind: 'value', itemId: 'i-zeta' });
+    });
+
+    it('shows the whole list where a category has no brand of its own, as the shop visit agreed', () => {
+        const cat = earbuds();
+        cat.apply({
+            brands: [
+                { id: 'b-oraimo', name: 'Oraimo', aliases: [], shown_first_in: [], status: 'approved', merged_into_id: null },
+                { id: 'b-hoco', name: 'Hoco', aliases: [], shown_first_in: [], status: 'approved', merged_into_id: null },
+            ],
+        });
+        const view = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
+        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'JBL', 'Oraimo']);
+    });
+
+    it('opens the tiles at a category, or at a category\'s brand, from a search result', () => {
+        const cat = earbuds();
+        expect(jumpTile(cat, 'jump:c-ear')).toEqual({ kind: 'jump', id: 'jump:c-ear', label: 'Earbuds and earpods', hint: 'Category', state: { categoryId: 'c-ear', choices: [] } });
+        expect(jumpTile(cat, 'jump:c-ear:b-oraimo')).toMatchObject({ label: 'Oraimo · Earbuds and earpods', hint: 'Brand', state: { categoryId: 'c-ear', choices: [{ key: 'brand', value: 'b-oraimo' }] } });
+        expect(jumpTile(cat, 'jump:c-gone')).toBeNull();
+        expect(jumpTile(cat, 'jump:c-ear:b-gone')).toBeNull();
     });
 });
