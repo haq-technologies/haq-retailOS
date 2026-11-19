@@ -26,7 +26,7 @@ func Counter(ctx context.Context, a Answers, out io.Writer) (Result, error) {
 	s := steps{out: out, of: 4}
 
 	s.next("Checking this PC")
-	if err := Preflight(ctx, out, config.Counter, a.Address); err != nil {
+	if err := Preflight(ctx, out, config.Counter, a.Address, false); err != nil {
 		return Result{}, err
 	}
 

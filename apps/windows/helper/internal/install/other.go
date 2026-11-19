@@ -31,7 +31,7 @@ func Stop(context.Context) error { return errWindows }
 func Remove(context.Context, io.Writer, bool) error { return errWindows }
 
 // Preflight is Windows only.
-func Preflight(context.Context, io.Writer, config.Mode, string) error { return errWindows }
+func Preflight(context.Context, io.Writer, config.Mode, string, bool) error { return errWindows }
 
 // InstallWSL is Windows only.
 func InstallWSL(context.Context, io.Writer) error { return errWindows }

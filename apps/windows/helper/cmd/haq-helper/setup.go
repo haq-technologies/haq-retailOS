@@ -18,7 +18,8 @@ import (
 
 // Exit codes the setup program reads from `setup check`.
 const (
-	exitNeedsWSL = 20 // Windows' Linux is not turned on: `setup wsl`, then a restart
+	exitNeedsWSL  = 20 // Windows' Linux is not turned on: `setup wsl`, then a restart
+	exitLowMemory = 21 // less memory than the server is tested with: the wizard asks, then checks with --warned
 )
 
 // runSetup is the install engine the setup program runs, in a window the person installing watches.
@@ -35,6 +36,7 @@ func runSetup(args []string) error {
 	mode := fs.String("mode", "server", "server or counter")
 	address := fs.String("address", "", "this PC's fixed address")
 	deleteShop := fs.Bool("delete-shop-and-sales", false, "remove deletes the shop server and every sale in it, for good")
+	warned := fs.Bool("warned", false, "check goes on past a warning the person installing has seen")
 	_ = fs.Parse(args[1:])
 
 	// What the install does is kept for support in logs\setup.log as well as shown; never the answers.
@@ -47,20 +49,24 @@ func runSetup(args []string) error {
 			out, log = io.MultiWriter(os.Stdout, l), l
 		}
 	}
-	err := setup(ctx, args[0], out, *answers, *distro, *result, *mode, *address, *deleteShop)
+	err := setup(ctx, args[0], out, *answers, *distro, *result, *mode, *address, *deleteShop, *warned)
 	if err != nil {
 		fmt.Fprintln(log, "Stopped:", err)
 	}
 	return err
 }
 
-func setup(ctx context.Context, what string, out io.Writer, answers, distro, result, mode, address string, deleteShop bool) error {
+func setup(ctx context.Context, what string, out io.Writer, answers, distro, result, mode, address string, deleteShop, warned bool) error {
 	switch what {
 	case "check":
-		err := install.Preflight(ctx, out, config.Mode(mode), address)
+		err := install.Preflight(ctx, out, config.Mode(mode), address, !warned)
 		if errors.Is(err, install.ErrNoWSL) {
 			fmt.Println(err)
 			os.Exit(exitNeedsWSL)
+		}
+		if low := (install.LowMemoryError{}); errors.As(err, &low) {
+			fmt.Println(low.Error())
+			os.Exit(exitLowMemory)
 		}
 		return err
 	case "wsl":

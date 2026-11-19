@@ -33,7 +33,7 @@ func Server(ctx context.Context, a Answers, distro string, out io.Writer) (Resul
 	dist := config.DefaultDistribution
 
 	s.next("Checking this PC")
-	if err := Preflight(ctx, out, config.Server, a.Address); err != nil {
+	if err := Preflight(ctx, out, config.Server, a.Address, false); err != nil {
 		return Result{}, err
 	}
 	if _, err := os.Stat(distro); err != nil {
@@ -161,7 +161,9 @@ func importDistribution(ctx context.Context, out io.Writer, distro, dist string)
 		return err
 	}
 	if code != 0 {
-		return fmt.Errorf("WSL could not import the server's Linux (code %d); the output above says why", code)
+		return fmt.Errorf("WSL could not import the server's Linux (code %d); the output above says why. "+
+			"Error 0x80370102 there means virtualisation is turned off in the PC's firmware (its BIOS or UEFI): "+
+			"turn on Intel VT-x, or SVM Mode or AMD-V, and run the setup again", code)
 	}
 	return nil
 }

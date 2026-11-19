@@ -1,12 +1,28 @@
 # The setup program
 
-`HAQ-Retail-OS-Setup-<version>.exe`, made with Inno Setup (D88). One file installs the whole shop on a Windows 10 (22H2) or 11 PC, or makes a PC a counter of a shop whose server is another PC. It asks the questions; the HAQ Helper's install engine (`haq-helper setup`, [../helper/README.md](../helper/README.md)) does the install, in a window that numbers each step.
+`HAQ-Retail-OS-Setup-<version>.exe`, made with Inno Setup (D88). One file installs the whole shop on a 64-bit Windows 10 or 11 PC, or makes a PC a counter of a shop whose server is another PC. It asks the questions; the HAQ Helper's install engine (`haq-helper setup`, [../helper/README.md](../helper/README.md)) does the install, in a window that numbers each step.
+
+## Which PCs
+
+The setup checks the PC itself, not a version number, and says in plain words what to do about anything that stops it (D92). Nobody needs to look up the PC's Windows version first.
+
+| The PC | A counter | The shop's server |
+|---|---|---|
+| 64-bit Windows 11, any edition | Yes | Yes |
+| 64-bit Windows 10 20H2 to 22H2, updated since November 2022, any edition (Home, Pro, Enterprise, Education, LTSC 2021) | Yes | Yes |
+| 64-bit Windows 10 older than that, or not updated since | Yes | Not yet: it asks for Windows Update (free) first, because Microsoft's current WSL needs it |
+| Virtualisation turned off in the firmware (BIOS or UEFI) | Yes | Not yet: it says how to turn it on |
+| An ARM processor (some Windows 11 laptops) | Yes, though not yet tried on one | No: the server's Linux is for Intel and AMD processors |
+| 32-bit Windows | No | No |
+| Windows in S mode | No: Windows runs no setup program in S mode; leaving it is free, in the Microsoft Store | No, for the same reason |
+
+The server is tested with 8 GB of memory. On a PC with less, the setup says so and asks whether to go on, until the server's memory use is measured and the least it needs is set (D92). It also needs 30 GB free.
 
 ## What it asks
 
 | Page | This PC runs the shop | This PC is a counter |
 |---|---|---|
-| What is this PC? | It checks the PC can run the shop. If Windows' Linux (WSL) is off, it turns it on; you restart and run the setup again | It checks the PC |
+| What is this PC? | It checks the PC can run the shop. If Windows' Linux (WSL) is off, it turns it on, with Microsoft's WSL installer (about 370 MB); you restart and run the setup again | It checks the PC |
 | This PC's address | The PC's fixed address, which every device reaches it at | The same, for its print bridge |
 | The download token | The GitHub user name and the read-only token, asked this once; the server keeps it for every update (D89) | - |
 | The shop | The name, and the receipt's heading, address, phone and footer | - |

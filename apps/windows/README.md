@@ -1,6 +1,6 @@
 # The Windows setup
 
-The Windows parts of HAQ Retail OS (D86 to D88). One setup program installs the whole shop on a Windows 10 (22H2) or 11 PC, with the shop server hidden in WSL2, or makes a PC a counter of a shop that already has a server. USB receipt printers work through the HAQ print bridge. The shop server itself is the same code as on the Ubuntu mini-PC: `apps/shop-server/`, with its own installer and updater inside the hidden distribution.
+The Windows parts of HAQ Retail OS (D86 to D88). One setup program installs the whole shop on a 64-bit Windows 10 or 11 PC, checking the PC itself rather than its version (D92), with the shop server hidden in WSL2, or makes a PC a counter of a shop that already has a server. USB receipt printers work through the HAQ print bridge. The shop server itself is the same code as on the Ubuntu mini-PC: `apps/shop-server/`, with its own installer and updater inside the hidden distribution.
 
 | Folder | What | State |
 |---|---|---|
