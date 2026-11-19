@@ -17,7 +17,12 @@
 # --http-port, --https-port, --project (Compose project name), --backup-dir (the second internal disk's
 # folder for backups), --standin-printer (a rehearsal with no printer only: receipts go to `haq receipts`),
 # --windows (the server hidden in WSL2 on a Windows PC, D86: the Windows setup gives it; the HAQ Helper then
-# reports the disks and the clock and starts the off-site copy from Windows, so neither is set up here).
+# reports the disks and the clock and starts the off-site copy from Windows, so neither is set up here),
+# --release (a release's folder, brought on a flash drive, in place of fetching it from GitHub),
+# --check-only (check the release given by --tag, and stop before anything is installed).
+#
+# A release (--tag YEAR.MONTH.N) is checked before anything is installed, as the updater checks it: its
+# signed manifest, its Compose file, and its images, which are then pulled by their digests (D99).
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -34,6 +39,8 @@ registry=ghcr.io/haq-technologies
 backup_dir=
 channel=""
 windows=0
+release_dir=""
+check_only=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -50,6 +57,8 @@ while [ $# -gt 0 ]; do
         --backup-dir) backup_dir="$2"; shift 2 ;;
         --standin-printer) standin=1; shift ;;
         --windows) windows=1; shift ;;
+        --release) release_dir="$2"; shift 2 ;;
+        --check-only) check_only=1; shift ;;
         *) echo "Unknown option $1" >&2; exit 2 ;;
     esac
 done
@@ -78,6 +87,59 @@ fi
 # A rehearsal with no printer prints to a stand-in that writes each receipt to its log; a shop never runs it.
 if [ "$standin" = 1 ]; then export COMPOSE_PROFILES=standin; fi
 
+json() { python3 -I -c 'import json,sys; d=json.load(open(sys.argv[1]))
+for k in sys.argv[2].split("."): d=d[k]
+print(d)' "$1" "$2"; }
+
+# A release's tag is its version, YEAR.MONTH.N; anything else (main, local) is not a release.
+is_release=0
+if printf '%s' "$tag" | grep -Eq '^[0-9]{4}\.[0-9]{1,2}\.[0-9]+$'; then is_release=1; fi
+app_image="$registry/retail-os-app:$tag"
+web_image="$registry/retail-os-web:$tag"
+db_image="$registry/retail-os-db:$tag"
+compose_file="$here/compose.yaml"
+release_commit=""
+# A release is checked before anything is installed (D99): the updater's own checks of its signed manifest,
+# its Compose file and its images pinned by digest, as a shop with no release yet runs them. The shop then
+# runs exactly what the release signs from its first day, never whatever its version tag points at. Images
+# loaded on this machine (SKIP_PULL=1) are used by their tags, since a loaded image keeps no digest.
+if [ "$is_release" = 1 ] && [ "${SKIP_PULL:-0}" != "1" ]; then
+    [ -f "$here/release-public.pem" ] || { echo "There is no release public key in deploy/, so release $tag cannot be checked. Nothing was installed." >&2; exit 1; }
+    checked="$(mktemp -d)"
+    trap 'rm -rf "$checked"' EXIT
+    mkdir -p "$checked/release" "$checked/shop"
+    for f in manifest.json manifest.json.sig compose.yaml; do
+        if [ -n "$release_dir" ]; then
+            cp "$release_dir/$f" "$checked/release/$f" || { echo "The release folder $release_dir has no $f. Nothing was installed." >&2; exit 1; }
+        else
+            curl -fsSL --retry 3 -o "$checked/release/$f" "https://github.com/haq-technologies/haq-retailOS/releases/download/$tag/$f" \
+                || { echo "Could not fetch release $tag's $f from GitHub. Check the connection, and that the release exists. Nothing was installed." >&2; exit 1; }
+        fi
+    done
+    cp "$checked/release/compose.yaml" "$checked/shop/compose.yaml"
+    cp "$here/release-public.pem" "$checked/shop/release-public.pem"
+    if ! "$here/update.sh" --dir "$checked/shop" --release "$checked/release" --version "$tag" --check-only >"$checked/said" 2>&1; then
+        cat "$checked/said" >&2
+        echo "Release $tag did not check out, so nothing was installed." >&2
+        exit 1
+    fi
+    app_image="$(json "$checked/release/manifest.json" images.app)"
+    web_image="$(json "$checked/release/manifest.json" images.web)"
+    db_image="$(json "$checked/release/manifest.json" images.db)"
+    release_commit="$(json "$checked/release/manifest.json" commit 2>/dev/null || true)"
+    compose_file="$checked/release/compose.yaml"
+    echo "Release $tag is signed: its images are installed by their digests."
+    if [ "$check_only" = 1 ]; then
+        echo "The release checks out. Nothing was installed (--check-only)."
+        exit 0
+    fi
+elif [ "$check_only" = 1 ]; then
+    echo "--check-only checks a release: give one with --tag, such as 2026.11.3, and leave SKIP_PULL unset." >&2
+    exit 2
+elif [ "$is_release" = 1 ]; then
+    echo "WARNING: the images were loaded on this machine, so they are used by their tags, unchecked against release $tag's signed manifest." >&2
+fi
+
 # Docker from Ubuntu's own packages (as at G2), if the server has none yet.
 if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; then
     if command -v apt-get >/dev/null; then
@@ -99,7 +161,7 @@ secret() { head -c 32 /dev/urandom | base64 | tr -d '/+=\n' | head -c 40; }
 
 mkdir -p "$dir/secrets"
 chmod 700 "$dir" "$dir/secrets"
-cp "$here/compose.yaml" "$dir/compose.yaml"
+cp "$compose_file" "$dir/compose.yaml"
 
 for s in postgres_password owner_password app_password reporting_password; do
     if [ ! -f "$dir/secrets/$s" ]; then
@@ -115,10 +177,7 @@ if [ ! -f "$dir/.env" ]; then
         echo "RETAIL_APP_PASSWORD=$(cat "$dir/secrets/app_password")"
     } > "$dir/.env"
 fi
-# The image tags, name and ports may change on a rerun; the secrets never do.
-# A release's tag is its version, YEAR.MONTH.N; anything else (main, local) is not a release.
-is_release=0
-if printf '%s' "$tag" | grep -Eq '^[0-9]{4}\.[0-9]{1,2}\.[0-9]+$'; then is_release=1; fi
+# The images, name and ports may change on a rerun; the secrets never do.
 # A release is installed from its own commit, so the installer, the Compose file and the updater are the
 # release's too (D81). A checkout of another commit still installs, with a warning.
 if [ "$is_release" = 1 ] && command -v git >/dev/null; then
@@ -131,9 +190,9 @@ if [ "$is_release" = 1 ] && command -v git >/dev/null; then
 fi
 grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|RELEASE_VERSION|SERVER_NAME|SERVER_IP|HTTP_PORT|HTTPS_PORT|BACKUP_DIR)=' "$dir/.env" > "$dir/.env.new" || true
 {
-    echo "APP_IMAGE=$registry/retail-os-app:$tag"
-    echo "WEB_IMAGE=$registry/retail-os-web:$tag"
-    echo "DB_IMAGE=$registry/retail-os-db:$tag"
+    echo "APP_IMAGE=$app_image"
+    echo "WEB_IMAGE=$web_image"
+    echo "DB_IMAGE=$db_image"
     # What the back office's server health page shows as the version.
     if [ "$is_release" = 1 ]; then echo "RELEASE_VERSION=$tag"; fi
     echo "SERVER_NAME=$name"
@@ -309,8 +368,9 @@ fi
 # What is installed, for the updater: it refuses an older release, and it knows where a shop starts from
 # (D81). An install from main or from local images is not a release, and leaves any record as it is.
 if [ "$is_release" = 1 ]; then
-    printf '{\n    "version": "%s",\n    "images": {"app": "%s", "web": "%s", "db": "%s"},\n    "installed_at": "%s"\n}\n' \
-        "$tag" "$registry/retail-os-app:$tag" "$registry/retail-os-web:$tag" "$registry/retail-os-db:$tag" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$dir/release.json"
+    printf '{\n    "version": "%s",%s\n    "images": {"app": "%s", "web": "%s", "db": "%s"},\n    "installed_at": "%s"\n}\n' \
+        "$tag" "$( [ -z "$release_commit" ] || printf '\n    "commit": "%s",' "$release_commit" )" \
+        "$app_image" "$web_image" "$db_image" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$dir/release.json"
 fi
 # Which releases a plain `haq update` takes: stable unless told otherwise, and never changed by a rerun
 # that does not name one.

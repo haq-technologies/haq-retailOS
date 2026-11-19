@@ -100,4 +100,18 @@ rm -f "$tmp/shop/channel"
 named() { "$root/apps/shop-server/deploy/update.sh" --dir "$tmp/shop" --check-only --version "$1"; }
 expect fail "a version that is not YEAR.MONTH.N is refused before anything is fetched" named main
 
+# A new shop's first install checks its release as the updater does, and installs its images by digest (D99).
+cp -r "$root/apps/shop-server/deploy" "$tmp/deploy"
+cp "$tmp/key/release-public.pem" "$tmp/deploy/release-public.pem"
+first() { # $1: the release folder, $2: the version asked for
+    env -u SKIP_PULL "$tmp/deploy/install.sh" --dir "$tmp/new-shop" --ip 127.0.0.1 --tag "$2" --release "$1" --check-only
+}
+expect pass "a new shop's first install takes a release signed with the release key" first "$tmp/good" 2026.11.2
+expect fail "a new shop's first install refuses a manifest changed after signing" first "$tmp/changed" 2026.11.9
+expect fail "a new shop's first install refuses a Compose file that is not the signed one" first "$tmp/compose" 2026.11.2
+expect fail "a new shop's first install refuses a release signed by another key" first "$tmp/stranger" 2026.11.2
+expect fail "a new shop's first install refuses an image named by tag, not digest" first "$tmp/tagged" 2026.11.3
+expect fail "a new shop's first install refuses a release that is not the one asked for" first "$tmp/good" 2026.11.4
+[ ! -e "$tmp/new-shop" ] && echo "PASS  a first install's check installs nothing" || { echo "FAIL  a first install's check made $tmp/new-shop"; failures=$((failures + 1)); }
+
 [ "$failures" = 0 ] && echo "The signing dry run passed." || { echo "The signing dry run failed ($failures)."; exit 1; }
