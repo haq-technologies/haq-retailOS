@@ -47,6 +47,7 @@ export default function CounterPage({ terminal, tiles, idleLockMinutes, settings
     const [runtime] = useState(() => {
         const made = new Runtime();
         made.cat.noBrandId = settings.noBrandId;
+        made.cat.brandDefaults = new Map(Object.entries(settings.brandDefaults));
         return made;
     });
     const cat = runtime.cat;

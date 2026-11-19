@@ -41,7 +41,11 @@ it('opens the counter page from home on an enrolled counter, with what the clien
         ->has('tiles', 2)
         ->where('settings.transferAlertTick', true)->where('settings.floorPercent', 50)->where('settings.cashierItemCreation', 'on')
         ->where('settings.colours', fn ($c) => count($c) > 3)
-        ->where('settings.noBrandId', Brand::query()->where('seed_id', 'brand.no-brand')->value('id')));
+        ->where('settings.noBrandId', Brand::query()->where('seed_id', 'brand.no-brand')->value('id'))
+        // "Made by" is No brand on pouches, screen protectors and batteries until the cashier chooses (D93).
+        ->where('settings.brandDefaults', fn ($defaults) => collect(['cases', 'screen_protectors', 'batteries'])
+            ->every(fn (string $code) => ($defaults[Category::query()->where('code', $code)->value('id')] ?? null) === Brand::query()->where('seed_id', 'brand.no-brand')->value('id'))
+            && count($defaults) === 3));
     expect($page->getContent())->not->toContain('cost');
 
     $this->defaultCookies = []; // a device that was never enrolled

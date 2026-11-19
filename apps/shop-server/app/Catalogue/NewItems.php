@@ -95,12 +95,26 @@ final readonly class NewItems
     }
 
     /**
+     * The new item's brand: one from the list, or one the cashier typed. A chosen brand follows the same
+     * rules as at the tiles (D54, D79, D93): a merged brand counts as the one it was merged into, "No brand"
+     * is no brand, so the item is the one made with none rather than a second with the same name, and a
+     * brand that is not there refuses the item instead of quietly making it with no brand. A typed brand
+     * still waiting for approval may be chosen, as the brand box suggests it [v1.3].
+     *
      * @param  array{brand_id?: ?string, brand_text?: ?string}  $input
      */
     private function brand(array $input, User $actor): ?Brand
     {
         if (isset($input['brand_id']) && $input['brand_id'] !== '') {
-            return Brand::query()->find($input['brand_id']);
+            $brand = Brand::query()->find(strtolower($input['brand_id']));
+            for ($hops = 0; $brand !== null && $brand->status === 'merged' && $brand->merged_into_id !== null && $hops < 10; $hops++) {
+                $brand = Brand::query()->find($brand->merged_into_id);
+            }
+            if ($brand === null || $brand->status === 'merged') {
+                throw new NewItemRefused('That brand is no longer in the list. Choose the brand again.');
+            }
+
+            return $brand->seed_id === config('catalogue.no_brand_seed_id') ? null : $brand;
         }
         $typed = $this->clean($input['brand_text'] ?? null);
         if ($typed === null) {

@@ -37,6 +37,8 @@ export interface FullSettings extends CounterSettings {
     cashierItemCreation: 'on' | 'request_only';
     /** The brand list's "No brand" entry: the same answer as Skip brand (D79). */
     noBrandId: string | null;
+    /** A category's default brand, by category ID: "Made by" is No brand on pouches, protectors and batteries (D93). */
+    brandDefaults: Record<string, string>;
 }
 
 interface Props {
@@ -601,7 +603,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                             {learnCode !== null && (
                                 <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-action p-4 text-lg">
                                     <span>
-                                        New code <strong>{learnCode}</strong>. Find its item by search or the tiles; the counter remembers it.
+                                        New code <strong>{learnCode}</strong>. Find its item by search or the tiles, or make it with New item; the counter remembers it.
                                     </span>
                                     <button
                                         type="button"
@@ -781,19 +783,23 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                     cat={cat}
                     api={api}
                     requestOnly={settings.cashierItemCreation === 'request_only' && session.user.role === 'cashier'}
+                    customerType={cart.customerType}
                     startCategoryId={state.categoryId}
+                    learnCode={learnCode}
                     onClose={() => {
                         setSheet(null);
                     }}
                     onPickExisting={(itemId) => {
                         setSheet(null);
-                        void addItem(itemId, { addedBy: 'search' });
+                        // A scanned code is learned for the item picked instead, as a match found by search is (D93).
+                        void addItem(itemId, learnCode === null ? { addedBy: 'search' } : { addedBy: 'learn', barcode: learnCode });
                     }}
                     onCreated={({ item, prices, priceKobo }) => {
                         sync?.absorb({ items: [item] }, prices);
                         cat.apply({ items: [item] });
                         setSheet(null);
-                        putLine(item.id, priceKobo, 'typed', { addedBy: 'new' }, {});
+                        // The server learned the scanned code with the item; the sale that taught it does not confirm it (D93).
+                        putLine(item.id, priceKobo, 'typed', learnCode === null ? { addedBy: 'new' } : { addedBy: 'learn', barcode: learnCode }, {});
                     }}
                 />
             )}
