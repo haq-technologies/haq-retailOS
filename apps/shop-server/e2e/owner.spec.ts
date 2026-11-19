@@ -63,6 +63,24 @@ test('shows a manager the day without profit, and no Needs cost', async ({ brows
     await expect(page.getByRole('link', { name: /Needs cost/ })).toHaveCount(0);
 });
 
+test('opens the back office from a counter\'s name tiles for a manager, and goes back to the counter (D91)', async ({ browser }) => {
+    const context = await browser.newContext({ storageState: join(here, '.auth', 'T01.json') });
+    open.push(context);
+    const page = watched(await context.newPage());
+    await page.goto('/counter');
+    await expect(page.getByRole('heading', { name: 'Who is selling?' })).toBeVisible();
+    await page.getByRole('link', { name: 'Open the back office' }).click();
+    await expect(page.getByRole('heading', { name: 'Back office' })).toBeVisible();
+    // A cashier has no tile in the back office.
+    await expect(page.getByRole('button', { name: /^Amina/ })).toHaveCount(0);
+    await page.getByRole('button', { name: /^Kemi/ }).click();
+    await page.keyboard.type('246810', { delay: 60 });
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page.getByRole('heading', { name: 'Revenue today, by cost' })).toBeVisible();
+    await page.getByRole('link', { name: 'Open the counter' }).click();
+    await expect(page.getByRole('heading', { name: 'Who is selling?' })).toBeVisible();
+});
+
 test('puts a lockout in Needs your attention, then the owner marks it as seen and exports the flags', async ({ browser }) => {
     // Five wrong PINs for Amina on counter T02 lock her out (spec section 3) [F8]; nothing later in this file signs her in.
     const context = await browser.newContext({ storageState: join(here, '.auth', 'T02.json') });

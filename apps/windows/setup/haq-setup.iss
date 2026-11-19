@@ -50,6 +50,13 @@ CloseApplications=no
 RestartApplications=no
 UninstallDisplayName=HAQ Retail OS
 UninstallDisplayIcon={app}\haq-helper.exe
+ChangesEnvironment=yes
+
+[Registry]
+; haq-helper on the PATH, so HAQ support runs the server's commands in Terminal (Admin) as
+; `haq-helper server enrol T02` or `haq-helper server add-user "Amina" cashier` (D91). The uninstall takes
+; only this folder off it again (RemoveFromPath), never the whole value.
+Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}"; Check: NotOnPath
 
 [Files]
 Source: "{#Helper}"; DestDir: "{app}"; DestName: "haq-helper.exe"; Flags: ignoreversion
@@ -63,6 +70,7 @@ Filename: "{app}\haq-helper.exe"; Parameters: "setup remove"; Flags: runhidden w
 [Code]
 const
   NeedsWSL = 20;
+  EnvironmentKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
 
 var
   ModePage: TInputOptionWizardPage;
@@ -90,6 +98,34 @@ end;
 function DataDir(): String;
 begin
   Result := ExpandConstant('{commonappdata}\HAQ');
+end;
+
+{ Whether the setup's folder is still to go on the system PATH: not after an update, which has it already. }
+function NotOnPath(): Boolean;
+var
+  Path: String;
+begin
+  if not RegQueryStringValue(HKLM, EnvironmentKey, 'Path', Path) then
+    Result := True
+  else
+    Result := Pos(';' + Uppercase(ExpandConstant('{app}')) + ';', ';' + Uppercase(Path) + ';') = 0;
+end;
+
+{ The uninstall takes the setup's folder off the system PATH, and leaves the rest of it as it was. }
+procedure RemoveFromPath();
+var
+  Path, App: String;
+  P: Integer;
+begin
+  if not RegQueryStringValue(HKLM, EnvironmentKey, 'Path', Path) then
+    Exit;
+  App := ExpandConstant('{app}');
+  Path := ';' + Path + ';';
+  P := Pos(';' + Uppercase(App) + ';', Uppercase(Path));
+  if P = 0 then
+    Exit;
+  Delete(Path, P, Length(App) + 1);
+  RegWriteExpandStringValue(HKLM, EnvironmentKey, 'Path', Copy(Path, 2, Length(Path) - 2));
 end;
 
 { Runs the helper hidden, its output into a file, and returns its exit code and output. }
@@ -238,7 +274,7 @@ begin
   CountersPage.Values[1] := 'T01';
 
   OwnerPage := CreateInputQueryPage(CountersPage.ID, 'The owner',
-    'The owner signs in with their name tile and a 6-digit PIN, and adds everyone else in the back office.', '');
+    'The owner signs in with their name tile and a 6-digit PIN. After the setup, add the staff in Terminal (Admin), for example: haq-helper server add-user "Amina" cashier', '');
   OwnerPage.Add('The owner''s name, as on their tile:', False);
   OwnerPage.Add('The owner''s PIN (6 digits):', True);
   OwnerPage.Add('The same PIN again:', True);
@@ -589,6 +625,8 @@ end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
+  if CurUninstallStep = usPostUninstall then
+    RemoveFromPath();
   if (CurUninstallStep = usPostUninstall) and not UninstallSilent() then
     MsgBox('HAQ Retail OS is removed from Windows. The shop and its sales are kept in ' + ExpandConstant('{commonappdata}\HAQ') +
       ', and running the setup again brings them back. HAQ support can delete them for good.', mbInformation, MB_OK);

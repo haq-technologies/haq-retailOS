@@ -205,6 +205,10 @@ export default function CounterPage({ terminal, tiles, idleLockMinutes, settings
                         }}
                     />
                 )}
+                {/* The owner or a manager at a shop's only PC opens the back office here; a sale waiting is kept (D91). */}
+                <a href="/back-office" className="flex min-h-touch items-center justify-center rounded-xl border-2 border-border px-4 text-lg font-semibold text-action-text">
+                    Open the back office
+                </a>
             </main>
         </>
     );

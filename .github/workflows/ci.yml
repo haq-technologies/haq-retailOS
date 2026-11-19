@@ -448,7 +448,12 @@ jobs:
             }
             if ($p.ExitCode) { throw "the setup gave code $($p.ExitCode)" }
           }
+          # The system PATH as written, unexpanded: the setup adds its folder, and the uninstall takes only that off.
+          function Get-MachinePath { (Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment').GetValue('Path', '', 'DoNotExpandEnvironmentNames') }
+          function Count-OnPath { @((Get-MachinePath) -split ';' | Where-Object { $_ -eq $app }).Count }
+          $pathBefore = Get-MachinePath
           Run-Setup "$env:RUNNER_TEMP\install.log" @('/MODE=counter', "/ANSWERS=$answers")
+          if ((Count-OnPath) -ne 1) { throw 'the setup did not put its folder on the PATH' }
           if (Test-Path $answers) { throw 'the setup left the answers file' }
           if (-not (Test-Path "$app\haq-helper.exe")) { throw 'the helper is not installed' }
           if (-not (Test-Path C:\ProgramData\HAQ\installed)) { throw 'the counter is not marked installed' }
@@ -460,6 +465,7 @@ jobs:
           # A second run is an update: it asks nothing, and the service runs again from the new files.
           Run-Setup "$env:RUNNER_TEMP\update.log" @('/MODE=counter')
           if ((& "$app\haq-helper.exe" service state) -ne 'running') { throw 'the service is not running after the update' }
+          if ((Count-OnPath) -ne 1) { throw "the update left its folder on the PATH $(Count-OnPath) times" }
 
           $uninstaller = Get-ChildItem $app -Filter 'unins*.exe' | Select-Object -First 1
           Start-Process $uninstaller.FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
@@ -469,6 +475,12 @@ jobs:
           if (Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq $ca.Thumbprint) { throw 'the certificate is still trusted' }
           if (Test-Path $link) { throw 'the shortcut is still there' }
           if (-not (Test-Path C:\ProgramData\HAQ\helper.json)) { throw "the uninstall took the shop's settings" }
+          # The uninstaller ends after its files go, so the PATH is waited for.
+          $deadline = (Get-Date).AddSeconds(30)
+          while ((Get-MachinePath) -ne $pathBefore) {
+            if ((Get-Date) -gt $deadline) { throw "the PATH is not as it was: before $pathBefore; after $(Get-MachinePath)" }
+            Start-Sleep 1
+          }
           Stop-Job $shop; Remove-Job $shop -Force
           Write-Host 'Installed, updated and uninstalled; the shop''s folder is kept.'
 

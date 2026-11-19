@@ -30,6 +30,8 @@ haq-helper setup update                      after a newer setup: the Windows pa
 haq-helper setup stop                        before a newer setup copies its files
 haq-helper setup remove [--delete-shop-and-sales]
 haq-helper server enrol T02                  the shop server's own haq commands, on the server's PC
+haq-helper server add-user "Amina" cashier   a person with a name tile; the helper asks the PIN, hidden and twice
+haq-helper server pin "Amina"                a new PIN, asked the same way
 haq-helper server printer T02 192.168.1.21   point counter T02 at the bridge on its PC
 ```
 

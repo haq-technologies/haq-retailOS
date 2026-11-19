@@ -61,6 +61,8 @@ func asServer(ctx context.Context, dir string, s starter, out io.Writer, argv ..
 	if err := config.WriteFile(queuePath(dir), raw); err != nil {
 		return -1, err
 	}
+	// The command may hold a PIN (`server add-user`), so it is kept only while it runs.
+	defer os.Remove(queuePath(dir))
 	began := time.Now()
 	if err := s.Start(ctx); err != nil {
 		return -1, fmt.Errorf("could not start the runner task: %w", err)
