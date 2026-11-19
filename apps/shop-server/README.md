@@ -74,6 +74,8 @@ It checks every service and one-shot job, that no running container holds the ow
 ```
 apps/shop-server/deploy/staging.sh           # the latest images from main, at https://localhost:8443
 apps/shop-server/deploy/staging.sh --local   # images built here: docker build ... --target app|web|db -t retail-os/retail-os-<target>:local
+apps/shop-server/deploy/staging.sh --build   # builds the branch checked out, then installs it: a pull request tried before it merges (D96)
+apps/shop-server/deploy/staging.sh --build --fresh   # the same, as a brand-new shop: the staging shop and its data are removed first
 ```
 
 ## The counter

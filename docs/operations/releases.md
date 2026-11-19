@@ -8,7 +8,7 @@ One branch lives for ever: `main`. Every other branch is short.
 
 | Branch | Lives | What it is for |
 |---|---|---|
-| `main` | For ever | The one line of work. Every commit on it has passed CI and can be released. The "Protect main" ruleset allows changes only through a pull request with every check green, as squash merges, with no force-push |
+| `main` | For ever | The one line of work. Every commit on it has passed CI, been tried by the product owner, and can be released. The "Protect main" ruleset allows changes only through a pull request with every check green, as squash merges, with no force-push |
 | `fix/…`, `feat/…`, `docs/…`, `chore/…` | A day or two | One change each: off main, back through a pull request, then deleted |
 | `release/YEAR.MONTH` | Only while a release already out needs a fix and main cannot be released | Cut from that release's tag. It takes fixes only, each merged to main first and then cherry-picked. The "Protect release branches" ruleset guards it as main is guarded |
 
@@ -23,11 +23,12 @@ Work that is not finished stays on its short branch, or is merged switched off b
 
 | Stage | Where | It moves on when |
 |---|---|---|
-| 1. Pull request | CI: style, static analysis, every test suite, the upgrade path, the restore drill, the image builds and scans | Every check is green, and it is merged |
-| 2. Main | CI builds the three images once and pushes them to GHCR, tagged with the commit (`sha-<commit>`) | The images are on GHCR |
-| 3. Staging | This computer: `apps/shop-server/deploy/staging.sh` installs main's images as a shop would | The product owner has tried it |
-| 4. Beta | The beta shop: the release is published as a pre-release, and a shop on the beta channel takes it | It has traded for some days with no fault |
-| 5. Stable | Every other shop: the release is marked as the latest | |
+| 1. Pull request | CI: style, static analysis, every test suite, the upgrade path, the restore drill, the image builds and scans | Every check is green |
+| 2. Tried before merge | This computer: `apps/shop-server/deploy/staging.sh --build` builds the pull request's branch and installs it as a shop would (`--fresh` first for a brand-new shop). The product owner tries it (D96) | The product owner says to merge it, and it is merged |
+| 3. Main | CI builds the three images once and pushes them to GHCR, tagged with the commit (`sha-<commit>`) | The images are on GHCR |
+| 4. Staging | This computer: `apps/shop-server/deploy/staging.sh` installs main's images as a shop would, before a release is made | The product owner has tried it |
+| 5. Beta | The beta shop: the release is published as a pre-release, and a shop on the beta channel takes it | It has traded for some days with no fault |
+| 6. Stable | Every other shop: the release is marked as the latest | |
 
 ## Channels
 
