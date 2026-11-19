@@ -464,7 +464,10 @@ test('keeps focus in the field a cashier is typing in while the counter polls, a
     await page.keyboard.type('Zetasound Pro', { delay: 400 });
     await expect(brand).toBeFocused();
     await expect(brand).toHaveValue('Zetasound Pro');
+    // Something typed: Cancel asks before it discards it (D93).
     await sheet.getByRole('button', { name: 'Cancel' }).click();
+    await sheet.getByRole('button', { name: 'Discard', exact: true }).click();
+    await expect(sheet).toBeHidden();
 
     // Hold's label asks for focus as its sheet opens, and keeps it.
     await addCable(page, '3000');
