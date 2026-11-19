@@ -287,18 +287,25 @@ begin
   PrinterPage.SelectedValueIndex := 0;
 end;
 
+function IsQuestion(PageID: Integer): Boolean;
+begin
+  Result := (PageID = ModePage.ID) or (PageID = AddressPage.ID) or (PageID = TokenPage.ID) or
+    (PageID = ShopPage.ID) or (PageID = CountersPage.ID) or (PageID = OwnerPage.ID) or
+    (PageID = ServerPage.ID) or (PageID = PrinterPage.ID) or (PageID = PrinterHostPage.ID);
+end;
+
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   Result := False;
-  if Updating then
-    Result := (PageID = ModePage.ID) or (PageID = AddressPage.ID) or (PageID = TokenPage.ID) or
-      (PageID = ShopPage.ID) or (PageID = CountersPage.ID) or (PageID = OwnerPage.ID) or
-      (PageID = ServerPage.ID) or (PageID = PrinterPage.ID) or (PageID = PrinterHostPage.ID)
+  { Silent, the answers come from their file, which the engine checks; an update asks nothing. Inno still
+    passes through skipped pages' checks otherwise, and a check's message would wait for nobody. }
+  if WizardSilent() or Updating then
+    Result := IsQuestion(PageID)
   else if IsServer() then
     Result := PageID = ServerPage.ID
   else
     Result := (PageID = TokenPage.ID) or (PageID = ShopPage.ID) or (PageID = CountersPage.ID) or (PageID = OwnerPage.ID);
-  if (PageID = PrinterHostPage.ID) and not Updating then
+  if (PageID = PrinterHostPage.ID) and not Updating and not WizardSilent() then
     Result := not NetworkPrinterChosen();
 end;
 
@@ -321,6 +328,8 @@ var
   Code, N: Integer;
 begin
   Result := True;
+  if WizardSilent() then
+    Exit;
   if CurPageID = ModePage.ID then
   begin
     if IsServer() then Mode := 'server' else Mode := 'counter';
