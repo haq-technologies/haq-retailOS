@@ -9,7 +9,7 @@
 ARG PHP_IMAGE=php:8.5.12-fpm-trixie
 ARG COMPOSER_IMAGE=composer:2.11.1
 ARG NODE_IMAGE=node:26.13.0-alpine3.24
-ARG NGINX_IMAGE=nginx:1.30.6-alpine
+ARG NGINX_IMAGE=nginx:1.30.7-alpine
 ARG POSTGRES_IMAGE=postgres:18.6-trixie
 
 FROM ${COMPOSER_IMAGE} AS composer
