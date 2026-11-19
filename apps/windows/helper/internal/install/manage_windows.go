@@ -82,47 +82,58 @@ if ($task) { $task | Stop-ScheduledTask }`, map[string]string{"HAQ_TASK_PATH": t
 
 // Remove takes the Windows parts away: the service, the tasks, the ports, the firewall rules, the shortcut
 // and the trusted certificate. The shop itself stays, with its sales, in its distribution and in
-// C:\ProgramData\HAQ, so a setup run again finds it; deleteShop removes that too, for good.
+// C:\ProgramData\HAQ, so a setup run again finds it; deleteShop removes that too, for good. It goes on past
+// a part it cannot remove, so an uninstall takes away all it can, and says at the end what is left.
 func Remove(ctx context.Context, out io.Writer, deleteShop bool) error {
 	cfg, cfgErr := config.Load(config.Path())
-	fmt.Fprintln(out, "Removing the HAQ Helper service, the tasks, the firewall rules and the shortcut...")
-	if err := service.Remove(); err != nil {
-		return err
+	var left []error
+	try := func(what string, err error) {
+		if err != nil {
+			left = append(left, fmt.Errorf("%s: %w", what, err))
+		}
 	}
+	fmt.Fprintln(out, "Removing the HAQ Helper service, the tasks, the firewall rules, the shortcut and the certificate...")
+	try("the HAQ Helper service", service.Remove())
 	if deleteShop && cfgErr == nil && cfg.Mode == config.Server {
 		fmt.Fprintln(out, "Deleting the shop server and every sale in it...")
-		_ = unregisterTask(ctx, serverTask)
-		if code, err := asServerHere(ctx, out, "wsl.exe", "--unregister", cfg.Distribution); err != nil || code != 0 {
-			return fmt.Errorf("could not delete the distribution (code %d): %v", code, err)
+		try("the keep-alive task", unregisterTask(ctx, serverTask))
+		code, err := asServerHere(ctx, out, "wsl.exe", "--unregister", cfg.Distribution)
+		if err == nil && code != 0 {
+			err = fmt.Errorf("wsl --unregister stopped with code %d", code)
+		}
+		if err != nil {
+			return fmt.Errorf("could not delete the distribution, so the shop's data is kept: %w", err)
 		}
 	}
 	for _, task := range []string{serverTask, runnerTask} {
-		if err := unregisterTask(ctx, task); err != nil {
-			return err
-		}
+		try("the task "+task, unregisterTask(ctx, task))
 	}
 	if cfgErr == nil {
 		removeForward(ctx, cfg.Address)
 	}
-	if err := removeFirewall(ctx); err != nil {
-		return err
+	try("the firewall rules", removeFirewall(ctx))
+	if err := os.Remove(startupShortcut()); err != nil && !errors.Is(err, os.ErrNotExist) {
+		try("the start-up shortcut", err)
 	}
-	_ = os.Remove(startupShortcut())
 	untrust(ctx)
-	if !deleteShop {
-		fmt.Fprintln(out, "Removed. The shop and its sales are kept in", config.Dir(), "and a setup run again finds them.")
-		return nil
-	}
-	if cfgErr == nil && cfg.Mode == config.Server {
-		_ = changeRight(qualified(account), batchRight, false)
-		_, _ = psOutput(ctx, `
+	if deleteShop {
+		if cfgErr == nil && cfg.Mode == config.Server {
+			try("the account's right", changeRight(qualified(account), batchRight, false))
+			_, err := psOutput(ctx, `
 Get-CimInstance Win32_UserProfile | Where-Object { $_.LocalPath -like ('*\' + $env:HAQ_ACCOUNT) } | Remove-CimInstance -ErrorAction SilentlyContinue
 Remove-LocalUser -Name $env:HAQ_ACCOUNT -ErrorAction SilentlyContinue`, map[string]string{"HAQ_ACCOUNT": account})
+			try("the "+account+" account", err)
+		}
+		try(config.Dir(), os.RemoveAll(config.Dir()))
 	}
-	if err := os.RemoveAll(config.Dir()); err != nil {
-		return fmt.Errorf("could not delete %s: %w", config.Dir(), err)
+	if len(left) > 0 {
+		return fmt.Errorf("removed all but these, which are still there: %w", errors.Join(left...))
 	}
-	fmt.Fprintln(out, "Removed, with the shop's data.")
+	if deleteShop {
+		fmt.Fprintln(out, "Removed, with the shop's data.")
+	} else {
+		fmt.Fprintln(out, "Removed. The shop and its sales are kept in", config.Dir(), "and a setup run again finds them.")
+	}
 	return nil
 }
 
