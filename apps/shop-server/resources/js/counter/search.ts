@@ -3,7 +3,8 @@ import MiniSearch from 'minisearch';
 /**
  * Search (spec section 7) [S10, R2]: words split on letter and digit boundaries ("1m" is "1 m", "20w" is
  * "20W"), prefixes match, one typo is allowed in words of 4 or more letters, and items sold more in the
- * last 30 days rank first. It covers item names, active aliases and the generated shapes not yet sold.
+ * last 30 days rank first. It covers item names, active aliases and the generated shapes not yet sold, and
+ * the categories and their brands as places on the tiles, ranked below the items (D94).
  */
 export interface SearchDoc {
     id: string;
@@ -27,7 +28,8 @@ export function buildIndex(docs: SearchDoc[]): MiniSearch<SearchDoc> {
             prefix: true,
             fuzzy: (term) => (term.length >= 4 && /^\p{L}+$/u.test(term) ? 1 : false),
             boost: { name: 2 },
-            boostDocument: (_id, _term, stored) => 1 + Math.log1p(typeof stored?.sold === 'number' ? stored.sold : 0) * 0.5,
+            // A place on the tiles (a category, or a category's brand) ranks below the items (D94).
+            boostDocument: (id, _term, stored) => (String(id).startsWith('jump:') ? 0.5 : 1 + Math.log1p(typeof stored?.sold === 'number' ? stored.sold : 0) * 0.5),
         },
     });
     index.addAll(docs);

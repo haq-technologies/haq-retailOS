@@ -38,6 +38,9 @@ interface Props {
     requestOnly: boolean;
     customerType: CustomerType;
     startCategoryId: string | null;
+    /** From the tiles' New tile: the brand and the choices made there, already filled in (D94). */
+    startBrandId?: string | null;
+    startFacets?: Record<string, string>;
     /** A code scanned before New item opened: the server learns it for the new item (D93). */
     learnCode: string | null;
     onCreated: (created: Created) => void;
@@ -55,7 +58,7 @@ interface CreateAnswer {
 const NO_BRAND = 'no brand';
 const FIRST_BRANDS = 8;
 
-export function NewItem({ cat, api, requestOnly, customerType, startCategoryId, learnCode, onCreated, onPickExisting, onClose }: Props) {
+export function NewItem({ cat, api, requestOnly, customerType, startCategoryId, startBrandId = null, startFacets = {}, learnCode, onCreated, onPickExisting, onClose }: Props) {
     const start = startCategoryId === null ? undefined : cat.categories.get(startCategoryId);
     const defaultBrand = (c: CategoryRow | null): string | null => (c === null ? null : (cat.brandDefaults.get(c.id) ?? null));
     const startCategory = start?.sellable === true ? start : null;
@@ -63,9 +66,12 @@ export function NewItem({ cat, api, requestOnly, customerType, startCategoryId, 
     const [browse, setBrowse] = useState<string | null>(start !== undefined && !start.sellable ? start.id : null);
     const [notInList, setNotInList] = useState(false);
     const [word, setWord] = useState('');
-    const [brandId, setBrandId] = useState<string | null>(defaultBrand(startCategory));
+    // What the form starts from: the category's default brand, or what the tiles already know (D94).
+    const startBrand = startCategory === null ? null : (startBrandId ?? defaultBrand(startCategory));
+    const startDetails = startCategory === null ? {} : startFacets;
+    const [brandId, setBrandId] = useState<string | null>(startBrand);
     const [brandText, setBrandText] = useState('');
-    const [facets, setFacets] = useState<Record<string, string>>({});
+    const [facets, setFacets] = useState<Record<string, string>>(startDetails);
     const [families, setFamilies] = useState<Record<string, string>>({});
     const [phoneModelText, setPhoneModelText] = useState('');
     const [freeText, setFreeText] = useState('');
@@ -140,11 +146,14 @@ export function NewItem({ cat, api, requestOnly, customerType, startCategoryId, 
         return pieces.filter((p) => p.trim() !== '').join(' ');
     }, [notInList, word, freeText, category, template, requestOnly, brandId, brandText, cat, fields, facets, phoneModelText]);
 
+    // Changed from where the form started: the category's defaults, or what the tiles filled in.
+    const atStart = category !== null && category.id === startCategory?.id;
+    const details = (x: Record<string, string>) => JSON.stringify(Object.entries(x).filter(([, v]) => v !== '').sort(([a], [b]) => a.localeCompare(b)));
     const dirty =
         word.trim() !== '' ||
         brandText.trim() !== '' ||
-        brandId !== defaultBrand(category) ||
-        Object.values(facets).some((v) => v !== '') ||
+        brandId !== (atStart ? startBrand : defaultBrand(category)) ||
+        details(facets) !== details(atStart ? startDetails : {}) ||
         phoneModelText.trim() !== '' ||
         freeText.trim() !== '' ||
         digits !== '';

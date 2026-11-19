@@ -6,7 +6,7 @@ import { addLine, emptyCart, removeLine, restoreLine, setColour, setCustomerType
 import type { Catalogue } from '../catalogue';
 import { addToJournal } from '../db';
 import { journalEntry, reportJournal } from '../recovery';
-import { drill, parseShapeId, shapeAtBrandStep, type DrillState, type Tile } from '../drill';
+import { drill, jumpTile, parseShapeId, shapeAtBrandStep, type DrillState, type Tile } from '../drill';
 import { naira } from '../money';
 import { isJunkCode, isReceiptNumber, MAX_CODE, ScanDetector } from '../scanner';
 import type { SearchClient } from '../search-client';
@@ -66,7 +66,7 @@ interface AddContext {
 type SheetState =
     | { kind: 'price'; itemId: string; name: string; crumbs: string[]; lineId: string; prefill: number | null; source: 'set_price' | 'last_price' | 'median' | null; range: PriceRange | null; ctx: AddContext; editing: boolean }
     | { kind: 'waiting' }
-    | { kind: 'new-item' }
+    | { kind: 'new-item'; start?: { categoryId: string; brandId: string | null; facets: Record<string, string> } }
     | { kind: 'picker'; code: string; options: { id: string; name: string }[] }
     | { kind: 'hold' }
     | { kind: 'no-sale' }
@@ -334,10 +334,17 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
     const tapTile = (tile: Tile) => {
         if (tile.kind === 'category') setState({ categoryId: tile.id, choices: [] });
         else if (tile.kind === 'value' && tile.itemId !== null) void addItem(tile.itemId, { addedBy: learnCode === null ? 'tile' : 'learn', barcode: learnCode }, [...view_.crumbs, tile.label]);
-        else if (tile.kind === 'value') setState((s) => ({ ...s, choices: [...s.choices, { key: tile.key, value: tile.value }] }));
+        else if (tile.kind === 'value') setState((s) => ({ ...s, choices: [...s.choices, { key: tile.key, value: tile.value }], allBrands: false }));
         else if (tile.kind === 'skip' && tile.itemId !== null) void addItem(tile.itemId, { addedBy: learnCode === null ? 'tile' : 'learn', barcode: learnCode }, view_.crumbs);
-        else if (tile.kind === 'skip') setState((s) => ({ ...s, choices: [...s.choices, { key: tile.key, value: null }] }));
-        else void addItem(tile.id, { addedBy: learnCode === null ? 'tile' : 'learn', barcode: learnCode }, view_.crumbs);
+        else if (tile.kind === 'skip') setState((s) => ({ ...s, choices: [...s.choices, { key: tile.key, value: null }], allBrands: false }));
+        // More brands shows the whole brand list at this step; New opens New item with what the tiles know (D94).
+        else if (tile.kind === 'more') setState((s) => ({ ...s, allBrands: true }));
+        else if (tile.kind === 'new') setSheet({ kind: 'new-item', start: { categoryId: tile.categoryId, brandId: tile.brandId, facets: tile.facets } });
+        else if (tile.kind === 'jump') {
+            setQuery('');
+            setResults([]);
+            setState(tile.state);
+        } else void addItem(tile.id, { addedBy: learnCode === null ? 'tile' : 'learn', barcode: learnCode }, view_.crumbs);
     };
 
     /** A search result: an item is added; a shape goes to its brand step first, where its category has one (D79). */
@@ -354,7 +361,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
 
     const back = () => {
         setState((s) => {
-            if (s.choices.length > 0) return { ...s, choices: s.choices.slice(0, -1) };
+            if (s.choices.length > 0) return { ...s, choices: s.choices.slice(0, -1), allBrands: false };
             const parent = s.categoryId === null ? null : (cat.categories.get(s.categoryId)?.parent_id ?? null);
             return { categoryId: parent, choices: [] };
         });
@@ -458,8 +465,10 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
     const flaggedCount = parked.filter((p) => p.flagged).length;
     const heldCount = parked.filter((p) => p.kind === 'hold').length;
     const searching = query.trim() !== '';
+    // Items and shapes first, then the categories and brands that matched, as places on the tiles (D94).
     const resultTiles: Tile[] = results
         .map((id): Tile | null => {
+            if (id.startsWith('jump:')) return jumpTile(cat, id);
             const item = cat.items.get(id);
             if (item !== undefined) {
                 const p = cat.priceFor(id, cart.customerType);
@@ -468,7 +477,8 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
             const shape = cat.shapes.find((s) => s.id === id);
             return shape === undefined ? null : { kind: 'item', id, label: shape.display_name, priceKobo: null, shape };
         })
-        .filter((t): t is Tile => t !== null);
+        .filter((t): t is Tile => t !== null)
+        .sort((a, b) => Number(a.kind === 'jump') - Number(b.kind === 'jump'));
     const tiles = searching ? resultTiles : view_.tiles;
 
     const panel = (
@@ -674,7 +684,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                                     <button
                                         key={tile.kind === 'value' ? `${tile.key}:${tile.value}` : tile.kind === 'skip' ? `skip:${tile.key}` : tile.id}
                                         type="button"
-                                        className={`flex min-h-[104px] flex-col items-start justify-between rounded-xl border-2 p-3 text-left ${tile.kind === 'skip' ? 'border-dashed border-border' : 'border-border'}`}
+                                        className={`flex min-h-[104px] flex-col items-start justify-between rounded-xl border-2 p-3 text-left ${tile.kind === 'skip' || tile.kind === 'more' || tile.kind === 'new' ? 'border-dashed border-border' : 'border-border'}`}
                                         onClick={() => {
                                             if (searching && tile.kind === 'item') {
                                                 pickResult(tile);
@@ -684,7 +694,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                                         }}
                                     >
                                         <span className="text-lg font-semibold">{tile.label}</span>
-                                        {tile.kind === 'skip' && <span className="text-text-secondary">{tile.hint}</span>}
+                                        {(tile.kind === 'skip' || tile.kind === 'more' || tile.kind === 'new' || tile.kind === 'jump') && <span className="text-text-secondary">{tile.hint}</span>}
                                         {tile.kind === 'item' && <span className="text-lg text-text-secondary">{tile.priceKobo === null ? 'Type the price' : naira(tile.priceKobo)}</span>}
                                         {tile.kind === 'value' && tile.itemId !== null && tile.priceKobo !== null && <span className="text-lg text-text-secondary">{naira(tile.priceKobo)}</span>}
                                     </button>
@@ -784,7 +794,9 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                     api={api}
                     requestOnly={settings.cashierItemCreation === 'request_only' && session.user.role === 'cashier'}
                     customerType={cart.customerType}
-                    startCategoryId={state.categoryId}
+                    startCategoryId={sheet.start?.categoryId ?? state.categoryId}
+                    startBrandId={sheet.start?.brandId ?? null}
+                    startFacets={sheet.start?.facets ?? {}}
                     learnCode={learnCode}
                     onClose={() => {
                         setSheet(null);

@@ -618,3 +618,35 @@ test('keeps a code scanned before New item, asks "Made by" and phone models by f
     await scan(page, code);
     await expect(page.getByRole('dialog', { name: 'Price' })).toContainText('Oraimo SpaceBuds Earbuds');
 });
+
+test('asks the brand in a category with nothing of that brand yet, ends at New with the brand filled in, and finds the brand by search (D94)', async ({ browser }) => {
+    const page = await counter(browser, 'T02');
+    const tiles = page.getByRole('main');
+
+    // Earbuds have no generated items: the brand is still asked, Skip brand first, the earbuds' brands, then More brands.
+    await tiles.getByRole('button', { name: 'Earbuds and earpods', exact: true }).click();
+    await expect(page.getByText('Choose brand')).toBeVisible();
+    await expect(tiles.getByRole('button', { name: /^Skip brand/ })).toBeVisible();
+    await expect(tiles.getByRole('button', { name: 'Spigen', exact: true })).toHaveCount(0);
+    await tiles.getByRole('button', { name: /^More brands/ }).click();
+    await expect(tiles.getByRole('button', { name: 'Spigen', exact: true })).toBeVisible();
+
+    // A brand with nothing sold here yet ends at New, which opens New item with the category and the brand.
+    await tiles.getByRole('button', { name: 'Hoco', exact: true }).click();
+    await expect(page.getByText('None yet. Make one with New.')).toBeVisible();
+    await tiles.getByRole('button', { name: /^New Hoco earbuds/ }).click();
+    const sheet = page.getByRole('dialog', { name: 'New item' });
+    await expect(sheet.getByRole('region', { name: 'Brand' }).getByRole('button', { name: 'Hoco', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await sheet.getByLabel(/^Model/).fill('EW04');
+    const price = sheet.getByRole('region', { name: 'Price' });
+    for (const key of ['8', '0', '0', '0']) await price.getByRole('button', { name: key, exact: true }).click();
+    await sheet.getByRole('button', { name: 'Add at ₦8,000' }).click();
+    await expect(sheet).toBeHidden();
+    await expect(page.getByRole('complementary', { name: 'Sale' }).getByText('Hoco EW04 Earbuds')).toBeVisible();
+
+    // Search finds the brand in its category as a place on the tiles, after the items.
+    await page.getByPlaceholder('Search or scan').fill('hoco ear');
+    await tiles.getByRole('button', { name: /^Hoco · Earbuds and earpods/ }).click();
+    await expect(tiles.getByRole('button', { name: /^Hoco EW04 Earbuds/ })).toBeVisible();
+    await expect(tiles.getByRole('button', { name: /^New Hoco earbuds/ })).toBeVisible();
+});
