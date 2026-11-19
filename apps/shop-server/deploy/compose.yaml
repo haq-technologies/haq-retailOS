@@ -30,6 +30,8 @@ x-app: &app
     SESSION_SECURE_COOKIE: "true"
     # The release installed, written by the installer and the updater; server health shows it (D81).
     RELEASE_VERSION: ${RELEASE_VERSION:-}
+    # A backup disk of its own (install.sh --backup-dir); without one the off-site copy is daily (D97).
+    BACKUP_OWN_DISK: ${BACKUP_DIR:+true}
   volumes:
     - storage:/app/storage
   depends_on:
