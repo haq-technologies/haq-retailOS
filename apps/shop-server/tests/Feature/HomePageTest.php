@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 use Inertia\Testing\AssertableInertia;
 
-it('renders the server page through Inertia with the version and the database', function () {
+it('renders the server page through Inertia with the version, and the database answering without its version (AU10)', function () {
     $this->get('/server')
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->component('home')
             ->where('version', config('app.version'))
-            ->where('database', fn (string $database) => str_starts_with($database, 'PostgreSQL 18.'))
-        );
+            ->where('database', 'Answering')
+        )
+        ->assertDontSee('PostgreSQL');
 });
 
 it('answers the health check', function () {

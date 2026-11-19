@@ -8,19 +8,19 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Response;
 
 /**
- * The placeholder home page while Phase 2 builds the foundation. It proves the stack end to end:
- * nginx, PHP-FPM, PostgreSQL, Inertia and the React build.
+ * The server's own page, which anyone on the shop's network can open: it proves the stack end to end
+ * (nginx, PHP-FPM, PostgreSQL, Inertia and the React build) and names the release. It never names the
+ * database's version, which would only help someone looking for a weakness (AU10, D99).
  */
 class HomeController
 {
     public function __invoke(): Response
     {
-        /** @var object{server_version: string} $row */
-        $row = DB::selectOne('SHOW server_version');
+        DB::selectOne('SELECT 1');
 
         return Page::render('home', [
             'version' => config()->string('app.version'),
-            'database' => 'PostgreSQL '.strtok($row->server_version, ' '),
+            'database' => 'Answering',
         ]);
     }
 }
