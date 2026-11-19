@@ -157,6 +157,24 @@ if command -v systemctl >/dev/null && systemctl list-unit-files docker.service >
     systemctl enable docker.service containerd.service >/dev/null 2>&1 || echo "WARNING: Docker could not be set to start with the server." >&2
 fi
 
+# Ubuntu's own security updates run at night, never while the shop trades: one that updates Docker restarts
+# every container (D100). Ubuntu's default is 6:00 to 7:00 by the server's clock, often UTC, so 7:00 to 8:00
+# in Lagos, as the shop opens. Now they run from 23:15 to 23:45 in Lagos, after the active hours (D98) and
+# before the night's backups at 01:00; a server that was off at night takes them when it next starts.
+if command -v systemctl >/dev/null && [ -d /etc/systemd/system ] && [ "$(id -u)" = 0 ]; then
+    mkdir -p /etc/systemd/system/apt-daily-upgrade.timer.d
+    cat > /etc/systemd/system/apt-daily-upgrade.timer.d/haq-at-night.conf <<'UNIT'
+# HAQ Retail OS (D100): Ubuntu's security updates at night, never while the shop trades.
+[Timer]
+OnCalendar=
+OnCalendar=*-*-* 23:15 Africa/Lagos
+RandomizedDelaySec=30m
+Persistent=true
+UNIT
+    systemctl daemon-reload
+    systemctl restart apt-daily-upgrade.timer >/dev/null 2>&1 || echo "WARNING: Ubuntu's update timer did not restart; it takes the night hours at the next start." >&2
+fi
+
 secret() { head -c 32 /dev/urandom | base64 | tr -d '/+=\n' | head -c 40; }
 
 mkdir -p "$dir/secrets"
