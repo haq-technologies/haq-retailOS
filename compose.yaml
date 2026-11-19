@@ -140,7 +140,7 @@ services:
     command: ["php", "artisan", "printing:fake-printer", "--port=9100"]
 
   web:
-    image: nginx:1.30.6-alpine
+    image: nginx:1.30.7-alpine
     ports:
       - "127.0.0.1:8080:80"
     volumes:
