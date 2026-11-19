@@ -51,7 +51,7 @@ Everything runs in Docker through Colima. From this folder, in Terminal:
    docker compose exec app php artisan shop:enrol-terminal D01
    ```
 
-   Open http://localhost:8080/enrol, type the code, then http://localhost:8080/back-office. Try the dashboard, Needs cost (enter a cost, then Undo it), Prices, Review, Flags, the Daily summary, the Measured pilot (start the 14 days, type the notebook's totals, trace a difference), the Audit log, Server health and Shop settings, where the owner downloads all the shop's data. On the counter, My history shows the cashier's own actions.
+   Open http://localhost:8080/enrol, type the code, then http://localhost:8080/back-office. Try the dashboard, Needs cost (enter a cost, then Undo it), Prices, Review, Flags, the Daily summary, the Audit log, Server health and Shop settings, where the owner downloads all the shop's data. On the counter, My history shows the cashier's own actions.
 
 6. Stop it with `docker compose down`; the data is kept for next time.
 
@@ -66,7 +66,7 @@ The automatic tests run with `docker compose run --rm -e COMPOSER_PROCESS_TIMEOU
 | [docs/spec/](docs/spec/) | The product spec, v1.5 |
 | [docs/decisions.md](docs/decisions.md) | The decision log |
 | [docs/catalogue/](docs/catalogue/) | Starter catalogue v1.1: the JSON seed (the master), the review workbook for the shop owner, and Appendix C |
-| [docs/operations/](docs/operations/) | Installing a shop (install-a-shop.md), the hardware list, the G3 software rehearsal, restores, releases, start-up, the off-site copy, the 52 checks and the safety week (measured-pilot.md) |
+| [docs/operations/](docs/operations/) | Installing a shop (install-a-shop.md), the hardware list, the G3 software rehearsal, restores, releases, start-up, the off-site copy, the 52 checks and the safety week (safety-week.md) |
 | [docs/archive/](docs/archive/) | Superseded originals: spec v1.4 and the locked catalogue v1. Read-only |
 | [tools/catalogue/](tools/catalogue/) | Scripts that build and verify the catalogue |
 | [apps/shop-server/](apps/shop-server/) | The shop server: Laravel, Inertia and React, with its own README |

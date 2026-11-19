@@ -14,8 +14,8 @@ use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\text;
 
 /**
- * Makes a shop profile before the visit (spec section 6, phase 0) [F25, D14]. In the pilot the console
- * is not built yet, so the sysadmin uses this. The profile holds shop data: keep it out of Git.
+ * Makes a shop profile before the visit (spec section 6, phase 0) [F25, D14]. Until the console is
+ * built, so the sysadmin uses this. The profile holds shop data: keep it out of Git.
  */
 #[AsCommand(name: 'shop:make-profile')]
 class MakeProfileCommand extends Command

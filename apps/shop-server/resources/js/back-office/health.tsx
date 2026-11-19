@@ -8,7 +8,7 @@ import type { Can } from './types';
 
 /**
  * Catalogue health (spec section 12) [v1.3; wireframe CatalogueHealth]: the share of revenue with a cost
- * against the pilot's goal, what waits in review, how many items sold have a barcode, and the best sellers
+ * against its goal, what waits in review, how many items sold have a barcode, and the best sellers
  * the counter has not learned a barcode for yet. Percentages and counts only.
  */
 interface Health {

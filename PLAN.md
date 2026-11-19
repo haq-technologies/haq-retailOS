@@ -32,7 +32,7 @@ Done:
 
 - Gate G2 passed on 6 November 2026 (D27); the identity timings accepted (D28); back-office devices for the owner's phone or laptop (D29).
 - Phase 3, the counter and sale core (D30 to D36): Finish with gapless receipt numbers and signed epochs; prices and their checks; server printing with pending print and the drawer log; the catalogue feed in commit order; new items, barcode learning and aliases; held sales and Awaiting transfer; the local-first counter client; Playwright browser tests in CI; pgBackRest backups with the verified weekly test restore and the restore script; the signed release manifest and the updater; the rehearsal tooling. See the Phase 3 checklist below.
-- Phase 5's tools, built early at the product owner's go (D56, D57): the measured pilot (the notebook's totals beside the app's, each difference traced, the five success measures read live, the owner's decision with the scorecard as it stood) and the owner's data export as one ZIP of spreadsheets; the procedure is in docs/operations/measured-pilot.md.
+- Phase 5's tools, built early at the product owner's go (D56, D57): the measured pilot (the notebook's totals beside the app's, each difference traced, the five success measures read live, the owner's decision with the scorecard as it stood) and the owner's data export as one ZIP of spreadsheets. The measured pilot was removed entirely on 19 November 2026 (D95); the safety week's procedure is in docs/operations/safety-week.md.
 - Phase 4's owner features, started before G3 at the product owner's go (D39), all five built on 7 November 2026 (D40 to D46): the back office with the owner's dashboard and cost entry with backfill; flags and Needs your attention; the review queues with merge and undo; first-sale prices, catalogue health, the daily summary on screen and printed, and the CSV exports; and recovery: restore epochs end to end with the lost window, server health with catch-up and the server clock, and reboot recovery. See the Phase 4 section below.
 
 - A QA review of the whole codebase (10 November 2026; the QA report, a Claude Doc) found 10 product defects, 8 pipeline findings and 6 places where the documents drifted. Every one in the code and the documents is fixed on the branch fix/qa-report-findings, with a test for each (D61 to D65): manager approvals that survive parking and a slow transfer, a Finish with no answer that can never be sold twice, receipt counters that only go up, printing that never opens the drawer twice, the enrolment and PIN races, the Content Security Policy, digest-pinned updates, and in CI the image scan, the dependency audits, the coverage floor, the restore drill and a weekly run. Every CI job became a required check on main the same day (D66); the restore drill joins the list when this branch merges. Squash-only merges stay with the product owner.
@@ -51,7 +51,7 @@ The product owner signed and published release 2026.11.3 on 15 November 2026, as
 
 On 17 November 2026 the product owner asked for a simpler install: a small shop may have only one Windows desktop, a scanner and a USB receipt printer. So a shop's server may now be a Windows 10 or 11 PC, installed by one setup program that hides the server in Windows' own Linux, WSL2 (D86). USB receipt printers work through the HAQ print bridge (D87), and the Windows parts are written in Go with an Inno Setup installer (D88). The Ubuntu mini-PC install stays as it is, and every release carries both ways. Go-live waits for the Windows setup: the first shop installs with the first release that carries it, once G3 passes on it (D89). While planning it, a scanned QR code longer than 120 characters was found to refuse the whole sale (D83), and two counters making their first sales at once could each make a branch key, so one's signed epochs no longer verified (D84); both are fixed.
 
-Next: the Windows setup's last steps (the checklist below): main's build tried on the Windows 10 PC, the server's memory measured, the release integration and the install guide's Windows section; the shop owner's answers (Open items), including the brands of the 11 categories with none of their own (D94); then the release that carries the Windows setup, signed and rehearsed (G3), the install at the shop with it (docs/operations/install-a-shop.md), the safety week (docs/operations/measured-pilot.md) and G5.
+Next: the Windows setup's last steps (the checklist below): main's build tried on the Windows 10 PC, the server's memory measured, the release integration and the install guide's Windows section; the shop owner's answers (Open items), including the brands of the 11 categories with none of their own (D94); then the release that carries the Windows setup, signed and rehearsed (G3), the install at the shop with it (docs/operations/install-a-shop.md), the safety week (docs/operations/safety-week.md) and G5.
 
 ## Team
 
@@ -224,16 +224,16 @@ Built on main in apps/windows/, one short pull request per step, each with its o
 
 ## Phase 5: go-live and the safety week (D67)
 
-The measured pilot's tools were built on 10 November 2026 (D56, D57); its Measured pilot section is kept, for comparing the notebook with the app in the safety week.
+The measured pilot's tools were built on 10 November 2026 (D56, D57). The measured pilot was removed entirely on 19 November 2026 (D95): the safety week keeps the notebook as a backup, with no comparison in the app.
 
-- [x] The measured pilot in the back office: the owner starts the 14 days, a manager or the owner types the notebook's totals each evening and traces each difference to the notebook or the app, the five measures are read live, and the owner records continue or stop with the scorecard as it stood (Claude, 10 November 2026; D56)
+- [x] The measured pilot in the back office: the owner starts the 14 days, a manager or the owner types the notebook's totals each evening and traces each difference to the notebook or the app, the five measures are read live, and the owner records continue or stop with the scorecard as it stood (Claude, 10 November 2026; D56). Removed entirely on 19 November 2026 (D95)
 - [x] The owner's data export: the whole record, cost included, as one ZIP of CSV files with each file's SHA-256, from the back office or `shop:export` (Claude, 10 November 2026; D57)
-- [x] The procedure for the safety week (Claude; docs/operations/measured-pilot.md, rewritten for D67)
+- [x] The procedure for the safety week (Claude; docs/operations/safety-week.md, rewritten for D67 and D95)
 - [x] Gate G4: every acceptance check written down, A1 to be measured in the safety week (product owner, 11 November 2026, D71)
 - [x] Release 2026.11.2's fixes from the readiness QA review: a counter's clock never stops a sale (D72), a sale is never both voided and returned (D73), `sudo haq users`, `pin` and `deactivate` (D74), and capped logs (D75) (Claude, 11 November 2026)
 - [x] Sign and publish release 2026.11.2 (product owner, 11 November 2026; docs/operations/releases.md)
 - [ ] Install at the shop with the first release that carries the Windows setup (D89), by the setup program or `install.sh --tag <version>`, setting each counter's date and time (product owner)
-- [ ] The safety week: the notebook beside the app for seven trading days, compared each evening (shop owner and manager)
+- [ ] The safety week: the notebook kept beside the app as a backup for seven trading days (shop owner and manager)
 - [ ] Gate G5: the owner confirms the notebook can stop (shop owner, product owner)
 
 ## After go-live
@@ -291,7 +291,6 @@ Assumptions:
 | Which shop runs which release: today `sudo haq version` and the server health page, shop by shop. A list kept outside this public repository, then a fleet view | Product owner, Claude | Before the third shop | Asked shop by shop |
 | The shop's receipt text: shop name, address, phone and any returns wording, for the sysadmin to enter in its shop profile (D14) | Shop owner | Install | Placeholders on the receipt wireframe |
 | What the shop does today when the PC fails | Product owner | Install | The paper-pad downtime procedure (spec section 9) |
-| Whether the shop's notebook records how each sale was paid (cash, transfer or POS), which the safety week's totals compare | Product owner, from the shop owner | The safety week | The cashiers add a payment column for the safety week (docs/operations/measured-pilot.md) |
 | The shop's closing time, for the forgotten-shift rule: a shift still open four hours later closes as unclosed (S12) | Shop owner, in Shop settings on a back-office device (D37) | Install | None set: no shift closes by itself |
 | The shop's discard limit: the most a cashier may discard of their own parked sale without a manager (F12) | Shop owner, in Shop settings on a back-office device (D38) | Install | ₦0: every cashier discard needs a manager (D33) |
 | Where head office and cloud backups are hosted, and data residency | Product owner, lawyer | Before the MVP | Not needed for the pilot |
@@ -367,3 +366,4 @@ Assumptions:
 | 19 November 2026 | The Windows setup checks the PC itself, not its version: any 64-bit Windows 10 or 11 as a counter, the server on Windows 10 updated since November 2022 or Windows 11 (D92) |
 | 19 November 2026 | A review of the sale path (the 18 browser tests of sales pass): New item keeps a scanned code, makes no second item with "No brand", asks "Made by" on pouches, shows the category's own brands first, chooses phone models by family and offers the listed models (D93) |
 | 19 November 2026 | The brand step is asked in every category with a brand, Skip brand first, the category's own brands, then More brands; the tiles end with New; search finds categories and brands; an approved brand is shown first where it was sold (D94). C8 recorded as settled at the shop visit, and the plan's Next line and open items brought up to date |
+| 19 November 2026 | The measured pilot removed entirely (D95): the safety week keeps the notebook as a backup, with no comparison in the app (docs/operations/safety-week.md) |

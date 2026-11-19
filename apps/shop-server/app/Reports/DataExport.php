@@ -12,9 +12,8 @@ use RuntimeException;
 use ZipArchive;
 
 /**
- * The owner's data export (spec section 14, Pilot success thresholds: "either way the owner receives his
- * data export") [F10, D57]: the shop's whole record in one ZIP file of CSV files that open in Excel, cost
- * included, with a README naming each file and its SHA-256, and the audit code it was made at. Only the
+ * The owner's data export (spec section 14: "either way the owner receives his data export") [F10, D57]:
+ * the shop's whole record in one ZIP file of CSV files that open in Excel, cost included, with a README naming each file and its SHA-256, and the audit code it was made at. Only the
  * owner downloads it; HAQ makes it on the server with shop:export. PINs and device secrets never leave.
  * Each file is written a row at a time, so a long history never sits in memory.
  */
@@ -113,9 +112,6 @@ final readonly class DataExport
             'flags.csv' => [['When', 'Flag', 'What happened', 'Detail', 'Amount (NGN)', 'Cost (NGN)', 'Who', 'Approved by', 'Counter', 'Receipt', 'Seen by', 'Seen at'], $this->flagRows($zone)],
             'people.csv' => [['Name', 'Role', 'Active', 'Added', 'Deactivated'], $this->people($zone)],
             'audit-log.csv' => [['When', 'Chain', 'Entry', 'Who', 'Device', 'Action', 'Subject', 'Subject ID', 'Before', 'After', 'Sensitive before', 'Sensitive after', 'Hash'], $this->audit($zone)],
-            'pilot-days.csv' => [['When', 'What', 'First day', 'Decision', 'Note', 'Who'], $this->pilotEvents($zone)],
-            'pilot-notebook.csv' => [['Business day', 'Paid by', 'Notebook total (NGN)', 'Typed by', 'Typed at', 'Counts'], $this->notebook($zone)],
-            'pilot-traces.csv' => [['Business day', 'Paid by', 'Amount (NGN)', 'Whose record was wrong', 'What happened', 'Receipt', 'Written by', 'Written at', 'Withdrawn'], $this->traces($zone)],
         ];
     }
 
@@ -138,9 +134,6 @@ final readonly class DataExport
             'flags.csv' => 'Every flag the system raised, and who marked it as seen.',
             'people.csv' => 'Everyone who could sign in, and their role. PINs are never exported.',
             'audit-log.csv' => 'Every action, who did it, on which device and what changed, with the chain\'s hash.',
-            'pilot-days.csv' => 'The measured pilot: when its 14 days started and the owner\'s decision.',
-            'pilot-notebook.csv' => 'The measured pilot: the notebook\'s totals as typed (the newest for a day counts).',
-            'pilot-traces.csv' => 'The measured pilot: each difference traced, and whose record was wrong.',
         ];
         $lines = [
             'HAQ Retail OS: the shop\'s data',
@@ -301,45 +294,6 @@ final readonly class DataExport
             /** @var object{recorded_at: string, chain: string, seq: int|string, who: ?string, device: ?string, action: string, subject_type: ?string, subject_id: ?string, redacted_before: ?string, redacted_after: ?string, sensitive_before: ?string, sensitive_after: ?string, hash: string} $r */
             yield [$this->time($r->recorded_at, $zone), $r->chain, (int) $r->seq, $r->who, $r->device, $r->action, $r->subject_type, $r->subject_id === null ? null : trim($r->subject_id),
                 $r->redacted_before, $r->redacted_after, $r->sensitive_before, $r->sensitive_after, $r->hash];
-        }
-    }
-
-    /** @return Generator<int, list<string|int|null>> */
-    private function pilotEvents(string $zone): Generator
-    {
-        foreach (DB::table('pilot_events as e')->join('users as u', 'u.id', '=', 'e.actor_id')->orderBy('e.seq')->select(['e.at', 'e.kind', 'e.first_day', 'e.decision', 'e.note', 'u.name'])->cursor() as $e) {
-            /** @var object{at: string, kind: string, first_day: ?string, decision: ?string, note: ?string, name: string} $e */
-            yield [$this->time($e->at, $zone), $e->kind === 'started' ? 'Started the 14 days' : 'Decided', $e->first_day, $e->decision === null ? '' : ucfirst($e->decision), $e->note, $e->name];
-        }
-    }
-
-    /** @return Generator<int, list<string|int|null>> */
-    private function notebook(string $zone): Generator
-    {
-        $rows = DB::cursor(<<<'SQL'
-            SELECT n.business_day, n.method, n.amount_kobo, u.name, n.entered_at,
-                   n.seq = (SELECT max(x.seq) FROM notebook_totals x WHERE x.business_day = n.business_day AND x.method = n.method) AS newest
-            FROM notebook_totals n JOIN users u ON u.id = n.entered_by ORDER BY n.seq
-            SQL);
-        foreach ($rows as $r) {
-            /** @var object{business_day: string, method: string, amount_kobo: int|string, name: string, entered_at: string, newest: bool} $r */
-            yield [$r->business_day, ['cash' => 'Cash', 'transfer' => 'Transfer', 'pos' => 'POS'][$r->method] ?? $r->method, Csv::naira((int) $r->amount_kobo), $r->name,
-                $this->time($r->entered_at, $zone), $r->newest ? 'Yes' : 'No, corrected later'];
-        }
-    }
-
-    /** @return Generator<int, list<string|int|null>> */
-    private function traces(string $zone): Generator
-    {
-        $rows = DB::cursor(<<<'SQL'
-            SELECT t.business_day, t.method, t.amount_kobo, t.side, t.what, t.receipt_number, u.name, t.entered_at,
-                   EXISTS (SELECT 1 FROM pilot_traces w WHERE w.withdraws_id = t.id) AS withdrawn
-            FROM pilot_traces t JOIN users u ON u.id = t.entered_by WHERE t.withdraws_id IS NULL ORDER BY t.seq
-            SQL);
-        foreach ($rows as $r) {
-            /** @var object{business_day: string, method: string, amount_kobo: int|string, side: string, what: string, receipt_number: ?string, name: string, entered_at: string, withdrawn: bool} $r */
-            yield [$r->business_day, ['cash' => 'Cash', 'transfer' => 'Transfer', 'pos' => 'POS'][$r->method] ?? $r->method, Csv::naira((int) $r->amount_kobo),
-                $r->side === 'notebook' ? 'The notebook' : 'The app', $r->what, $r->receipt_number, $r->name, $this->time($r->entered_at, $zone), $r->withdrawn ? 'Yes' : 'No'];
         }
     }
 }

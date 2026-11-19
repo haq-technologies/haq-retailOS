@@ -10,7 +10,6 @@ import { Flags } from './flags';
 import { CatalogueHealth } from './health';
 import { LostWindow } from './lost-window';
 import { NeedsCost } from './needs-cost';
-import { MeasuredPilot } from './pilot';
 import { Prices } from './prices';
 import { Review } from './review';
 import { ServerHealth } from './server-health';
@@ -22,7 +21,7 @@ import type { Can, Me } from './types';
  * sections on the left (at the bottom on a phone), and the section itself. Each person sees only the
  * sections their role may open. The address keeps the section, so Back works.
  */
-type Section = 'dashboard' | 'costs' | 'prices' | 'review' | 'catalogue' | 'flags' | 'summary' | 'pilot' | 'recovery' | 'audit' | 'server' | 'settings';
+type Section = 'dashboard' | 'costs' | 'prices' | 'review' | 'catalogue' | 'flags' | 'summary' | 'recovery' | 'audit' | 'server' | 'settings';
 
 interface Badges {
     costs: number;
@@ -31,7 +30,6 @@ interface Badges {
     prices: number;
     recovery: number;
     recovery_shown: boolean;
-    pilot: number;
 }
 
 const sections: { id: Section; label: string; allowed: (c: Can, b: Badges) => boolean; icon: string }[] = [
@@ -43,7 +41,6 @@ const sections: { id: Section; label: string; allowed: (c: Can, b: Badges) => bo
     { id: 'flags', label: 'Flags', allowed: (c) => c.flags, icon: 'M5 21V4h12l-2.5 4.5L17 13H5' },
     { id: 'summary', label: 'Daily summary', allowed: (c) => c.summary, icon: 'M6 3h8l5 5v13H6zM14 3v5h5M9 13h7M9 17h7' },
     // The 14 measured days beside the notebook, and the owner's decision at gate G5 (D56).
-    { id: 'pilot', label: 'Measured pilot', allowed: (c) => c.pilot, icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
     // After a restore, and while a lost sale waits (D44).
     { id: 'recovery', label: 'Lost sales', allowed: (c, b) => c.recovery && b.recovery_shown, icon: 'M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 8v4l3 2' },
     // Reading the audit log: managers the branch's, redacted; the owner all (D47).
@@ -68,7 +65,7 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
     const api = useCounterApi(session.token, setToken);
     const [me, setMe] = useState<Me | null>(null);
     const [section, setSection] = useState<string>(fromHash());
-    const [badge, setBadge] = useState<Badges>({ costs: 0, flags: 0, review: 0, prices: 0, recovery: 0, recovery_shown: false, pilot: 0 });
+    const [badge, setBadge] = useState<Badges>({ costs: 0, flags: 0, review: 0, prices: 0, recovery: 0, recovery_shown: false });
 
     useEffect(() => {
         void api.get<Me>('/api/back-office/me').then((a) => {
@@ -104,7 +101,7 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
 
     const open = sections.filter((s) => s.allowed(me.can, badge));
     const current: Section | undefined = open.find((s) => s.id === section)?.id ?? open[0]?.id;
-    const count = (id: Section) => (id === 'costs' || id === 'flags' || id === 'review' || id === 'prices' || id === 'recovery' || id === 'pilot' ? badge[id] : 0);
+    const count = (id: Section) => (id === 'costs' || id === 'flags' || id === 'review' || id === 'prices' || id === 'recovery' ? badge[id] : 0);
 
     const nav = (
         <>
@@ -159,7 +156,6 @@ export function BackOfficeApp({ session, setToken, canSell, onLock }: Props) {
                     {current === 'catalogue' && <CatalogueHealth api={api} can={me.can} go={go} />}
                     {current === 'flags' && <Flags api={api} onChanged={refreshBadges} />}
                     {current === 'summary' && <DailySummary api={api} go={go} />}
-                    {current === 'pilot' && <MeasuredPilot api={api} onChanged={refreshBadges} />}
                     {current === 'recovery' && <LostWindow api={api} onChanged={refreshBadges} />}
                     {current === 'server' && <ServerHealth api={api} />}
                     {current === 'audit' && <AuditLog api={api} />}

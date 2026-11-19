@@ -10,7 +10,7 @@ use InvalidArgumentException;
 
 /**
  * A shop profile: the file the installer applies so every install is the same (spec sections 6 and 11).
- * In the pilot the sysadmin makes it with `php artisan shop:make-profile` before the visit [F25, D14].
+ * Until the console is built, the sysadmin makes it with `php artisan shop:make-profile` before the visit [F25, D14].
  * It holds shop data, so it is never committed.
  */
 final readonly class Profile

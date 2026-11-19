@@ -9,7 +9,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cost entries (spec section 8) [F14]. In the pilot and MVP a sale line takes the owner's current cost
+ * Cost entries (spec section 8) [F14]. In the MVP a sale line takes the owner's current cost
  * entry for the item; with none, its cost snapshot is NULL and the line waits in the Needs-cost queue.
  * Cost never leaves the server for a role that may not see it.
  */

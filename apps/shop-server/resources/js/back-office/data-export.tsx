@@ -26,7 +26,7 @@ export function DataExport({ api }: { api: CounterApi }) {
                 Your data
             </h2>
             <p className="text-text-secondary">
-                One ZIP file of spreadsheets that open in Excel: every sale, payment, item, price, cost, shift, drawer opening and flag, the audit log and the measured pilot&apos;s record, with a list that proves none of it changed. It holds cost, so keep it safe.
+                One ZIP file of spreadsheets that open in Excel: every sale, payment, item, price, cost, shift, drawer opening and flag, and the audit log, with a list that proves none of it changed. It holds cost, so keep it safe.
             </p>
             {state === 'error' && <Notice tone="error">The export did not download. Check the connection and try again.</Notice>}
             {state === 'done' && (

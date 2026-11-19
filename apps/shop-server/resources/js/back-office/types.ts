@@ -14,8 +14,6 @@ export interface Can {
     health: boolean;
     recovery: boolean;
     audit: boolean;
-    pilot: boolean;
-    pilot_decide: boolean;
     export: boolean;
 }
 

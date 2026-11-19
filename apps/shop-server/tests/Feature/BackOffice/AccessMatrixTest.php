@@ -40,8 +40,6 @@ const BACK_OFFICE_ROUTES = [
     'POST catalogue/items/{item}' => 'review', 'GET catalogue/search' => 'catalogue', 'GET catalogue/names/{kind}' => 'names',
     'GET audit' => 'audit', 'GET health' => 'health', 'POST health/backup' => 'health', 'POST health/clock' => 'health',
     'GET recovery' => 'recovery', 'POST recovery/lost/{lost}/re-enter' => 'recovery',
-    'GET pilot' => 'pilot', 'GET pilot/days/{day}' => 'pilot', 'POST pilot/start' => 'pilot_decide', 'POST pilot/notebook' => 'pilot',
-    'POST pilot/traces' => 'pilot', 'POST pilot/traces/{trace}/withdraw' => 'pilot', 'POST pilot/decision' => 'pilot_decide',
     'GET settings' => 'settings', 'POST settings' => 'settings',
 ];
 

@@ -13,7 +13,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Shifts per drawer (spec section 9) [F19, F20, S11, S12]. The pilot needs the part a sale depends on: a
+ * Shifts per drawer (spec section 9) [F19, F20, S11, S12]. The first release needs the part a sale depends on: a
  * sale always lands on its drawer's open shift, and the shift sets the business day. A sale with no open
  * shift is never blocked: the counter opens an unattributed shift with no counted float, which the owner
  * dashboard flags. A shift still open four hours after closing time closes as unclosed. Counted closes,
