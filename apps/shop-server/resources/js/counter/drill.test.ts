@@ -293,7 +293,7 @@ describe('a shape waits for its brand (D79)', () => {
     });
 });
 
-describe('the brand step in every category with a brand (D94)', () => {
+describe('the brands a category offers follow its items (D94, D103)', () => {
     function earbuds(): Catalogue {
         const cat = new Catalogue();
         cat.apply({
@@ -322,17 +322,45 @@ describe('the brand step in every category with a brand (D94)', () => {
         return cat;
     }
 
-    it('asks the brand with no item yet: Skip brand first, the category\'s own brands A to Z, then More brands', () => {
-        const cat = earbuds();
-        const first = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
-        expect(first.prompt).toBe('Choose brand');
-        expect(first.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'More brands', 'New earbuds']);
-        expect(first.tiles.at(-2)).toMatchObject({ kind: 'more', hint: '1 more in the brand list' });
-        // New at the brand step opens New item with the category and no brand chosen (D102).
-        expect(first.tiles.at(-1)).toMatchObject({ kind: 'new', categoryId: 'c-ear', brandId: null, facets: {} });
+    function earbud(id: string, brandId: string, model: string, name: string) {
+        return {
+            items: [{ id, category_id: 'c-ear', brand_id: brandId, item_code: id.toUpperCase(), display_name: name, search_text: '', status: 'active' }],
+            item_facets: [{ id: `f-${id}`, item_id: id, facet_key: 'model', picklist_value_id: null, text_value: model }],
+        };
+    }
 
-        const all = drill(cat, { categoryId: 'c-ear', choices: [], allBrands: true }, 'retail');
-        expect(all.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'JBL', 'New earbuds']);
+    it('asks no brand in a category with nothing yet: it says "None yet", with New', () => {
+        const view = drill(earbuds(), { categoryId: 'c-ear', choices: [] }, 'retail');
+        expect(view.prompt).toBe('None yet. Make one with New.');
+        // New opens New item with the category and no brand chosen; New item lists the brands (D103).
+        expect(view.tiles).toEqual([{ kind: 'new', id: 'new-item', label: 'New earbuds', hint: 'Not here? Make it', categoryId: 'c-ear', brandId: null, facets: {} }]);
+    });
+
+    it('asks no brand while the items have one brand: the one brand\'s earbuds are listed straight away', () => {
+        const cat = earbuds();
+        cat.apply(earbud('i-fp3', 'b-oraimo', 'FreePods 3', 'Oraimo FreePods 3 Earbuds'));
+        cat.apply(earbud('i-fp4', 'b-oraimo', 'FreePods 4', 'Oraimo FreePods 4 Earbuds'));
+        const view = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
+        expect(view.prompt).toBe('Choose model');
+        expect(view.tiles.map((t) => t.label)).toEqual(['FreePods 3', 'FreePods 4', 'New earbuds']);
+    });
+
+    it('asks the brand once the items have two, with only their brands: no More brands, no brand with nothing to sell', () => {
+        const cat = earbuds();
+        cat.apply({ brands: [{ id: 'b-zeta', name: 'Zetasound', aliases: [], shown_first_in: [], status: 'pending', merged_into_id: null }] });
+        cat.apply(earbud('i-fp4', 'b-oraimo', 'FreePods 4', 'Oraimo FreePods 4 Earbuds'));
+        // A brand typed on the go, still waiting for approval, counts once it has an item.
+        cat.apply(earbud('i-zeta', 'b-zeta', 'Zeta Pods 9', 'Zetasound Zeta Pods 9 Earbuds'));
+        const view = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
+        expect(view.prompt).toBe('Choose brand');
+        // Hoco is one of the earbuds' brands in the catalogue but has no earbuds here yet, so it waits for New item.
+        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Oraimo', 'Zetasound', 'New earbuds']);
+        expect(tile(view.tiles, 'Zetasound')).toEqual({ kind: 'value', key: 'brand', value: 'b-zeta', label: 'Zetasound' });
+        const zeta = drill(cat, { categoryId: 'c-ear', choices: [{ key: 'brand', value: 'b-zeta' }] }, 'retail');
+        expect(zeta.tiles.map((t) => t.label)).toEqual(['Zetasound Zeta Pods 9 Earbuds', 'New Zetasound earbuds']);
+        expect(cat.brandsAtTiles('c-ear')).toEqual(new Set(['b-oraimo', 'b-zeta']));
+        // New item still lists the catalogue's earbuds brands first.
+        expect(cat.brandsOf('c-ear')).toEqual(new Set(['b-oraimo', 'b-hoco', 'b-zeta']));
     });
 
     it('ends a brand with nothing sold yet at New, which opens New item with the brand', () => {
@@ -342,46 +370,19 @@ describe('the brand step in every category with a brand (D94)', () => {
         expect(view.crumbs).toEqual(['Earbuds and earpods', 'Oraimo']);
     });
 
-    it('counts a brand with an item in the category as its own, even one still waiting, and lists its lone item with New', () => {
-        const cat = earbuds();
-        cat.apply({
-            brands: [{ id: 'b-zeta', name: 'Zetasound', aliases: [], shown_first_in: [], status: 'pending', merged_into_id: null }],
-            items: [{ id: 'i-zeta', category_id: 'c-ear', brand_id: 'b-zeta', item_code: 'A00031', display_name: 'Zetasound Zeta Pods 9 Earbuds', search_text: '', status: 'pending_review' }],
-            item_facets: [{ id: 'f-zeta', item_id: 'i-zeta', facet_key: 'model', picklist_value_id: null, text_value: 'Zeta Pods 9' }],
-        });
-        const view = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
-        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'Zetasound', 'More brands', 'New earbuds']);
-        expect(tile(view.tiles, 'Zetasound')).toEqual({ kind: 'value', key: 'brand', value: 'b-zeta', label: 'Zetasound' });
-        const zeta = drill(cat, { categoryId: 'c-ear', choices: [{ key: 'brand', value: 'b-zeta' }] }, 'retail');
-        expect(zeta.tiles.map((t) => t.label)).toEqual(['Zetasound Zeta Pods 9 Earbuds', 'New Zetasound earbuds']);
-    });
-
     it('finds an item made with a brand after Skip brand too, and says "None yet" only when there is nothing (D102)', () => {
         const cat = earbuds();
         const skip = { categoryId: 'c-ear', choices: [{ key: 'brand', value: null }] };
         expect(drill(cat, skip, 'retail').prompt).toBe('None yet. Make one with New.');
-        // Skip brand, then New, where the cashier chose Oraimo: the item is Oraimo's.
-        cat.apply({
-            items: [{ id: 'i-fp4', category_id: 'c-ear', brand_id: 'b-oraimo', item_code: 'A00032', display_name: 'Oraimo FreePods 4 Earbuds', search_text: '', status: 'pending_review' }],
-            item_facets: [{ id: 'f-fp4', item_id: 'i-fp4', facet_key: 'model', picklist_value_id: null, text_value: 'FreePods 4' }],
-        });
+        cat.apply(earbud('i-fp4', 'b-oraimo', 'FreePods 4', 'Oraimo FreePods 4 Earbuds'));
+        cat.apply(earbud('i-ew04', 'b-hoco', 'EW04', 'Hoco EW04 Earbuds'));
         const again = drill(cat, skip, 'retail');
-        expect(again.prompt).toBe('Choose the item');
+        expect(again.prompt).toBe('Choose model');
         expect(again.crumbs).toEqual(['Earbuds and earpods', 'Every brand']);
-        expect(again.tiles.map((t) => t.label)).toEqual(['Oraimo FreePods 4 Earbuds', 'New earbuds']);
-        expect(again.tiles[1]).toMatchObject({ kind: 'new', brandId: null });
-    });
-
-    it('shows the whole list where a category has no brand of its own, as the shop visit agreed', () => {
-        const cat = earbuds();
-        cat.apply({
-            brands: [
-                { id: 'b-oraimo', name: 'Oraimo', aliases: [], shown_first_in: [], status: 'approved', merged_into_id: null },
-                { id: 'b-hoco', name: 'Hoco', aliases: [], shown_first_in: [], status: 'approved', merged_into_id: null },
-            ],
-        });
-        const view = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
-        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'JBL', 'Oraimo', 'New earbuds']);
+        expect(again.tiles.map((t) => t.label)).toEqual(['EW04', 'FreePods 4', 'New earbuds']);
+        const fp4 = drill(cat, { categoryId: 'c-ear', choices: [...skip.choices, { key: 'model', value: 'FreePods 4' }] }, 'retail');
+        expect(fp4.tiles.map((t) => t.label)).toEqual(['Oraimo FreePods 4 Earbuds', 'New earbuds']);
+        expect(fp4.tiles[1]).toMatchObject({ kind: 'new', brandId: null, facets: { model: 'FreePods 4' } });
     });
 
     it('opens the tiles at a category, or at a category\'s brand, from a search result', () => {
@@ -393,7 +394,7 @@ describe('the brand step in every category with a brand (D94)', () => {
     });
 });
 
-describe('a step never adds an item (D102)', () => {
+describe('a step never adds an item, and a pouch asks no brand while its pouches have none (D102, D103)', () => {
     function pouches(): Catalogue {
         const cat = new Catalogue();
         cat.apply({
@@ -414,6 +415,7 @@ describe('a step never adds an item (D102)', () => {
             ],
             picklist_values: [
                 { id: 'p-s23', list: 'phone_models', name: 'Samsung Galaxy S23+', aliases: [], parent_id: null, status: 'active', position: 1 },
+                { id: 'p-i13', list: 'phone_models', name: 'iPhone 13', aliases: [], parent_id: null, status: 'active', position: 2 },
                 { id: 'p-sil', list: 'case_types', name: 'Silicone', aliases: [], parent_id: null, status: 'active', position: 1 },
             ],
             brands: [
@@ -432,43 +434,49 @@ describe('a step never adds an item (D102)', () => {
         return cat;
     }
 
-    it('lists the one pouch after Skip brand, with New after it, instead of adding it', () => {
-        const cat = pouches();
-        // One phone model and one type so far: nothing to choose there, so the brand step comes first.
-        const first = drill(cat, { categoryId: 'c-case', choices: [] }, 'retail');
-        expect(first.prompt).toBe('Choose brand');
-        expect(first.tiles).toEqual([
-            { kind: 'skip', key: 'brand', label: 'Skip brand', hint: 'Shows every brand' },
-            { kind: 'value', key: 'brand', value: 'b-spigen', label: 'Spigen' },
-            { kind: 'new', id: 'new-item', label: 'New pouch', hint: 'Not here? Make it', categoryId: 'c-case', brandId: null, facets: {} },
-        ]);
+    function pouch(cat: Catalogue, id: string, phoneModel: string, brandId: string, name: string): void {
+        cat.apply({
+            items: [{ id, category_id: 'c-case', brand_id: brandId, item_code: id.toUpperCase(), display_name: name, search_text: '', status: 'pending_review' }],
+            item_facets: [
+                { id: `f-${id}a`, item_id: id, facet_key: 'phone_model', picklist_value_id: phoneModel, text_value: null },
+                { id: `f-${id}b`, item_id: id, facet_key: 'case_type', picklist_value_id: 'p-sil', text_value: null },
+            ],
+        });
+    }
 
-        const skip = drill(cat, { categoryId: 'c-case', choices: [{ key: 'brand', value: null }] }, 'retail');
-        expect(skip.prompt).toBe('Choose the item');
-        expect(skip.tiles).toEqual([
+    it('lists the one pouch straight away, with New after it, instead of asking a brand or adding it', () => {
+        const first = drill(pouches(), { categoryId: 'c-case', choices: [] }, 'retail');
+        // One phone model, one type and no brand so far: nothing to choose, so the list comes first.
+        expect(first.prompt).toBe('Choose the item');
+        expect(first.tiles).toEqual([
             { kind: 'item', id: 'i-s23', label: 'Samsung Galaxy S23+ Silicone Pouch', priceKobo: 1_000_000, shape: null },
             { kind: 'new', id: 'new-item', label: 'New pouch', hint: 'Not here? Make it', categoryId: 'c-case', brandId: null, facets: {} },
         ]);
     });
 
-    it('offers New beside the phone models once there are two, so a third is made from there', () => {
+    it('offers New beside the phone models once there are two, and goes from a phone model straight to its pouches', () => {
         const cat = pouches();
-        cat.apply({
-            picklist_values: [{ id: 'p-i13', list: 'phone_models', name: 'iPhone 13', aliases: [], parent_id: null, status: 'active', position: 2 }],
-            items: [{ id: 'i-i13', category_id: 'c-case', brand_id: 'b-none', item_code: 'A00041', display_name: 'iPhone 13 Silicone Pouch', search_text: '', status: 'pending_review' }],
-            item_facets: [
-                { id: 'f-i13a', item_id: 'i-i13', facet_key: 'phone_model', picklist_value_id: 'p-i13', text_value: null },
-                { id: 'f-i13b', item_id: 'i-i13', facet_key: 'case_type', picklist_value_id: 'p-sil', text_value: null },
-            ],
-        });
+        pouch(cat, 'i-i13', 'p-i13', 'b-none', 'iPhone 13 Silicone Pouch');
         const first = drill(cat, { categoryId: 'c-case', choices: [] }, 'retail');
         expect(first.prompt).toBe('Choose phone model');
         expect(first.tiles.map((t) => t.label)).toEqual(['Samsung Galaxy S23+', 'iPhone 13', 'New pouch']);
         expect(first.tiles.at(-1)).toMatchObject({ kind: 'new', categoryId: 'c-case', brandId: null, facets: {} });
 
-        // After a phone model, the brand step's New carries the phone model.
+        // Every iPhone 13 pouch has no brand, so no brand is asked: the pouch and New, with the phone model.
         const iphone = drill(cat, { categoryId: 'c-case', choices: [{ key: 'phone_model', value: 'p-i13' }] }, 'retail');
-        expect(iphone.prompt).toBe('Choose brand');
-        expect(iphone.tiles.at(-1)).toMatchObject({ kind: 'new', label: 'New pouch', facets: { phone_model: 'p-i13' } });
+        expect(iphone.prompt).toBe('Choose the item');
+        expect(iphone.tiles.map((t) => t.label)).toEqual(['iPhone 13 Silicone Pouch', 'New pouch']);
+        expect(iphone.tiles.at(-1)).toMatchObject({ kind: 'new', facets: { phone_model: 'p-i13' } });
+    });
+
+    it('asks "Made by" only where a phone model has pouches of a brand and of none', () => {
+        const cat = pouches();
+        pouch(cat, 'i-s23-sp', 'p-s23', 'b-spigen', 'Spigen Samsung Galaxy S23+ Silicone Pouch');
+        pouch(cat, 'i-i13', 'p-i13', 'b-none', 'iPhone 13 Silicone Pouch');
+        const s23 = drill(cat, { categoryId: 'c-case', choices: [{ key: 'phone_model', value: 'p-s23' }] }, 'retail');
+        expect(s23.prompt).toBe('Choose brand');
+        expect(s23.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Spigen', 'New pouch']);
+        const iphone = drill(cat, { categoryId: 'c-case', choices: [{ key: 'phone_model', value: 'p-i13' }] }, 'retail');
+        expect(iphone.prompt).toBe('Choose the item');
     });
 });

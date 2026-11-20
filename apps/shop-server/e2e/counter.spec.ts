@@ -631,32 +631,40 @@ test('keeps a code scanned before New item, asks "Made by" and phone models by f
     await expect(page.getByRole('dialog', { name: 'Price' })).toContainText('Oraimo SpaceBuds Earbuds');
 });
 
-test('asks the brand in a category with nothing of that brand yet, ends at New with the brand filled in, and finds the brand by search (D94)', async ({ browser }) => {
+test('offers only the brands a category has items of, adds a brand on the go from New, and finds it by search (D94, D103)', async ({ browser }) => {
     const page = await counter(browser, 'T02');
     const tiles = page.getByRole('main');
 
-    // Earbuds have no generated items: the brand is still asked, Skip brand first, the earbuds' brands, then More brands.
+    // Earbuds so far are Zetasound's and Oraimo's: the brand step offers those two, no More brands, then New.
     await tiles.getByRole('button', { name: 'Earbuds and earpods', exact: true }).click();
     await expect(page.getByText('Choose brand')).toBeVisible();
     await expect(tiles.getByRole('button', { name: /^Skip brand/ })).toBeVisible();
-    // Every step ends with New, the brand step too (D102).
-    await expect(tiles.getByRole('button', { name: /^New earbuds/ })).toBeVisible();
-    await expect(tiles.getByRole('button', { name: 'Spigen', exact: true })).toHaveCount(0);
-    await tiles.getByRole('button', { name: /^More brands/ }).click();
-    await expect(tiles.getByRole('button', { name: 'Spigen', exact: true })).toBeVisible();
+    for (const brand of ['Oraimo', 'Zetasound']) await expect(tiles.getByRole('button', { name: brand, exact: true })).toBeVisible();
+    await expect(tiles.getByRole('button', { name: 'Hoco', exact: true })).toHaveCount(0);
+    await expect(tiles.getByRole('button', { name: /^More brands/ })).toHaveCount(0);
 
-    // A brand with nothing sold here yet ends at New, which opens New item with the category and the brand.
-    await tiles.getByRole('button', { name: 'Hoco', exact: true }).click();
-    await expect(page.getByText('None yet. Make one with New.')).toBeVisible();
-    await tiles.getByRole('button', { name: /^New Hoco earbuds/ }).click();
+    // A brand with no earbuds here yet is added on the go: New opens New item with the category, and the brand is chosen there.
+    await tiles.getByRole('button', { name: /^New earbuds/ }).click();
     const sheet = page.getByRole('dialog', { name: 'New item' });
-    await expect(sheet.getByRole('region', { name: 'Brand' }).getByRole('button', { name: 'Hoco', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    const brand = sheet.getByRole('region', { name: 'Brand' });
+    await sheet.getByLabel('Or type the brand').fill('Hoco');
+    await brand.getByRole('button', { name: 'Hoco', exact: true }).click();
+    await expect(brand.getByRole('button', { name: 'Hoco', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await sheet.getByLabel(/^Model/).fill('EW04');
     const price = sheet.getByRole('region', { name: 'Price' });
     for (const key of ['8', '0', '0', '0']) await price.getByRole('button', { name: key, exact: true }).click();
     await sheet.getByRole('button', { name: 'Add at ₦8,000' }).click();
     await expect(sheet).toBeHidden();
     await expect(page.getByRole('complementary', { name: 'Sale' }).getByText('Hoco EW04 Earbuds')).toBeVisible();
+
+    // From then on Hoco is one of the earbuds' brands, and its list ends with New, the brand filled in.
+    await tiles.getByRole('button', { name: 'Earbuds and earpods', exact: true }).click();
+    await tiles.getByRole('button', { name: 'Hoco', exact: true }).click();
+    await expect(tiles.getByRole('button', { name: /^Hoco EW04 Earbuds/ })).toBeVisible();
+    await tiles.getByRole('button', { name: /^New Hoco earbuds/ }).click();
+    await expect(sheet.getByRole('region', { name: 'Brand' }).getByRole('button', { name: 'Hoco', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
 
     // Search finds the brand in its category as a place on the tiles, after the items.
     await page.getByPlaceholder('Search or scan').fill('hoco ear');
