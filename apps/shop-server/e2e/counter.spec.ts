@@ -661,10 +661,14 @@ test('asks the brand in a category with nothing of that brand yet, ends at New w
     await expect(tiles.getByRole('button', { name: /^Hoco EW04 Earbuds/ })).toBeVisible();
     await expect(tiles.getByRole('button', { name: /^New Hoco earbuds/ })).toBeVisible();
 
-    // Skip brand shows every brand: the Hoco earbuds made above are there too, listed with New (D102).
+    // Skip brand shows every brand: the earbuds made under Zetasound, Oraimo and Hoco are all there, so the
+    // model is asked, and the Hoco earbuds made above are listed with New (D102).
     await page.getByRole('button', { name: 'All', exact: true }).click();
     await tiles.getByRole('button', { name: 'Earbuds and earpods', exact: true }).click();
     await tiles.getByRole('button', { name: /^Skip brand/ }).click();
+    await expect(page.getByText('Choose model')).toBeVisible();
+    for (const model of ['Zeta Pods 9', 'SpaceBuds']) await expect(tiles.getByRole('button', { name: model, exact: true })).toBeVisible();
+    await tiles.getByRole('button', { name: 'EW04', exact: true }).click();
     await expect(page.getByText('Choose the item')).toBeVisible();
     await expect(tiles.getByRole('button', { name: /^Hoco EW04 Earbuds/ })).toBeVisible();
     await expect(tiles.getByRole('button', { name: /^New earbuds/ })).toBeVisible();
