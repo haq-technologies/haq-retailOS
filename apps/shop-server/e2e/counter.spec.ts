@@ -48,18 +48,23 @@ async function scan(page: Page, code: string): Promise<void> {
     }, code);
 }
 
-/** The tiles to a cable: the brand first, with every listed brand (D54, D79); these tests sell it with no brand. */
-async function drillToCable(page: Page, connector: RegExp, length: RegExp): Promise<void> {
+/**
+ * The tiles to a cable: the brand first, with every listed brand (D54, D79); these tests sell it with no
+ * brand. The steps only move the tiles on: the cable is added from its own tile, in the list (D102).
+ */
+async function drillToCable(page: Page, connector: RegExp, length: RegExp, cable: RegExp): Promise<void> {
     await page.getByRole('button', { name: 'Cables', exact: true }).click();
     await expect(page.getByText('Choose brand')).toBeVisible();
     await page.getByRole('button', { name: /^Skip brand/ }).click();
     await expect(page.getByText('Choose connector pair')).toBeVisible();
     await page.getByRole('button', { name: connector }).first().click();
     await page.getByRole('button', { name: length }).first().click();
+    await expect(page.getByText('Choose the item')).toBeVisible();
+    await page.getByRole('button', { name: cable }).click();
 }
 
 async function addCable(page: Page, price: string): Promise<void> {
-    await drillToCable(page, /^Type-C to Lightning/, /^1m/);
+    await drillToCable(page, /^Type-C to Lightning/, /^1m/, /^Type-C to Lightning Cable 1m/);
     const pad = page.getByRole('dialog', { name: 'Price' });
     await expect(pad).toBeVisible();
     await expect(pad.getByText('Prints as')).toBeVisible();
@@ -99,7 +104,7 @@ test('signs in, drills to a cable, types its first price, takes cash and prints 
 
 test('remembers the price it sold at, and asks before an unusual one', async ({ browser }) => {
     const page = await counter(browser, 'T01');
-    await drillToCable(page, /^Type-C to Lightning/, /^1m/);
+    await drillToCable(page, /^Type-C to Lightning/, /^1m/, /^Type-C to Lightning Cable 1m/);
     const pad = page.getByRole('dialog', { name: 'Price' });
     await expect(pad.getByText('Filled in from the last sale')).toBeVisible();
     await page.screenshot({ path: 'e2e/results/screens/price-pad.png' });
@@ -201,6 +206,7 @@ test('offers every brand for a power bank in a fresh shop, and the receipt name 
     await page.getByRole('button', { name: /^Oraimo/ }).first().click();
     await expect(page.getByText('Choose capacity')).toBeVisible();
     await page.getByRole('button', { name: /^20000mAh/ }).first().click();
+    await page.getByRole('button', { name: /^Oraimo Power Bank 20000mAh/ }).click();
     const pad = page.getByRole('dialog', { name: 'Price' });
     await expect(pad).toBeVisible();
     await expect(pad).toContainText('Oraimo Power Bank 20000mAh');
@@ -210,7 +216,7 @@ test('asks the brand for a cable and a charger head in a fresh shop, at the tile
     const page = await counter(browser, 'T02');
     const pad = page.getByRole('dialog', { name: 'Price' });
 
-    // Cables: the brand, then the connector pair, then the length. The last tap adds it as Oraimo's.
+    // Cables: the brand, then the connector pair, then the length, then the cable's own tile, as Oraimo's.
     await page.getByRole('button', { name: 'Cables', exact: true }).click();
     await expect(page.getByText('Choose brand')).toBeVisible();
     await expect(page.getByRole('button', { name: 'No brand', exact: true })).toHaveCount(0);
@@ -218,6 +224,9 @@ test('asks the brand for a cable and a charger head in a fresh shop, at the tile
     await expect(page.getByText('Choose connector pair')).toBeVisible();
     await page.getByRole('button', { name: /^Type-C to Type-C/ }).first().click();
     await page.getByRole('button', { name: /^2m/ }).first().click();
+    // The length leaves one cable, and the list still shows it with New, rather than adding it (D102).
+    await expect(page.getByRole('button', { name: /^New Oraimo cable/ })).toBeVisible();
+    await page.getByRole('button', { name: /^Oraimo Type-C to Type-C Cable 2m/ }).click();
     await expect(pad).toContainText('Oraimo Type-C to Type-C Cable 2m');
     await pad.getByRole('button', { name: 'Back' }).click();
 
@@ -228,6 +237,7 @@ test('asks the brand for a cable and a charger head in a fresh shop, at the tile
     await expect(page.getByText('Choose brand')).toBeVisible();
     await page.getByRole('button', { name: /^Skip brand/ }).click();
     await page.getByRole('button', { name: /^20W/ }).first().click();
+    await page.getByRole('button', { name: /^Charger Head 20W/ }).click();
     await expect(pad).toContainText('Charger Head 20W');
     await expect(pad).not.toContainText('Oraimo');
     await pad.getByRole('button', { name: 'Back' }).click();
@@ -237,6 +247,7 @@ test('asks the brand for a cable and a charger head in a fresh shop, at the tile
     await page.getByRole('button', { name: /^Type-C to Type-C Cable 0\.25m/ }).first().click();
     await expect(page.getByText('Choose brand')).toBeVisible();
     await page.getByRole('button', { name: 'Anker', exact: true }).click();
+    await page.getByRole('button', { name: /^Anker Type-C to Type-C Cable 0\.25m/ }).click();
     await expect(pad).toContainText('Anker Type-C to Type-C Cable 0.25m');
 });
 
@@ -278,8 +289,8 @@ test('shows an item made at one counter in the other counter\'s search within 5 
 
 test('keeps a manager\'s approval of a price below the floor through a slow transfer, and the other counter finishes it (check D4)', async ({ browser }) => {
     const one = await counter(browser, 'T01');
-    await drillToCable(one, /^USB-A to Micro-USB/, /^3m/);
-    // A set price adds the cable at ₦3,000 in one tap; the cashier changes the line's price.
+    await drillToCable(one, /^USB-A to Micro-USB/, /^3m/, /^USB-A to Micro-USB Cable 3m/);
+    // A set price adds the cable at ₦3,000 from its tile; the cashier changes the line's price.
     const sale = one.getByRole('complementary', { name: 'Sale' });
     await sale.getByRole('button', { name: 'Change the price of USB-A to Micro-USB Cable 3m' }).click();
     const pad = one.getByRole('dialog', { name: 'Price' });
@@ -649,4 +660,12 @@ test('asks the brand in a category with nothing of that brand yet, ends at New w
     await tiles.getByRole('button', { name: /^Hoco · Earbuds and earpods/ }).click();
     await expect(tiles.getByRole('button', { name: /^Hoco EW04 Earbuds/ })).toBeVisible();
     await expect(tiles.getByRole('button', { name: /^New Hoco earbuds/ })).toBeVisible();
+
+    // Skip brand shows every brand: the Hoco earbuds made above are there too, listed with New (D102).
+    await page.getByRole('button', { name: 'All', exact: true }).click();
+    await tiles.getByRole('button', { name: 'Earbuds and earpods', exact: true }).click();
+    await tiles.getByRole('button', { name: /^Skip brand/ }).click();
+    await expect(page.getByText('Choose the item')).toBeVisible();
+    await expect(tiles.getByRole('button', { name: /^Hoco EW04 Earbuds/ })).toBeVisible();
+    await expect(tiles.getByRole('button', { name: /^New earbuds/ })).toBeVisible();
 });

@@ -9,7 +9,7 @@ import type { CustomerType, FacetDefinition, Shape } from './types';
  * A brand is never multiplied into the generated shapes (catalogue v1.1), so the brand step offers brands
  * wherever a shape could still be chosen, as agreed at the shop visit; a shape chosen after a brand becomes
  * that brand's item on its first sale (D54). A shape is never the last answer while its brand is still to
- * ask (D79), and "No brand" is the same answer as Skip brand, so it is not offered as a brand.
+ * ask (D79), and "No brand" is not offered as a brand: an item made with it has none.
  *
  * The brand step is asked in every category that has a brand, not only those with generated shapes, so the
  * tiles never stop at "Nothing here yet" before the brand (D94). It shows Skip brand first, then the
@@ -17,6 +17,11 @@ import type { CustomerType, FacetDefinition, Shape } from './types';
  * then More brands for the rest of the list; a category with none of its own shows the whole list, as the
  * shop visit agreed. The item tiles end with a New tile that opens New item with the category, the brand
  * and the choices so far already filled in.
+ *
+ * Only an item's own tile adds it to the sale, and every list ends with New (D102): a step's tile only
+ * moves the tiles on, even when it leaves one thing to sell, so the cashier sees the item and its price
+ * before it is added and can always make another. Skip brand shows every brand, and none: an item made
+ * with a brand in New item is found after Skip brand too, and a shape sold from there has no brand.
  */
 export interface DrillState {
     categoryId: string | null;
@@ -27,8 +32,8 @@ export interface DrillState {
 
 export type Tile =
     | { kind: 'category'; id: string; label: string }
-    | { kind: 'value'; key: string; value: string; label: string; itemId: string | null; priceKobo: number | null }
-    | { kind: 'skip'; key: string; label: string; hint: string; itemId: string | null }
+    | { kind: 'value'; key: string; value: string; label: string }
+    | { kind: 'skip'; key: string; label: string; hint: string }
     | { kind: 'item'; id: string; label: string; priceKobo: number | null; shape: Shape | null }
     | { kind: 'more'; id: string; label: string; hint: string }
     | { kind: 'new'; id: string; label: string; hint: string; categoryId: string; brandId: string | null; facets: Record<string, string> }
@@ -118,6 +123,7 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
     const facets = template?.facets ?? [];
     // The pool: every item and every shape the choices so far allow. A shape stays in it under any brand,
     // even when it has been sold with another brand or with none, so it can still be sold under this one.
+    // Skip brand keeps every brand (D102).
     let pool = candidatesFor(cat, node.id);
     let brand: string | null = null;
     for (const choice of state.choices) {
@@ -125,7 +131,7 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
         if (definition?.type === 'brand' && choice.value !== null) brand = choice.value;
         pool = pool.filter((c) => matches(c, definition, choice.key, choice.value));
         if (choice.value !== null) crumbs.push(valueLabel(cat, definition, choice.value));
-        else crumbs.push(definition?.type === 'brand' ? 'No brand' : `No ${definition?.label.toLowerCase() ?? choice.key}`);
+        else crumbs.push(definition?.type === 'brand' ? 'Every brand' : `No ${definition?.label.toLowerCase() ?? choice.key}`);
     }
     // What shows now: the pool, with each shape that is already an item under the brand so far shown once.
     const candidates = distinct(pool, facets, brand);
@@ -148,30 +154,12 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
                 else values.add(v);
             }
 
-            // What a tile leaves is worked out as the next step would: under a brand, the shapes not yet sold
-            // as that brand's items stay too, so a brand with one item sold still offers the rest (a power
-            // bank's other capacities, a cable's other lengths). A tile that leaves one thing to sell is that
-            // thing: it adds it in one tap. A shape is not yet a thing to sell while its brand is to ask.
-            const leaves = (value: string | null): { itemId: string | null; priceKobo: number | null } => {
-                const brandAfter = isBrand ? value : brand;
-                const left = distinct(
-                    pool.filter((c) => matches(c, definition, key, value)),
-                    facets,
-                    brandAfter,
-                );
-                const only = left.length === 1 ? left[0] : undefined;
-                if (only === undefined || (only.shape !== null && brandOpen && !isBrand)) return { itemId: null, priceKobo: null };
-                if (only.shape !== null) {
-                    // A shape left after a brand was chosen is added as that brand's item (D54).
-                    return { itemId: brandAfter !== null ? brandedShapeId(only.id, brandAfter) : only.id, priceKobo: null };
-                }
-                const price = cat.priceFor(only.id, type);
-                return { itemId: only.id, priceKobo: price.setPrice ?? price.prefill };
-            };
-            const valueTile = (v: string, text: string): Tile => ({ kind: 'value', key, value: v, label: text, ...leaves(v) });
+            // A step's tile only moves the tiles on, even when it leaves one thing to sell: the item is added
+            // from its own tile, in the list that ends with New (D102).
+            const valueTile = (v: string, text: string): Tile => ({ kind: 'value', key, value: v, label: text });
 
             if (isBrand) {
-                return { crumbs, prompt: 'Choose brand', tiles: brandStep(cat, node.id, key, values, state.allBrands === true, valueTile, leaves(null).itemId) };
+                return { crumbs, prompt: 'Choose brand', tiles: brandStep(cat, node.id, key, values, state.allBrands === true, valueTile) };
             }
 
             // One value and no blanks, or nothing at all: there is nothing to choose at this step.
@@ -183,7 +171,7 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
                 .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
                 .map(({ v, label: text }) => valueTile(v, text));
             if (blanks > 0) {
-                tiles.push({ kind: 'skip', key, label: `Skip ${label.toLowerCase()}`, hint: `Prints without a ${label.toLowerCase()}`, itemId: leaves(null).itemId });
+                tiles.push({ kind: 'skip', key, label: `Skip ${label.toLowerCase()}`, hint: `Prints without a ${label.toLowerCase()}` });
             }
             return { crumbs, prompt: `Choose ${label.toLowerCase()}`, tiles };
         }
@@ -222,9 +210,9 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
 }
 
 /**
- * The brand step's tiles (D94): Skip brand first, then the category's own brands A to Z, with the brands
- * of the items still in the pool among them, then More brands for the rest of the listed brands. A
- * category with no brand of its own shows the whole list, as the shop visit agreed.
+ * The brand step's tiles (D94): Skip brand first, which shows every brand (D102), then the category's own
+ * brands A to Z, with the brands of the items still in the pool among them, then More brands for the rest
+ * of the listed brands. A category with no brand of its own shows the whole list, as the shop visit agreed.
  */
 function brandStep(
     cat: Catalogue,
@@ -233,7 +221,6 @@ function brandStep(
     inPool: Set<string>,
     all: boolean,
     valueTile: (value: string, label: string) => Tile,
-    skipItemId: string | null,
 ): Tile[] {
     const own = cat.brandsOf(categoryId);
     for (const id of inPool) own.add(id);
@@ -244,7 +231,7 @@ function brandStep(
             .sort((a, b) => a.label.localeCompare(b.label))
             .map(({ id, label }) => valueTile(id, label));
 
-    const tiles: Tile[] = [{ kind: 'skip', key, label: 'Skip brand', hint: 'Prints without a brand', itemId: skipItemId }];
+    const tiles: Tile[] = [{ kind: 'skip', key, label: 'Skip brand', hint: 'Shows every brand' }];
     if (own.size === 0) return [...tiles, ...byName(listed.map((b) => b.id))];
     tiles.push(...byName(own));
     const rest = listed.filter((b) => !own.has(b.id)).map((b) => b.id);
@@ -253,15 +240,19 @@ function brandStep(
     return tiles;
 }
 
-/** Whether a candidate stays after a choice. A shape has no brand of its own, so it stays under any brand chosen. */
+/**
+ * Whether a candidate stays after a choice. Skip brand keeps every brand, and none (D102). A shape has no
+ * brand of its own, so it stays under any brand chosen.
+ */
 function matches(c: Candidate, definition: FacetDefinition | undefined, key: string, value: string | null): boolean {
-    return c.value(key) === value || (definition?.type === 'brand' && value !== null && c.shape !== null);
+    if (definition?.type === 'brand') return value === null || c.shape !== null || c.value(key) === value;
+    return c.value(key) === value;
 }
 
 /**
- * Drops each shape that is already an item: under the brand chosen (or none), a shape whose values are
- * exactly an item's, with no facet of its own beyond them, prints the same name and is the same item, so it
- * shows once, as the item with its price (D54).
+ * Drops each shape that is already an item: under the brand chosen (none after Skip brand), a shape whose
+ * values are exactly an item's, with no facet of its own beyond them, prints the same name and is the same
+ * item, so it shows once, as the item with its price (D54).
  */
 function distinct(candidates: Candidate[], facets: FacetDefinition[], brand: string | null): Candidate[] {
     const items = candidates.filter((c) => c.shape === null);
