@@ -116,6 +116,7 @@ func Server(ctx context.Context, a Answers, distro string, out io.Writer) (Resul
 		return Result{}, err
 	}
 	neverSleep(ctx)
+	activeHours(out)
 	mark := fmt.Sprintf("release %s, %s\n", a.Tag, time.Now().UTC().Format(time.RFC3339))
 	if err := config.WriteFile(filepath.Join(config.Dir(), installedMark), []byte(mark)); err != nil {
 		return Result{}, err

@@ -115,7 +115,10 @@ final readonly class Health
             }
         }
 
-        // The off-site copy (D53): set up, copied within the week the drives are swapped, and not failing.
+        // The off-site copy (D53): set up, copied within the week the drives are swapped, and not failing. When the
+        // backups share the database's disk (a Windows server, or a mini-PC with no second disk), a drive is the
+        // only copy away from that disk, so one is copied each day (D97).
+        $ownDisk = config()->boolean('health.backup_own_disk');
         /** @var array{key_made_at: ?string, drives: array<string, array{copied_at: ?string, failed_at: ?string, reason: ?string, ok: bool}>}|null $offsite */
         $offsite = is_array($snapshot['offsite'] ?? null) ? $snapshot['offsite'] : null;
         if ($backups !== null && $offsite !== null) {
@@ -125,9 +128,16 @@ final readonly class Health
                 $copies = array_filter(array_map(fn (array $d) => $d['copied_at'], $offsite['drives']));
                 $latest = $copies === [] ? null : CarbonImmutable::parse(max($copies));
                 $since = $latest ?? CarbonImmutable::parse($offsite['key_made_at']);
-                if ($since->lessThan($now->subDays(8))) {
+                if ($ownDisk && $since->lessThan($now->subDays(config()->integer('health.offsite_warn_days')))) {
                     $warn('offsite', $latest === null ? 'No flash drive has a copy yet' : 'No flash drive has had a copy for '.(int) $latest->diffInDays($now, true).' days',
                         'Plug in the off-site drive that is at the shop: it copies by itself. Then take it away and bring the other one back next week.');
+                } elseif (! $ownDisk && $since->lessThan($now->subHours(config()->integer('health.offsite_shared_warn_hours')))) {
+                    $hours = $latest === null ? null : (int) $latest->diffInHours($now, true);
+                    $warn('offsite', match (true) {
+                        $hours === null => 'No flash drive has a copy yet',
+                        $hours < 72 => "No flash drive has had a copy for {$hours} hours",
+                        default => 'No flash drive has had a copy for '.intdiv($hours, 24).' days',
+                    }, 'The backups are on the same disk as the sales, so a flash drive is the only copy away from it. At closing, plug in the off-site drive: it copies by itself. Take it home, and bring the other one back the next day.');
                 }
                 foreach ($offsite['drives'] as $name => $d) {
                     if ($d['failed_at'] !== null && ($d['copied_at'] === null || $d['failed_at'] > $d['copied_at'])) {

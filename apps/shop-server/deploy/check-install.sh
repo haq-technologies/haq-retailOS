@@ -42,6 +42,14 @@ for id in $(compose ps --status running -q); do
 done
 if [ -z "$norestart" ]; then pass "every running service restarts by itself"; else fail "these services do not restart by themselves:$norestart"; fi
 if ! command -v systemctl >/dev/null || systemctl is-enabled docker.service >/dev/null 2>&1; then pass "Docker starts with the server"; else fail "Docker does not start with the server (systemctl enable docker)"; fi
+# Ubuntu's own updates run at night, never while the shop trades (D100).
+if ! command -v systemctl >/dev/null || ! systemctl cat apt-daily-upgrade.timer >/dev/null 2>&1; then
+    :
+elif systemctl cat apt-daily-upgrade.timer 2>/dev/null | grep -q '^OnCalendar=.* Africa/Lagos'; then
+    pass "Ubuntu's own updates run at night, from 23:15 in Lagos"
+else
+    fail "Ubuntu's own updates may run while the shop trades: run install.sh again"
+fi
 
 # 2. No running container holds the owner's password (check D).
 owner_password="$(cat "$dir/secrets/owner_password")"

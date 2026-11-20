@@ -100,4 +100,69 @@ rm -f "$tmp/shop/channel"
 named() { "$root/apps/shop-server/deploy/update.sh" --dir "$tmp/shop" --check-only --version "$1"; }
 expect fail "a version that is not YEAR.MONTH.N is refused before anything is fetched" named main
 
+# A new shop's first install checks its release as the updater does, and installs its images by digest (D99).
+cp -r "$root/apps/shop-server/deploy" "$tmp/deploy"
+cp "$tmp/key/release-public.pem" "$tmp/deploy/release-public.pem"
+first() { # $1: the release folder, $2: the version asked for
+    env -u SKIP_PULL "$tmp/deploy/install.sh" --dir "$tmp/new-shop" --ip 127.0.0.1 --tag "$2" --release "$1" --check-only
+}
+expect pass "a new shop's first install takes a release signed with the release key" first "$tmp/good" 2026.11.2
+expect fail "a new shop's first install refuses a manifest changed after signing" first "$tmp/changed" 2026.11.9
+expect fail "a new shop's first install refuses a Compose file that is not the signed one" first "$tmp/compose" 2026.11.2
+expect fail "a new shop's first install refuses a release signed by another key" first "$tmp/stranger" 2026.11.2
+expect fail "a new shop's first install refuses an image named by tag, not digest" first "$tmp/tagged" 2026.11.3
+expect fail "a new shop's first install refuses a release that is not the one asked for" first "$tmp/good" 2026.11.4
+if [ -e "$tmp/new-shop" ]; then
+    echo "FAIL  a first install's check made $tmp/new-shop"
+    failures=$((failures + 1))
+else
+    echo "PASS  a first install's check installs nothing"
+fi
+
+# A release carries its Windows setup and haq-server distribution, each named in the signed manifest with its
+# SHA-256 (D99); check-windows.sh checks them before HAQ's team takes the setup to a shop.
+mkdir -p "$tmp/win"
+printf 'MZ a stand-in setup' > "$tmp/win/HAQ-Retail-OS-Setup-2026.11.2.exe"
+printf 'a stand-in distribution' > "$tmp/win/haq-server.tar.gz"
+made() {
+    "$root/tools/release/make-manifest.sh" --local --version 2026.11.2 --windows "$tmp/win" --out "$tmp/made" >/dev/null &&
+    python3 -I - "$tmp/made" <<'PY'
+import hashlib, json, sys
+folder = sys.argv[1]
+w = json.load(open(folder + "/manifest.json"))["windows"]
+for part, name in (("setup", "HAQ-Retail-OS-Setup-2026.11.2.exe"), ("distribution", "haq-server.tar.gz")):
+    assert w[part]["file"] == name, w
+    assert w[part]["sha256"] == hashlib.sha256(open(folder + "/" + name, "rb").read()).hexdigest(), w
+PY
+}
+expect pass "make-manifest names the Windows setup and distribution with their SHA-256" made
+with_windows() { # $1: folder made by release(); adds the Windows files and names them in its manifest
+    cp "$tmp/win/"* "$1/"
+    python3 -I - "$1" <<'PY'
+import hashlib, json, sys
+folder = sys.argv[1]
+path = folder + "/manifest.json"
+m = json.load(open(path))
+sha = lambda n: hashlib.sha256(open(folder + "/" + n, "rb").read()).hexdigest()
+m["windows"] = {"setup": {"file": "HAQ-Retail-OS-Setup-2026.11.2.exe", "sha256": sha("HAQ-Retail-OS-Setup-2026.11.2.exe")},
+                "distribution": {"file": "haq-server.tar.gz", "sha256": sha("haq-server.tar.gz")}}
+json.dump(m, open(path, "w"))
+PY
+}
+windows() { "$root/tools/release/check-windows.sh" --release "$1" --public-key "$tmp/key/release-public.pem"; }
+release "$tmp/win-good" 2026.11.2
+with_windows "$tmp/win-good"
+"$root/tools/release/sign.sh" "$tmp/win-good/manifest.json" "$tmp/key/release-private.pem" >/dev/null
+expect pass "a release's Windows setup and distribution check out against its signed manifest" windows "$tmp/win-good"
+cp -r "$tmp/win-good" "$tmp/win-changed"
+printf ' and a change' >> "$tmp/win-changed/HAQ-Retail-OS-Setup-2026.11.2.exe"
+expect fail "a Windows setup changed after signing is refused" windows "$tmp/win-changed"
+cp -r "$tmp/win-good" "$tmp/win-missing"
+rm "$tmp/win-missing/haq-server.tar.gz"
+expect fail "a release missing its distribution is refused" windows "$tmp/win-missing"
+cp -r "$tmp/win-good" "$tmp/win-stranger"
+"$root/tools/release/sign.sh" "$tmp/win-stranger/manifest.json" "$tmp/other/release-private.pem" >/dev/null
+expect fail "Windows files under a manifest signed by another key are refused" windows "$tmp/win-stranger"
+expect fail "a release whose manifest names no Windows setup is refused" windows "$tmp/good"
+
 [ "$failures" = 0 ] && echo "The signing dry run passed." || { echo "The signing dry run failed ($failures)."; exit 1; }

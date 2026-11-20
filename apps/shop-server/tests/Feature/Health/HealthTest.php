@@ -62,8 +62,9 @@ beforeEach(function () {
         Cache::forever(MutabilityCommand::HEALTH_KEY, ['checked_at' => now()->subHours(3)->toIso8601String(), 'problems' => []]);
         Cache::forever(VerifyCommand::HEALTH_KEY, ['checked_at' => now()->subHours(3)->toIso8601String(), 'problems' => []]);
         Cache::forever(Clock::HIGH_WATER, now()->toIso8601String());
-        // The disks are this machine's own; the tests set what counts as full.
-        config(['health.disk_warn_percent' => 0, 'health.disk_warn_bytes' => 0]);
+        // The disks are this machine's own; the tests set what counts as full. The backups have a disk of their
+        // own, as on a mini-PC with its second disk, so the drives are swapped weekly.
+        config(['health.disk_warn_percent' => 0, 'health.disk_warn_bytes' => 0, 'health.backup_own_disk' => true]);
     };
 });
 
@@ -234,4 +235,31 @@ it('warns when the off-site copy is not set up, overdue or failing (D53)', funct
     unlink($this->dir.'/offsite/key.json');
     $this->artisan('health:check')->assertSuccessful();
     expect(collect(app(Health::class)->warnings())->where('kind', 'offsite')->pluck('title')->all())->toBe(['The off-site copy is not set up']);
+});
+
+it('asks for an off-site copy each day when the backups share the database\'s disk (AU4, D97)', function () {
+    ($this->healthy)();
+    config(['health.backup_own_disk' => false]);
+    $now = time();
+    $copied = fn (int $hoursAgo) => file_put_contents($this->dir.'/offsite.json', json_encode(['drives' => ['A' => ['copied_at' => $now - $hoursAgo * 3600, 'ok' => true]]]));
+    $offsite = function () {
+        $this->artisan('health:check')->assertSuccessful();
+
+        return collect(app(Health::class)->warnings())->where('kind', 'offsite')->values();
+    };
+
+    // Last night's copy is enough.
+    $copied(20);
+    expect($offsite())->toBeEmpty();
+
+    // A day and more without one is a warning, which the owner's dashboard repeats.
+    $copied(30);
+    expect($offsite()->pluck('title')->all())->toBe(['No flash drive has had a copy for 30 hours'])
+        ->and($offsite()->first()['detail'])->toContain('only copy away from it');
+    $copied(4 * 24);
+    expect($offsite()->pluck('title')->all())->toBe(['No flash drive has had a copy for 4 days']);
+
+    // With a backup disk of its own the same copy is still within the week.
+    config(['health.backup_own_disk' => true]);
+    expect($offsite())->toBeEmpty();
 });

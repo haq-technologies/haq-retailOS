@@ -13,13 +13,15 @@ use function Laravel\Prompts\password;
 
 /**
  * Adds a person with a name tile and PIN, at install (spec section 6, phase 1). The PIN is asked for
- * twice without echoing. --pin is for scripted installs, and for the Windows helper, which asks the PIN
- * itself because its runner has no terminal (D91).
+ * twice without echoing. --pin is for scripted installs; the Windows helper asks the PIN itself, because its
+ * runner has no terminal (D91), and sends it on standard input with --pin-stdin (D99).
  */
 #[AsCommand(name: 'shop:add-user')]
 class AddUserCommand extends Command
 {
-    protected $signature = 'shop:add-user {name : The name on the tile} {--role=cashier : cashier, manager, storekeeper or owner} {--pin= : Scripted installs, and the Windows helper, which asks it itself: the PIN}';
+    use GivenPin;
+
+    protected $signature = 'shop:add-user {name : The name on the tile} {--role=cashier : cashier, manager, storekeeper or owner} {--pin= : Scripted installs: the PIN} {--pin-stdin : The Windows helper: the PIN, as the first line of standard input}';
 
     protected $description = 'Add a person who signs in with a name tile and PIN';
 
@@ -32,8 +34,8 @@ class AddUserCommand extends Command
             return self::INVALID;
         }
 
-        $pin = $this->option('pin');
-        if (! is_string($pin) || $pin === '') {
+        $pin = $this->givenPin();
+        if ($pin === null) {
             [$min, $max] = $role->pinLength();
             $hint = $min === $max ? "{$min} digits" : "{$min} to {$max} digits";
             $pin = password("PIN for {$this->argument('name')} ({$hint})", required: true);

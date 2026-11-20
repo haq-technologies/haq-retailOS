@@ -55,6 +55,7 @@ func Update(ctx context.Context, out io.Writer) error {
 			}
 		}
 	}
+	activeHours(out)
 	s.next("Starting the HAQ Helper")
 	if cfg.Printer != "" || cfg.Mode == config.Server {
 		if err := startService(); err != nil {
@@ -93,7 +94,7 @@ func Remove(ctx context.Context, out io.Writer, deleteShop bool) error {
 			left = append(left, fmt.Errorf("%s: %w", what, err))
 		}
 	}
-	fmt.Fprintln(out, "Removing the HAQ Helper service, the tasks, the firewall rules, the shortcut and the certificate...")
+	fmt.Fprintln(out, "Removing the HAQ Helper service, the tasks, the firewall rules, the shortcut, the certificate and the active hours...")
 	try("the HAQ Helper service", service.Remove())
 	if deleteShop && cfgErr == nil && cfg.Mode == config.Server {
 		fmt.Fprintln(out, "Deleting the shop server and every sale in it...")
@@ -117,6 +118,7 @@ func Remove(ctx context.Context, out io.Writer, deleteShop bool) error {
 		try("the start-up shortcut", err)
 	}
 	untrust(ctx)
+	try("Windows Update's active hours", removeActiveHours())
 	if deleteShop {
 		if cfgErr == nil && cfg.Mode == config.Server {
 			try("the account's right", changeRight(qualified(account), batchRight, false))
@@ -245,10 +247,15 @@ var ErrNoWSL = errors.New("Windows' Linux (WSL) is not turned on yet")
 
 // AsServer runs argv as HAQServer through the runner, for support: the server's own commands inside it.
 func AsServer(ctx context.Context, out io.Writer, argv ...string) (int, error) {
+	return AsServerWithInput(ctx, out, "", argv...)
+}
+
+// AsServerWithInput is AsServer with input given to the command on its standard input: a PIN (D99).
+func AsServerWithInput(ctx context.Context, out io.Writer, input string, argv ...string) (int, error) {
 	if !windows.GetCurrentProcessToken().IsElevated() {
 		return -1, errors.New("run it in Terminal (Admin)")
 	}
-	return asServerHere(ctx, out, argv...)
+	return asServerWithInput(ctx, RunnerDir(), taskRunner{}, out, input, argv...)
 }
 
 // Prepare makes HAQServer, its folders and its tasks, without WSL: the first part of the server's install,

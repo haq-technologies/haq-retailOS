@@ -60,42 +60,58 @@ Keep `release-private.pem` there, with a copy in a safe place. Commit only `rele
 
 ## Making a release
 
-Versions are YEAR.MONTH.N, such as 2026.11.3. A release is one commit: its git tag, its manifest and its images all name that commit.
+Versions are YEAR.MONTH.N, such as 2026.11.3. A release is one commit: its git tag, its manifest, its images and its Windows setup all name that commit. Every release carries both ways to install a shop: the images for the mini-PC, and the Windows setup with its haq-server distribution (D86, D99).
 
-1. Merge to main and wait for CI to finish on main: it pushes that commit's images to GHCR.
-2. Write the manifest. It names the commit, pins that commit's three images by digest, and records the hash of that commit's Compose file:
+1. Merge to main and wait for CI to finish on main: it pushes that commit's images to GHCR, and keeps the haq-server distribution it built and checked from that commit.
+2. Build the release's Windows setup from that commit, with the release's version, so it installs that release's images. Then download it:
 
    ```
-   tools/release/make-manifest.sh --version 2026.11.3
+   gh workflow run windows-release.yml -f version=2026.11.3 -f commit=<the commit, in full>
+   gh run list --workflow windows-release.yml --limit 1
+   gh run download <that run> --name haq-retail-os-windows-2026.11.3 --dir release/2026.11.3/windows
    ```
 
-   With no `--commit` it takes main as GitHub has it now, and prints the commit. This computer must be signed in to GHCR (`docker login ghcr.io`, with a token that has read:packages). The folder `release/2026.11.3/` holds `manifest.json` and `compose.yaml`; it is never committed.
-3. Sign it on the offline computer:
+   It takes the distribution CI built from the commit, never one built again. The folder holds `HAQ-Retail-OS-Setup-2026.11.3.exe` and `haq-server.tar.gz`.
+3. Write the manifest. It names the commit, pins that commit's three images by digest, and records the hash of that commit's Compose file and of the two Windows files:
+
+   ```
+   tools/release/make-manifest.sh --version 2026.11.3 --commit <the commit> --windows release/2026.11.3/windows
+   ```
+
+   With no `--commit` it takes main as GitHub has it now, and prints the commit; it must be the commit the Windows setup was built from. This computer must be signed in to GHCR (`docker login ghcr.io`, with a token that has read:packages). The folder `release/2026.11.3/` holds `manifest.json`, `compose.yaml` and the two Windows files; it is never committed.
+4. Sign it on the offline computer:
 
    ```
    tools/release/sign.sh release/2026.11.3/manifest.json /path/to/release-private.pem
    ```
 
-4. Publish the three files as a pre-release, on the manifest's commit. The manifest tool prints this line with the commit filled in:
+5. Publish the five files as a pre-release, on the manifest's commit. The manifest tool prints this line with the commit filled in:
 
    ```
-   gh release create 2026.11.3 release/2026.11.3/manifest.json release/2026.11.3/manifest.json.sig release/2026.11.3/compose.yaml --title 2026.11.3 --target <commit> --prerelease
+   gh release create 2026.11.3 release/2026.11.3/manifest.json release/2026.11.3/manifest.json.sig release/2026.11.3/compose.yaml release/2026.11.3/HAQ-Retail-OS-Setup-2026.11.3.exe release/2026.11.3/haq-server.tar.gz --title 2026.11.3 --target <commit> --prerelease
    ```
 
-   Publishing starts the Release workflow (D70). It checks the release with the updater's own checks against the release public key on main, checks that the tag is on the commit the manifest names, then gives the three images the version as their tag on GHCR, pointing at the manifest's digests. A version's tag is never moved. Check it is green:
+   Publishing starts the Release workflow (D70). It checks the release with the updater's own checks against the release public key on main, checks that the tag is on the commit the manifest names, then gives the three images the version as their tag on GHCR, pointing at the manifest's digests, and checks the Windows setup and distribution against the SHA-256 the manifest signs for each (D99). A version's tag is never moved. Check it is green:
 
    ```
    gh run list --workflow Release --limit 1
    ```
 
-5. Update the beta shop, or name the release at any shop: `sudo haq update --version 2026.11.3`. A shop on the beta channel takes it with a plain `sudo haq update`.
-6. When it has traded with no fault, mark it as the latest. From then a plain update on a stable shop takes it:
+6. Update the beta shop, or name the release at any shop: `sudo haq update --version 2026.11.3`. A shop on the beta channel takes it with a plain `sudo haq update`.
+7. When it has traded with no fault, mark it as the latest. From then a plain update on a stable shop takes it:
 
    ```
    gh release edit 2026.11.3 --prerelease=false --latest
    ```
 
-For the very first shop there is no other shop to protect, so steps 4 and 6 can be one: publish without `--prerelease`.
+For the very first shop there is no other shop to protect, so steps 5 and 7 can be one: publish without `--prerelease`. Either way, the release that goes live is marked as the latest: until then GitHub's latest is 2026.11.2, which must not go live (D76), and its notes say so.
+
+Before taking a release's Windows setup to a shop, check it against the signed manifest on a computer with the repository (the Release workflow has checked it too):
+
+```
+gh release download 2026.11.3 --dir release/2026.11.3
+tools/release/check-windows.sh --release release/2026.11.3
+```
 
 ## A fix for a release already out
 
@@ -150,4 +166,4 @@ The updater and the other tools in the install folder come from the release the 
 
 ## Rehearsed
 
-On 6 November 2026, on staging with a throwaway key: a signed release installed after a full backup, and a release whose health check was made to fail rolled back to the previous one with the server still answering. `tools/release/dry-run.sh` runs in CI on every pull request: a signed release checks out, and a changed manifest, a changed Compose file, another key's signature and an older release are refused. Since 15 November 2026 it also checks that a release's tag must be on its manifest's commit, that a shop too far behind is sent to the release in between, and that a pinned shop stays where it is (D81). The same day, the updater's checks were run against the published releases 2026.11.1 and 2026.11.2 by name, by the stable channel and by the beta channel, changing nothing.
+On 6 November 2026, on staging with a throwaway key: a signed release installed after a full backup, and a release whose health check was made to fail rolled back to the previous one with the server still answering. `tools/release/dry-run.sh` runs in CI on every pull request: a signed release checks out, and a changed manifest, a changed Compose file, another key's signature and an older release are refused. Since 15 November 2026 it also checks that a release's tag must be on its manifest's commit, that a shop too far behind is sent to the release in between, and that a pinned shop stays where it is (D81). Since 19 November 2026 it also checks that a new shop's first install refuses what the updater refuses and installs nothing while it checks, and that a release's Windows setup and distribution must be the files its manifest signs (D99). The same day, the updater's checks were run against the published releases 2026.11.1 and 2026.11.2 by name, by the stable channel and by the beta channel, changing nothing.

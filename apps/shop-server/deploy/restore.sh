@@ -5,10 +5,13 @@
 # docs/operations/restore-drill.md walks through it.
 #
 #   sudo deploy/restore.sh [--dir /opt/haq-retail-os] [--project haq-retail-os] [--from-drive /dev/sdb1]
+#   haq-helper server restore --from-windows-drive E: A      on a Windows server, in Terminal (Admin)
 #
 # With --from-drive, the backups come first from an off-site flash drive (the server and its backup disk
 # were lost): it asks for two of the three key shares and unpacks the newest copy onto this machine's
 # backup disk, with the branch key and the epochs (D53). Then the restore runs as from the backup disk.
+# --from-windows-drive does the same on a Windows server, from the drive's letter and which drive it is,
+# A or B (`haq-helper drives` shows both); the HAQ Helper asks the two shares and sends them (D101).
 #
 # 1. Stops everything, then pgBackRest restores the latest backup and replays every archived WAL segment.
 # 2. Starts PostgreSQL and waits for recovery to finish.
@@ -23,11 +26,15 @@ set -euo pipefail
 dir=/opt/haq-retail-os
 project=haq-retail-os
 from_drive=
+windows_drive=()
 while [ $# -gt 0 ]; do
     case "$1" in
         --dir) dir="$2"; shift 2 ;;
         --project) project="$2"; shift 2 ;;
         --from-drive) from_drive="$2"; shift 2 ;;
+        --from-windows-drive)
+            [ $# -ge 3 ] || { echo "Give the drive's letter and which drive it is: --from-windows-drive E: A" >&2; exit 2; }
+            windows_drive=("$2" "$3"); shift 3 ;;
         *) echo "Unknown option $1" >&2; exit 2 ;;
     esac
 done
@@ -41,8 +48,11 @@ compose stop
 if [ -n "$from_drive" ]; then
     echo "   First, the backups from the off-site drive $from_drive (two key shares needed)"
     HAQ_DIR="$dir" HAQ_PROJECT="$project" "$(dirname "$0")/offsite.sh" unpack "$from_drive"
+elif [ "${#windows_drive[@]}" = 2 ]; then
+    echo "   First, the backups from the off-site drive ${windows_drive[0]} (HAQ-OFFSITE-${windows_drive[1]}; two key shares needed)"
+    HAQ_DIR="$dir" HAQ_PROJECT="$project" "$(dirname "$0")/offsite.sh" unpack-windows "${windows_drive[0]}" "${windows_drive[1]}"
 fi
-compose --profile restore run --rm --no-deps restore
+compose --profile restore run --rm --no-deps -T restore
 
 echo "2. Starting PostgreSQL and waiting for recovery"
 compose up -d db
@@ -51,11 +61,15 @@ until [ "$(compose exec -T db psql -h /var/run/postgresql -U postgres -d postgre
 
 echo "3. Giving the database roles this machine's secrets"
 compose exec -T db sh -c 'echo "ALTER ROLE postgres PASSWORD :'"'"'pw'"'"';" | psql -q -v ON_ERROR_STOP=1 -h /var/run/postgresql -U postgres -d postgres -v pw="$(cat /run/secrets/postgres_password)"'
-compose run --rm roles
+compose run --rm -T roles
 
 echo "4. The shop's keys and the new epochs, before any counter can sell"
 # The app key opens the counters' device cookies: with the shop's own, every counter stays enrolled (D69).
 backup_dir="$(grep '^BACKUP_DIR=' "$dir/.env" | cut -d= -f2- || true)"
+# With no backup disk of its own (a Windows server, D97), the backups are in Compose's volume (D101).
+if [ -z "$backup_dir" ]; then
+    backup_dir="$(docker volume inspect -f '{{ .Mountpoint }}' "${project}_backup-repo" 2>/dev/null || true)"
+fi
 kept="$backup_dir/status/keys/app.key"
 if [ -n "$backup_dir" ] && [ -s "$kept" ]; then
     key="$(cat "$kept")"
@@ -73,7 +87,7 @@ fi
 compose up -d --wait scheduler
 compose exec -T scheduler php artisan shop:after-restore --reason=restore
 # The certificate from the shop's authority, if the restore brought it back in place of this machine's own.
-compose run --rm --no-deps certificate
+compose run --rm --no-deps -T certificate
 
 echo "5. Starting the rest and checking"
 compose up -d --wait

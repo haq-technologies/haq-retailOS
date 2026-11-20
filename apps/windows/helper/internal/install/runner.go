@@ -21,9 +21,11 @@ import (
 // scheduled task that runs it as HAQServer, then follows its output, as the spike proved
 // (apps/windows/spike). Only administrators can write the queue; HAQServer writes only the output.
 
-// job is one command for the runner.
+// job is one command for the runner, and what it reads on standard input: a PIN, sent so that it never
+// stands in a command line (D99).
 type job struct {
-	Argv []string `json:"argv"`
+	Argv  []string `json:"argv"`
+	Stdin string   `json:"stdin,omitempty"`
 }
 
 // starter starts the runner's task, and says whether it is running and, if it is not, why.
@@ -45,7 +47,12 @@ func donePath(dir string) string   { return filepath.Join(dir, "out", "done") }
 // asServer runs argv as HAQServer through the runner, copying its output to out as it comes, and returns
 // its exit code.
 func asServer(ctx context.Context, dir string, s starter, out io.Writer, argv ...string) (int, error) {
-	raw, err := json.Marshal(job{Argv: argv})
+	return asServerWithInput(ctx, dir, s, out, "", argv...)
+}
+
+// asServerWithInput is asServer with input given to the command on its standard input.
+func asServerWithInput(ctx context.Context, dir string, s starter, out io.Writer, input string, argv ...string) (int, error) {
+	raw, err := json.Marshal(job{Argv: argv, Stdin: input})
 	if err != nil {
 		return -1, err
 	}
@@ -61,7 +68,7 @@ func asServer(ctx context.Context, dir string, s starter, out io.Writer, argv ..
 	if err := config.WriteFile(queuePath(dir), raw); err != nil {
 		return -1, err
 	}
-	// The command may hold a PIN (`server add-user`), so it is kept only while it runs.
+	// The command's input may hold a PIN (`server add-user`), so the queue is kept only while it runs.
 	defer os.Remove(queuePath(dir))
 	began := time.Now()
 	if err := s.Start(ctx); err != nil {
@@ -145,6 +152,9 @@ func runQueued(dir string) int {
 	}
 	cmd := exec.Command(j.Argv[0], j.Argv[1:]...)
 	cmd.Stdout, cmd.Stderr = out, out
+	if j.Stdin != "" {
+		cmd.Stdin = strings.NewReader(j.Stdin)
+	}
 	// WSL writes its own messages as UTF-8 rather than UTF-16.
 	cmd.Env = append(os.Environ(), "WSL_UTF8=1")
 	if err := cmd.Run(); err != nil {

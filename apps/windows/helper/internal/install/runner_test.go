@@ -46,10 +46,20 @@ func TestACommandRunsThroughTheQueueWithItsOutputAndCode(t *testing.T) {
 	}
 }
 
+func TestACommandReadsItsInputAndNotItsArguments(t *testing.T) {
+	dir := t.TempDir()
+	var out bytes.Buffer
+	// `server add-user` sends the PIN it asked for on standard input (D99).
+	code, err := asServerWithInput(context.Background(), dir, taskNow{dir}, &out, "1357\n", "/bin/sh", "-c", `read pin; echo "read $pin"`)
+	if err != nil || code != 0 || out.String() != "read 1357\n" {
+		t.Fatalf("code %d, %v, output %q", code, err, out.String())
+	}
+}
+
 func TestTheQueueIsGoneOnceTheCommandEnds(t *testing.T) {
 	dir := t.TempDir()
-	// `server add-user` passes the PIN it asked for in the command (D91).
-	if _, err := asServer(context.Background(), dir, taskNow{dir}, &bytes.Buffer{}, "/bin/echo", "--pin=1357"); err != nil {
+	// The queue holds a command's input, which may be a PIN, only while it runs.
+	if _, err := asServerWithInput(context.Background(), dir, taskNow{dir}, &bytes.Buffer{}, "1357\n", "/bin/cat"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(queuePath(dir)); !errors.Is(err, os.ErrNotExist) {

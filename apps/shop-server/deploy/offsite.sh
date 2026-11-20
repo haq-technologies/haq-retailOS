@@ -18,6 +18,14 @@ project="${HAQ_PROJECT:-haq-retail-os}"
 [ -f "$dir/compose.yaml" ] || { echo "There is no stack in $dir." >&2; exit 2; }
 compose() { docker compose --project-name "$project" --project-directory "$dir" -f "$dir/compose.yaml" --env-file "$dir/.env" "$@"; }
 
+# One drive at a time (D101): plugging a drive in to restore from it starts the HAQ Helper's copy onto it too,
+# and the copy must never unmount the drive under the unpack. An unpack waits for a copy to end; a copy
+# while an unpack runs is skipped.
+lock_drives() {
+    exec 9>/run/haq-offsite.lock
+    flock "$@" 9
+}
+
 # The drive's label, A or B, and where it is mounted while the copy runs. The copy runs as root, so it reads
 # the backup disk's branch key (the app's own) as well as the backups (PostgreSQL's), and an unpack puts
 # every file back with its owner.
@@ -79,8 +87,11 @@ copy_to_drive() {
 
 unpack_drive() {
     trap unmount_drive EXIT
-    # Asks for two of the three shares on this terminal.
-    compose run --rm --no-deps --user root -v "$mnt:/offsite" --entrypoint haq-offsite.sh backup unpack /offsite
+    # Asks for two of the three shares: on this terminal, or on standard input when the HAQ Helper sends them
+    # from Windows, whose runner has no terminal (D101).
+    tty=()
+    [ -t 0 ] || tty=(-T)
+    compose run --rm --no-deps "${tty[@]}" --user root -v "$mnt:/offsite" --entrypoint haq-offsite.sh backup unpack /offsite
 }
 
 case "${1:-}" in
@@ -88,18 +99,22 @@ case "${1:-}" in
         compose run --rm --no-deps -T --user root --entrypoint haq-offsite.sh backup key "${2:-}"
         ;;
     copy)
+        lock_drives -n || { echo "A restore is reading an off-site drive, so this copy is skipped." >&2; exit 75; }
         mount_drive "${2:?Give the drive, such as /dev/sdb1}"
         copy_to_drive
         ;;
     copy-windows)
+        lock_drives -n || { echo "A restore is reading an off-site drive, so this copy is skipped." >&2; exit 75; }
         mount_windows_drive "${2:?Give the drive letter, such as E:}" "${3:?Give A or B}"
         copy_to_drive
         ;;
     unpack)
+        lock_drives
         mount_drive "${2:?Give the drive, such as /dev/sdb1}"
         unpack_drive
         ;;
     unpack-windows)
+        lock_drives
         mount_windows_drive "${2:?Give the drive letter, such as E:}" "${3:?Give A or B}"
         unpack_drive
         ;;

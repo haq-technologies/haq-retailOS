@@ -29,6 +29,11 @@ updates:
     groups:
       javascript:
         update-types: [minor, patch]
+    ignore:
+      # TypeScript 7 waits for typescript-eslint to accept it: typescript-eslint 8.72 asks for a TypeScript below 7,
+      # so npm will not install the two together (audit finding AU8, 19 November 2026). Remove this once it does.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: docker
     directory: /apps/shop-server/docker

@@ -4,6 +4,8 @@ Gate G3 closes Phase 3 (PLAN.md). It runs in software only (D60): two virtual ma
 
 The scripted sales are real rows that can never be deleted, so the rehearsal is wiped afterwards and never used for a shop.
 
+Every release carries both ways to install a shop (D86, D89), so G3 passes on a release only when both pass: the mini-PC way below, on virtual machines, and [the Windows way](#the-windows-way), on the product owner's own Windows PC, never a virtual machine (D90).
+
 ## Before the day
 
 - Two Ubuntu Server 24.04 LTS virtual machines, each with a second disk for backups: the server and the spare. Set each up as in [Rehearse on a Windows PC](install-a-shop.md#rehearse-on-a-windows-pc); Lima on this computer works too. With Lima, make each backup disk with `limactl disk create <name> --size 5GiB --format raw`. Lima can wipe that disk when the machine starts after a hard power-off (its own start-up script, not the shop's), so check the backups after step 4.
@@ -54,7 +56,34 @@ Follow [restore-drill.md](restore-drill.md) on the spare, with the server's back
 - [ ] Service is back within 1 hour; the new epoch is higher; every audit chain verifies; the last receipt is in the copy or re-entered on Lost sales.
 - [ ] Each counter reconnects to the spare with no new code and no certificate warning: the restore brought back the shop's app key and certificate authority (D69).
 
+## The Windows way
+
+On the product owner's own Windows PC, with the release's setup checked against its manifest first (`tools/release/check-windows.sh`, [releases.md](releases.md)). The second counter is another PC with the setup, or a second Chrome profile on the same PC registered as T02 from its setup page.
+
+### W1. Install with the setup, timed (check E2)
+
+Start the clock. Follow [The Windows way](install-a-shop.md#the-windows-way-one-setup-program) in install-a-shop.md, with two counters and a drawer on T01, and the receipt printer the PC has, or none yet.
+
+- [ ] `haq-helper server check`, in **Terminal (Admin)**, ends with **Every check passed**.
+- [ ] From starting the setup to the first sale, with both counters registered, takes under 2 hours.
+- [ ] Windows' **Settings**, **Windows Update**, shows the active hours as 6:00 to 23:00 (D98).
+- [ ] `haq-helper server add-user "Test Cashier" cashier` asks the PIN twice, and the new name tile signs in with it (D99).
+
+### W2. The counters by hand, and 300 scripted sales
+
+- [ ] As in steps 2 and 3, with `haq-helper server artisan` in place of the `docker compose ... exec app php artisan` line: `haq-helper server artisan shop:rehearse --count=300 --pace=2 --confirm`, then `haq-helper server artisan shop:rehearsal-check`.
+- [ ] While the sales run, Task Manager's **Memory** for **VmmemWSL** (or **vmmem**) is written down against the PC's memory: the server's memory measured (PLAN.md, the Windows setup).
+
+### W3. A restart, and the off-site drive
+
+- [ ] Start `shop:rehearse` again and restart Windows while it runs (**Start**, **Power**, **Restart**). The server is ready before anyone signs in; each counter shows Reconnecting and is selling again within 3 minutes, with its open sale kept; `shop:rehearsal-check` passes. A real power cut, holding the power button, is optional, at the product owner's choice (D90).
+- [ ] Plug HAQ-OFFSITE-A into the PC: **Server health** shows its new copy.
+
+### W4. Restore from the off-site drive (check E1, D101)
+
+- [ ] With drive A's copy made in W3, delete the rehearsal shop (`haq-helper setup remove --delete-shop-and-sales`), run the setup again as **This PC runs the shop** with the same details, and follow [Restoring a Windows server from a flash drive](restore-drill.md#restoring-a-windows-server-from-a-flash-drive). The restore asks two shares through `haq-helper`; afterwards each counter sells with no new code and no certificate warning, and `haq-helper server artisan shop:rehearsal-check` passes.
+
 ## 6. After
 
 - Write the results and the times in PLAN.md (the Phase 3 checklist) and against checks E1 and E2 in acceptance-checks.md.
-- Wipe the rehearsal: delete both virtual machines, and remove the rehearsal's certificate from each counter PC ([install-a-shop.md](install-a-shop.md#rehearse-on-a-windows-pc)).
+- Wipe the rehearsal: delete both virtual machines, and remove the rehearsal's certificate from each counter PC ([install-a-shop.md](install-a-shop.md#rehearse-on-a-windows-pc)). On the Windows PC, `haq-helper setup remove --delete-shop-and-sales` in **Terminal (Admin)** deletes the rehearsal's shop and sales for good.

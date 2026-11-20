@@ -1,0 +1,101 @@
+name: Windows release build
+
+# The Windows setup a release carries (D86, D99), built for one version from one commit: that commit's HAQ
+# Helper, and the haq-server distribution CI built and checked from the same commit, so the setup installs
+# that release's images by its version. Run it before the release's manifest is made, then give its two files
+# to make-manifest.sh --windows, which names each with its SHA-256 in the manifest that is signed
+# (docs/operations/releases.md):
+#
+#   gh workflow run windows-release.yml -f version=2026.12.1 -f commit=<the release's commit, in full>
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The release, such as 2026.12.1
+        required: true
+      commit:
+        description: The commit the release is made from, in full (main's, or a release branch's)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    name: the release's Windows setup
+    runs-on: windows-2025
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    env:
+      VERSION: ${{ inputs.version }}
+      COMMIT: ${{ inputs.commit }}
+    steps:
+      - name: Check the version and the commit
+        shell: pwsh
+        run: |
+          if ($env:VERSION -notmatch '^[0-9]{4}\.[0-9]{1,2}\.[0-9]+$') { throw "Not a release version: $env:VERSION" }
+          if ($env:COMMIT -notmatch '^[0-9a-f]{40}$') { throw "Give the commit in full, 40 characters: $env:COMMIT" }
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.commit }}
+          persist-credentials: false
+
+      # The distribution CI built and checked from this commit when it reached main or a release branch, kept
+      # 90 days; never one built again, which would not be the one CI checked.
+      - name: The distribution CI built from this commit
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $run = gh run list --repo $env:GITHUB_REPOSITORY --workflow ci.yml --commit $env:COMMIT --event push --status success --limit 1 --json databaseId --jq '.[0].databaseId'
+          if (-not $run) { throw "No CI run of $env:COMMIT on main or a release branch passed: wait for it, or check the commit" }
+          $dir = Join-Path $env:RUNNER_TEMP 'distro'
+          gh run download $run --repo $env:GITHUB_REPOSITORY --name haq-server-distro --dir $dir
+          if ($LASTEXITCODE) { throw "CI run $run keeps no distribution any more (90 days): make the release from a newer commit" }
+          $want = ((Get-Content (Join-Path $dir 'haq-server.tar.gz.sha256') -Raw).Trim() -split '\s+')[0].ToLower()
+          $got = (Get-FileHash (Join-Path $dir 'haq-server.tar.gz') -Algorithm SHA256).Hash.ToLower()
+          if ($got -ne $want) { throw "The distribution is not the one CI built: $got, not $want" }
+          Write-Host "The distribution from CI run $run, SHA-256 $got"
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: apps/windows/helper/go.mod
+          cache: false
+
+      - name: Inno Setup 6.7.4, checked against its SHA-256
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'innosetup-6.7.4.exe'
+          Invoke-WebRequest https://github.com/jrsoftware/issrc/releases/download/is-6_7_4/innosetup-6.7.4.exe -OutFile $installer
+          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
+          if ($hash -ne 'a549929319f9120716677c685535ca4671e4b937b5fdc87e2585f32d8eb30e8c') { throw "Inno Setup's download is not the one pinned: $hash" }
+          $dir = Join-Path $env:RUNNER_TEMP 'inno'
+          Start-Process $installer -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=$dir" -Wait
+          if (-not (Test-Path "$dir\ISCC.exe")) { throw 'Inno Setup did not install' }
+          "INNO=$dir" >> $env:GITHUB_ENV
+
+      - name: Build the release's setup
+        shell: pwsh
+        run: |
+          $helper = Join-Path $env:RUNNER_TEMP 'haq-helper.exe'
+          go build -C apps/windows/helper -trimpath -ldflags "-s -w -X main.version=$env:VERSION" -o $helper ./cmd/haq-helper
+          if ($LASTEXITCODE) { throw 'the helper did not build' }
+          $out = Join-Path $env:RUNNER_TEMP 'release'
+          & "$env:INNO\ISCC.exe" /Qp "/DAppVersion=$env:VERSION" "/DNumericVersion=$env:VERSION.0" "/DTag=$env:VERSION" "/DHelper=$helper" `
+            "/DDistro=$env:RUNNER_TEMP\distro\haq-server.tar.gz" "/O$out" apps\windows\setup\haq-setup.iss
+          if ($LASTEXITCODE) { throw 'ISCC failed' }
+          Copy-Item "$env:RUNNER_TEMP\distro\haq-server.tar.gz" $out
+          if (-not (Test-Path "$out\HAQ-Retail-OS-Setup-$env:VERSION.exe")) { throw 'the setup is not named for the release' }
+          Get-ChildItem $out | ForEach-Object { '{0}  {1}  {2} MB' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name, [math]::Round($_.Length / 1MB) } | Write-Host
+
+      - name: Keep them for the release
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: haq-retail-os-windows-${{ inputs.version }}
+          path: ${{ runner.temp }}/release/*
+          retention-days: 30
+          compression-level: 0
+          if-no-files-found: error

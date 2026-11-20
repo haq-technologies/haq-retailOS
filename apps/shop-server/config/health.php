@@ -27,6 +27,16 @@ return [
     // Warn when no test restore has verified for this long (it runs weekly).
     'restore_warn_days' => 9,
 
+    // Whether the backups have a disk of their own (install.sh --backup-dir), or share the database's: a
+    // Windows server, or a mini-PC with no second disk. Sharing, a flash drive is the only copy away from
+    // that disk, so the off-site copy is warned about after a day, not a week (D97).
+    'backup_own_disk' => (bool) env('BACKUP_OWN_DISK', false),
+
+    // Warn when no flash drive has had an off-site copy for this long: the drives are swapped weekly, or,
+    // when the backups share the database's disk, copied each day (D53, D97).
+    'offsite_warn_days' => 8,
+    'offsite_shared_warn_hours' => 24,
+
     // Warn when a disk has less free than this share or this many bytes.
     'disk_warn_percent' => 10,
     'disk_warn_bytes' => 5 * 1024 ** 3,
