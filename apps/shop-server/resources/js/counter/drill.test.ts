@@ -78,17 +78,19 @@ describe('the tiles', () => {
         const cat = cables();
         const first = drill(cat, { categoryId: 'c-cables', choices: [] }, 'retail');
         expect(first.prompt).toBe('Choose connector pair');
-        expect(first.tiles.map((t) => t.label)).toEqual(['Type-C to Lightning', 'Type-C to Type-C']);
+        expect(first.tiles.map((t) => t.label)).toEqual(['Type-C to Lightning', 'Type-C to Type-C', 'New cable']);
 
         const second = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2l' }] }, 'retail');
         expect(second.prompt).toBe('Choose length');
-        expect(second.tiles.map((t) => t.label)).toEqual(['1m', '2m', 'Skip length']);
+        expect(second.tiles.map((t) => t.label)).toEqual(['1m', '2m', 'Skip length', 'New cable']);
+        // Every step ends with New, filled in with the choices so far (D102).
+        expect(second.tiles.at(-1)).toEqual({ kind: 'new', id: 'new-item', label: 'New cable', hint: 'Not here? Make it', categoryId: 'c-cables', brandId: null, facets: { connector_pair: 'p-c2l' } });
         expect(second.crumbs).toEqual(['Cables', 'Type-C to Lightning']);
 
         const third = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2l' }, { key: 'length', value: 'p-1m' }] }, 'retail');
         expect(third.prompt).toBe('Choose brand');
         // Skip brand first, then the cables' own brands A to Z: Oraimo is shown first there, Anker has an item (D94).
-        expect(third.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo']);
+        expect(third.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo', 'New cable']);
         expect(third.tiles[0]).toEqual({ kind: 'skip', key: 'brand', label: 'Skip brand', hint: 'Shows every brand' });
         // Each brand leaves one item, but its tile only moves the tiles on, with no price: the item is added from its own tile (D102).
         expect(tile(third.tiles, 'Oraimo')).toEqual({ kind: 'value', key: 'brand', value: 'b-oraimo', label: 'Oraimo' });
@@ -111,7 +113,7 @@ describe('the tiles', () => {
         const choices = [{ key: 'connector_pair', value: 'p-c2l' }, { key: 'length', value: null }];
         const view = drill(cables(), { categoryId: 'c-cables', choices }, 'retail');
         expect(view.prompt).toBe('Choose brand');
-        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo']);
+        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo', 'New cable']);
         expect(view.crumbs.at(-1)).toBe('No length');
         const oraimo = drill(cables(), { categoryId: 'c-cables', choices: [...choices, { key: 'brand', value: 'b-oraimo' }] }, 'retail');
         expect(oraimo.tiles.map((t) => t.label)).toEqual(['Oraimo Type-C to Lightning Cable', 'New Oraimo cable']);
@@ -156,7 +158,7 @@ describe('the brand step with generated shapes (D54)', () => {
         const view = drill(powerBanks(), { categoryId: 'c-pb', choices: [] }, 'retail');
         expect(view.prompt).toBe('Choose brand');
         // No brand is the power banks' own here, so the whole listed list shows; a typed brand waits (D94).
-        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Oraimo']);
+        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Oraimo', 'New power bank']);
     });
 
     it('makes a shape chosen after a brand that brand\'s item, named with it', () => {
@@ -180,7 +182,8 @@ describe('the brand step with generated shapes (D54)', () => {
         const oraimo = [{ key: 'brand', value: 'b-oraimo' }];
         const view = drill(cat, { categoryId: 'c-pb', choices: oraimo }, 'retail');
         expect(view.prompt).toBe('Choose capacity');
-        expect(view.tiles.map((t) => t.label)).toEqual(['10000mAh', '20000mAh']);
+        expect(view.tiles.map((t) => t.label)).toEqual(['10000mAh', '20000mAh', 'New Oraimo power bank']);
+        expect(view.tiles.at(-1)).toMatchObject({ kind: 'new', brandId: 'b-oraimo', facets: {} });
         const sold = drill(cat, { categoryId: 'c-pb', choices: [...oraimo, { key: 'capacity', value: 'p-20k' }] }, 'retail');
         expect(sold.tiles.map((t) => (t.kind === 'item' ? t.id : t.kind))).toEqual(['i-o20', 'new']);
         const other = drill(cat, { categoryId: 'c-pb', choices: [...oraimo, { key: 'capacity', value: 'p-10k' }] }, 'retail');
@@ -198,7 +201,7 @@ describe('a shape waits for its brand (D79)', () => {
         const c2c = [{ key: 'connector_pair', value: 'p-c2c' }];
         const brand = drill(cat, { categoryId: 'c-cables', choices: c2c }, 'retail');
         expect(brand.prompt).toBe('Choose brand');
-        expect(brand.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo']);
+        expect(brand.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo', 'New cable']);
         // Each answer then lists the one shape, with the brand or with none, and New after it (D102).
         const oraimo = drill(cat, { categoryId: 'c-cables', choices: [...c2c, { key: 'brand', value: 'b-oraimo' }] }, 'retail');
         expect(oraimo.tiles.map((t) => (t.kind === 'item' ? t.id : t.label))).toEqual(['shape:c-cables:c2c-2m|brand=b-oraimo', 'New Oraimo cable']);
@@ -214,7 +217,7 @@ describe('a shape waits for its brand (D79)', () => {
 
         const first = drill(cat, { categoryId: 'c-cables', choices: [] }, 'retail');
         expect(first.prompt).toBe('Choose brand');
-        expect(first.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo']);
+        expect(first.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo', 'New cable']);
 
         const oraimo = [{ key: 'brand', value: 'b-oraimo' }];
         expect(drill(cat, { categoryId: 'c-cables', choices: oraimo }, 'retail').prompt).toBe('Choose connector pair');
@@ -236,7 +239,7 @@ describe('a shape waits for its brand (D79)', () => {
 
         const none = [{ key: 'brand', value: null }, { key: 'connector_pair', value: 'p-c2l' }];
         const lengths = drill(cat, { categoryId: 'c-cables', choices: none }, 'retail');
-        expect(lengths.tiles.map((t) => t.label)).toEqual(['1m', '2m', 'Skip length']);
+        expect(lengths.tiles.map((t) => t.label)).toEqual(['1m', '2m', 'Skip length', 'New cable']);
         const oneMetre = drill(cat, { categoryId: 'c-cables', choices: [...none, { key: 'length', value: 'p-1m' }] }, 'retail');
         expect(oneMetre.prompt).toBe('Choose the item');
         expect(oneMetre.tiles.map((t) => t.label)).toEqual(['Anker Type-C to Lightning Cable 1m', 'Oraimo Type-C to Lightning Cable 1m', 'New cable']);
@@ -261,7 +264,7 @@ describe('a shape waits for its brand (D79)', () => {
         cat.noBrandId = 'b-none';
 
         const brand = drill(cat, { categoryId: 'c-cables', choices: [{ key: 'connector_pair', value: 'p-c2c' }] }, 'retail');
-        expect(brand.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo']);
+        expect(brand.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Anker', 'Oraimo', 'New cable']);
         // Skip brand lists the item already made, once, not the shape beside it.
         const c2c = [{ key: 'connector_pair', value: 'p-c2c' }];
         const none = drill(cat, { categoryId: 'c-cables', choices: [...c2c, { key: 'brand', value: null }] }, 'retail');
@@ -323,11 +326,13 @@ describe('the brand step in every category with a brand (D94)', () => {
         const cat = earbuds();
         const first = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
         expect(first.prompt).toBe('Choose brand');
-        expect(first.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'More brands']);
-        expect(first.tiles.at(-1)).toMatchObject({ kind: 'more', hint: '1 more in the brand list' });
+        expect(first.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'More brands', 'New earbuds']);
+        expect(first.tiles.at(-2)).toMatchObject({ kind: 'more', hint: '1 more in the brand list' });
+        // New at the brand step opens New item with the category and no brand chosen (D102).
+        expect(first.tiles.at(-1)).toMatchObject({ kind: 'new', categoryId: 'c-ear', brandId: null, facets: {} });
 
         const all = drill(cat, { categoryId: 'c-ear', choices: [], allBrands: true }, 'retail');
-        expect(all.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'JBL']);
+        expect(all.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'JBL', 'New earbuds']);
     });
 
     it('ends a brand with nothing sold yet at New, which opens New item with the brand', () => {
@@ -345,7 +350,7 @@ describe('the brand step in every category with a brand (D94)', () => {
             item_facets: [{ id: 'f-zeta', item_id: 'i-zeta', facet_key: 'model', picklist_value_id: null, text_value: 'Zeta Pods 9' }],
         });
         const view = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
-        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'Zetasound', 'More brands']);
+        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'Oraimo', 'Zetasound', 'More brands', 'New earbuds']);
         expect(tile(view.tiles, 'Zetasound')).toEqual({ kind: 'value', key: 'brand', value: 'b-zeta', label: 'Zetasound' });
         const zeta = drill(cat, { categoryId: 'c-ear', choices: [{ key: 'brand', value: 'b-zeta' }] }, 'retail');
         expect(zeta.tiles.map((t) => t.label)).toEqual(['Zetasound Zeta Pods 9 Earbuds', 'New Zetasound earbuds']);
@@ -376,7 +381,7 @@ describe('the brand step in every category with a brand (D94)', () => {
             ],
         });
         const view = drill(cat, { categoryId: 'c-ear', choices: [] }, 'retail');
-        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'JBL', 'Oraimo']);
+        expect(view.tiles.map((t) => t.label)).toEqual(['Skip brand', 'Hoco', 'JBL', 'Oraimo', 'New earbuds']);
     });
 
     it('opens the tiles at a category, or at a category\'s brand, from a search result', () => {
@@ -435,6 +440,7 @@ describe('a step never adds an item (D102)', () => {
         expect(first.tiles).toEqual([
             { kind: 'skip', key: 'brand', label: 'Skip brand', hint: 'Shows every brand' },
             { kind: 'value', key: 'brand', value: 'b-spigen', label: 'Spigen' },
+            { kind: 'new', id: 'new-item', label: 'New pouch', hint: 'Not here? Make it', categoryId: 'c-case', brandId: null, facets: {} },
         ]);
 
         const skip = drill(cat, { categoryId: 'c-case', choices: [{ key: 'brand', value: null }] }, 'retail');
@@ -443,5 +449,26 @@ describe('a step never adds an item (D102)', () => {
             { kind: 'item', id: 'i-s23', label: 'Samsung Galaxy S23+ Silicone Pouch', priceKobo: 1_000_000, shape: null },
             { kind: 'new', id: 'new-item', label: 'New pouch', hint: 'Not here? Make it', categoryId: 'c-case', brandId: null, facets: {} },
         ]);
+    });
+
+    it('offers New beside the phone models once there are two, so a third is made from there', () => {
+        const cat = pouches();
+        cat.apply({
+            picklist_values: [{ id: 'p-i13', list: 'phone_models', name: 'iPhone 13', aliases: [], parent_id: null, status: 'active', position: 2 }],
+            items: [{ id: 'i-i13', category_id: 'c-case', brand_id: 'b-none', item_code: 'A00041', display_name: 'iPhone 13 Silicone Pouch', search_text: '', status: 'pending_review' }],
+            item_facets: [
+                { id: 'f-i13a', item_id: 'i-i13', facet_key: 'phone_model', picklist_value_id: 'p-i13', text_value: null },
+                { id: 'f-i13b', item_id: 'i-i13', facet_key: 'case_type', picklist_value_id: 'p-sil', text_value: null },
+            ],
+        });
+        const first = drill(cat, { categoryId: 'c-case', choices: [] }, 'retail');
+        expect(first.prompt).toBe('Choose phone model');
+        expect(first.tiles.map((t) => t.label)).toEqual(['Samsung Galaxy S23+', 'iPhone 13', 'New pouch']);
+        expect(first.tiles.at(-1)).toMatchObject({ kind: 'new', categoryId: 'c-case', brandId: null, facets: {} });
+
+        // After a phone model, the brand step's New carries the phone model.
+        const iphone = drill(cat, { categoryId: 'c-case', choices: [{ key: 'phone_model', value: 'p-i13' }] }, 'retail');
+        expect(iphone.prompt).toBe('Choose brand');
+        expect(iphone.tiles.at(-1)).toMatchObject({ kind: 'new', label: 'New pouch', facets: { phone_model: 'p-i13' } });
     });
 });

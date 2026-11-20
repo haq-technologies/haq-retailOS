@@ -224,7 +224,8 @@ test('asks the brand for a cable and a charger head in a fresh shop, at the tile
     await expect(page.getByText('Choose connector pair')).toBeVisible();
     await page.getByRole('button', { name: /^Type-C to Type-C/ }).first().click();
     await page.getByRole('button', { name: /^2m/ }).first().click();
-    // The length leaves one cable, and the list still shows it with New, rather than adding it (D102).
+    // The length leaves one cable, and the list shows it with New, rather than adding it (D102).
+    await expect(page.getByText('Choose the item')).toBeVisible();
     await expect(page.getByRole('button', { name: /^New Oraimo cable/ })).toBeVisible();
     await page.getByRole('button', { name: /^Oraimo Type-C to Type-C Cable 2m/ }).click();
     await expect(pad).toContainText('Oraimo Type-C to Type-C Cable 2m');
@@ -638,6 +639,8 @@ test('asks the brand in a category with nothing of that brand yet, ends at New w
     await tiles.getByRole('button', { name: 'Earbuds and earpods', exact: true }).click();
     await expect(page.getByText('Choose brand')).toBeVisible();
     await expect(tiles.getByRole('button', { name: /^Skip brand/ })).toBeVisible();
+    // Every step ends with New, the brand step too (D102).
+    await expect(tiles.getByRole('button', { name: /^New earbuds/ })).toBeVisible();
     await expect(tiles.getByRole('button', { name: 'Spigen', exact: true })).toHaveCount(0);
     await tiles.getByRole('button', { name: /^More brands/ }).click();
     await expect(tiles.getByRole('button', { name: 'Spigen', exact: true })).toBeVisible();
@@ -668,6 +671,7 @@ test('asks the brand in a category with nothing of that brand yet, ends at New w
     await tiles.getByRole('button', { name: /^Skip brand/ }).click();
     await expect(page.getByText('Choose model')).toBeVisible();
     for (const model of ['Zeta Pods 9', 'SpaceBuds']) await expect(tiles.getByRole('button', { name: model, exact: true })).toBeVisible();
+    await expect(tiles.getByRole('button', { name: /^New earbuds/ })).toBeVisible();
     await tiles.getByRole('button', { name: 'EW04', exact: true }).click();
     await expect(page.getByText('Choose the item')).toBeVisible();
     await expect(tiles.getByRole('button', { name: /^Hoco EW04 Earbuds/ })).toBeVisible();

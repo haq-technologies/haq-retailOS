@@ -18,10 +18,11 @@ import type { CustomerType, FacetDefinition, Shape } from './types';
  * shop visit agreed. The item tiles end with a New tile that opens New item with the category, the brand
  * and the choices so far already filled in.
  *
- * Only an item's own tile adds it to the sale, and every list ends with New (D102): a step's tile only
- * moves the tiles on, even when it leaves one thing to sell, so the cashier sees the item and its price
- * before it is added and can always make another. Skip brand shows every brand, and none: an item made
- * with a brand in New item is found after Skip brand too, and a shape sold from there has no brand.
+ * Only an item's own tile adds it to the sale, and every step in a category ends with New, as the list
+ * does (D102): a step's tile only moves the tiles on, even when it leaves one thing to sell, so the cashier
+ * sees the item and its price before it is added and can always make another, from wherever they are.
+ * Skip brand shows every brand, and none: an item made with a brand in New item is found after Skip brand
+ * too, and a shape sold from there has no brand.
  */
 export interface DrillState {
     categoryId: string | null;
@@ -136,6 +137,25 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
     // What shows now: the pool, with each shape that is already an item under the brand so far shown once.
     const candidates = distinct(pool, facets, brand);
 
+    // The way on when the item is not here: New item, with what the tiles already know (D94). It ends every
+    // step in the category, not only the list, so a phone model or a brand not yet sold is made from
+    // there (D102).
+    const brandName = brand === null ? null : (cat.brands.get(brand)?.name ?? null);
+    const known: Record<string, string> = {};
+    for (const choice of state.choices) {
+        if (choice.value !== null && facets.find((f) => f.key === choice.key)?.type !== 'brand') known[choice.key] = choice.value;
+    }
+    const word = (node.word ?? node.name).toLowerCase();
+    const newTile: Tile = {
+        kind: 'new',
+        id: 'new-item',
+        label: `New ${brandName === null ? '' : `${brandName} `}${word}`,
+        hint: 'Not here? Make it',
+        categoryId: node.id,
+        brandId: brand,
+        facets: known,
+    };
+
     const chosen = new Set(state.choices.map((c) => c.key));
     // The brand step, while it is still to ask: in every category with a brand, so the tiles reach it even
     // with no item yet (D94). A shape waits for it: with a brand it is another item (D79).
@@ -159,7 +179,7 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
             const valueTile = (v: string, text: string): Tile => ({ kind: 'value', key, value: v, label: text });
 
             if (isBrand) {
-                return { crumbs, prompt: 'Choose brand', tiles: brandStep(cat, node.id, key, values, state.allBrands === true, valueTile) };
+                return { crumbs, prompt: 'Choose brand', tiles: [...brandStep(cat, node.id, key, values, state.allBrands === true, valueTile), newTile] };
             }
 
             // One value and no blanks, or nothing at all: there is nothing to choose at this step.
@@ -173,11 +193,10 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
             if (blanks > 0) {
                 tiles.push({ kind: 'skip', key, label: `Skip ${label.toLowerCase()}`, hint: `Prints without a ${label.toLowerCase()}` });
             }
-            return { crumbs, prompt: `Choose ${label.toLowerCase()}`, tiles };
+            return { crumbs, prompt: `Choose ${label.toLowerCase()}`, tiles: [...tiles, newTile] };
         }
     }
 
-    const brandName = brand === null ? null : (cat.brands.get(brand)?.name ?? null);
     const items: Tile[] = candidates
         .map((c) => {
             const price = c.shape === null ? cat.priceFor(c.id, type) : null;
@@ -187,21 +206,7 @@ export function drill(cat: Catalogue, state: DrillState, type: CustomerType): Dr
             return { kind: 'item' as const, id: c.id, label: c.label, priceKobo: price === null ? null : (price.setPrice ?? price.prefill), shape: c.shape };
         })
         .sort((a, b) => a.label.localeCompare(b.label));
-    // The way on when the item is not here: New item, with what the tiles already know (D94).
-    const known: Record<string, string> = {};
-    for (const choice of state.choices) {
-        if (choice.value !== null && facets.find((f) => f.key === choice.key)?.type !== 'brand') known[choice.key] = choice.value;
-    }
-    const word = (node.word ?? node.name).toLowerCase();
-    items.push({
-        kind: 'new',
-        id: 'new-item',
-        label: `New ${brandName === null ? '' : `${brandName} `}${word}`,
-        hint: 'Not here? Make it',
-        categoryId: node.id,
-        brandId: brand,
-        facets: known,
-    });
+    items.push(newTile);
     return {
         crumbs,
         prompt: items.length === 1 ? 'None yet. Make one with New.' : 'Choose the item',
