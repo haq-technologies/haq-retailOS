@@ -153,6 +153,7 @@ export class Catalogue {
      * The brands that belong to a category (D93): those the catalogue shows first there, and any brand with
      * an item in it, so a typed brand sold in earbuds is one of the earbuds' brands. "No brand" is none, and
      * a merged brand is gone. A category with none of its own offers the whole list, as the shop visit agreed.
+     * New item orders its brands by it; the tiles offer brandsAtTiles (D103).
      */
     brandsOf(categoryId: string): Set<string> {
         const code = this.categories.get(categoryId)?.code;
@@ -166,6 +167,27 @@ export class Catalogue {
         }
         if (this.noBrandId !== null) own.delete(this.noBrandId);
         return own;
+    }
+
+    /** Whether a category has generated shapes, sold under a brand chosen at the tiles (D54, D79). */
+    generates(categoryId: string): boolean {
+        return this.shapes.some((s) => s.category_id === categoryId);
+    }
+
+    /**
+     * The brands the tiles and search offer in a category (D103): those with an item there, learned as the
+     * shop sells, so a brand is added on the go in New item. A category with generated shapes also offers
+     * its own brands from the catalogue, because a generic cable gets its brand at the tiles. New item still
+     * lists every brand, the category's own first (brandsOf).
+     */
+    brandsAtTiles(categoryId: string): Set<string> {
+        if (this.generates(categoryId)) return this.brandsOf(categoryId);
+        const sold = new Set<string>();
+        for (const item of this.items.values()) {
+            if (item.category_id !== categoryId || item.brand_id === null || item.brand_id === this.noBrandId || !this.sellable(item)) continue;
+            if (this.brands.get(item.brand_id)?.status !== 'merged') sold.add(item.brand_id);
+        }
+        return sold;
     }
 
     asksColour(categoryId: string): boolean {

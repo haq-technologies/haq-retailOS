@@ -332,13 +332,11 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
     }, [undo]);
 
     const tapTile = (tile: Tile) => {
+        // A step's tile only moves the tiles on; an item is added from its own tile (D102).
         if (tile.kind === 'category') setState({ categoryId: tile.id, choices: [] });
-        else if (tile.kind === 'value' && tile.itemId !== null) void addItem(tile.itemId, { addedBy: learnCode === null ? 'tile' : 'learn', barcode: learnCode }, [...view_.crumbs, tile.label]);
-        else if (tile.kind === 'value') setState((s) => ({ ...s, choices: [...s.choices, { key: tile.key, value: tile.value }], allBrands: false }));
-        else if (tile.kind === 'skip' && tile.itemId !== null) void addItem(tile.itemId, { addedBy: learnCode === null ? 'tile' : 'learn', barcode: learnCode }, view_.crumbs);
-        else if (tile.kind === 'skip') setState((s) => ({ ...s, choices: [...s.choices, { key: tile.key, value: null }], allBrands: false }));
-        // More brands shows the whole brand list at this step; New opens New item with what the tiles know (D94).
-        else if (tile.kind === 'more') setState((s) => ({ ...s, allBrands: true }));
+        else if (tile.kind === 'value') setState((s) => ({ ...s, choices: [...s.choices, { key: tile.key, value: tile.value }] }));
+        else if (tile.kind === 'skip') setState((s) => ({ ...s, choices: [...s.choices, { key: tile.key, value: null }] }));
+        // New opens New item with what the tiles know (D94).
         else if (tile.kind === 'new') setSheet({ kind: 'new-item', start: { categoryId: tile.categoryId, brandId: tile.brandId, facets: tile.facets } });
         else if (tile.kind === 'jump') {
             setQuery('');
@@ -361,7 +359,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
 
     const back = () => {
         setState((s) => {
-            if (s.choices.length > 0) return { ...s, choices: s.choices.slice(0, -1), allBrands: false };
+            if (s.choices.length > 0) return { ...s, choices: s.choices.slice(0, -1) };
             const parent = s.categoryId === null ? null : (cat.categories.get(s.categoryId)?.parent_id ?? null);
             return { categoryId: parent, choices: [] };
         });
@@ -684,7 +682,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                                     <button
                                         key={tile.kind === 'value' ? `${tile.key}:${tile.value}` : tile.kind === 'skip' ? `skip:${tile.key}` : tile.id}
                                         type="button"
-                                        className={`flex min-h-[104px] flex-col items-start justify-between rounded-xl border-2 p-3 text-left ${tile.kind === 'skip' || tile.kind === 'more' || tile.kind === 'new' ? 'border-dashed border-border' : 'border-border'}`}
+                                        className={`flex min-h-[104px] flex-col items-start justify-between rounded-xl border-2 p-3 text-left ${tile.kind === 'skip' || tile.kind === 'new' ? 'border-dashed border-border' : 'border-border'}`}
                                         onClick={() => {
                                             if (searching && tile.kind === 'item') {
                                                 pickResult(tile);
@@ -694,9 +692,8 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                                         }}
                                     >
                                         <span className="text-lg font-semibold">{tile.label}</span>
-                                        {(tile.kind === 'skip' || tile.kind === 'more' || tile.kind === 'new' || tile.kind === 'jump') && <span className="text-text-secondary">{tile.hint}</span>}
+                                        {(tile.kind === 'skip' || tile.kind === 'new' || tile.kind === 'jump') &&<span className="text-text-secondary">{tile.hint}</span>}
                                         {tile.kind === 'item' && <span className="text-lg text-text-secondary">{tile.priceKobo === null ? 'Type the price' : naira(tile.priceKobo)}</span>}
-                                        {tile.kind === 'value' && tile.itemId !== null && tile.priceKobo !== null && <span className="text-lg text-text-secondary">{naira(tile.priceKobo)}</span>}
                                     </button>
                                 ))}
                             </div>
