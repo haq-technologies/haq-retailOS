@@ -78,7 +78,8 @@ final readonly class Printing
         } elseif ($uncertain) {
             $duplicate = ['at' => CarbonImmutable::now(), 'by' => 'the server'];
         }
-        $receipt = Receipt::forSale($sale, $terminal->name, $this->text(), $duplicate);
+        $days = $this->settings->get('payments.transfer_contact_days');
+        $receipt = Receipt::forSale($sale, $terminal->name, $this->text(), $duplicate, is_int($days) ? $days : 90);
         $openDrawer = $job->kind === 'receipt' && ! $uncertain && $this->drawerFitted($terminal)
             && in_array('cash', array_column($sale['payments'], 'method'), true);
 

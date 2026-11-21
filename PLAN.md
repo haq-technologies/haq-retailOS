@@ -51,6 +51,8 @@ The product owner signed and published release 2026.11.3 on 15 November 2026, as
 
 On 17 November 2026 the product owner asked for a simpler install: a small shop may have only one Windows desktop, a scanner and a USB receipt printer. So a shop's server may now be a Windows 10 or 11 PC, installed by one setup program that hides the server in Windows' own Linux, WSL2 (D86). USB receipt printers work through the HAQ print bridge (D87), and the Windows parts are written in Go with an Inno Setup installer (D88). The Ubuntu mini-PC install stays as it is, and every release carries both ways. Go-live waits for the Windows setup: the first shop installs with the first release that carries it, once G3 passes on it (D89). While planning it, a scanned QR code longer than 120 characters was found to refuse the whole sale (D83), and two counters making their first sales at once could each make a branch key, so one's signed epochs no longer verified (D84); both are fixed.
 
+The privacy checks of 20 November 2026 (a Claude Doc) found the code sound and nine gaps around it, against the Nigeria Data Protection Act 2023. They are fixed on the branch worktree-privacy-fixes (D108 to D114): the privacy drafts for the lawyer in docs/operations/privacy.md, a retention schedule, support visits on the owner's flag list, key-only SSH, a warning while the server's disk is not encrypted, a transfer's sender kept apart and cleared after 90 days, `sudo haq rename`, and a note on the export. The lawyer's review is now an open item before the install.
+
 Next: the Windows setup's last steps (the checklist below): main's build tried on the Windows 10 PC, the server's memory measured, the release integration and the install guide's Windows section; the shop owner's answers (Open items); then the release that carries the Windows setup, signed and rehearsed (G3), the install at the shop with it (docs/operations/install-a-shop.md), the safety week (docs/operations/safety-week.md) and G5.
 
 ## Team
@@ -232,6 +234,7 @@ The measured pilot's tools were built on 10 November 2026 (D56, D57). The measur
 - [x] Gate G4: every acceptance check written down, A1 to be measured in the safety week (product owner, 11 November 2026, D71)
 - [x] Release 2026.11.2's fixes from the readiness QA review: a counter's clock never stops a sale (D72), a sale is never both voided and returned (D73), `sudo haq users`, `pin` and `deactivate` (D74), and capped logs (D75) (Claude, 11 November 2026)
 - [x] Sign and publish release 2026.11.2 (product owner, 11 November 2026; docs/operations/releases.md)
+- [ ] The lawyer's review of the privacy drafts (docs/operations/privacy.md) and the shop contract, and the accountant's tax-record period (product owner; D108, D109)
 - [ ] Install at the shop with the first release that carries the Windows setup (D89), by the setup program or `install.sh --tag <version>`, setting each counter's date and time (product owner)
 - [ ] The safety week: the notebook kept beside the app as a backup for seven trading days (shop owner and manager)
 - [ ] Gate G5: the owner confirms the notebook can stop (shop owner, product owner)
@@ -302,6 +305,11 @@ Assumptions:
 | A code-signing certificate for the setup program, or a cloud signing service (D88) | Product owner | Before shops download the setup themselves | Unsigned: Windows asks to run it anyway, acceptable while only HAQ's team installs |
 | Trademark status of HAQ (classes 9 and 42) | Product owner, trademark agent | Before the first paid install | Proceed with the name and register |
 | Say-it-aloud test of HAQ with five shop owners | Product owner | Before launch | Proceed unless owners object |
+| Commercial and legal: the lawyer reviews docs/operations/privacy.md (the staff and customer notices, the processor terms and the breach steps) and the shop contract under the NDPA (D108) | Product owner, lawyer | Install | Drafts only: no notice goes to a shop before the review |
+| The tax-record period, which sets how long sales and the audit trail are kept, and whether e-invoicing applies to the shop (D109) | Accountant | Install | Nothing is deleted |
+| How late the shop's bank can reverse a transfer, which sets how long a sender's name and phone are kept (D112) | Shop owner, from the shop's bank | Install | 90 days (`payments.transfer_contact_days`) |
+| Encrypting the backup disk: its key cannot live on the main disk, so it is designed and rehearsed with the restore drill (D111) | Claude, product owner | G3 | Not encrypted; its state shows on the health page |
+| GitHub's private-email setting (Settings, Emails: keep my email private, and block pushes that expose it), so a merge never publishes a personal email again (D114) | Product owner | Now | Merges use `gh pr merge --author-email` with the noreply address |
 
 ## Change log
 
@@ -370,3 +378,4 @@ Assumptions:
 | 19 November 2026 | Test before merge (D96): each pull request is tried by the product owner on staging (`staging.sh --build`, `--fresh` for a new shop) and merged only on their word; main stays the only long branch |
 | 20 November 2026 | Three findings on staging fixed (D102): a step's tile no longer adds the one item it leaves, so every list shows the item with its price, and every step ends with New; Skip brand shows every brand, so an item made with a brand after Skip brand is found there too |
 | 20 November 2026 | The brands at the tiles follow the shop's own items (D103): outside the five generated categories the brand is asked only when the items left have more than one brand, and only their brands are shown; no More brands; a brand is added on the go in New item. The brands of the 11 categories with none of their own become optional |
+| 21 November 2026 | The privacy checks' nine findings fixed (D108 to D114): privacy drafts for the lawyer in docs/operations/privacy.md and the legal review as an open item; a retention schedule; every support command and SSH sign-in on the audit trail and the owner's flag list, with key-only SSH; a health warning while the server's disk is not encrypted; a transfer's sender asked at Pay, kept apart and cleared after 90 days; `sudo haq rename`; the export's safety note; merges with the noreply address |

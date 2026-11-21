@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 final class Sales
 {
     /**
-     * @return array{id: string, receipt_number: string, kind: string, reverses_receipt_number: ?string, business_day: string, recorded_at: string, customer_type: string, cashier: string, cashier_id: string, total_kobo: int, change_kobo: int, lines: list<array{client_line_id: string, item_id: string, name: string, colour: ?string, qty: int, unit_price_kobo: int, line_total_kobo: int}>, payments: list<array{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string}>, print_status: ?string, retried: bool}
+     * @return array{id: string, receipt_number: string, kind: string, reverses_receipt_number: ?string, business_day: string, recorded_at: string, customer_type: string, cashier: string, cashier_id: string, total_kobo: int, change_kobo: int, lines: list<array{client_line_id: string, item_id: string, name: string, colour: ?string, qty: int, unit_price_kobo: int, line_total_kobo: int}>, payments: list<array{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string, contact_kept: bool}>, print_status: ?string, retried: bool}
      */
     public static function summary(string $saleId): array
     {
@@ -25,8 +25,10 @@ final class Sales
         /** @var list<object{client_line_id: string, item_id: string, name_snapshot: string, colour_note: ?string, qty: int, unit_price_kobo: int, line_total_kobo: int}> $lines */
         $lines = DB::table('sale_lines')->where('sale_id', $saleId)->orderBy('line_no')
             ->get(['client_line_id', 'item_id', 'name_snapshot', 'colour_note', 'qty', 'unit_price_kobo', 'line_total_kobo'])->all();
-        /** @var list<object{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string}> $payments */
-        $payments = DB::table('payments')->where('sale_id', $saleId)->orderBy('id')->get(['method', 'amount_kobo', 'tendered_kobo', 'change_kobo', 'reference'])->all();
+        /** @var list<object{id: string, method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string}> $payments */
+        $payments = DB::table('payments')->where('sale_id', $saleId)->orderBy('id')->get(['id', 'method', 'amount_kobo', 'tendered_kobo', 'change_kobo', 'reference'])->all();
+        // Whether a transfer's sender was kept, so the receipt can say why and for how long; never who (D112).
+        $kept = DB::table('transfer_contacts')->where('sale_id', $saleId)->pluck('payment_id')->all();
         $print = DB::table('print_jobs')->where('sale_id', $saleId)->where('kind', 'receipt')->value('status');
         $cashier = DB::table('users')->where('id', $sale->cashier_id)->value('name');
         $reverses = $sale->reverses_sale_id === null ? null : DB::table('sales')->where('id', $sale->reverses_sale_id)->value('receipt_number');
@@ -54,6 +56,7 @@ final class Sales
                 'method' => $p->method, 'amount_kobo' => (int) $p->amount_kobo,
                 'tendered_kobo' => $p->tendered_kobo === null ? null : (int) $p->tendered_kobo,
                 'change_kobo' => $p->change_kobo === null ? null : (int) $p->change_kobo, 'reference' => $p->reference,
+                'contact_kept' => in_array($p->id, $kept, true),
             ], $payments),
             'print_status' => is_string($print) ? $print : null,
             'retried' => false,

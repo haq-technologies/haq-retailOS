@@ -57,6 +57,22 @@ func TestTheClockReadsFromW32tm(t *testing.T) {
 	}
 }
 
+func TestBitLockerReadsAsOnOffOrUnknown(t *testing.T) {
+	for out, want := range map[string]*bool{"1\r\n": ptr(true), "0": ptr(false), "none\n": ptr(false), "2": nil, "unknown": nil, "": nil} {
+		got := ParseBitLocker(out)
+		switch {
+		case want == nil && got != nil:
+			t.Errorf("%q: want unknown, got %+v", out, got)
+		case want != nil && (got == nil || got.System == nil || *got.System != *want || got.Backup == nil || *got.Backup != *want):
+			t.Errorf("%q: want %v on both disks, got %+v", out, *want, got)
+		}
+	}
+	raw, err := json.Marshal(Build(time.Unix(0, 0), nil, nil, nil))
+	if err != nil || strings.Contains(string(raw), "encryption") {
+		t.Errorf("a report with no encryption read should leave it out: %s %v", raw, err)
+	}
+}
+
 func TestAReportWritesAndReadsBackWithItsAge(t *testing.T) {
 	dir := t.TempDir()
 	at := time.Unix(1_800_000_000, 0)

@@ -197,6 +197,11 @@ final class Snapshot
             'disks' => $ssds,
             'smartctl' => ($file['smartctl'] ?? null) === true,
             'time_synced' => is_bool($file['time_synced'] ?? null) ? $file['time_synced'] : null,
+            // Whether the server's own disk and its backup disk are encrypted (D111): null where the host cannot say.
+            'encryption' => is_array($file['encryption'] ?? null) ? [
+                'system' => is_bool($file['encryption']['system'] ?? null) ? $file['encryption']['system'] : null,
+                'backup' => is_bool($file['encryption']['backup'] ?? null) ? $file['encryption']['backup'] : null,
+            ] : null,
         ];
     }
 

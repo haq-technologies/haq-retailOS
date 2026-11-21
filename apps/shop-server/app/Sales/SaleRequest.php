@@ -14,9 +14,12 @@ use Illuminate\Support\Facades\Validator;
  */
 final readonly class SaleRequest
 {
+    /** A transfer's sender name, as the bank alert shows it, kept for the reversal window only (D112). */
+    public const MAX_SENDER_NAME = 80;
+
     /**
      * @param  list<array{client_line_id: string, item_id: string, qty: int, unit_price_kobo: int, colour: ?string, added_by: string, price_source: string, approval_token: ?string, confirmed_outside_range: bool, retyped: bool, barcode: ?string, search_term: ?string}>  $lines
-     * @param  list<array{method: string, amount_kobo: int, tendered_kobo: ?int, reference: ?string, alert_seen: ?bool}>  $payments
+     * @param  list<array{method: string, amount_kobo: int, tendered_kobo: ?int, reference: ?string, alert_seen: ?bool, sender_name: ?string, phone: ?string}>  $payments
      */
     public function __construct(
         public string $idempotencyKey,
@@ -57,6 +60,9 @@ final readonly class SaleRequest
             'payments.*.tendered_kobo' => ['nullable', 'integer', 'min:1'],
             'payments.*.reference' => ['nullable', 'string', 'max:60'],
             'payments.*.alert_seen' => ['nullable', 'boolean'],
+            // A transfer's sender is not part of the sale, so it never refuses one: too long, it is dropped (D112).
+            'payments.*.sender_name' => ['nullable', 'string'],
+            'payments.*.phone' => ['nullable', 'string'],
         ], [
             'lines.required' => 'The sale has no items.',
             'lines.*.unit_price_kobo.required' => 'Every item needs a price.',
@@ -68,7 +74,7 @@ final readonly class SaleRequest
         }
 
         // The validator has checked every field above; this names their types for the code below.
-        /** @var array{idempotency_key: string, customer_type: string, started_at?: string|null, parked_sale_id?: string|null, lines: list<array{client_line_id: string|int, item_id: string, qty: int|string, unit_price_kobo: int|string, colour?: string|null, added_by: string, price_source: string, approval_token?: string|null, confirmed_outside_range?: bool|int|string, retyped?: bool|int|string, barcode?: string|null, search_term?: string|null}>, payments: list<array{method: string, amount_kobo: int|string, tendered_kobo?: int|string|null, reference?: string|null, alert_seen?: bool|int|string|null}>} $data */
+        /** @var array{idempotency_key: string, customer_type: string, started_at?: string|null, parked_sale_id?: string|null, lines: list<array{client_line_id: string|int, item_id: string, qty: int|string, unit_price_kobo: int|string, colour?: string|null, added_by: string, price_source: string, approval_token?: string|null, confirmed_outside_range?: bool|int|string, retyped?: bool|int|string, barcode?: string|null, search_term?: string|null}>, payments: list<array{method: string, amount_kobo: int|string, tendered_kobo?: int|string|null, reference?: string|null, alert_seen?: bool|int|string|null, sender_name?: string|null, phone?: string|null}>} $data */
         $lines = [];
         foreach ($data['lines'] as $l) {
             $colour = isset($l['colour']) ? trim($l['colour']) : '';
@@ -96,6 +102,8 @@ final readonly class SaleRequest
                 'tendered_kobo' => isset($p['tendered_kobo']) ? (int) $p['tendered_kobo'] : null,
                 'reference' => $reference === '' ? null : $reference,
                 'alert_seen' => isset($p['alert_seen']) ? (bool) $p['alert_seen'] : null,
+                'sender_name' => $p['method'] === 'transfer' ? self::kept($p['sender_name'] ?? null, self::MAX_SENDER_NAME) : null,
+                'phone' => $p['method'] === 'transfer' ? self::phone($p['phone'] ?? null) : null,
             ];
         }
 
@@ -107,6 +115,14 @@ final readonly class SaleRequest
             parkedSaleId: isset($data['parked_sale_id']) ? strtolower($data['parked_sale_id']) : null,
             startedAt: $data['started_at'] ?? null,
         );
+    }
+
+    /** A phone number: digits with an optional leading +, written as typed but without spaces or dashes (D112). */
+    private static function phone(?string $value): ?string
+    {
+        $digits = preg_replace('/[\s().-]/', '', (string) $value) ?? '';
+
+        return preg_match('/^\+?[0-9]{7,15}$/', $digits) === 1 ? $digits : null;
     }
 
     /** A line's trimmed barcode or search term, or null when it is empty or longer than learning keeps (D83). */
@@ -130,7 +146,12 @@ final readonly class SaleRequest
                 'client_line_id' => $l['client_line_id'], 'item_id' => $l['item_id'], 'qty' => $l['qty'],
                 'unit_price_kobo' => $l['unit_price_kobo'], 'colour' => $l['colour'], 'approval_token' => $l['approval_token'],
             ], $this->lines),
-            'payments' => $this->payments,
+            // A transfer's sender name and phone are not part of the sale (D112): the hash a sale was finished
+            // with before they existed still matches a retry of it.
+            'payments' => array_map(fn (array $p) => [
+                'method' => $p['method'], 'amount_kobo' => $p['amount_kobo'], 'tendered_kobo' => $p['tendered_kobo'],
+                'reference' => $p['reference'], 'alert_seen' => $p['alert_seen'],
+            ], $this->payments),
         ]);
     }
 

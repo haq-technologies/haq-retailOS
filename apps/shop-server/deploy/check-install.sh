@@ -20,6 +20,8 @@ env_value() { grep -E "^$1=" "$dir/.env" | head -1 | cut -d= -f2-; }
 failures=0
 pass() { echo "PASS  $1"; }
 fail() { echo "FAIL  $1"; failures=$((failures + 1)); }
+# A warning is worth putting right but never fails the check (D111).
+warn() { echo "WARN  $1"; }
 as_superuser() { compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d retail -tAc "$1" 2>&1; }
 as_app() { compose exec -T -e PGPASSWORD="$(env_value RETAIL_APP_PASSWORD)" db psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U retail_app -d retail -tAc "$1" 2>&1; }
 
@@ -49,6 +51,26 @@ elif systemctl cat apt-daily-upgrade.timer 2>/dev/null | grep -q '^OnCalendar=.*
     pass "Ubuntu's own updates run at night, from 23:15 in Lagos"
 else
     fail "Ubuntu's own updates may run while the shop trades: run install.sh again"
+fi
+
+# HAQ support signs in with a key, never a password, so every sign-in is a named key, recorded on the audit
+# trail and the owner's flag list (D110). A server with no SSH, such as a Windows PC's, is reached at the PC.
+if command -v sshd >/dev/null 2>&1; then
+    ssh_settings="$(sshd -T 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+    if echo "$ssh_settings" | grep -qx 'passwordauthentication no' && ! echo "$ssh_settings" | grep -qx 'kbdinteractiveauthentication yes'; then
+        pass "SSH takes keys only, never a password"
+    else
+        fail "SSH still takes passwords: set PasswordAuthentication no (docs/operations/install-a-shop.md)"
+    fi
+else
+    pass "there is no SSH server on this PC"
+fi
+# A stolen server can be read unless its disk is encrypted (D111): a warning, never a stop.
+root_source="$(findmnt -no SOURCE / 2>/dev/null | cut -d'[' -f1)"
+if [ -n "$root_source" ] && lsblk -s -no TYPE "$root_source" 2>/dev/null | grep -qw crypt; then
+    pass "the server's disk is encrypted"
+else
+    warn "the server's disk is not encrypted, so anyone who takes it can read the shop's records (docs/operations/install-a-shop.md)"
 fi
 
 # 2. No running container holds the owner's password (check D).
