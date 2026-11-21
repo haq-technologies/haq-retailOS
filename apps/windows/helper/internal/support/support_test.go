@@ -17,14 +17,14 @@ func helperFolder(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
 	files := map[string]string{
-		"logs/service.log":    "2026-11-20T19:47:25Z the bridge listens on :9100\n",
-		"logs/setup.log":      "=== setup server\nGHCR token ghp_abcdefghijklmnopqrstuvwxyz0123456789 typed once\n",
-		"logs/service.log.1":  "older lines\n",
-		"status/host.json":    `{"written_at": 1, "disks": []}`,
-		"config.json":         `{"mode": "server"}`,
+		"logs/service.log":     "2026-11-20T19:47:25Z the bridge listens on :9100\n",
+		"logs/setup.log":       "=== setup server\nGHCR token ghp_abcdefghijklmnopqrstuvwxyz0123456789 typed once\n",
+		"logs/service.log.1":   "older lines\n",
+		"status/host.json":     `{"written_at": 1, "disks": []}`,
+		"config.json":          `{"mode": "server"}`,
 		"install/answers.json": `{"pin": "135790"}`,
-		"install/ghcr_token":  "ghp_abcdefghijklmnopqrstuvwxyz0123456789",
-		"runner/queue.json":   `{"argv": []}`,
+		"install/ghcr_token":   "ghp_abcdefghijklmnopqrstuvwxyz0123456789",
+		"runner/queue.json":    `{"argv": []}`,
 	}
 	for name, body := range files {
 		path := filepath.Join(root, filepath.FromSlash(name))
