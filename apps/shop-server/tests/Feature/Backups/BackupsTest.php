@@ -154,6 +154,25 @@ it('verifies a test restore the backup service made ready: row counts and every 
     $this->artisan('backups:tick')->doesntExpectOutputToContain('verified')->assertSuccessful();
 });
 
+it('checks a second try of the same backup again, never answering it with the first try\'s result (D128)', function () {
+    $label = '20261108-010000F';
+    // The first try could not be checked.
+    file_put_contents($this->dir.'/restore.json', json_encode(['state' => 'ready', 'label' => $label, 'port' => 1, 'started_at' => time() - 600]));
+    config(['backups.restore_host' => '127.0.0.1']);
+    $this->artisan('backups:tick')->assertFailed();
+
+    // The backup service tries the same backup again: a new copy, so the app checks it.
+    file_put_contents($this->dir.'/restore.json', json_encode(['state' => 'ready', 'label' => $label, 'port' => (int) config('database.connections.pgsql.port'), 'started_at' => time()]));
+    config(['backups.restore_host' => config('database.connections.pgsql.host')]);
+    $this->artisan('backups:tick')->expectsOutput("The test restore of {$label} verified.")->assertSuccessful();
+    expect(json_decode((string) file_get_contents($this->dir."/verified-{$label}.json"), true)['ok'])->toBeTrue();
+    expect(DB::table('audit_log')->where('action', 'backup.restore_failed')->count())->toBe(1)
+        ->and(DB::table('audit_log')->where('action', 'backup.restore_verified')->count())->toBe(1);
+
+    // Each try is checked once.
+    $this->artisan('backups:tick')->doesntExpectOutputToContain('verified')->assertSuccessful();
+});
+
 it('records a test restore it cannot check as failed, for the owner to see', function () {
     file_put_contents($this->dir.'/restore.json', json_encode(['state' => 'ready', 'label' => '20261108-010000F', 'port' => 1]));
     config(['backups.restore_host' => '127.0.0.1']);

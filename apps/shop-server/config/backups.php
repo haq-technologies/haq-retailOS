@@ -20,4 +20,8 @@ return [
     'restore_host' => env('BACKUP_RESTORE_HOST', 'backup'),
     'restore_port' => (int) env('BACKUP_RESTORE_PORT', 5433),
 
+    // The backup disk's marker, beside the status folder (D129). Where the backups have a disk of their own
+    // (health.backup_own_disk), a missing marker means the disk is not mounted.
+    'disk_marker' => env('BACKUP_DISK_MARKER', '/backup/.haq-backup-disk'),
+
 ];

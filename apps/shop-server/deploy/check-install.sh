@@ -116,6 +116,16 @@ fi
 compose run --rm migrate > /dev/null 2>&1
 if compose exec -T app php artisan db:mutability --check > /dev/null 2>&1; then pass "rerunning the migration job puts the grants back"; else fail "the grants are still wrong"; fi
 
+# The backup disk carries its marker, so backups never go to a folder a failed mount left empty (D129).
+backup_dir="$(env_value BACKUP_DIR)"
+if [ -z "$backup_dir" ]; then
+    :
+elif [ -f "$backup_dir/.haq-backup-disk" ]; then
+    pass "the backup disk at $backup_dir is mounted and marked"
+else
+    fail "the backup disk at $backup_dir is not mounted (no .haq-backup-disk): mount it, then run install.sh again"
+fi
+
 # 7. The audit trail verifies, untouched by the attempts above.
 if compose exec -T app php artisan audit:verify > /dev/null 2>&1; then pass "every audit chain and root verifies"; else fail "the audit trail does not verify"; fi
 
