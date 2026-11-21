@@ -90,7 +90,7 @@ final readonly class Dashboard
             'cashiers' => $this->cashiers->forDay($day),
             'todo' => [
                 'needs_cost' => NeedsCost::queue(limit: 0)['total_items'],
-                'flags_week' => count($this->flags->list(Period::named('week', $this->flags->zone()), false)),
+                'flags_week' => count($this->flags->list(Period::named('week', $this->flags->zone()), $withCost)),
                 'review' => $this->review->total(),
                 'first_sales' => count(array_filter(FirstSales::forDay($day, Period::day($day, $this->flags->zone())), fn (array $g) => $g['set'] === null)),
             ],
