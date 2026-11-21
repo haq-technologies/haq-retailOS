@@ -6,6 +6,7 @@ namespace App\Platform\Console;
 
 use App\Platform\Database\Mutability\Applier;
 use App\Platform\Database\Mutability\DriftCheck;
+use App\Platform\Database\Mutability\NewerMigrations;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,15 @@ class MutabilityCommand extends Command
         $db = DB::connection(is_string($connection) ? $connection : null);
 
         if (! $this->option('check')) {
-            $applier->apply($db);
+            $left = $applier->apply($db);
+            if ($left !== []) {
+                // A failed update rolled back the code and kept the database (D105).
+                $newer = NewerMigrations::on($db);
+                $message = 'This database is ahead of this code: a newer release ran '.count($newer).' migration(s) here ('
+                    .implode(', ', $newer).'). Its tables are left to it, with no grant to the app: '.implode(', ', $left).'.';
+                Log::warning($message, ['tables' => $left, 'migrations' => $newer]);
+                $this->components->warn($message.' Install that release again once it is fixed.');
+            }
             $this->components->info('The mutability matrix is applied: grants and triggers match it.');
 
             return self::SUCCESS;
