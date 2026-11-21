@@ -222,10 +222,16 @@ grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|RELEASE_VERSION|SERVER_NAME|SERVER_IP
 mv "$dir/.env.new" "$dir/.env"
 chmod 600 "$dir/.env"
 
-# Backups go to the second internal disk (spec section 9). PostgreSQL's user (999) owns the folder.
+# Backups go to the second internal disk (spec section 9). PostgreSQL's user (999) owns the folder. The
+# disk carries a marker, so a disk that later fails to mount, leaving an empty folder on the main disk,
+# stops the backups with a warning instead of taking them beside the sales (D129).
 if [ -n "$backup_dir" ]; then
     mkdir -p "$backup_dir"
-    chown 999:999 "$backup_dir" 2>/dev/null || echo "Could not give $backup_dir to PostgreSQL's user (999); do it before trading." >&2
+    if command -v mountpoint >/dev/null && ! mountpoint -q "$backup_dir"; then
+        echo "WARNING: $backup_dir is not a mounted disk, so the backups would share the main disk. Mount the second disk there (docs/operations/install-a-shop.md, step 3) and run this again." >&2
+    fi
+    [ -f "$backup_dir/.haq-backup-disk" ] || echo "HAQ Retail OS backup disk. Prepared by install.sh on $(date -u +%F)." > "$backup_dir/.haq-backup-disk"
+    chown 999:999 "$backup_dir" "$backup_dir/.haq-backup-disk" 2>/dev/null || echo "Could not give $backup_dir to PostgreSQL's user (999); do it before trading." >&2
 else
     echo "WARNING: no --backup-dir. Backups share the database's disk until the second disk is mounted and this is run again with --backup-dir." >&2
 fi

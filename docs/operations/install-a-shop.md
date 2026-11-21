@@ -59,7 +59,7 @@ sudo mount -a
 df -h /mnt/backup
 ```
 
-The last line shows the disk's size at /mnt/backup.
+The last line shows the disk's size at /mnt/backup. Mount it before step 4: the installer leaves a marker on the disk, and the backups go only where that marker is, so a disk that later fails to mount stops them with "The backup disk is not mounted" on **Server health** instead of filling the main disk (D129). The installer warns if /mnt/backup is not a mounted disk.
 
 ## 4. Install HAQ Retail OS
 
