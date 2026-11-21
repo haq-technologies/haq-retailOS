@@ -3,7 +3,7 @@ import { Keypad, padKeyFrom } from '@/components/keypad';
 import { Notice } from '@/components/notice';
 import type { Tile } from '@/components/sign-in-panel';
 import { WarningIcon } from '@/components/icons';
-import { finishPayload, finishSettles, markChecked, paymentState, totalKobo, type Cart, type FinishPayload, type Payment } from '../cart';
+import { finishPayload, finishSettles, markChecked, paymentState, phoneLooksRight, totalKobo, type Cart, type FinishPayload, type Payment } from '../cart';
 import { digitsToKobo, koboToDigits, naira, quickCash, typeDigits } from '../money';
 import type { CounterSettings } from '../types';
 import type { CounterApi } from '../use-api';
@@ -12,7 +12,8 @@ import { newId, type FinishAnswer, type SaleSummary } from './types';
 
 /**
  * Pay (spec section 7) [D11, F12, S2]: cash with the amount received and change, transfer with the
- * bank-alert tick and a reference, POS with nothing typed, or a split. Finish sends the sale once; a lost
+ * bank-alert tick, the bank's reference and, if the customer agrees, the sender's name and phone (kept apart
+ * and cleared after the reversal window, D112), POS with nothing typed, or a split. Finish sends the sale once; a lost
  * answer is safe to retry, because the idempotency key stays the same. After a Finish with no answer, the
  * exact request is kept on the cart and nothing can change until the server answers: Finish sends it again,
  * or Check the server asks whether that sale exists (D61). Wireframes: PayCash, PayTransfer, PaySplit.
@@ -24,7 +25,11 @@ interface SplitRow {
     digits: string;
     alertSeen: boolean;
     reference: string;
+    senderName: string;
+    phone: string;
 }
+
+const emptyRow = (method: SplitRow['method'], digits: string): SplitRow => ({ method, digits, alertSeen: false, reference: '', senderName: '', phone: '' });
 
 type Problem =
     | { kind: 'message'; message: string }
@@ -46,18 +51,19 @@ interface Props {
     onBack: () => void;
     /** After a restore, Finish waits for the counter's journal report (D44); true once it is in. */
     reportJournal: () => Promise<boolean>;
+    /** A resumed awaiting transfer: the reference and the sender's name typed when it was parked. */
+    initial?: { reference: string; senderName: string };
 }
 
-export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFinished, onAwaiting, onBack, reportJournal }: Props) {
+export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFinished, onAwaiting, onBack, reportJournal, initial }: Props) {
     const total = totalKobo(cart);
     const [method, setMethod] = useState<Method>(onlyTransfer ? 'transfer' : 'cash');
     const [cash, setCash] = useState('');
     const [alertSeen, setAlertSeen] = useState(false);
-    const [reference, setReference] = useState('');
-    const [split, setSplit] = useState<SplitRow[]>([
-        { method: 'cash', digits: '', alertSeen: false, reference: '' },
-        { method: 'transfer', digits: koboToDigits(total), alertSeen: false, reference: '' },
-    ]);
+    const [reference, setReference] = useState(initial?.reference ?? '');
+    const [senderName, setSenderName] = useState(initial?.senderName ?? '');
+    const [phone, setPhone] = useState('');
+    const [split, setSplit] = useState<SplitRow[]>([emptyRow('cash', ''), emptyRow('transfer', koboToDigits(total))]);
     const [selected, setSelected] = useState(0);
     const [busy, setBusy] = useState(false);
     const [problem, setProblem] = useState<Problem | null>(null);
@@ -73,7 +79,7 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
             return tendered >= total ? [{ method: 'cash', amountKobo: total, tenderedKobo: tendered }] : null;
         }
         if (method === 'transfer') {
-            return tick(alertSeen) ? [{ method: 'transfer', amountKobo: total, reference, alertSeen }] : null;
+            return tick(alertSeen) ? [{ method: 'transfer', amountKobo: total, reference, alertSeen, senderName, phone }] : null;
         }
         if (method === 'pos') {
             return [{ method: 'pos', amountKobo: total }];
@@ -83,13 +89,13 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
             r.method === 'cash'
                 ? { method: 'cash', amountKobo: digitsToKobo(r.digits), tenderedKobo: digitsToKobo(r.digits) }
                 : r.method === 'transfer'
-                  ? { method: 'transfer', amountKobo: digitsToKobo(r.digits), reference: r.reference, alertSeen: r.alertSeen }
+                  ? { method: 'transfer', amountKobo: digitsToKobo(r.digits), reference: r.reference, alertSeen: r.alertSeen, senderName: r.senderName, phone: r.phone }
                   : { method: 'pos', amountKobo: digitsToKobo(r.digits) },
         );
         const state = paymentState(total, list);
         const ticked = rows.every((r) => r.method !== 'transfer' || tick(r.alertSeen));
         return state.paid === total && ticked ? list : null;
-    }, [method, cash, total, alertSeen, reference, split, settings.transferAlertTick]);
+    }, [method, cash, total, alertSeen, reference, senderName, phone, split, settings.transferAlertTick]);
 
     const ready = payments() !== null && total > 0;
 
@@ -309,18 +315,20 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                         I have seen the bank alert for {naira(total)}
                     </label>
                     <label className="flex flex-col gap-1 text-lg">
-                        Transfer reference
+                        Bank reference
                         <input
                             type="text"
                             value={reference}
                             maxLength={60}
+                            autoComplete="off"
                             className="min-h-touch rounded-xl border-2 border-border px-4"
                             onChange={(e) => {
                                 setReference(e.target.value);
                             }}
                         />
-                        <span className="text-text-secondary">A sale with no reference still goes through, but the owner sees it flagged.</span>
+                        <span className="text-text-secondary">From the bank alert. A sale with no reference still goes through, but the owner sees it flagged.</span>
                     </label>
+                    <SenderFields name={senderName} phone={phone} days={settings.transferContactDays} onName={setSenderName} onPhone={setPhone} />
                     {!onlyTransfer && (
                         <div className="flex flex-col gap-2 rounded-xl bg-panel p-4">
                             <p className="font-semibold">Alert not here yet?</p>
@@ -334,7 +342,8 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                                 className="min-h-touch self-start rounded-xl border-2 border-warning-text px-4 text-lg font-semibold text-warning-text"
                                 onClick={() => {
                                     setBusy(true);
-                                    void onAwaiting({ method: 'transfer', amountKobo: total, reference, alertSeen: false }, reference).then((error) => {
+                                    // The sender's name, or else the reference, labels the wait; the label goes when the sale does (D112).
+                                    void onAwaiting({ method: 'transfer', amountKobo: total, reference, alertSeen: false }, senderName.trim() !== '' ? senderName : reference).then((error) => {
                                         setBusy(false);
                                         if (error !== null) setProblem({ kind: 'message', message: error });
                                     });
@@ -399,13 +408,25 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                                     </label>
                                     <input
                                         type="text"
-                                        placeholder="Transfer reference"
-                                        aria-label="Transfer reference"
+                                        placeholder="Bank reference"
+                                        aria-label="Bank reference"
                                         value={row.reference}
                                         maxLength={60}
+                                        autoComplete="off"
                                         className="min-h-touch flex-1 rounded-xl border-2 border-border px-3"
                                         onChange={(e) => {
                                             setSplit((rows) => rows.map((r, j) => (j === i ? { ...r, reference: e.target.value } : r)));
+                                        }}
+                                    />
+                                    <SenderFields
+                                        name={row.senderName}
+                                        phone={row.phone}
+                                        days={settings.transferContactDays}
+                                        onName={(value) => {
+                                            setSplit((rows) => rows.map((r, j) => (j === i ? { ...r, senderName: value } : r)));
+                                        }}
+                                        onPhone={(value) => {
+                                            setSplit((rows) => rows.map((r, j) => (j === i ? { ...r, phone: value } : r)));
                                         }}
                                     />
                                 </div>
@@ -417,7 +438,7 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                         className="min-h-touch self-start rounded-xl border-2 border-border px-4 text-lg"
                         onClick={() => {
                             const left = Math.max(0, total - split.reduce((s, r) => s + digitsToKobo(r.digits), 0));
-                            setSplit((rows) => [...rows, { method: 'pos', digits: koboToDigits(left), alertSeen: false, reference: '' }]);
+                            setSplit((rows) => [...rows, emptyRow('pos', koboToDigits(left))]);
                             setSelected(split.length);
                         }}
                     >
@@ -504,5 +525,51 @@ export function Pay({ cart, setCart, settings, people, api, onlyTransfer, onFini
                 {busy ? 'Finishing…' : 'Finish'}
             </button>
         </section>
+    );
+}
+
+/**
+ * The sender of a transfer, both optional (D112, finding DP6): kept apart from the sale so the shop can reach
+ * them if the bank reverses it, then deleted. Never printed. Text inputs, so Pay's keys never take the digits.
+ */
+function SenderFields({ name, phone, days, onName, onPhone }: { name: string; phone: string; days: number; onName: (v: string) => void; onPhone: (v: string) => void }) {
+    const looksWrong = !phoneLooksRight(phone);
+    return (
+        <fieldset className="flex w-full flex-col gap-2">
+            <legend className="text-lg">Sender, if the customer agrees</legend>
+            <div className="grid gap-2 md:grid-cols-2">
+                <input
+                    type="text"
+                    aria-label="Sender's name"
+                    placeholder="Sender's name"
+                    value={name}
+                    maxLength={80}
+                    autoComplete="off"
+                    className="min-h-touch rounded-xl border-2 border-border px-3"
+                    onChange={(e) => {
+                        onName(e.target.value);
+                    }}
+                />
+                <input
+                    type="text"
+                    inputMode="tel"
+                    aria-label="Sender's phone"
+                    placeholder="Sender's phone"
+                    value={phone}
+                    maxLength={20}
+                    autoComplete="off"
+                    aria-invalid={looksWrong}
+                    className={`min-h-touch rounded-xl border-2 px-3 ${looksWrong ? 'border-warning-text' : 'border-border'}`}
+                    onChange={(e) => {
+                        onPhone(e.target.value);
+                    }}
+                />
+            </div>
+            <span className={looksWrong ? 'text-warning-text' : 'text-text-secondary'}>
+                {looksWrong
+                    ? 'That phone number will not be kept: use digits only, such as 0803 123 4567.'
+                    : `Kept ${String(days)} days, only to reach the sender if the bank reverses the transfer, then deleted. Never printed.`}
+            </span>
+        </fieldset>
     );
 }

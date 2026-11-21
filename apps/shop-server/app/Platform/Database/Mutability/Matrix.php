@@ -98,6 +98,10 @@ final readonly class Matrix
             // Users are deactivated, never deleted [F18]
             Rule::neverDeleted('users'),
 
+            // A transfer's sender name and phone: not part of the sale, so the nightly clear-up deletes them
+            // after payments.transfer_contact_days (D112). Which payment they belong to never changes.
+            Rule::mutable('transfer_contacts', fixed: ['payment_id', 'sale_id']),
+
             // Laravel's own tables (D21)
             ...array_map(Rule::framework(...), ['sessions', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs']),
             Rule::readOnly('migrations'),

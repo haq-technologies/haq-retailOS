@@ -142,6 +142,10 @@ final readonly class DataExport
             '',
             'Every file opens in Excel. Money is in naira with two decimals; times are the shop\'s ('.$this->zone().').',
             '',
+            // DP9 of the privacy checks (D114): the file is not locked, so the owner is told how to keep it.
+            'This file holds cost, staff names and the audit log, and it has no password: keep it on a device or drive only you',
+            'use, share it with no one, and delete old copies. Transfer senders\' names and phones are never in it.',
+            '',
         ];
         foreach ($files as $name => $file) {
             $lines[] = str_pad($name, 20).($about[$name] ?? '').' '.$file['rows'].' rows.';

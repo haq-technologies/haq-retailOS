@@ -104,7 +104,7 @@ func usage() {
   haq-helper setup remove [--delete-shop-and-sales]
   haq-helper server <haq command>          the shop server's own commands: enrol T02, printer T02 <address>,
                                            add-user "Amina" cashier and pin "Amina" (they ask the PIN),
-                                           users, deactivate, certificate, check, update ...
+                                           users, deactivate, rename, certificate, check, update ...
   haq-helper as-server <program> [args]    runs a program as HAQServer, which owns the server's Linux
   haq-helper service [run|install|start|stop|remove|state]
   haq-helper keepalive                     keeps the hidden server running; run by its task as HAQServer

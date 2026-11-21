@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Audit\Console\VerifyCommand;
 use App\Health\CatchUp;
 use App\Platform\Console\MutabilityCommand;
+use App\Sales\Console\ClearTransferContactsCommand;
 use Illuminate\Support\Facades\Schedule;
 
 // Catch-up scheduling (spec section 4) [F24, D45]: each nightly check runs once a day, in the night window
@@ -19,6 +20,9 @@ Schedule::command('db:mutability --check')->everyFiveMinutes()->when($due(Mutabi
 Schedule::command('audit:root')->everyMinute()->withoutOverlapping();
 Schedule::command('audit:ingest-spool')->everyMinute()->withoutOverlapping();
 Schedule::command('audit:verify')->everyFiveMinutes()->when($due(VerifyCommand::HEALTH_KEY))->withoutOverlapping();
+
+// A transfer sender's name and phone go once the bank can no longer reverse the transfer (D112).
+Schedule::command('payments:clear-contacts')->everyFiveMinutes()->when($due(ClearTransferContactsCommand::HEALTH_KEY))->withoutOverlapping();
 
 // A shift left open four hours past closing time closes as unclosed [S12].
 Schedule::command('shifts:auto-close')->everyFiveMinutes()->withoutOverlapping();

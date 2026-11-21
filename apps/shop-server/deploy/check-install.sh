@@ -20,6 +20,8 @@ env_value() { grep -E "^$1=" "$dir/.env" | head -1 | cut -d= -f2-; }
 failures=0
 pass() { echo "PASS  $1"; }
 fail() { echo "FAIL  $1"; failures=$((failures + 1)); }
+# A warning is worth putting right but never fails the check (D111).
+warn() { echo "WARN  $1"; }
 as_superuser() { compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d retail -tAc "$1" 2>&1; }
 as_app() { compose exec -T -e PGPASSWORD="$(env_value RETAIL_APP_PASSWORD)" db psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U retail_app -d retail -tAc "$1" 2>&1; }
 
@@ -56,6 +58,44 @@ elif systemctl cat apt-daily-upgrade.timer 2>/dev/null | grep -q '^OnCalendar=.*
     pass "Ubuntu's own updates run at night, from 23:15 in Lagos"
 else
     fail "Ubuntu's own updates may run while the shop trades: run install.sh again"
+fi
+
+# HAQ support signs in with a key, never a password, so every sign-in is a named key, recorded on the audit
+# trail and the owner's flag list (D110). A server with no SSH running, such as a Windows PC's, is reached at
+# the PC. Ubuntu 24.04 starts sshd on demand from ssh.socket, so a listening socket counts as running.
+ssh_running() {
+    pgrep -x sshd >/dev/null 2>&1 && return 0
+    command -v systemctl >/dev/null 2>&1 || return 1
+    local unit
+    for unit in ssh.socket ssh.service sshd.service; do
+        systemctl is-active --quiet "$unit" 2>/dev/null && return 0
+    done
+    return 1
+}
+if ! command -v sshd >/dev/null 2>&1 || ! ssh_running; then
+    pass "there is no SSH server running on this PC"
+else
+    # sshd -T needs root to read the host keys; without it there is nothing to judge, which is not a failure.
+    ssh_settings="$(sshd -T 2>/dev/null | tr '[:upper:]' '[:lower:]' || true)"
+    if [ -z "$ssh_settings" ]; then
+        warn "the SSH settings could not be read: run the check with sudo (sudo haq check)"
+    elif echo "$ssh_settings" | grep -qx 'passwordauthentication no' && ! echo "$ssh_settings" | grep -qx 'kbdinteractiveauthentication yes'; then
+        pass "SSH takes keys only, never a password"
+    else
+        fail "SSH still takes passwords: set PasswordAuthentication no (docs/operations/install-a-shop.md)"
+    fi
+fi
+# A stolen server can be read unless its disk is encrypted (D111): a warning, never a stop. Where the disk
+# cannot be read (no findmnt or lsblk, as on a Mac's staging), it says so rather than guess.
+root_source="$(findmnt -no SOURCE / 2>/dev/null | cut -d'[' -f1 || true)"
+root_types=""
+if [ -n "$root_source" ]; then root_types="$(lsblk -s -no TYPE "$root_source" 2>/dev/null || true)"; fi
+if [ -z "$root_types" ]; then
+    warn "whether the server's disk is encrypted could not be read on this PC"
+elif echo "$root_types" | grep -qw crypt; then
+    pass "the server's disk is encrypted"
+else
+    warn "the server's disk is not encrypted, so anyone who takes it can read the shop's records (docs/operations/install-a-shop.md)"
 fi
 
 # 2. No running container holds the owner's password (check D).

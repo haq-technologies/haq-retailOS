@@ -36,11 +36,22 @@ The counters and printers find the server by its address, so the server and ever
 1. In the server's BIOS, set **Restore on AC power loss** to **Power On**, so it starts by itself after a power cut ([start-up.md](start-up.md)).
 2. Install **Ubuntu Server 24.04 LTS** from a USB stick. In the installer:
    - **Network:** edit the wired connection, choose **IPv4 Manual**, and type the subnet (192.168.1.0/24), the address (192.168.1.10), the gateway (the router, such as 192.168.1.1) and the name servers (the router, then 8.8.8.8).
-   - **Storage:** use the entire **first** disk. Leave the second disk alone for now.
+   - **Storage:** use the entire **first** disk. If the server has a TPM 2.0 (see its BIOS; most mini-PCs do), also tick **Encrypt the LVM group with LUKS**, with a passphrase HAQ keeps with the shop's off-site key shares, so a stolen server cannot be read (D111). With no TPM, do not encrypt: a server that waits for a passphrase after every power cut stops the shop, and the health page then warns instead. Leave the second disk alone for now.
    - **Profile:** server name `haq-server`, user `haq`, and a strong password that HAQ keeps.
-   - **SSH:** install OpenSSH server, so HAQ support can reach the server on the shop's network.
+   - **SSH:** install OpenSSH server, so HAQ support can reach the server on the shop's network. Every sign-in is recorded on the audit trail and shown on the owner's flag list (D110).
    - **Featured snaps:** choose none. The installer adds Docker itself, from Ubuntu's own packages.
-3. Restart, and sign in as `haq`.
+3. Restart, type the disk's passphrase this once if you encrypted it, and sign in as `haq`.
+4. If you encrypted the disk, let it unlock itself after a power cut with the server's TPM, as [privacy.md](privacy.md) says under "Disk encryption". Restart to check that it starts without the passphrase.
+5. Give HAQ support's public key to the `haq` user and turn off password sign-in, so only HAQ's named keys reach the server (D110):
+
+   ```
+   mkdir -p ~/.ssh && nano ~/.ssh/authorized_keys      # paste HAQ support's public key, one line
+   chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys
+   printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\n' | sudo tee /etc/ssh/sshd_config.d/10-haq.conf
+   sudo systemctl restart ssh
+   ```
+
+   Sign in again from HAQ's laptop with the key before closing this session. `sudo haq check` fails while SSH still takes passwords.
 
 ## 3. Prepare the backup disk
 
@@ -161,6 +172,7 @@ A shop whose server is a Windows PC is installed with the release's setup progra
 
 - **The PC that runs the shop:** 64-bit Windows 11, or Windows 10 updated since November 2022, with virtualisation turned on, 8 GB of memory and 30 GB free. The setup checks the PC itself and says what to do about anything that stops it (D92).
 - **A UPS for that PC.** A desktop's disk has no protection against a power cut, so the UPS is required (D86).
+- **Disk encryption on that PC.** Windows Pro: BitLocker on the system drive, with the TPM only, so the PC starts by itself after a power cut. Windows Home: **Device encryption**, where Windows offers it. Keep the recovery key with the shop's off-site key shares, never on the PC. Without it the server health page warns that a stolen PC can be read (D111; [privacy.md](privacy.md)).
 - **The release's setup**, `HAQ-Retail-OS-Setup-<release>.exe`, downloaded from the release on GitHub and checked against its signed manifest first ([releases.md](releases.md)):
 
   ```
@@ -213,6 +225,7 @@ On a Windows server the backups share the PC's disk, so a flash drive is the onl
 | `sudo haq users` | Everyone with a name tile: role, active or deactivated, when the PIN was set, and ID (D74) |
 | `sudo haq pin "Name"` | A new PIN for a person who forgot theirs or whose PIN someone saw; asks it twice, and the old one stops working at once |
 | `sudo haq deactivate "Name"` | For someone who leaves: their tile goes and their PIN stops working. Nobody is deleted. If two people share the name, give the ID from `sudo haq users` |
+| `sudo haq rename "Name" "Right name"` | Corrects the name on a tile; the audit trail keeps both names (D113) |
 | `sudo haq enrol T01` | A one-time code, for 30 minutes, to register counter T01 (or D01 for a back-office device), a link that fills the code in, and the shop's certificate thumbprint, whose first 16 characters a new device asks for (D125) |
 | `sudo haq printer T02 192.168.1.22` | Where a counter prints: a network printer's address, or the Windows PC whose print bridge has its USB printer; `none` for no printer. It is kept in the shop's profile, so a later install keeps it (D87) |
 | `sudo haq certificate` | The setup page's address, and the certificate's thumbprint, whose first 16 characters a new device asks for |
@@ -227,6 +240,8 @@ On a Windows server the backups share the PC's disk, so a flash drive is the onl
 | `sudo haq logs app` | Follows a service's log, for HAQ support |
 
 On a Windows server each is `haq-helper server` and the same words, in **Terminal (Admin)**, such as `haq-helper server users`.
+
+Every command here that reaches the shop's records (people, PINs, enrolment, the export, logs, receipts, `artisan` and restore) is written to the audit trail first, with who ran it and from where, and the owner sees it on the flag list (D110). The owner agreed to HAQ's support in the contract; the flag list shows each visit.
 
 ## If something goes wrong
 

@@ -53,6 +53,27 @@ final readonly class Users
         });
     }
 
+    /**
+     * Corrects the name on a person's tile (D113, finding DP7). The audit trail keeps both names, so who did
+     * what stays readable; receipts already printed keep the name they printed.
+     */
+    public function rename(User $user, string $name, ?string $actorId = null): void
+    {
+        $name = trim($name);
+        if ($name === '' || mb_strlen($name) > 60) {
+            throw new \InvalidArgumentException('A name tile needs a name of 1 to 60 characters.');
+        }
+        if ($name === $user->name) {
+            return;
+        }
+        DB::transaction(function () use ($user, $name, $actorId): void {
+            $old = $user->name;
+            $user->update(['name' => $name]);
+            $this->audit->record(new AuditEntry(action: 'identity.user_renamed', actorId: $actorId, subjectType: 'user', subjectId: $user->id,
+                before: ['name' => $old], after: ['name' => $name]));
+        });
+    }
+
     public function deactivate(User $user, ?string $actorId = null): void
     {
         DB::transaction(function () use ($user, $actorId): void {

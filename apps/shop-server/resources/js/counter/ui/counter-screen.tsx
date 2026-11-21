@@ -85,6 +85,8 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
     // A Finish the server never answered stays on Pay until it answers, even after the idle lock (D61).
     const view = (cart.pending ?? null) !== null ? 'pay' : chosenView;
     const [onlyTransfer, setOnlyTransfer] = useState(false);
+    // A resumed awaiting transfer opens Pay with what was typed when it was parked (D112).
+    const [payInitial, setPayInitial] = useState<{ reference: string; senderName: string } | undefined>(undefined);
     const [afterSale, setAfterSale] = useState<SaleSummary | null>(null);
     const [state, setState] = useState<DrillState>({ categoryId: null, choices: [] });
     const [query, setQuery] = useState('');
@@ -284,6 +286,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
     const pay = useCallback(() => {
         if (cart.lines.length === 0 || sheet !== null) return;
         setOnlyTransfer(false);
+        setPayInitial(undefined);
         setView('pay');
     }, [cart.lines.length, sheet]);
 
@@ -429,7 +432,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
 
     const resume = async (entry: ParkedEntry) => {
         try {
-            const a = await api.post<{ payload?: { cart?: Cart }; message?: string }>(`/api/counter/parked/${entry.id}/resume`, {});
+            const a = await api.post<{ payload?: { cart?: Cart; payment?: { reference?: string } }; message?: string }>(`/api/counter/parked/${entry.id}/resume`, {});
             const resumed = a.body.payload?.cart;
             if (!a.ok || resumed === undefined) {
                 say('error', a.body.message ?? 'That sale could not be resumed.');
@@ -440,6 +443,10 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
             setSheet(null);
             refreshParked();
             if (entry.kind === 'awaiting_transfer') {
+                // The label is the sender's name when one was typed, otherwise the reference (pay.tsx).
+                const reference = a.body.payload?.payment?.reference ?? '';
+                const label = entry.label ?? '';
+                setPayInitial({ reference, senderName: label !== '' && label !== reference.trim() ? label : '' });
                 setOnlyTransfer(true);
                 setView('pay');
             }
@@ -564,6 +571,7 @@ export function CounterScreen({ session, setToken, terminal, people, settings, c
                             people={people}
                             api={api}
                             onlyTransfer={onlyTransfer}
+                            initial={payInitial}
                             onFinished={finished}
                             onAwaiting={awaiting}
                             onBack={() => {

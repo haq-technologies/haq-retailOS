@@ -178,6 +178,8 @@ export interface Person {
 
 export interface CounterSettings {
     transferAlertTick: boolean;
+    /** How long a transfer sender's name and phone are kept (D112). */
+    transferContactDays: number;
     floorPercent: number;
     retypeMultiple: number;
     colours: string[];

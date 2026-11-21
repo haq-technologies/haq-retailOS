@@ -121,8 +121,9 @@ final class Finish
 
                 foreach ($request->payments as $payment) {
                     $cash = $payment['method'] === 'cash';
+                    $paymentId = Ulid::generate();
                     DB::table('payments')->insert([
-                        'id' => Ulid::generate(), 'sale_id' => $saleId, 'method' => $payment['method'],
+                        'id' => $paymentId, 'sale_id' => $saleId, 'method' => $payment['method'],
                         'amount_kobo' => $payment['amount_kobo'],
                         'tendered_kobo' => $cash ? ($payment['tendered_kobo'] ?? $payment['amount_kobo']) : null,
                         'change_kobo' => $cash ? ($payment['tendered_kobo'] ?? $payment['amount_kobo']) - $payment['amount_kobo'] : null,
@@ -131,6 +132,13 @@ final class Finish
                         'confirmed_by' => $payment['method'] === 'transfer' ? $cashier->id : null,
                         'confirmed_at' => $payment['method'] === 'transfer' ? $at : null,
                     ]);
+                    // The sender, kept apart from the sale and cleared after the reversal window (D112).
+                    if ($payment['method'] === 'transfer' && ($payment['sender_name'] !== null || $payment['phone'] !== null)) {
+                        DB::table('transfer_contacts')->insert([
+                            'id' => Ulid::generate(), 'payment_id' => $paymentId, 'sale_id' => $saleId,
+                            'sender_name' => $payment['sender_name'], 'phone' => $payment['phone'], 'recorded_at' => $at,
+                        ]);
+                    }
                 }
 
                 // Committed with the sale: a cut between commit and print leaves a recoverable receipt [F5].
@@ -275,7 +283,9 @@ final class Finish
         }
         // An open row (Awaiting transfer) closes here; a held cart was closed when it was resumed.
         if ($parked->status === 'open') {
-            DB::table('parked_sales')->where('id', $parkedSaleId)->update(['status' => 'completed']);
+            // A finished awaiting transfer's label goes: it may be the sender's name, which is now kept apart and
+            // cleared after the reversal window (D112).
+            DB::table('parked_sales')->where('id', $parkedSaleId)->update(['status' => 'completed', 'label' => null]);
         }
         if ($parked->kind === 'awaiting_transfer') {
             DB::table('parked_sale_events')->insert(['id' => Ulid::generate(), 'parked_sale_id' => $parkedSaleId, 'type' => 'transfer_confirmed',

@@ -41,7 +41,8 @@ export interface Cart {
 
 export type Payment =
     | { method: 'cash'; amountKobo: number; tenderedKobo: number }
-    | { method: 'transfer'; amountKobo: number; reference: string; alertSeen: boolean }
+    // The sender's name and phone are optional and kept apart from the sale, then cleared (D112).
+    | { method: 'transfer'; amountKobo: number; reference: string; alertSeen: boolean; senderName?: string; phone?: string }
     | { method: 'pos'; amountKobo: number };
 
 export function emptyCart(customerType: CustomerType = 'retail'): Cart {
@@ -200,7 +201,30 @@ export interface FinishPayload {
         barcode: string | null;
         search_term: string | null;
     }[];
-    payments: { method: string; amount_kobo: number; tendered_kobo?: number; reference?: string | null; alert_seen?: boolean }[];
+    payments: {
+        method: string;
+        amount_kobo: number;
+        tendered_kobo?: number;
+        reference?: string | null;
+        alert_seen?: boolean;
+        sender_name?: string | null;
+        phone?: string | null;
+    }[];
+}
+
+/**
+ * Whether a typed phone number is one the server keeps: digits with an optional leading +, spaces, brackets
+ * and dashes left out (D112). Nothing typed is fine; a number that is not kept never stops the sale.
+ */
+export function phoneLooksRight(phone: string): boolean {
+    const digits = phone.replace(/[\s().-]/g, '');
+    return digits === '' || /^\+?[0-9]{7,15}$/.test(digits);
+}
+
+/** Typed text, trimmed, or null when nothing was typed. */
+function orNull(text: string): string | null {
+    const trimmed = text.trim();
+    return trimmed === '' ? null : trimmed;
 }
 
 /**
@@ -230,7 +254,14 @@ export function finishPayload(cart: Cart, payments: Payment[], newKey: () => str
             p.method === 'cash'
                 ? { method: 'cash', amount_kobo: p.amountKobo, tendered_kobo: p.tenderedKobo }
                 : p.method === 'transfer'
-                  ? { method: 'transfer', amount_kobo: p.amountKobo, reference: p.reference.trim() === '' ? null : p.reference.trim(), alert_seen: p.alertSeen }
+                  ? {
+                        method: 'transfer',
+                        amount_kobo: p.amountKobo,
+                        reference: orNull(p.reference),
+                        alert_seen: p.alertSeen,
+                        sender_name: orNull(p.senderName ?? ''),
+                        phone: orNull(p.phone ?? ''),
+                    }
                   : { method: 'pos', amount_kobo: p.amountKobo },
         ),
     };
