@@ -34,6 +34,8 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 COPY apps/shop-server/docker/php/conf.d/app.ini /usr/local/etc/php/conf.d/zz-app.ini
+# php-fpm logs no request lines of its own: nginx does (finding LG4).
+COPY apps/shop-server/docker/php/fpm/zz-shop.conf /usr/local/etc/php-fpm.d/zz-shop.conf
 
 WORKDIR /app
 

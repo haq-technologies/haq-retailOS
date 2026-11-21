@@ -3,10 +3,38 @@
 package logfile
 
 import (
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
+
+// NewLogger writes each line with its time in UTC and its zone, as the shop server's logs do (finding LG10):
+// "2026-11-20T19:47:25Z keeping haq-server running". The log package's own flags write the PC's local time
+// with no zone, an hour from the server's lines beside them in Lagos.
+func NewLogger(w io.Writer) *log.Logger {
+	return log.New(utcWriter{w: w, now: time.Now}, "", 0)
+}
+
+type utcWriter struct {
+	w   io.Writer
+	now func() time.Time
+}
+
+// Write sends the time and the line as one write, so a line is never split across a rotation.
+func (u utcWriter) Write(p []byte) (int, error) {
+	line := append([]byte(u.now().UTC().Format(time.RFC3339)+" "), p...)
+	n, err := u.w.Write(line)
+	if err != nil {
+		return 0, err
+	}
+	if n < len(line) {
+		return 0, io.ErrShortWrite
+	}
+	return len(p), nil
+}
 
 // File is an open log.
 type File struct {

@@ -21,7 +21,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"net/netip"
 	"os"
 	"os/signal"
@@ -79,6 +78,8 @@ func main() {
 		err = testPrint(os.Args[2:])
 	case "bridge":
 		err = runBridge(os.Args[2:])
+	case "support-file":
+		err = runSupportFile(os.Args[2:])
 	case "version":
 		fmt.Println("HAQ Helper", version)
 	case "help", "-h", "--help":
@@ -114,6 +115,8 @@ func usage() {
   haq-helper printers [--json|--names]             the printers on this PC, and how each is reached
   haq-helper test-print --printer <name>   the test receipt, with its barcode and QR code
   haq-helper bridge --printer <name> [--listen :9100] [--allow <address or network>,...]
+  haq-helper support-file [--out <file.zip>]   one file for HAQ support: this PC's logs and, on the
+                                           server's PC, the server's own; for a USB drive or WhatsApp
   haq-helper version
 `)
 }
@@ -134,12 +137,12 @@ func runService(args []string) error {
 					return err
 				}
 				defer l.Close()
-				return serve(ctx, log.New(l, "", log.LstdFlags).Printf)
+				return serve(ctx, logfile.NewLogger(l).Printf)
 			})
 		}
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 		defer stop()
-		return serve(ctx, log.New(os.Stderr, "", log.LstdFlags).Printf)
+		return serve(ctx, logfile.NewLogger(os.Stderr).Printf)
 	case "install":
 		exe, err := os.Executable()
 		if err != nil {
@@ -176,7 +179,7 @@ func runKeepalive() error {
 		return err
 	}
 	defer l.Close()
-	logger := log.New(l, "", log.LstdFlags)
+	logger := logfile.NewLogger(l)
 	logger.Printf("HAQ Helper %s: keeping %s running", version, cfg.Distribution)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
@@ -359,7 +362,7 @@ func runBridge(args []string) error {
 	if len(prefixes) > 0 {
 		only = bridge.Only(prefixes...)
 	}
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	logger := logfile.NewLogger(os.Stderr)
 	b := bridge.New(bridge.Config{Listen: *listen, Printer: p, Allow: only, Logf: logger.Printf})
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

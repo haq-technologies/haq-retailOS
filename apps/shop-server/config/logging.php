@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Platform\Logging\IsoTimes;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -60,11 +61,14 @@ return [
             'ignore_exceptions' => false,
         ],
 
+        // Every channel that writes lines stamps them with the zone (IsoTimes, finding LG10). A shop logs
+        // to stderr (the app image sets LOG_CHANNEL), which Docker keeps, capped (D75).
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
+            'tap' => [IsoTimes::class],
         ],
 
         'daily' => [
@@ -73,6 +77,7 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
+            'tap' => [IsoTimes::class],
         ],
 
         'monthly' => [
@@ -113,6 +118,7 @@ return [
             ],
             'formatter' => env('LOG_STDERR_FORMATTER'),
             'processors' => [PsrLogMessageProcessor::class],
+            'tap' => [IsoTimes::class],
         ],
 
         'syslog' => [

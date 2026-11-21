@@ -45,7 +45,7 @@ func runSetup(args []string) error {
 	if args[0] != "check" {
 		if l, err := logfile.Open(filepath.Join(config.LogDir(), "setup.log"), logMax); err == nil {
 			defer l.Close()
-			fmt.Fprintf(l, "\n=== HAQ Helper %s: setup %s, %s\n", version, args[0], time.Now().Format(time.RFC3339))
+			fmt.Fprintf(l, "\n=== HAQ Helper %s: setup %s, %s\n", version, args[0], time.Now().UTC().Format(time.RFC3339))
 			out, log = io.MultiWriter(os.Stdout, l), l
 		}
 	}

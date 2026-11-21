@@ -56,6 +56,10 @@ jobs:
       - name: Release signing dry run (a throwaway key; the updater's own checks)
         run: tools/release/dry-run.sh
 
+      # The support file holds what HAQ support needs and never a secret (finding LG7).
+      - name: Support file self-test
+        run: tools/ci/support-file-test.sh
+
   # The Windows setup's scripts (D86): ShellCheck for what runs inside Linux, and PowerShell's own parser and
   # PSScriptAnalyzer for what runs on Windows. The scripts themselves run on Windows, in the spike.
   windows-scripts:
