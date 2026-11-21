@@ -1,4 +1,5 @@
 import { getJson, Unreachable } from '@/lib/api';
+import { Backoff } from './backoff';
 import type { Catalogue } from './catalogue';
 import { allRows, clearRows, getMeta, putRows, setMeta } from './db';
 import type { ChangesPage, FeedRows, FeedTable, ItemPrices, Shape, SnapshotPage } from './types';
@@ -23,6 +24,7 @@ export class CatalogueSync {
     private timer: number | undefined;
     private stopped = false;
     private generation: string | null = null;
+    private readonly backoff = new Backoff(POLL_MS);
 
     constructor(
         private readonly cat: Catalogue,
@@ -60,9 +62,12 @@ export class CatalogueSync {
     }
 
     private async poll(): Promise<void> {
+        let answered = false;
         try {
             const generation = this.generation === null ? '' : `&generation=${encodeURIComponent(this.generation)}`;
             const answer = await getJson<ChangesPage>(`/api/counter/catalogue/changes?after=${String(this.cat.seq)}${generation}`);
+            answered = true;
+            this.backoff.answered(answer.status);
             if (!answer.ok) throw new Unreachable(`The feed answered ${String(answer.status)}.`);
             const page = answer.body;
             this.events.onStatus(true);
@@ -96,7 +101,9 @@ export class CatalogueSync {
             this.schedule(page.more ? 0 : POLL_MS);
         } catch {
             this.events.onStatus(false);
-            this.schedule(POLL_MS);
+            // No answer at all keeps the pace; server errors slow it, up to 30 seconds (finding LG8).
+            if (!answered) this.backoff.answered(0);
+            this.schedule(this.backoff.delayMs());
         }
     }
 

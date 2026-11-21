@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Identity\Http\ActingUser;
+use App\Identity\Http\DeviceErrorController;
 use App\Identity\Http\EnrolledTerminal;
 use App\Identity\Http\IdentityController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,8 @@ Route::middleware('web')->group(function (): void {
     Route::middleware(EnrolledTerminal::class)->group(function (): void {
         Route::get('/sign-in', [IdentityController::class, 'tiles'])->name('identity.tiles');
         Route::post('/api/identity/pin', [IdentityController::class, 'pin']);
+        // A device's own errors, before or after anyone signs in (finding LG3).
+        Route::post('/api/device/errors', [DeviceErrorController::class, 'store'])->middleware('throttle:20,1');
 
         Route::middleware(ActingUser::class)->group(function (): void {
             Route::get('/api/identity/me', [IdentityController::class, 'me']);

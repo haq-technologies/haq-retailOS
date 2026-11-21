@@ -7,6 +7,7 @@ namespace App\Identity\Console;
 use App\Identity\Role;
 use App\Identity\Users;
 use Illuminate\Console\Command;
+use InvalidArgumentException;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 use function Laravel\Prompts\password;
@@ -46,7 +47,15 @@ class AddUserCommand extends Command
             }
         }
 
-        $user = $users->add((string) $this->argument('name'), $role, $pin);
+        // A PIN of the wrong length is a typing mistake, not a server error: say so plainly, as shop:set-pin
+        // does, and keep it out of the log (finding LG9).
+        try {
+            $user = $users->add((string) $this->argument('name'), $role, $pin);
+        } catch (InvalidArgumentException $e) {
+            $this->components->error($e->getMessage().' Nobody was added.');
+
+            return self::FAILURE;
+        }
         $this->components->info("Added {$user->name} ({$role->label()}).");
 
         return self::SUCCESS;

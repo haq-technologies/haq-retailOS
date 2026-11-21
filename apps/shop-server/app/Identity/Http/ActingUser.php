@@ -10,6 +10,7 @@ use App\Identity\SignIn;
 use App\Organisation\Models\Terminal;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Context;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -36,6 +37,8 @@ final readonly class ActingUser
             return response()->json(['message' => 'This person cannot sign in. Ask the owner.'], 401);
         }
         $request->attributes->set('acting_user', $user);
+        // And the person, by ID only, never by name (finding LG5).
+        Context::add('user_id', $user->id);
 
         $response = $next($request);
         $response->headers->set(ActingToken::HEADER, ActingToken::mint($user->id, $terminal->id, $user->role, $this->signIn->expiry($user->role)));

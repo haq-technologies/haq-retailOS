@@ -7,6 +7,7 @@ namespace App\Health;
 use App\Audit\Console\VerifyCommand;
 use App\Platform\Clock;
 use App\Platform\Console\MutabilityCommand;
+use App\Platform\Logging\ErrorCounts;
 use App\Settings\Settings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -77,6 +78,16 @@ final readonly class Health
             $warn('clock', 'The server\'s clock may be wrong', $clock['reason'] === 'before_build'
                 ? 'It says '.CarbonImmutable::parse($clock['server_time'])->setTimezone($this->zone())->format('j F Y, H:i').', before this version was made. Selling goes on; sales are marked until the time is put right. Call HAQ support.'
                 : 'It went back in time. Selling goes on; sales are marked until the owner confirms the time on the health page.');
+        }
+
+        // Errors (finding LG6): one plain line for the owner, who is often away; HAQ support reads what they
+        // were with `haq errors` and in the log, by the reference a cashier reads out.
+        $errors = ErrorCounts::lastDay();
+        $seen = $errors[ErrorCounts::ERROR] + $errors[ErrorCounts::CRASH];
+        if ($seen >= config()->integer('health.error_warn_count') && $errors['first_at'] !== null) {
+            $first = CarbonImmutable::parse($errors['first_at'])->setTimezone($this->zone());
+            $since = $first->isSameDay($now->setTimezone($this->zone())) ? $first->format('H:i') : $first->format('j F, H:i');
+            $warn('errors', 'The server had errors', "It logged {$seen} errors since {$since}. Selling goes on. Call HAQ support: they can see what happened.");
         }
 
         if ($snapshot === null) {

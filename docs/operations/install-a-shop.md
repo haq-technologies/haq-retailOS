@@ -238,8 +238,10 @@ On a Windows server the backups share the PC's disk, so a flash drive is the onl
 | `sudo haq restore` | Restores the server from its backups, or with `--from-drive` (on Windows `--from-windows-drive E: A`) from an off-site drive ([restore-drill.md](restore-drill.md)) |
 | `sudo haq offsite-key` | Makes the off-site key and its three shares, once |
 | `sudo haq logs app` | Follows a service's log, for HAQ support |
+| `sudo haq errors` | The last day's errors, failed screens, failed scheduled tasks and failed jobs, for HAQ support: what the owner's "The server had errors" stands for (D118) |
+| `sudo haq support-file` | One ZIP for HAQ support, to copy to a USB drive or send on WhatsApp: a week of logs, the checks, the errors and the versions, never a secret. It holds staff names, so give it to HAQ support only, and like `haq logs` it is written to the owner's flag list (D110). On Windows, `haq-helper support-file` makes it with the PC's own logs too (D119) |
 
-On a Windows server each is `haq-helper server` and the same words, in **Terminal (Admin)**, such as `haq-helper server users`.
+On a Windows server each is `haq-helper server` and the same words, in **Terminal (Admin)**, such as `haq-helper server users`. The support file is the one exception: `haq-helper support-file`, without `server`, so the file lands on Windows with the PC's own logs in it.
 
 Every command here that reaches the shop's records (people, PINs, enrolment, the export, logs, receipts, `artisan` and restore) is written to the audit trail first, with who ran it and from where, and the owner sees it on the flag list (D110). The owner agreed to HAQ's support in the contract; the flag list shows each visit.
 
@@ -247,6 +249,8 @@ Every command here that reaches the shop's records (people, PINs, enrolment, the
 
 | What you see | What to do |
 |---|---|
+| A counter or the back office says "Something went wrong" | Nothing: the screen opens again by itself after 15 seconds, or tap Reload, and an open sale is kept. If it keeps happening, call HAQ support and read them the reference it shows (D117) |
+| The dashboard says "The server had errors" | Selling goes on. Call HAQ support; they read `sudo haq errors` and may ask for `sudo haq support-file` (D118, D119) |
 | Chrome says "Your connection is not private" | The certificate step is not finished. Run the setup page's line again in **Terminal (Admin)**, then close every Chrome window and open Chrome again |
 | "That code is not valid, or it has expired" | The code was used, or its 30 minutes ran out. Make a new one with `sudo haq enrol T01` |
 | The setup page does not open | The counter cannot reach the server. Check that the server is on, its cable is in, and the counter is on the same network |

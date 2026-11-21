@@ -244,7 +244,7 @@ fi
 # The updater, the restore and the install check live with the stack, so updates need no checkout; and the
 # release public key, so the updater can check a release's signature (spec section 4).
 mkdir -p "$dir/bin"
-cp "$here/update.sh" "$here/restore.sh" "$here/check-install.sh" "$here/host-health.sh" "$here/offsite.sh" "$dir/bin/"
+cp "$here/update.sh" "$here/restore.sh" "$here/check-install.sh" "$here/host-health.sh" "$here/offsite.sh" "$here/support-file.sh" "$dir/bin/"
 if [ -f "$here/release-public.pem" ]; then
     cp "$here/release-public.pem" "$dir/release-public.pem"
 else

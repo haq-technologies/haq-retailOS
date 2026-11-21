@@ -45,6 +45,10 @@ return [
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
             'timezone' => 'UTC',
+            // A failed query's error names its SQL with ? placeholders, never the values: a value can be a
+            // PIN's hash, a cost or a name, and the error goes to the log (finding LG1). Connections made at
+            // run time copy this one, so they keep it.
+            'mask_bindings_in_exception_messages' => true,
         ],
 
         // The owner role, which owns the tables. Only the one-shot migration job holds its password, so
@@ -63,6 +67,7 @@ return [
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
             'timezone' => 'UTC',
+            'mask_bindings_in_exception_messages' => true,
         ],
 
     ],
