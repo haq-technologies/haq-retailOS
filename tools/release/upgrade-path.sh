@@ -14,9 +14,13 @@
 #    scripted sales on two counters; its own rehearsal check passes.
 # 2. The newer version migrates the same database (only what is pending, in order) and applies the
 #    mutability matrix; the grant check finds no drift.
-# 3. The older code sells again against the newer schema.
-# 4. The newer code sells, and its rehearsal check passes over every sale: gapless receipt numbers per
-#    counter and epoch, whole sales, a receipt job for each, every audit chain and root, and the grants.
+# 3. A code-only rollback, as deploy/update.sh does one. From an older version at or above the rollback
+#    floor (D106: it has D95's migration), the older code's migrate job runs first, as it does on a shop,
+#    then its grant check and the owner's data export, which reads every table it knows (D105). Then the
+#    older code sells again against the newer schema. Below the floor, only the selling is checked.
+# 4. The update is tried again: the newer code migrates and applies its matrix, sells, and its rehearsal
+#    check passes over every sale: gapless receipt numbers per counter and epoch, whole sales, a receipt
+#    job for each, every audit chain and root, and the grants.
 set -euo pipefail
 
 old="${1:?Give the older apps/shop-server folder}"
@@ -43,10 +47,23 @@ art "$new" migrate --database=pgsql_owner --force
 art "$new" db:mutability --database=pgsql_owner
 art "$new" db:mutability --check
 
-step "3. The older code still sells against the newer schema (a code-only rollback)"
+step "3. A code-only rollback: the older code starts and sells against the newer schema"
+# The rollback floor (D106): the first code that has D95's migration. Older code is not rolled back to.
+if [ -f "$old/database/migrations/2026_11_19_000100_remove_measured_pilot.php" ]; then
+    art "$old" migrate --database=pgsql_owner --force
+    art "$old" db:mutability --database=pgsql_owner
+    art "$old" db:mutability --check
+    art "$old" shop:export - > /dev/null
+    echo "The older code's migrate job, grant check and data export passed."
+else
+    echo "Below the rollback floor (D106): only the selling is checked."
+fi
 art "$old" shop:rehearse --count=6 --pace=0 --confirm
 
-step "4. The newer code sells, and checks every sale"
+step "4. The update again: the newer code migrates, sells, and checks every sale"
+art "$new" migrate --database=pgsql_owner --force
+art "$new" db:mutability --database=pgsql_owner
+art "$new" db:mutability --check
 art "$new" catalogue:seed
 art "$new" shop:rehearse --count=6 --pace=0 --confirm
 art "$new" shop:rehearsal-check

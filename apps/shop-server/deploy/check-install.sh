@@ -43,6 +43,13 @@ for id in $(compose ps --status running -q); do
     case "$policy" in *" unless-stopped"|*" always") ;; *) norestart="$norestart ${policy%% *}" ;; esac
 done
 if [ -z "$norestart" ]; then pass "every running service restarts by itself"; else fail "these services do not restart by themselves:$norestart"; fi
+# The database runs under an init, so a healthcheck left behind never restarts PostgreSQL (D104).
+db_id="$(compose ps -q db | head -1)"
+if [ -n "$db_id" ] && [ "$(docker inspect "$db_id" --format '{{.HostConfig.Init}}')" = true ]; then
+    pass "the database runs under an init"
+else
+    fail "the database does not run under an init (D104): update to a newer release"
+fi
 if ! command -v systemctl >/dev/null || systemctl is-enabled docker.service >/dev/null 2>&1; then pass "Docker starts with the server"; else fail "Docker does not start with the server (systemctl enable docker)"; fi
 # Ubuntu's own updates run at night, never while the shop trades (D100).
 if ! command -v systemctl >/dev/null || ! systemctl cat apt-daily-upgrade.timer >/dev/null 2>&1; then
@@ -137,6 +144,16 @@ fi
 # Put the grants back by rerunning the migration job, which applies the mutability matrix.
 compose run --rm migrate > /dev/null 2>&1
 if compose exec -T app php artisan db:mutability --check > /dev/null 2>&1; then pass "rerunning the migration job puts the grants back"; else fail "the grants are still wrong"; fi
+
+# The backup disk carries its marker, so backups never go to a folder a failed mount left empty (D129).
+backup_dir="$(env_value BACKUP_DIR)"
+if [ -z "$backup_dir" ]; then
+    :
+elif [ -f "$backup_dir/.haq-backup-disk" ]; then
+    pass "the backup disk at $backup_dir is mounted and marked"
+else
+    fail "the backup disk at $backup_dir is not mounted (no .haq-backup-disk): mount it, then run install.sh again"
+fi
 
 # 7. The audit trail verifies, untouched by the attempts above.
 if compose exec -T app php artisan audit:verify > /dev/null 2>&1; then pass "every audit chain and root verifies"; else fail "the audit trail does not verify"; fi

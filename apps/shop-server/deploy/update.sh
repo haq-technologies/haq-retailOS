@@ -7,8 +7,10 @@
 #      Refuse an older release than the one installed.
 #   2. Pull the three images by digest, with this shop's own read-only GHCR token if it has one.
 #   3. Take a full backup. No backup, no update.
-#   4. Switch to the new images and Compose file; the migration job runs first, and migrations only
-#      expand, so the previous code still works on the new schema.
+#   4. Switch to the new images and Compose file; the migration job runs first. Migrations only go
+#      forward and only expand: a table is dropped only a release after the code stopped using it, and no
+#      release rolls back below the floor (D106). Tables a new release adds are left to it by the previous
+#      release's migrate job (D105). So the previous code still works on the new schema.
 #   5. Health check: the app answers and the grants match the matrix. If not, roll back the code only;
 #      the database stays, because sales may already have been made on it.
 #
@@ -174,15 +176,25 @@ rollback() {
     echo "   $1 Rolling back the code only; the database stays as it is." >&2
     cp "$dir/.env.previous" "$dir/.env"
     cp "$dir/compose.yaml.previous" "$dir/compose.yaml"
-    compose up -d --wait --remove-orphans || true
-    echo "Release $version was NOT installed. The previous release runs again. Tell HAQ support." >&2
+    # The previous release's own migrate job runs first. It leaves any table the new release made to that
+    # release (D105), so the previous release starts on the newer schema; say so only if it really did.
+    if compose up -d --wait --remove-orphans; then
+        echo "Release $version was NOT installed. The previous release runs again. Tell HAQ support." >&2
+    else
+        echo "Release $version was NOT installed, and the previous release did not start either. The shop cannot" >&2
+        echo "sell from this server. Tell HAQ support now, with the output of sudo haq check" >&2
+        echo "(on a Windows server: haq-helper server check, in Terminal (Admin))." >&2
+    fi
     exit 1
 }
 
 if ! compose up -d --wait --remove-orphans; then
     migrate="$(compose ps -a --format '{{.Service}} {{.ExitCode}}' | awk '$1 == "migrate" { print $2 }')"
     if [ "$migrate" != 0 ]; then
-        rollback "The migration failed (each migration runs in a transaction, so the schema is as it was; if not, restore the backup just taken with restore.sh)."
+        # Each migration runs in its own transaction: the one that failed left nothing behind, and the ones
+        # before it stay, which the previous release works with (D105). Restoring the backup would not undo
+        # them, because restore.sh replays every archived WAL segment.
+        rollback "The migration failed."
     fi
     rollback "The new release did not start."
 fi

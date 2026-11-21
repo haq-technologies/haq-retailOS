@@ -100,6 +100,7 @@ pgBackRest archives WAL to the backup volume (in a shop, the second internal dis
 ```
 docker compose exec backup haq-backup.sh full            # a full backup now
 docker compose exec backup haq-backup.sh test-restore    # the test restore now (the scheduler verifies it)
+docker compose exec backup haq-backup.sh selftest        # the backup schedule and the disk's marker (CI runs it)
 docker compose exec scheduler php artisan backups:status    # on a shop server: sudo haq backups
 docker compose exec scheduler php artisan health:check   # what Server health shows (the scheduler runs it every minute)
 ```
@@ -147,7 +148,7 @@ Other commands run the same way: `docker compose exec app php artisan …`, `doc
 
 - PostgreSQL holds sessions, jobs and the cache; there is no Redis (spec section 4). A test fails if a Redis setting or client appears.
 - Every application table has a ULID primary key. A test fails on any other key.
-- Three database roles (spec section 4). The app runs as `retail_app`; only the one-shot `migrate` job holds the owner's password. Grants and triggers come from the mutability matrix in `app/Platform/Database/Mutability/Matrix.php`, applied after every migration; a table missing from it stops the migration. Triggers hold the rules even against a widened grant, and `db:mutability --check` runs nightly to report any drift.
+- Three database roles (spec section 4). The app runs as `retail_app`; only the one-shot `migrate` job holds the owner's password. Grants and triggers come from the mutability matrix in `app/Platform/Database/Mutability/Matrix.php`, applied after every migration; a table missing from it stops the migration, unless a newer release made it and the code was rolled back (D105). Migrations only go forward: rollback, reset and refresh refuse, and `migrate:fresh` rebuilds a development or test database (D107). Triggers hold the rules even against a widened grant, and `db:mutability --check` runs nightly to report any drift.
 - Times are UTC, in PHP and in PostgreSQL. A test checks both.
 - Every action can be written to the audit trail (spec section 10): a hash chain per terminal and one per branch, a root over every chain head each minute, sensitive values in their own table, and failures spooled when their chain is busy. `audit:verify` checks it all, nightly.
 - Tests only ever rebuild a database whose name ends in `_test` or `_concurrency`.

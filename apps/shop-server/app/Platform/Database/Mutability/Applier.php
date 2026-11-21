@@ -22,11 +22,17 @@ final readonly class Applier
         private Roles $roles,
     ) {}
 
-    public function apply(Connection $db): void
+    /**
+     * @return list<string> The tables left to a newer release: none, unless a failed update rolled back the
+     *                      code and kept the database (D105).
+     */
+    public function apply(Connection $db): array
     {
         $tables = Schema::tables($db);
         $unclassified = array_values(array_filter($tables, fn (string $t) => $this->matrix->rule($t) === null));
-        if ($unclassified !== []) {
+        // A table missing from the matrix stops the migration, unless a newer release made it: after a
+        // code-only rollback the previous release must still start on the newer schema (D105).
+        if ($unclassified !== [] && NewerMigrations::on($db) === []) {
             throw UnclassifiedTable::tables($unclassified);
         }
 
@@ -43,10 +49,27 @@ final readonly class Applier
             $db->statement("GRANT USAGE ON SCHEMA public TO {$app}, {$reporting}");
 
             foreach ($tables as $table) {
-                $rule = $this->matrix->rule($table) ?? throw new LogicException("No rule for {$table}");
+                $rule = $this->matrix->rule($table);
+                if ($rule === null) {
+                    // A newer release's table: this code gives the app no grant on it, and the triggers that
+                    // release put on it stay, so its rows keep their rules.
+                    $this->revokeAll($db, $table, $app, $reporting);
+
+                    continue;
+                }
                 $this->applyRule($db, $rule, $app, $reporting);
             }
         });
+
+        return $unclassified;
+    }
+
+    private function revokeAll(Connection $db, string $table, string $app, string $reporting): void
+    {
+        $db->statement('REVOKE ALL ON TABLE '.$this->quote($table)." FROM PUBLIC, {$app}, {$reporting}");
+        foreach (Schema::sequencesOf($db, $table) as $sequence) {
+            $db->statement('REVOKE ALL ON SEQUENCE '.$this->quote($sequence)." FROM PUBLIC, {$app}, {$reporting}");
+        }
     }
 
     private function applyRule(Connection $db, Rule $rule, string $app, string $reporting): void
