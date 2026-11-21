@@ -1,11 +1,25 @@
 package logfile
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestALineCarriesItsTimeInUTCWithTheZone(t *testing.T) {
+	var got strings.Builder
+	lagos := time.FixedZone("WAT", 3600)
+	logger := log.New(utcWriter{w: &got, now: func() time.Time { return time.Date(2026, 11, 20, 20, 47, 25, 0, lagos) }}, "", 0)
+	logger.Printf("keeping %s running", "haq-server")
+
+	// 20:47 in Lagos is 19:47 UTC, written with its zone, as the shop server's own lines are.
+	if want := "2026-11-20T19:47:25Z keeping haq-server running\n"; got.String() != want {
+		t.Fatalf("got %q, want %q", got.String(), want)
+	}
+}
 
 func TestALogPastItsLimitMovesAsideAndStartsAgain(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "logs", "helper.log")

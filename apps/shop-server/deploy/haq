@@ -19,6 +19,8 @@
 #   sudo haq offsite-key                 make the off-site key and its three shares, once
 #   sudo haq receipts                    a rehearsal's stand-in printer: the receipts as they print
 #   sudo haq logs [service]              follow a service's log
+#   sudo haq errors                      the last day's errors, failed tasks and failed jobs, for HAQ support
+#   sudo haq support-file [--out f.zip]  one file for HAQ support: logs, checks and versions, never a secret
 #   sudo haq artisan <command>           any server command, for HAQ support
 #   sudo haq restore [options]           restore the server from its backups (docs/operations/restore-drill.md)
 set -euo pipefail
@@ -45,7 +47,7 @@ https_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "https://$IP"; else e
 http_url() { if [ "${HTTP_PORT:-80}" = 80 ]; then echo "http://$IP"; else echo "http://$IP:$HTTP_PORT"; fi; }
 setup_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "$(http_url)/setup"; else echo "$(http_url)/setup?https_port=$HTTPS_PORT"; fi; }
 
-usage() { sed -n '2,23p' "$self" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,25p' "$self" | sed 's/^# \{0,1\}//'; }
 
 command="${1:-help}"
 [ $# -gt 0 ] && shift
@@ -191,6 +193,13 @@ if r.get("previous"): print("Before it: release " + r["previous"]["version"])' "
         compose exec -T printer tail -n 60 -F storage/logs/fake-printer.log
         ;;
     logs) compose logs -f --tail 100 "$@" ;;
+    # What the owner's "The server had errors" stands for (finding LG6).
+    errors) compose exec -T app php artisan health:errors ;;
+    # For a shop with no internet: one file to put on a USB drive or send on WhatsApp (finding LG7).
+    support-file)
+        if [ ! -x "$dir/bin/support-file.sh" ]; then echo "This install has no support-file.sh yet: run install.sh again from this release." >&2; exit 1; fi
+        exec "$dir/bin/support-file.sh" --dir "$dir" --project "$PROJECT" "$@"
+        ;;
     artisan) compose exec ${interactive[@]+"${interactive[@]}"} app php artisan "$@" ;;
     help|-h|--help) usage ;;
     *) echo "Unknown command: $command" >&2; usage >&2; exit 2 ;;

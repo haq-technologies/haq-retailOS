@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Health;
 
 use App\Health\Console\CheckCommand;
+use App\Health\Console\ErrorsCommand;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -16,7 +17,7 @@ class HealthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([CheckCommand::class]);
+            $this->commands([CheckCommand::class, ErrorsCommand::class]);
         }
     }
 }

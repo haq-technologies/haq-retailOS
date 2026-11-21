@@ -43,5 +43,8 @@ return [
 
     // Warn when an SSD has less life left than this (from smartctl, through the host's report).
     'ssd_warn_percent' => 10,
+    // Warn when the server reported this many errors, or counter screens failed this many times, in the
+    // last 24 hours (finding LG6). One error alone is often a moment's fault; a failed job is three tries.
+    'error_warn_count' => 3,
 
 ];

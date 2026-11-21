@@ -36,9 +36,10 @@ final class Pins
     {
         [$min, $max] = $role->pinLength();
         if (preg_match('/^[0-9]+$/', $pin) !== 1 || strlen($pin) < $min || strlen($pin) > $max) {
+            $whose = (in_array($role->value[0], ['a', 'e', 'i', 'o', 'u'], true) ? 'An ' : 'A ').$role->value."'s";
             throw new InvalidArgumentException($min === $max
-                ? "A {$role->value}'s PIN is {$min} digits."
-                : "A {$role->value}'s PIN is {$min} to {$max} digits.");
+                ? "{$whose} PIN is {$min} digits."
+                : "{$whose} PIN is {$min} to {$max} digits.");
         }
     }
 

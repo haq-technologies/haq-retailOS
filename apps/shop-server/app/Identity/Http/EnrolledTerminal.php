@@ -7,6 +7,7 @@ namespace App\Identity\Http;
 use App\Identity\Enrolment;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Context;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -26,6 +27,8 @@ final readonly class EnrolledTerminal
                 : redirect()->route('identity.enrol');
         }
         $request->attributes->set('terminal', $terminal);
+        // Every log line of this request names its counter (finding LG5).
+        Context::add('terminal', $terminal->code);
 
         return $next($request);
     }

@@ -80,10 +80,15 @@ haq-helper printers [--json|--names]         the printers on this PC, and how ea
                                              the receipt printers there now, not Windows' own (PDF, OneNote, Fax)
 haq-helper test-print --printer "XP-80C"     the test receipt, with a barcode and a QR code for the scanner check
 haq-helper bridge --printer "XP-80C" --allow 192.168.1.10
+haq-helper support-file [--out <file.zip>]   one file for HAQ support, for a USB drive or WhatsApp (D119)
 haq-helper version
 ```
 
 `haq-helper service` run in a console, not by Windows, does the service's work there until Ctrl+C, logging to the console.
+
+Every log line carries its time in UTC with the zone, such as `2026-11-20T19:47:25Z`, as the shop server's do (D115). The logs are in `C:\ProgramData\HAQ\logs`, each kept under 5 MB with one older file.
+
+`haq-helper support-file` writes `haq-support-<time>.zip` in the folder it runs in: this PC's logs and its report, and on the server's PC the server's own support file, which the server writes into the runner's output folder and the helper removes once it is in the ZIP. It never takes `config.json`, the install folder (the setup's answers and the GHCR token), the distribution or the runner's queue, and it takes out a PIN's hash, a key, a token or a password should a log hold one ([internal/support](internal/support)).
 
 A printer is named as `printers` lists it: its Windows name, its port (USB001, COM3) or its target. `file:<path>` stands in for a printer anywhere, for development.
 
