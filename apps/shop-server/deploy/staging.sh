@@ -3,12 +3,15 @@
 # would install them, beside the development stack. It answers at https://localhost:8443, on this computer
 # only: the network it is on cannot reach it (D124).
 #
-#   apps/shop-server/deploy/staging.sh [--tag main] [--local] [--build] [--fresh]
+#   apps/shop-server/deploy/staging.sh [--tag main] [--local] [--build] [--fresh] [--lan]
 #
 # --local uses images built on this computer (retail-os-app:local and the others) instead of pulling.
 # --build builds those images first, from this checkout as it is, so a pull request's branch can be tried
 #         before it is merged (test before merge, D96). It implies --local.
 # --fresh removes the staging shop and all its data first, so the install is a brand-new shop.
+# --lan   answers the network this computer is on too, as staging did before D124, for a try from another
+#         device; its certificate still names localhost, so that device warns. Run it again without --lan
+#         to close it.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -16,6 +19,7 @@ repo="$(cd "$here/../../.." && pwd)"
 tag=main
 build=0
 fresh=0
+bind=127.0.0.1
 args=()
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -23,6 +27,7 @@ while [ $# -gt 0 ]; do
         --local) args+=(--registry retail-os); export SKIP_PULL=1; tag=local; shift ;;
         --build) build=1; args+=(--registry retail-os); export SKIP_PULL=1; tag=local; shift ;;
         --fresh) fresh=1; shift ;;
+        --lan) bind=""; shift ;;
         *) echo "Unknown option $1" >&2; exit 2 ;;
     esac
 done
@@ -68,5 +73,5 @@ exec "$here/install.sh" \
     --profile "$here/../docker/profile.example.json" \
     --name localhost --ip 127.0.0.1 \
     --dir "$dir" --project "$project" \
-    --http-port 8081 --https-port 8443 --bind 127.0.0.1 \
+    --http-port 8081 --https-port 8443 ${bind:+--bind "$bind"} \
     --tag "$tag" "${args[@]+"${args[@]}"}"
