@@ -147,6 +147,9 @@ services:
     entrypoint: ["/usr/local/bin/haq-backup.sh"]
     environment:
       TZ: ${SHOP_TIMEZONE:-Africa/Lagos}
+      # A backup disk of its own: backups go only where its marker is, never to a folder left empty because
+      # the disk did not mount (D129).
+      BACKUP_OWN_DISK: ${BACKUP_DIR:+true}
     volumes:
       - db-data:/var/lib/postgresql:ro
       - pg-socket:/var/run/postgresql

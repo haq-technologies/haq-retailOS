@@ -45,6 +45,8 @@ final class Snapshot
         return [
             'checked_at' => CarbonImmutable::now()->toIso8601String(),
             'backups' => $status->enabled() ? self::backups($status) : null,
+            // Where the backups have a disk of their own, whether it is mounted: its marker is there (D129).
+            'backup_disk' => config()->boolean('health.backup_own_disk') ? ['marked' => is_file(config()->string('backups.disk_marker'))] : null,
             'disks' => [
                 'main' => self::disk(storage_path()),
                 'backup' => $status->enabled() && $status->directory !== null ? self::disk(dirname($status->directory)) : null,

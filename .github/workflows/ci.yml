@@ -876,6 +876,12 @@ jobs:
         if: matrix.target == 'db'
         run: docker run --rm --user postgres retail-os-db:ci haq-offsite.sh selftest
 
+      # The backup loop's schedule and the backup disk's marker (D128, D129): what is due when, a failed
+      # test restore waiting a day or for a newer backup, and no backups where the disk's marker is missing.
+      - name: Backup schedule self-test
+        if: matrix.target == 'db'
+        run: docker run --rm --user postgres retail-os-db:ci haq-backup.sh selftest
+
   # On every merge to main: build each shop image once and push it to GHCR, tagged main and with the commit
   # (spec section 4) [D1, D2]. Staging on the product owner's computer and the G3 virtual machines pull these.
   # A release branch's images are pushed too, tagged with the commit only: `main` never points at a fix
