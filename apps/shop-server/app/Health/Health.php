@@ -178,12 +178,18 @@ final readonly class Health
             }
         }
 
-        /** @var array{disks: list<array{device: string, model: ?string, passed: ?bool, life_left: ?int}>}|null $host */
+        /** @var array{disks: list<array{device: string, model: ?string, passed: ?bool, life_left: ?int}>, encryption?: array{system: ?bool, backup: ?bool}|null}|null $host */
         $host = is_array($snapshot['host'] ?? null) ? $snapshot['host'] : null;
         foreach ($host['disks'] ?? [] as $ssd) {
             if ($ssd['passed'] === false || ($ssd['life_left'] !== null && $ssd['life_left'] < config()->integer('health.ssd_warn_percent'))) {
                 $warn('ssd', 'An SSD is wearing out', ($ssd['model'] ?? $ssd['device']).($ssd['passed'] === false ? ' failed its health check' : " has {$ssd['life_left']}% of its life left").'. Call HAQ support to replace it.');
             }
+        }
+        // A stolen server can be read unless its own disk is encrypted (D111): a warning, never a stop. The backup
+        // disk's state shows on the health page only, until encrypting it is designed with the restore drill.
+        if (($host['encryption']['system'] ?? null) === false) {
+            $warn('encryption', 'The server\'s disk is not encrypted',
+                'Anyone who takes the server can read the shop\'s records: staff names, sales, transfer senders and cost. Ask HAQ support to turn on BitLocker, or disk encryption on Ubuntu, as the install guide says.');
         }
 
         /** @var array{expires_at: string}|null $cert */

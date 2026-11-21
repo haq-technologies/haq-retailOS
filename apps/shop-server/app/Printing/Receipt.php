@@ -24,11 +24,12 @@ final readonly class Receipt
     public function __construct(public array $blocks) {}
 
     /**
-     * @param  array{receipt_number: string, kind?: string, reverses_receipt_number?: ?string, recorded_at: string, cashier: string, total_kobo: int, lines: list<array{name: string, colour: ?string, qty: int, unit_price_kobo: int, line_total_kobo: int}>, payments: list<array{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string}>}  $sale  Sales::summary()
+     * @param  array{receipt_number: string, kind?: string, reverses_receipt_number?: ?string, recorded_at: string, cashier: string, total_kobo: int, lines: list<array{name: string, colour: ?string, qty: int, unit_price_kobo: int, line_total_kobo: int}>, payments: list<array{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string, contact_kept?: bool}>}  $sale  Sales::summary()
      * @param  array{shop_name: ?string, address: ?string, phone: ?string, footer: ?string, currency: string, timezone: string}  $text
      * @param  array{at: CarbonImmutable, by: string}|null  $duplicate
+     * @param  int  $contactDays  how long a transfer sender's name and phone are kept (D112)
      */
-    public static function forSale(array $sale, string $counterName, array $text, ?array $duplicate = null): self
+    public static function forSale(array $sale, string $counterName, array $text, ?array $duplicate = null, int $contactDays = 90): self
     {
         $b = [];
         if ($duplicate !== null) {
@@ -87,6 +88,11 @@ final readonly class Receipt
                 $b[] = ['pair', $payment['method'] === 'pos' ? 'POS' : 'Transfer', Money::plain($payment['amount_kobo'])];
                 if ($payment['reference'] !== null) {
                     $b[] = ['indent', 'Ref: '.$payment['reference']];
+                }
+                // The sender's name and phone never print; the customer is told why they were asked (D112).
+                if (($payment['contact_kept'] ?? false) === true) {
+                    $b[] = ['indent', "Your name and phone are kept {$contactDays} days,"];
+                    $b[] = ['indent', 'only in case the bank reverses this.'];
                 }
             }
         }

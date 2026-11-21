@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Sales;
 
+use App\Sales\Console\ClearTransferContactsCommand;
 use App\Settings\Definition;
 use App\Settings\Registry;
 use Illuminate\Support\ServiceProvider;
@@ -19,6 +20,9 @@ class SalesServiceProvider extends ServiceProvider
         $this->app->extend(Registry::class, function (Registry $registry): Registry {
             // A transfer sale needs the tick that the bank alert was seen (spec section 7) [F12]. On by default.
             $registry->define(new Definition('payments.transfer_alert_tick', 'Transfer needs the alert-seen tick', true, ['required', 'boolean'], lockedByDefault: true, source: 'F12'));
+            // A transfer's sender name and phone are kept this many days, to reach the sender if the bank reverses
+            // it, then cleared (D112, finding DP6). 90 until the shop's bank says how late a reversal can come.
+            $registry->define(new Definition('payments.transfer_contact_days', 'Days a transfer sender\'s name and phone are kept', 90, ['required', 'integer', 'min:1', 'max:365'], lockedByDefault: true, source: 'D112'));
             // Prices (spec section 7) [S4, S5, F11]: console policies, with the spec's defaults.
             $registry->define(new Definition('pricing.fill_fallback', 'Price fill when there is no set price', 'last_price', ['required', 'in:last_price,median'], lockedByDefault: true, source: 'S4'));
             $registry->define(new Definition('pricing.floor_percent', 'Price floor (% of the bottom of the usual range)', 50, ['required', 'integer', 'min:1', 'max:100'], lockedByDefault: true, source: 'F11'));
@@ -43,5 +47,8 @@ class SalesServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadRoutesFrom(__DIR__.'/routes.php');
+        if ($this->app->runningInConsole()) {
+            $this->commands([ClearTransferContactsCommand::class]);
+        }
     }
 }

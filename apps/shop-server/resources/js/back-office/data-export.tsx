@@ -26,12 +26,12 @@ export function DataExport({ api }: { api: CounterApi }) {
                 Your data
             </h2>
             <p className="text-text-secondary">
-                One ZIP file of spreadsheets that open in Excel: every sale, payment, item, price, cost, shift, drawer opening and flag, and the audit log, with a list that proves none of it changed. It holds cost, so keep it safe.
+                One ZIP file of spreadsheets that open in Excel: every sale, payment, item, price, cost, shift, drawer opening and flag, and the audit log, with a list that proves none of it changed. It holds cost and staff names and has no password, so keep it on a device or drive only you use.
             </p>
             {state === 'error' && <Notice tone="error">The export did not download. Check the connection and try again.</Notice>}
             {state === 'done' && (
                 <p role="status" className="rounded-xl bg-panel p-4 text-lg">
-                    Downloaded. Keep a copy somewhere other than this device.
+                    Downloaded. Keep it on a device or drive only you use, share it with no one, and delete old copies once you have a newer one.
                 </p>
             )}
             <button type="button" disabled={state === 'busy'} className={`${styles.button} self-start`} onClick={() => void download()}>

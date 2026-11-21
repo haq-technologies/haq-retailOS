@@ -35,7 +35,7 @@ interface View {
     } | null;
     disks: { main: Disk | null; backup: Disk | null } | null;
     certificate: { expires_at: string; subject: string | null } | null;
-    host: { written_at: string | null; disks: { device: string; model: string | null; passed: boolean | null; life_left: number | null }[]; smartctl: boolean; time_synced: boolean | null } | null;
+    host: { written_at: string | null; disks: { device: string; model: string | null; passed: boolean | null; life_left: number | null }[]; smartctl: boolean; time_synced: boolean | null; encryption?: { system: boolean | null; backup: boolean | null } | null } | null;
     wal: { archived_at: string | null; failed_at: string | null; count: number } | null;
     offsite: { key_made_at: string | null; drives: Record<string, { copied_at: string | null; bytes: number | null; failed_at: string | null; reason: string | null; ok: boolean }> } | null;
     database_bytes: number;
@@ -204,6 +204,12 @@ export function ServerHealth({ api }: { api: CounterApi }) {
                     warning={has('ssd')}
                 />
                 <Card
+                    title="Disk encryption"
+                    value={encryptionText(view.host?.encryption ?? null)}
+                    note={has('encryption') ? 'Off: a stolen server can be read' : view.host?.encryption == null ? 'The server has not reported it yet' : 'OK'}
+                    warning={has('encryption')}
+                />
+                <Card
                     title="Certificate"
                     value={view.certificate === null ? 'Not found' : `Valid to ${longDay(view.certificate.expires_at.slice(0, 10)).replace(/^\w+ /, '')}`}
                     note={has('certificate') ? 'Renew it soon' : view.certificate === null ? 'HTTPS is set up at install' : 'OK · warns 60 days before'}
@@ -249,4 +255,11 @@ export function ServerHealth({ api }: { api: CounterApi }) {
             </div>
         </div>
     );
+}
+
+/** Whether the server's disks are encrypted (D111), in words: each disk the host could say anything about. */
+function encryptionText(e: { system: boolean | null; backup: boolean | null } | null): string {
+    if (e === null || (e.system === null && e.backup === null)) return 'Not reported';
+    const word = (on: boolean | null) => (on === null ? 'not known' : on ? 'on' : 'off');
+    return e.backup === null ? `Server disk ${word(e.system)}` : `Server disk ${word(e.system)} · backup disk ${word(e.backup)}`;
 }

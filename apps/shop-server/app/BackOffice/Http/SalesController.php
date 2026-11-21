@@ -34,8 +34,11 @@ final class SalesController
             ->where('l.sale_id', $sale)->orderBy('l.line_no')
             ->get(['l.id', 'l.name_snapshot', 'l.colour_note', 'l.qty', 'l.unit_price_kobo', 'l.line_total_kobo', 'l.cost_snapshot_kobo', 'l.price_source', 'l.flags', 'm.name as approver',
                 DB::raw('(SELECT r.unit_cost_kobo FROM cost_resolutions r WHERE r.sale_line_id = l.id ORDER BY r.created_at DESC, r.id DESC LIMIT 1) AS estimate')])->all();
-        /** @var list<object{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string, alert_seen: ?bool}> $payments */
-        $payments = DB::table('payments')->where('sale_id', $sale)->orderBy('id')->get(['method', 'amount_kobo', 'tendered_kobo', 'change_kobo', 'reference', 'alert_seen'])->all();
+        // A transfer's sender, for the owner and managers to reach them if the bank reverses it, until the
+        // nightly clear-up removes it (D112).
+        /** @var list<object{method: string, amount_kobo: int, tendered_kobo: ?int, change_kobo: ?int, reference: ?string, alert_seen: ?bool, sender_name: ?string, phone: ?string}> $payments */
+        $payments = DB::table('payments as p')->leftJoin('transfer_contacts as c', 'c.payment_id', '=', 'p.id')->where('p.sale_id', $sale)->orderBy('p.id')
+            ->get(['p.method', 'p.amount_kobo', 'p.tendered_kobo', 'p.change_kobo', 'p.reference', 'p.alert_seen', 'c.sender_name', 'c.phone'])->all();
 
         return response()->json([
             'id' => $row->id, 'receipt_number' => $row->receipt_number, 'kind' => $row->kind, 'total_kobo' => (int) $row->total_kobo,
@@ -66,7 +69,8 @@ final class SalesController
                 return $line;
             }, $lines),
             'payments' => array_map(fn (object $p) => ['method' => $p->method, 'amount_kobo' => (int) $p->amount_kobo, 'tendered_kobo' => $p->tendered_kobo === null ? null : (int) $p->tendered_kobo,
-                'change_kobo' => $p->change_kobo === null ? null : (int) $p->change_kobo, 'reference' => $p->reference, 'alert_seen' => $p->alert_seen], $payments),
+                'change_kobo' => $p->change_kobo === null ? null : (int) $p->change_kobo, 'reference' => $p->reference, 'alert_seen' => $p->alert_seen,
+                'sender_name' => $p->sender_name, 'phone' => $p->phone], $payments),
         ]);
     }
 }

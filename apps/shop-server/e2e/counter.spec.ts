@@ -141,7 +141,8 @@ test('parks a slow transfer as Awaiting transfer, and the other counter finishes
     await addCable(one, '3000');
     await one.keyboard.press('F8');
     await one.getByRole('tab', { name: 'Transfer' }).click();
-    await one.getByLabel('Transfer reference').fill('Chidi');
+    // The sender's name labels the wait (D112); the bank reference comes with the alert.
+    await one.getByLabel("Sender's name").fill('Chidi');
     await one.getByRole('button', { name: 'Awaiting transfer' }).click();
     await expect(one.getByText(/Waiting for the transfer/)).toBeVisible();
     await expect(one.getByRole('button', { name: /1 awaiting transfer/ })).toBeVisible({ timeout: 10_000 });
@@ -150,6 +151,9 @@ test('parks a slow transfer as Awaiting transfer, and the other counter finishes
     await two.getByRole('button', { name: /awaiting transfer/ }).click();
     await two.getByRole('dialog', { name: 'Waiting sales' }).getByRole('button', { name: 'Alert seen' }).click();
     await expect(two.getByRole('heading', { name: /^Pay / })).toBeVisible();
+    await expect(two.getByLabel("Sender's name")).toHaveValue('Chidi');
+    await two.getByLabel('Bank reference').fill('NIP-000123');
+    await two.getByLabel("Sender's phone").fill('0803 123 4567');
     await two.getByText(/I have seen the bank alert/).click();
     await two.getByRole('button', { name: 'Finish' }).click();
     await expect(two.getByRole('heading', { name: 'Sale complete' })).toBeVisible();
@@ -309,7 +313,7 @@ test('keeps a manager\'s approval of a price below the floor through a slow tran
     // The alert is slow: the cart waits as Awaiting transfer, long past the minute an approval has to bind.
     await one.keyboard.press('F8');
     await one.getByRole('tab', { name: 'Transfer' }).click();
-    await one.getByLabel('Transfer reference').fill('Bisi');
+    await one.getByLabel("Sender's name").fill('Bisi');
     await one.getByRole('button', { name: 'Awaiting transfer' }).click();
     await expect(one.getByText(/Waiting for the transfer/)).toBeVisible();
 

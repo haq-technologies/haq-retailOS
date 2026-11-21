@@ -8,6 +8,7 @@ use App\Identity\Console\AddUserCommand;
 use App\Identity\Console\DeactivateUserCommand;
 use App\Identity\Console\EnrolTerminalCommand;
 use App\Identity\Console\ListUsersCommand;
+use App\Identity\Console\RenameUserCommand;
 use App\Identity\Console\SetPinCommand;
 use App\Settings\Definition;
 use App\Settings\Registry;
@@ -35,7 +36,7 @@ class IdentityServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/routes.php');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([AddUserCommand::class, EnrolTerminalCommand::class, DeactivateUserCommand::class, ListUsersCommand::class, SetPinCommand::class]);
+            $this->commands([AddUserCommand::class, EnrolTerminalCommand::class, DeactivateUserCommand::class, ListUsersCommand::class, RenameUserCommand::class, SetPinCommand::class]);
         }
     }
 

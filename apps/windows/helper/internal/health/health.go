@@ -22,6 +22,15 @@ type Report struct {
 	Smartctl   bool   `json:"smartctl"`
 	Disks      []Disk `json:"disks"`
 	TimeSynced *bool  `json:"time_synced"`
+	// Encryption says whether a stolen PC could be read (D111): BitLocker on the system drive, which on a
+	// Windows server also holds the backups (D97). Left out when it could not be read.
+	Encryption *Encryption `json:"encryption,omitempty"`
+}
+
+// Encryption is whether the server's disk and its backup disk are encrypted, as host-health.sh says it.
+type Encryption struct {
+	System *bool `json:"system"`
+	Backup *bool `json:"backup"`
 }
 
 // Disk is one disk's health.
@@ -113,6 +122,23 @@ func ParseTimeSync(out string) *bool {
 	default:
 		return ptr(true)
 	}
+}
+
+// ParseBitLocker reads the collector's answer for the system drive: BitLocker's protection status, 1 on and
+// 0 off, or "none" when the PC has no BitLocker at all (Windows Home without device encryption). Anything else
+// is unknown.
+func ParseBitLocker(out string) *Encryption {
+	var on *bool
+	switch strings.TrimSpace(out) {
+	case "1":
+		on = ptr(true)
+	case "0", "none":
+		on = ptr(false)
+	default:
+		return nil
+	}
+	// The backups share the system drive on a Windows server (D97).
+	return &Encryption{System: on, Backup: on}
 }
 
 // Build makes the report from what the collectors read; disksErr says the disks could not be read.

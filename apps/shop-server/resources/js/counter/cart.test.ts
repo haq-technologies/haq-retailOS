@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addLine, countLabel, emptyCart, finishPayload, finishSettles, paymentState, removeLine, restoreLine, setCustomerType, setPrice, setQty, totalKobo, type NewLine } from './cart';
+import { addLine, countLabel, emptyCart, finishPayload, finishSettles, paymentState, phoneLooksRight, removeLine, restoreLine, setCustomerType, setPrice, setQty, totalKobo, type NewLine } from './cart';
 
 let n = 0;
 const id = () => `line-${String(++n)}`;
@@ -83,6 +83,19 @@ describe('the cart', () => {
         for (const status of [200, 409, 422]) expect(finishSettles(status)).toBe(true);
         // A sign-in that ran out, an expired page, a rate limit or a server error says nothing about the sale.
         for (const status of [401, 403, 404, 419, 429, 500, 503]) expect(finishSettles(status)).toBe(false);
+    });
+
+    it('sends a transfer sender trimmed, or null when nothing was typed (D112)', () => {
+        const cart = addLine(emptyCart(), line(), id, now).cart;
+        const typed = finishPayload(cart, [{ method: 'transfer', amountKobo: 1_400_000, reference: ' NIP-1 ', alertSeen: true, senderName: ' Chidi ', phone: '0803 123 4567' }], () => 'k');
+        expect(typed.payload.payments[0]).toEqual({ method: 'transfer', amount_kobo: 1_400_000, reference: 'NIP-1', alert_seen: true, sender_name: 'Chidi', phone: '0803 123 4567' });
+        const blank = finishPayload(cart, [{ method: 'transfer', amountKobo: 1_400_000, reference: '', alertSeen: true }], () => 'k');
+        expect(blank.payload.payments[0]).toMatchObject({ reference: null, sender_name: null, phone: null });
+    });
+
+    it('accepts the phone numbers the server keeps, and nothing typed', () => {
+        for (const phone of ['', '0803 123 4567', '+234 803-123-4567', '(0803) 1234567']) expect(phoneLooksRight(phone)).toBe(true);
+        for (const phone of ['call me', '0803', '0803x1234567', '++2348031234567']) expect(phoneLooksRight(phone)).toBe(false);
     });
 
     it('works out what is left to pay and the change', () => {

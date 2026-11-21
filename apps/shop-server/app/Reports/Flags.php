@@ -44,10 +44,11 @@ final readonly class Flags
         'voided' => 'Sale voided',
         'return_no_receipt' => 'Return with no receipt',
         'cash_variance' => 'Drawer over or short',
+        'support_access' => 'HAQ support on the server',
     ];
 
     /** What goes to the dashboard's Needs your attention until someone marks it as seen. */
-    public const ATTENTION = ['below_cost', 'below_cost_later', 'below_floor', 'transfer_waited', 'approval_away', 'locked_out', 'return_no_receipt', 'cash_variance'];
+    public const ATTENTION = ['below_cost', 'below_cost_later', 'below_floor', 'transfer_waited', 'approval_away', 'locked_out', 'return_no_receipt', 'cash_variance', 'support_access'];
 
     public function __construct(private Settings $settings) {}
 
@@ -89,6 +90,7 @@ final readonly class Flags
                 'voided' => $this->voided($period),
                 'return_no_receipt' => $this->returnsWithoutReceipt($period),
                 'cash_variance' => $this->cashVariances($period),
+                'support_access' => $this->supportAccess($period),
                 default => [],
             };
             array_push($rows, ...$found);
@@ -508,6 +510,35 @@ final readonly class Flags
             "{$r->drawer} ".((int) $r->variance > 0 ? 'over' : 'short').' by '.Money::naira(abs((int) $r->variance)),
             'Counted '.Money::naira((int) $r->counted).', expected '.Money::naira((int) $r->expected).", business day {$r->business_day}",
             who: $r->actor, cashierId: $r->actor_id, terminal: $r->terminal, amount: abs((int) $r->variance)), $rows);
+    }
+
+    /**
+     * HAQ support on the server (D110, finding DP3): each SSH sign-in and each `sudo haq` command that reaches
+     * the shop's records. The owner consented in the contract; this shows them every visit.
+     *
+     * @return list<Flag>
+     */
+    private function supportAccess(Period $p): array
+    {
+        /** @var list<object{id: string, at: string, action: string, command: ?string, by: ?string, from_address: ?string, method: ?string}> $rows */
+        $rows = DB::select(<<<'SQL'
+            SELECT al.id, al.recorded_at AS at, al.action, al.redacted_after->>'command' AS command,
+                   coalesce(al.redacted_after->>'by', al.redacted_after->>'user') AS by, al.redacted_after->>'from' AS from_address,
+                   al.redacted_after->>'method' AS method
+            FROM audit_log al
+            WHERE al.action IN ('support.signed_in', 'support.command') AND al.recorded_at >= ? AND al.recorded_at < ?
+            SQL, [$p->fromSql(), $p->toSql()]);
+
+        return array_map(function (object $r): array {
+            $where = $r->from_address === null ? 'on the server itself' : "from {$r->from_address}";
+            if ($r->action === 'support.signed_in') {
+                return $this->row('support_access', $r->id, $r->at, "Someone signed in to the server {$where}",
+                    'As '.($r->by ?? 'an unknown user').($r->method === null ? '' : ", with a {$r->method}").'. Only HAQ support should, with the consent in your contract.');
+            }
+
+            return $this->row('support_access', $r->id, $r->at, 'Server command: haq '.($r->command ?? '?'),
+                'Run by '.($r->by ?? 'an unknown user')." {$where}. It can read the shop's records.");
+        }, $rows);
     }
 
     /**
