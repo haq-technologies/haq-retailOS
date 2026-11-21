@@ -53,6 +53,10 @@ jobs:
       - name: Check Markdown tables and links
         run: python3 -I tools/docs/check_markdown.py
 
+      # nginx drops a server's headers in a location that adds its own, so each one includes them again (D123).
+      - name: Check the shop's nginx sends the security headers on every answer
+        run: python3 -I tools/ci/check_nginx_headers.py apps/shop-server/docker/nginx/shop.conf
+
       - name: Release signing dry run (a throwaway key; the updater's own checks)
         run: tools/release/dry-run.sh
 
@@ -293,7 +297,14 @@ jobs:
           $receipts = Join-Path $env:RUNNER_TEMP 'counter-receipts.bin'
           $answers = Join-Path $env:RUNNER_TEMP 'answers.json'
           $result = Join-Path $env:RUNNER_TEMP 'result.json'
-          @{ mode = 'counter'; address = '127.0.0.1'; server = '127.0.0.2'; counter = 'T02'; code = '4827-1093'; printer = "file:$receipts" } |
+          # A thumbprint that is not the certificate's, as if an impostor answered for the server: the setup
+          # stops, and Windows does not trust the certificate (D125).
+          @{ mode = 'counter'; address = '127.0.0.1'; server = '127.0.0.2'; counter = 'T02'; code = '4827-1093'; thumbprint = 'AB12 CD34 EF56 7890'; printer = "file:$receipts" } |
+            ConvertTo-Json | Set-Content $answers -Encoding ascii
+          & $exe setup counter --answers $answers --result $result; if (-not $LASTEXITCODE) { throw 'setup counter trusted a certificate whose thumbprint was not the one typed' }
+          if (Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq $ca.Thumbprint) { throw 'the certificate was trusted with the wrong thumbprint' }
+          # The first 16 characters, as `haq enrol` shows them on the server.
+          @{ mode = 'counter'; address = '127.0.0.1'; server = '127.0.0.2'; counter = 'T02'; code = '4827-1093'; thumbprint = (($ca.Thumbprint.Substring(0, 16) -split '(.{4})' | Where-Object { $_ }) -join ' '); printer = "file:$receipts" } |
             ConvertTo-Json | Set-Content $answers -Encoding ascii
           & $exe setup counter --answers $answers --result $result; if ($LASTEXITCODE) { throw 'setup counter failed' }
           if (Test-Path $answers) { throw 'the answers were not deleted' }
@@ -438,7 +449,8 @@ jobs:
 
           $answers = Join-Path $env:RUNNER_TEMP 'answers.json'
           $receipts = Join-Path $env:RUNNER_TEMP 'setup-receipts.bin'
-          @{ mode = 'counter'; address = '127.0.0.1'; server = '127.0.0.2'; counter = 'T02'; code = '4827-1093'; printer = "file:$receipts" } |
+          # The thumbprint's first 16 characters, as `haq enrol` shows them on the server (D125).
+          @{ mode = 'counter'; address = '127.0.0.1'; server = '127.0.0.2'; counter = 'T02'; code = '4827-1093'; thumbprint = $ca.Thumbprint.Substring(0, 16); printer = "file:$receipts" } |
             ConvertTo-Json | Set-Content $answers -Encoding ascii
           $app = Join-Path $env:ProgramFiles 'HAQ Retail OS'
           # Waits for the setup itself, not for whatever it started, at most 5 minutes; the logs say how far it got.
