@@ -184,11 +184,15 @@ services:
       - pg-socket:/var/run/postgresql
       - backup-repo:/backup
       - ./apps/shop-server/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    # An init is PID 1, never PostgreSQL itself. A check that outlives Docker's timeout leaves its pg_isready
+    # behind, and PostgreSQL 18 takes a stray child's exit code 2 for a crash and restarts every connection
+    # (D104). pg_isready gives up after 2 s, well inside the 10 s timeout.
+    init: true
     healthcheck:
       # Over TCP, so the check passes only once initialisation is over and the real server listens.
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d retail"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d retail -t 2"]
       interval: 2s
-      timeout: 3s
+      timeout: 10s
       retries: 30
     restart: unless-stopped
 
