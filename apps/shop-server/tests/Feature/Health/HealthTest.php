@@ -63,8 +63,11 @@ beforeEach(function () {
         Cache::forever(VerifyCommand::HEALTH_KEY, ['checked_at' => now()->subHours(3)->toIso8601String(), 'problems' => []]);
         Cache::forever(Clock::HIGH_WATER, now()->toIso8601String());
         // The disks are this machine's own; the tests set what counts as full. The backups have a disk of their
-        // own, as on a mini-PC with its second disk, so the drives are swapped weekly.
-        config(['health.disk_warn_percent' => 0, 'health.disk_warn_bytes' => 0, 'health.backup_own_disk' => true]);
+        // own, as on a mini-PC with its second disk, so the drives are swapped weekly; the disk is mounted, so its
+        // marker is there (D129).
+        file_put_contents($this->dir.'/.haq-backup-disk', "HAQ Retail OS backup disk.\n");
+        config(['health.disk_warn_percent' => 0, 'health.disk_warn_bytes' => 0, 'health.backup_own_disk' => true,
+            'backups.disk_marker' => $this->dir.'/.haq-backup-disk']);
     };
 });
 
@@ -262,4 +265,26 @@ it('asks for an off-site copy each day when the backups share the database\'s di
     // With a backup disk of its own the same copy is still within the week.
     config(['health.backup_own_disk' => true]);
     expect($offsite())->toBeEmpty();
+});
+
+it('warns when the backup disk is not mounted, where the backups have a disk of their own (D129)', function () {
+    ($this->healthy)();
+    $titles = function () {
+        $this->artisan('health:check')->assertSuccessful();
+
+        return collect(app(Health::class)->warnings())->pluck('title');
+    };
+
+    // No marker: the folder is not the backup disk.
+    unlink($this->dir.'/.haq-backup-disk');
+    expect($titles())->toContain('The backup disk is not mounted');
+
+    // The disk mounted again, its marker is back and so is the healthy page.
+    file_put_contents($this->dir.'/.haq-backup-disk', "HAQ Retail OS backup disk.\n");
+    expect($titles())->not->toContain('The backup disk is not mounted');
+
+    // Without a disk of their own, no marker is looked for.
+    unlink($this->dir.'/.haq-backup-disk');
+    config(['health.backup_own_disk' => false]);
+    expect($titles())->not->toContain('The backup disk is not mounted');
 });
