@@ -42,6 +42,9 @@ type Answers struct {
 	Server  string `json:"server,omitempty"`  // the shop server's address
 	Counter string `json:"counter,omitempty"` // which counter this PC is, such as T02
 	Code    string `json:"code,omitempty"`    // the one-time code from `haq enrol T02` on the server
+	// The start of the shop's certificate thumbprint, at least 16 characters, which `haq enrol` shows beside
+	// the code: the certificate fetched over the network is trusted only if it matches (D125).
+	Thumbprint string `json:"thumbprint,omitempty"`
 }
 
 // Shop is the shop's details, from which the engine makes its profile (shop:make-profile's shape).
@@ -58,14 +61,16 @@ type Shop struct {
 }
 
 var (
-	tag          = regexp.MustCompile(`^([0-9]{4}\.[0-9]{1,2}\.[0-9]+|main)$`)
-	githubUser   = regexp.MustCompile(`^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$`)
-	token        = regexp.MustCompile(`^[A-Za-z0-9_]{20,255}$`)
-	counterCode  = regexp.MustCompile(`^T[0-9]{2}$`)
-	enrolCode    = regexp.MustCompile(`^[A-Za-z0-9-]{4,20}$`)
-	printerHost  = regexp.MustCompile(`^[A-Za-z0-9.-]{1,64}$`)
-	ownerPIN     = regexp.MustCompile(`^[0-9]{6}$`)
-	errBothPrint = errors.New("give this PC's printer or a network printer's address, not both")
+	tag         = regexp.MustCompile(`^([0-9]{4}\.[0-9]{1,2}\.[0-9]+|main)$`)
+	githubUser  = regexp.MustCompile(`^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$`)
+	token       = regexp.MustCompile(`^[A-Za-z0-9_]{20,255}$`)
+	counterCode = regexp.MustCompile(`^T[0-9]{2}$`)
+	enrolCode   = regexp.MustCompile(`^[A-Za-z0-9-]{4,20}$`)
+	// A thumbprint's start, written without spaces: 16 to 40 hexadecimal characters (SHA-1 has 40).
+	thumbprintStart = regexp.MustCompile(`^[0-9A-F]{16,40}$`)
+	printerHost     = regexp.MustCompile(`^[A-Za-z0-9.-]{1,64}$`)
+	ownerPIN        = regexp.MustCompile(`^[0-9]{6}$`)
+	errBothPrint    = errors.New("give this PC's printer or a network printer's address, not both")
 )
 
 // ReadAnswers reads the setup's answers and deletes their file at once.
@@ -157,6 +162,8 @@ func (a Answers) validateCounter(address netip.Addr) error {
 		return fmt.Errorf("%q is not a counter, such as T02", a.Counter)
 	case !enrolCode.MatchString(a.Code):
 		return errors.New("type the one-time code from `haq enrol` on the server, such as 4827-1093")
+	case !thumbprintStart.MatchString(normThumbprint(a.Thumbprint)):
+		return errors.New("type the first 16 characters of the certificate's thumbprint, as `haq enrol` shows them on the server")
 	}
 	return nil
 }

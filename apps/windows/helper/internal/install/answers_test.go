@@ -57,6 +57,12 @@ func TestBadAnswersAreRefusedInWordsForTheInstaller(t *testing.T) {
 		"a counter with no code": {func(a *Answers) {
 			a.Mode, a.Address, a.Server, a.Counter, a.Code = config.Counter, "10.92.139.201", "10.92.139.200", "T02", ""
 		}, "one-time code"},
+		"a counter with no thumbprint": {func(a *Answers) {
+			a.Mode, a.Address, a.Server, a.Counter, a.Code = config.Counter, "10.92.139.201", "10.92.139.200", "T02", "4827-1093"
+		}, "first 16 characters"},
+		"a counter with too little of the thumbprint": {func(a *Answers) {
+			a.Mode, a.Address, a.Server, a.Counter, a.Code, a.Thumbprint = config.Counter, "10.92.139.201", "10.92.139.200", "T02", "4827-1093", "33CB C863"
+		}, "first 16 characters"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			a := serverAnswers()
@@ -70,7 +76,7 @@ func TestBadAnswersAreRefusedInWordsForTheInstaller(t *testing.T) {
 
 func TestACounterNeedsNoShopDetails(t *testing.T) {
 	a := Answers{Mode: config.Counter, Address: "10.92.139.201", Server: "10.92.139.200", Counter: "T02",
-		Code: "4827-1093", Printer: "XP-58"}
+		Code: "4827-1093", Thumbprint: "33cb c863 ec7d 14d0", Printer: "XP-58"}
 	if err := a.Validate(); err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +145,8 @@ func TestANetworkPrinterGoesInTheProfileAsItIs(t *testing.T) {
 
 func TestAnswersWithAByteOrderMarkAreRead(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "answers.json")
-	raw, _ := json.Marshal(Answers{Mode: config.Counter, Address: "10.92.139.201", Server: "10.92.139.200", Counter: "T02", Code: "4827-1093"})
+	raw, _ := json.Marshal(Answers{Mode: config.Counter, Address: "10.92.139.201", Server: "10.92.139.200", Counter: "T02", Code: "4827-1093",
+		Thumbprint: "33CB C863 EC7D 14D0"})
 	if err := os.WriteFile(path, append([]byte("\xef\xbb\xbf"), raw...), 0o600); err != nil {
 		t.Fatal(err)
 	}
