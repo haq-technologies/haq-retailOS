@@ -87,6 +87,7 @@ final class CounterController
             'idleLockMinutes' => $settings->get('identity.idle_lock_minutes'),
             'settings' => [
                 'transferAlertTick' => $settings->get('payments.transfer_alert_tick') !== false,
+                'transferContactDays' => $settings->get('payments.transfer_contact_days'),
                 'floorPercent' => $settings->get('pricing.floor_percent'),
                 'retypeMultiple' => $settings->get('pricing.retype_multiple'),
                 'colours' => $colours,

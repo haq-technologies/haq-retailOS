@@ -74,6 +74,7 @@ const flagName: Record<string, string> = {
     approval_away: 'Approved while not signed in',
     locked_out: 'Locked out',
     back_entry: 'Re-entered after a restore',
+    support_access: 'HAQ support on the server',
 };
 
 export function DailySummary({ api, go }: { api: CounterApi; go: (section: string) => void }) {

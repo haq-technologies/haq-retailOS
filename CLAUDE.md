@@ -28,7 +28,7 @@ PLAN.md            the living plan
 docs/spec/         the product spec (v1.5)
 docs/decisions.md  decision log
 docs/catalogue/    starter catalogue v1.1: seed (master), review workbook, Appendix C (generated)
-docs/operations/   install, restore, release and operations guides, the 52 checks and the G3 rehearsal
+docs/operations/   install, restore, release, privacy and operations guides, the 52 checks and the G3 rehearsal
 docs/archive/      superseded originals: spec v1.4 (.docx), locked catalogue v1. Read-only
 tools/catalogue/   scripts that build and verify the catalogue
 tools/docs/        the Markdown checker
@@ -121,7 +121,7 @@ Apple's system colours with fixed roles, the Inter typeface, and responsive layo
 
 ## Git
 
-- Remote: https://github.com/haq-technologies/haq-retailOS. It stays public until the owner makes it private (D10), so every push publishes. Commit with the GitHub noreply email set in this repository's git config, never a personal address, and check each diff for secrets, shop data and personal data before pushing.
+- Remote: https://github.com/haq-technologies/haq-retailOS. It stays public until the owner makes it private (D10), so every push publishes. Commit with the GitHub noreply email set in this repository's git config, never a personal address, and check each diff for secrets, shop data and personal data before pushing. Squash-merge with `gh pr merge --squash --author-email` and that noreply address: otherwise GitHub writes the merge under the account's own email (D114).
 - Main is the only long branch (D81): no develop branch, and no test or staging branch, because a release passes through its stages as the same images. Branch from main and keep branches short-lived. Merge only through a pull request with green CI, and only after the product owner has tried its build on staging (`apps/shop-server/deploy/staging.sh --build`) and said to merge it (test before merge, D96); never push directly to main. Shops never run main: they take only the releases the product owner signs. A fix for a release already out, when main cannot be released, is merged to main first and cherry-picked to a `release/YEAR.MONTH` branch cut from that release's tag ([docs/operations/releases.md](docs/operations/releases.md)). No approval is required, because one person builds this (D15) and GitHub does not let an author approve their own pull request. GitHub enforces this with the "Protect main" ruleset: a pull request, every CI check green and up to date (D66), squash merges only, no force-push or deletion, and no bypass. A new CI job becomes a required check once it is on main; add it to the ruleset then, never before, or every pull request waits for it.
 - End every commit message with the co-author line for Claude.
 

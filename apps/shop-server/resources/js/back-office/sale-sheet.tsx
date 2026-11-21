@@ -33,7 +33,17 @@ interface Sale {
     cashier: string;
     terminal: string;
     lines: SaleLine[];
-    payments: { method: string; amount_kobo: number; tendered_kobo: number | null; change_kobo: number | null; reference: string | null; alert_seen: boolean | null }[];
+    payments: {
+        method: string;
+        amount_kobo: number;
+        tendered_kobo: number | null;
+        change_kobo: number | null;
+        reference: string | null;
+        alert_seen: boolean | null;
+        /** A transfer's sender, until the nightly clear-up removes it (D112). */
+        sender_name?: string | null;
+        phone?: string | null;
+    }[];
 }
 
 const method: Record<string, string> = { cash: 'Cash', transfer: 'Transfer', pos: 'POS' };
@@ -108,6 +118,20 @@ export function SaleSheet({ api, saleIds, onClose }: { api: CounterApi; saleIds:
                                     {p.method === 'cash' && p.tendered_kobo !== null && ` · given ${naira(p.tendered_kobo)}, change ${naira(p.change_kobo ?? 0)}`}
                                 </span>
                                 <span>{naira(p.amount_kobo)}</span>
+                                {p.method === 'transfer' && ((p.sender_name ?? '') !== '' || (p.phone ?? '') !== '') && (
+                                    <span className="w-full text-text-secondary">
+                                        Sent by {p.sender_name ?? 'a sender with no name kept'}
+                                        {(p.phone ?? '') !== '' && (
+                                            <>
+                                                {' · '}
+                                                <a className="font-semibold text-action-text underline" href={`tel:${p.phone ?? ''}`}>
+                                                    {p.phone}
+                                                </a>
+                                            </>
+                                        )}
+                                        {' · kept for a reversed transfer, then cleared'}
+                                    </span>
+                                )}
                             </li>
                         ))}
                     </ul>

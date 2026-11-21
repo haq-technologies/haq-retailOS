@@ -5,6 +5,7 @@
 #   sudo haq users                       everyone with a name tile: role, status and ID
 #   sudo haq pin "Amina"                 a new PIN for a person (forgotten or seen); asks it twice
 #   sudo haq deactivate "Amina"          someone who leaves: their tile goes and their PIN stops
+#   sudo haq rename "Amina" "Aminat"     correct a name on a tile; the change is audited
 #   sudo haq enrol T01                   a one-time code (30 minutes) to register counter T01, or D01 for a phone
 #   sudo haq printer T02 192.168.1.22    where a counter prints: a network printer, or the PC whose print bridge has its USB printer
 #   sudo haq certificate                 the setup address for new devices, and the certificate's thumbprint
@@ -21,6 +22,9 @@
 #   sudo haq logs [service]              follow a service's log
 #   sudo haq artisan <command>           any server command, for HAQ support
 #   sudo haq restore [options]           restore the server from its backups (docs/operations/restore-drill.md)
+#
+# Every command that reaches the shop's records is written to the audit trail and the owner's flag list first,
+# with who ran it and from where (D110): the owner consents to support in the contract and sees each visit.
 set -euo pipefail
 
 self="$(readlink -f "$0" 2>/dev/null || echo "$0")"
@@ -45,10 +49,23 @@ https_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "https://$IP"; else e
 http_url() { if [ "${HTTP_PORT:-80}" = 80 ]; then echo "http://$IP"; else echo "http://$IP:$HTTP_PORT"; fi; }
 setup_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "$(http_url)/setup"; else echo "$(http_url)/setup?https_port=$HTTPS_PORT"; fi; }
 
-usage() { sed -n '2,23p' "$self" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,24p' "$self" | sed 's/^# \{0,1\}//'; }
+
+# Records a support command on the audit trail before it runs (D110). It never stops the command: a server that
+# is restoring or stopped has no app to record it, and the command must still work.
+record() {
+    local by="${HAQ_BY:-${SUDO_USER:-$(id -un 2>/dev/null || echo root)}}" from="${SSH_CLIENT:-}"
+    from="${from%% *}"
+    # sudo clears SSH_CLIENT; the terminal's own login says where an SSH session came from.
+    if [ -z "$from" ]; then from="$(who -m 2>/dev/null | sed -n 's/.*(\([^)]*\)).*/\1/p' || true)"; fi
+    compose exec -T app php artisan support:record "$1" --by="$by" ${from:+--from="$from"} >/dev/null 2>&1 || true
+}
 
 command="${1:-help}"
 [ $# -gt 0 ] && shift
+case "$command" in
+    add-user|users|pin|deactivate|rename|enrol|export|receipts|logs|artisan|restore) record "$command" ;;
+esac
 case "$command" in
     add-user)
         if [ $# -lt 2 ]; then echo 'Give the name and the role: sudo haq add-user "Halima" owner (cashier, manager, storekeeper or owner).' >&2; exit 2; fi
@@ -64,6 +81,10 @@ case "$command" in
     deactivate)
         if [ $# -lt 1 ]; then echo 'Give the name on the tile (or the ID from sudo haq users): sudo haq deactivate "Amina"' >&2; exit 2; fi
         compose exec -T app php artisan shop:deactivate-user "$1"
+        ;;
+    rename)
+        if [ $# -lt 2 ]; then echo 'Give the name on the tile (or the ID from sudo haq users) and the right name: sudo haq rename "Amina" "Aminat"' >&2; exit 2; fi
+        compose exec -T app php artisan shop:rename-user "$1" "$2"
         ;;
     enrol)
         if [ $# -lt 1 ]; then echo 'Give the device: sudo haq enrol T01 (a counter) or sudo haq enrol D01 (a back-office laptop or phone).' >&2; exit 2; fi
