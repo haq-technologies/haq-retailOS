@@ -331,10 +331,11 @@ begin
   OwnerPage.Add('The same PIN again:', True);
 
   ServerPage := CreateInputQueryPage(AddressPage.ID, 'The shop''s server',
-    'On the server''s PC, in Terminal (Admin), run: haq-helper server enrol T02 (for counter T02). It shows a code that works once, for 30 minutes.', '');
+    'On the server''s PC, in Terminal (Admin), run: haq-helper server enrol T02 (for counter T02). It shows a code that works once, for 30 minutes, and the shop''s certificate thumbprint. Type both as the server''s screen shows them, never from another page (D125).', '');
   ServerPage.Add('The server''s address:', False);
   ServerPage.Add('This counter (T02, T03 ...):', False);
   ServerPage.Add('The one-time code:', False);
+  ServerPage.Add('The thumbprint''s first 16 characters, such as AB12 CD34 EF56 7890:', False);
   ServerPage.Values[1] := 'T02';
 
   PrinterPage := CreateInputOptionPage(OwnerPage.ID, 'The receipt printer',
@@ -505,9 +506,9 @@ begin
   end
   else if CurPageID = ServerPage.ID then
   begin
-    if (Trim(ServerPage.Values[0]) = '') or (Trim(ServerPage.Values[1]) = '') or (Trim(ServerPage.Values[2]) = '') then
+    if (Trim(ServerPage.Values[0]) = '') or (Trim(ServerPage.Values[1]) = '') or (Trim(ServerPage.Values[2]) = '') or (Trim(ServerPage.Values[3]) = '') then
     begin
-      MsgBox('Give the server''s address, this counter and the one-time code.', mbError, MB_OK);
+      MsgBox('Give the server''s address, this counter, the one-time code and the thumbprint''s first 16 characters.', mbError, MB_OK);
       Result := False;
     end;
   end
@@ -588,7 +589,7 @@ begin
   else
     Result := '{"mode": "counter", "address": ' + JsonString(Trim(AddressPage.Values[0])) + Printer +
       ', "server": ' + JsonString(Trim(ServerPage.Values[0])) + ', "counter": ' + JsonString(Uppercase(Trim(ServerPage.Values[1]))) +
-      ', "code": ' + JsonString(Trim(ServerPage.Values[2])) + '}';
+      ', "code": ' + JsonString(Trim(ServerPage.Values[2])) + ', "thumbprint": ' + JsonString(Trim(ServerPage.Values[3])) + '}';
 end;
 
 { Before a newer setup copies its files, the old helper stops the service and the keep-alive. }

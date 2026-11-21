@@ -1,6 +1,7 @@
 #!/bin/bash
 # Staging on the product owner's computer (D16): the latest images from main, installed exactly as a shop
-# would install them, beside the development stack. It answers at https://localhost:8443.
+# would install them, beside the development stack. It answers at https://localhost:8443, on this computer
+# only: the network it is on cannot reach it (D124).
 #
 #   apps/shop-server/deploy/staging.sh [--tag main] [--local] [--build] [--fresh]
 #
@@ -67,5 +68,5 @@ exec "$here/install.sh" \
     --profile "$here/../docker/profile.example.json" \
     --name localhost --ip 127.0.0.1 \
     --dir "$dir" --project "$project" \
-    --http-port 8081 --https-port 8443 \
+    --http-port 8081 --https-port 8443 --bind 127.0.0.1 \
     --tag "$tag" "${args[@]+"${args[@]}"}"

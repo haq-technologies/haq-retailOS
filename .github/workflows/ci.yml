@@ -53,6 +53,10 @@ jobs:
       - name: Check Markdown tables and links
         run: python3 -I tools/docs/check_markdown.py
 
+      # nginx drops a server's headers in a location that adds its own, so each one includes them again (D123).
+      - name: Check the shop's nginx sends the security headers on every answer
+        run: python3 -I tools/ci/check_nginx_headers.py apps/shop-server/docker/nginx/shop.conf
+
       - name: Release signing dry run (a throwaway key; the updater's own checks)
         run: tools/release/dry-run.sh
 

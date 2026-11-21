@@ -65,12 +65,17 @@ func thumbprint(certPEM []byte) (string, error) {
 	return strings.Join(groups, " "), nil
 }
 
-// sameThumbprint compares two thumbprints however they are spaced or cased.
-func sameThumbprint(a, b string) bool {
-	norm := func(s string) string {
-		return strings.ToUpper(strings.Join(strings.Fields(strings.ReplaceAll(s, ":", " ")), ""))
-	}
-	return norm(a) != "" && norm(a) == norm(b)
+// thumbprintStarts says whether a certificate's thumbprint begins with what the person typed: at least its
+// first 16 characters, however spaced or cased, read from the server's own screen (D125). The thumbprint the
+// server publishes over plain HTTP is never the check, since an impostor on the network would answer it too.
+func thumbprintStarts(full, typed string) bool {
+	start := normThumbprint(typed)
+	return len(start) >= 16 && strings.HasPrefix(normThumbprint(full), start)
+}
+
+// normThumbprint is a thumbprint in upper case, without its spaces or colons.
+func normThumbprint(s string) string {
+	return strings.ToUpper(strings.Join(strings.Fields(strings.ReplaceAll(s, ":", " ")), ""))
 }
 
 // enrolCodeFrom takes the one-time code from shop:enrol-terminal's output: its last line.

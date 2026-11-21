@@ -40,6 +40,7 @@
   <section aria-labelledby="s1">
     <h2 id="s1"><span class="n">1</span> Trust the shop's certificate</h2>
     <p>The shop server proves who it is with a certificate from the shop's own authority. Windows must trust that authority once, or Chrome warns that the connection is not private.</p>
+    <p class="note"><strong>First, on the server:</strong> <code>sudo haq enrol</code> and <code>sudo haq certificate</code> show the certificate's thumbprint (on a Windows server's PC, <code>haq-helper server enrol</code> and <code>haq-helper server certificate</code>). You need its first 16 characters, such as <code>AB12 CD34 EF56 7890</code>. Read them on the server's screen, never from this page: anyone on the shop's network could change this page.</p>
     <p><strong>On a Windows PC:</strong></p>
     <ol>
       <li>Right-click the Start button and choose <strong>Terminal (Admin)</strong> (on Windows 10, <strong>Windows PowerShell (Admin)</strong>). Choose <strong>Yes</strong>.</li>
@@ -51,12 +52,13 @@
       <span id="copied" class="muted" role="status"></span>
     </div>
     <ol start="3">
-      <li>When it says <code>command completed successfully</code>, close Chrome completely (every window) and open it again.</li>
+      <li>It asks for the thumbprint's first 16 characters: type them as the server shows them, and press Enter.</li>
+      <li>When it says <code>command completed successfully</code>, close Chrome completely (every window) and open it again. If it says <strong>Not the shop's certificate</strong>, stop and call HAQ support.</li>
     </ol>
-    <p class="muted" id="thumb-line" hidden>The certificate's thumbprint is <strong id="thumb"></strong>. On the server, <code>sudo haq certificate</code> shows the same.</p>
     <details>
       <summary>A phone, a Mac, or doing it by hand</summary>
       <p><a class="button" id="download" href="/ca.crt">Download the certificate</a></p>
+      <p><strong>Before you install it:</strong> open the downloaded certificate's details. Its thumbprint (on a phone or a Mac, its SHA-1 fingerprint) must begin with the 16 characters the server shows. If it does not, stop and call HAQ support.</p>
       <ol>
         <li><strong>Windows by hand:</strong> open the downloaded file, choose Install Certificate, then Local Machine, then "Place all certificates in the following store", Browse, <em>Trusted Root Certification Authorities</em>, OK, Next, Finish.</li>
         <li><strong>Android:</strong> Settings, Security, More security settings, Install from device storage, CA certificate, then choose the downloaded file.</li>
@@ -87,7 +89,13 @@
     var port = /^\d{1,5}$/.test(params.get('https_port') || '') ? params.get('https_port') : '';
     var secure = 'https://' + window.location.hostname + (port && port !== '443' ? ':' + port : '');
     var plain = 'http://' + window.location.host;
-    var command = 'curl.exe -fsSo "$env:TEMP\\haq-shop-ca.crt" ' + plain + '/ca.crt; if ($LASTEXITCODE -eq 0) { certutil -addstore -f Root "$env:TEMP\\haq-shop-ca.crt" }';
+    // The certificate is trusted only if its thumbprint begins with what the person types from the server's
+    // own screen (D125): this page and the file both come over plain HTTP, so neither can vouch for itself.
+    var command = 'curl.exe -fsSo "$env:TEMP\\haq-shop-ca.crt" ' + plain + '/ca.crt; if ($LASTEXITCODE -eq 0) { '
+      + '$t = (Read-Host "The thumbprint\'s first 16 characters, from the server") -replace "[^0-9A-Fa-f]", ""; '
+      + '$c = (New-Object Security.Cryptography.X509Certificates.X509Certificate2 "$env:TEMP\\haq-shop-ca.crt").Thumbprint; '
+      + 'if ($t.Length -ge 16 -and $c.StartsWith($t.ToUpper())) { certutil -addstore -f Root "$env:TEMP\\haq-shop-ca.crt" } '
+      + 'else { Write-Host "Not the shop\'s certificate. Stop, and call HAQ support." -ForegroundColor Red } }';
     document.getElementById('command').value = command;
     document.getElementById('kiosk').value = '"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --kiosk ' + secure + '/counter --no-first-run --noerrdialogs';
     document.getElementById('download').href = plain + '/ca.crt';
@@ -103,15 +111,6 @@
       document.getElementById('copied').textContent = done ? 'Copied. Now paste it into the administrator window.' : 'Press Ctrl+C to copy the selected line.';
     });
 
-    var request = new XMLHttpRequest();
-    request.open('GET', '/ca.thumbprint');
-    request.onload = function () {
-      if (request.status === 200 && request.responseText.trim() !== '') {
-        document.getElementById('thumb').textContent = request.responseText.trim();
-        document.getElementById('thumb-line').hidden = false;
-      }
-    };
-    request.send();
   })();
 </script>
 </body>

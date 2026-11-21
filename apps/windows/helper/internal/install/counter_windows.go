@@ -43,14 +43,12 @@ func Counter(ctx context.Context, a Answers, out io.Writer) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	published, err := fetch(ctx, "http://"+a.Server+"/ca.thumbprint")
-	if err != nil {
-		return Result{}, err
-	}
+	// The certificate came over plain HTTP, so it is trusted only if it is the one the server's own screen
+	// shows: `haq enrol` there gives its thumbprint beside the code (D125).
 	thumb, _ := thumbprint(ca)
-	if !sameThumbprint(thumb, string(published)) {
-		return Result{}, fmt.Errorf("the certificate (%s) is not the one the server names (%s): stop, and call HAQ support",
-			thumb, strings.TrimSpace(string(published)))
+	if !thumbprintStarts(thumb, a.Thumbprint) {
+		return Result{}, fmt.Errorf("the certificate from %s (%s) is not the one the server's PC shows (%s): stop, and call HAQ support",
+			a.Server, thumb, strings.TrimSpace(a.Thumbprint))
 	}
 	if err := trust(ctx, out, ca); err != nil {
 		return Result{}, err

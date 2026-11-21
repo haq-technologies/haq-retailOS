@@ -19,6 +19,8 @@
 # --windows (the server hidden in WSL2 on a Windows PC, D86: the Windows setup gives it; the HAQ Helper then
 # reports the disks and the clock and starts the off-site copy from Windows, so neither is set up here),
 # --release (a release's folder, brought on a flash drive, in place of fetching it from GitHub),
+# --bind (publish the ports on this address only, such as 127.0.0.1 for staging on a laptop, D124; a shop
+# publishes on every address, for its counters),
 # --check-only (check the release given by --tag, and stop before anything is installed).
 #
 # A release (--tag YEAR.MONTH.N) is checked before anything is installed, as the updater checks it: its
@@ -41,6 +43,7 @@ channel=""
 windows=0
 release_dir=""
 check_only=0
+bind=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -59,6 +62,7 @@ while [ $# -gt 0 ]; do
         --windows) windows=1; shift ;;
         --release) release_dir="$2"; shift 2 ;;
         --check-only) check_only=1; shift ;;
+        --bind) bind="$2"; shift 2 ;;
         *) echo "Unknown option $1" >&2; exit 2 ;;
     esac
 done
@@ -206,7 +210,7 @@ if [ "$is_release" = 1 ] && command -v git >/dev/null; then
         echo "         Install from the release itself: git clone --branch $tag --depth 1 https://github.com/haq-technologies/haq-retailOS.git" >&2
     fi
 fi
-grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|RELEASE_VERSION|SERVER_NAME|SERVER_IP|HTTP_PORT|HTTPS_PORT|BACKUP_DIR)=' "$dir/.env" > "$dir/.env.new" || true
+grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|RELEASE_VERSION|SERVER_NAME|SERVER_IP|HTTP_PORT|HTTPS_PORT|BACKUP_DIR|BIND_ADDRESS)=' "$dir/.env" > "$dir/.env.new" || true
 {
     echo "APP_IMAGE=$app_image"
     echo "WEB_IMAGE=$web_image"
@@ -218,6 +222,7 @@ grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|RELEASE_VERSION|SERVER_NAME|SERVER_IP
     echo "HTTP_PORT=$http_port"
     echo "HTTPS_PORT=$https_port"
     if [ -n "$backup_dir" ]; then echo "BACKUP_DIR=$backup_dir"; fi
+    if [ -n "$bind" ]; then echo "BIND_ADDRESS=$bind"; fi
 } >> "$dir/.env.new"
 mv "$dir/.env.new" "$dir/.env"
 chmod 600 "$dir/.env"
