@@ -82,10 +82,13 @@ COPY --from=assets --chown=www-data:www-data /app/public/build /app/public/build
 # The starter catalogue's master file (R8), read by catalogue:seed.
 COPY docs/catalogue/starter-catalogue-v1.1.json /catalogue/starter-catalogue-v1.1.json
 
+# /etc/haq/ca is the shop's authority, for its owner alone (D121): a new volume mounted there takes this
+# owner and mode.
 RUN set -eux; \
     rm -rf /app/tests /app/e2e /app/docker/postgres /app/node_modules /app/.env /app/public/hot; \
-    mkdir -p /app/storage/app /app/storage/framework/cache/data /app/storage/framework/sessions /app/storage/framework/views /app/storage/logs /tls; \
-    chown -R www-data:www-data /app/storage /app/bootstrap/cache /tls
+    mkdir -p /app/storage/app /app/storage/framework/cache/data /app/storage/framework/sessions /app/storage/framework/views /app/storage/logs /tls /etc/haq/ca; \
+    chown -R www-data:www-data /app/storage /app/bootstrap/cache /tls /etc/haq/ca; \
+    chmod 700 /etc/haq/ca
 
 ENV APP_NAME="HAQ Retail OS" \
     APP_ENV=production \
@@ -106,6 +109,8 @@ ARG SECURITY_UPDATES=unset
 RUN echo "Security updates as of ${SECURITY_UPDATES}" && apk upgrade --no-cache
 
 COPY apps/shop-server/docker/nginx/shop.conf /etc/nginx/conf.d/default.conf
+# The security headers, included by every server and every location that adds headers of its own (D123).
+COPY apps/shop-server/docker/nginx/security-headers.conf /etc/nginx/snippets/haq-security-headers.conf
 # The page a new counter or phone opens at http://<server>/setup to trust the shop's certificate (D59).
 COPY apps/shop-server/docker/nginx/setup.html /usr/share/haq/setup.html
 COPY --from=assets /app/public /app/public

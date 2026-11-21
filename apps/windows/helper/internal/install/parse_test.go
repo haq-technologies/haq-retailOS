@@ -53,12 +53,29 @@ func TestTheThumbprintIsWindowsOwn(t *testing.T) {
 	if strings.ReplaceAll(got, " ", "") != strings.ToUpper(hex.EncodeToString(sum[:])) || len(strings.Fields(got)) != 10 {
 		t.Fatalf("got %q", got)
 	}
-	// As the setup page shows it, with a new line; or typed in lower case with colons.
-	if !sameThumbprint(got, got+"\n") || !sameThumbprint(got, strings.ToLower(strings.ReplaceAll(got, " ", ":"))) {
-		t.Fatal("the same thumbprint, differently written, should match")
+	// Its first 16 characters, as `haq enrol` shows them on the server: typed with spaces, in lower case,
+	// or with colons, or the whole of it (D125).
+	start := strings.Join(strings.Fields(got)[:4], " ")
+	for _, typed := range []string{start, strings.ToLower(start), strings.ReplaceAll(start, " ", ":"), got + "\n"} {
+		if !thumbprintStarts(got, typed) {
+			t.Fatalf("%q should match %q", typed, got)
+		}
 	}
-	if sameThumbprint("", "") || sameThumbprint(got, "AB12") {
-		t.Fatal("an empty or a different thumbprint should not match")
+}
+
+func TestATypedThumbprintThatIsShortOrAnothersDoesNotMatch(t *testing.T) {
+	got, err := thumbprint(testCA(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, err := thumbprint(testCA(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, typed := range []string{"", "AB12", strings.Join(strings.Fields(got)[:3], " "), strings.Join(strings.Fields(other)[:4], " ")} {
+		if thumbprintStarts(got, typed) {
+			t.Fatalf("%q should not match %q", typed, got)
+		}
 	}
 }
 

@@ -93,14 +93,20 @@ services:
       - DB_OWNER_PASSWORD="$$(cat /run/secrets/owner_password)" php artisan migrate --database=pgsql_owner --force
         && DB_OWNER_PASSWORD="$$(cat /run/secrets/owner_password)" php artisan db:mutability --database=pgsql_owner
 
-  # Makes the HTTPS certificate on the first start; a later start keeps it while it is still good.
+  # Makes the HTTPS certificate on the first start; a later start keeps it while it is still good. The shop's
+  # authority lives in a volume of its own, which only this job and the scheduler mount, never the app that
+  # answers the counters (D121). An older install's authority is moved out of the app's storage, once.
   certificate:
     <<: *app
+    environment:
+      <<: *app-env
+      SHOP_CA_DIR: /etc/haq/ca
     volumes:
       - storage:/app/storage
       - tls:/tls
+      - ca:/etc/haq/ca
     restart: "no"
-    command: ["php", "artisan", "shop:make-certificate", "--name=${SERVER_NAME}", "--ip=${SERVER_IP}", "--tls-dir=/tls"]
+    command: ["php", "artisan", "shop:make-certificate", "--name=${SERVER_NAME}", "--ip=${SERVER_IP}", "--tls-dir=/tls", "--move-from=/app/storage/app/ca"]
 
   app:
     <<: *app
@@ -117,12 +123,15 @@ services:
       <<: *app-env
       BACKUP_STATUS_DIR: /backup/status
       BACKUP_RESTORE_HOST: backup
-      # The health page shows when the HTTPS certificate expires (spec section 4) [F24].
-      HEALTH_CERTIFICATE: /etc/haq/tls/server.crt
+      # The shop's authority, which the scheduler keeps beside the backups and brings back after a restore (D69).
+      SHOP_CA_DIR: /etc/haq/ca
+      # The health page shows when the HTTPS certificate expires (spec section 4) [F24], from the public copy
+      # beside the authority: the scheduler never mounts the server's key (D122).
+      HEALTH_CERTIFICATE: /etc/haq/ca/server.crt
     volumes:
       - storage:/app/storage
       - ${BACKUP_DIR:-backup-repo}:/backup
-      - tls:/etc/haq/tls:ro
+      - ca:/etc/haq/ca
 
   # Backups (spec section 9) [S16, F24]: pgBackRest beside PostgreSQL. A weekly full and daily
   # incrementals with catch-up, retention of four weeks, and the weekly test restore that the scheduler
@@ -168,9 +177,11 @@ services:
   web:
     image: ${WEB_IMAGE}
     logging: *logging
+    # Every address, for the counters; staging on a laptop gives BIND_ADDRESS=127.0.0.1, so the network the
+    # laptop is on cannot reach it (D124).
     ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
+      - "${BIND_ADDRESS:+${BIND_ADDRESS}:}${HTTP_PORT:-80}:80"
+      - "${BIND_ADDRESS:+${BIND_ADDRESS}:}${HTTPS_PORT:-443}:443"
     volumes:
       - tls:/etc/haq/tls:ro
     depends_on:
@@ -194,6 +205,7 @@ volumes:
   db-data:
   storage:
   tls:
+  ca:
   pg-socket:
   # Only when no second disk is given: backups then share the database's disk, which the installer warns of.
   backup-repo:

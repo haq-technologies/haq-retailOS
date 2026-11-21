@@ -19,7 +19,7 @@ The setup program ([../setup/README.md](../setup/README.md)) asks the questions;
 5. forwards the PC's ports 80 and 443 to the server, and opens them to the shop's network
 6. trusts the shop's certificate on this PC, starts the HAQ Helper service, and makes this PC counter T01: the start-up shortcut, never sleeping on the mains, and a one-time code. The setup then opens the enrol page with the code filled in
 
-**This PC is a counter** (`setup counter --answers <file>`): fetches the shop's certificate from the server and trusts it if its thumbprint is the one the server names; starts the bridge for its own USB printer, letting in only the server; makes the start-up shortcut; and gives the enrol page and the line to run on the server's PC for its printer.
+**This PC is a counter** (`setup counter --answers <file>`): fetches the shop's certificate from the server and trusts it only if its thumbprint begins with the 16 or more characters the person typed from the server's own screen (`haq enrol` shows them; D125); starts the bridge for its own USB printer, letting in only the server; makes the start-up shortcut; and gives the enrol page and the line to run on the server's PC for its printer.
 
 The setup runs as an administrator, but WSL belongs to a Windows user, so commands for the distribution go through **the runner**: a queue only administrators can write, and a task that runs it as HAQServer and writes its output back. A task that never starts is reported within a minute, with Windows' reason.
 

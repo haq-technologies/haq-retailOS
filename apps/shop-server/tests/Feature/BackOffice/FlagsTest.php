@@ -16,6 +16,7 @@ use App\Reports\Csv;
 use App\Sales\Finish;
 use App\Sales\Parked;
 use App\Sales\Pricing;
+use App\Settings\Settings;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -70,10 +71,20 @@ it('flags a sale below cost when it is saved, with the cost only for the owner',
         ->and($owner['flags'][0]['detail'])->toBe('Thing item 1 at ₦1,000; cost ₦1,200')
         ->and($owner['counts']['below_cost'])->toBe(1);
 
-    // A manager sees the same flag with no cost: not in the detail, not in any field (check C4) [F10].
+    // A manager sees no below-cost flag at all, since "below cost at ₦1,000" says the cost is above ₦1,000:
+    // not in the list, the counts, the kinds offered, the badge or the dashboard (check C4) [F10; D126].
     $manager = ($this->manages)()->getJson('/api/back-office/flags?period=today')->assertOk();
-    expect($manager->json('flags.0.detail'))->toBe('Thing item 1 at ₦1,000');
-    expect($manager->getContent())->not->toContain('cost_kobo')->not->toContain('1,200')->not->toContain('120000');
+    expect($manager->json('flags'))->toBe([])
+        ->and($manager->json('kinds'))->not->toHaveKeys(['below_cost', 'below_cost_later'])
+        ->and($manager->json('counts'))->not->toHaveKey('below_cost');
+    expect($manager->getContent())->not->toContain('cost_kobo')->not->toContain('1,200')->not->toContain('120000')->not->toContain('elow cost');
+    expect(($this->manages)()->getJson('/api/back-office/badges')->json('flags'))->toBe(0);
+    expect(($this->manages)()->getJson('/api/back-office/dashboard')->json('attention.total'))->toBe(0);
+    expect(($this->owns)()->getJson('/api/back-office/badges')->json('flags'))->toBe(1);
+
+    // Where HAQ lets a manager see cost, they see the flag as the owner does.
+    app(Settings::class)->set('cost.manager_sees_cost', true, 'console');
+    expect(($this->manages)()->getJson('/api/back-office/flags?period=today')->json('flags.0.detail'))->toBe('Thing item 1 at ₦1,000; cost ₦1,200');
 });
 
 it('flags earlier sales again when a later cost entry turns them into losses (check C5)', function () {
