@@ -41,6 +41,13 @@ for id in $(compose ps --status running -q); do
     case "$policy" in *" unless-stopped"|*" always") ;; *) norestart="$norestart ${policy%% *}" ;; esac
 done
 if [ -z "$norestart" ]; then pass "every running service restarts by itself"; else fail "these services do not restart by themselves:$norestart"; fi
+# The database runs under an init, so a healthcheck left behind never restarts PostgreSQL (D104).
+db_id="$(compose ps -q db | head -1)"
+if [ -n "$db_id" ] && [ "$(docker inspect "$db_id" --format '{{.HostConfig.Init}}')" = true ]; then
+    pass "the database runs under an init"
+else
+    fail "the database does not run under an init (D104): update to a newer release"
+fi
 if ! command -v systemctl >/dev/null || systemctl is-enabled docker.service >/dev/null 2>&1; then pass "Docker starts with the server"; else fail "Docker does not start with the server (systemctl enable docker)"; fi
 # Ubuntu's own updates run at night, never while the shop trades (D100).
 if ! command -v systemctl >/dev/null || ! systemctl cat apt-daily-upgrade.timer >/dev/null 2>&1; then

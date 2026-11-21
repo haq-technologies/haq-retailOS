@@ -728,7 +728,10 @@ jobs:
   # code under review migrates it in order, the older code still sells against the newer schema, and the
   # newer code's rehearsal check passes over every sale. It runs from the end of Phase 3 (b34d27e), a shop
   # several versions behind, and from each release a shop may still run (D81): add a release here when it
-  # goes to a shop, and take it away when no shop runs it any more.
+  # goes to a shop, and take it away when no shop runs it any more. It also runs from the code just before
+  # this change (the merge commit's first parent): that code is above the rollback floor (D106), so its own
+  # migrate job, grant check and data export run against the newer schema, as a code-only rollback does
+  # (D105).
   upgrade-path:
     name: upgrade path
     runs-on: ubuntu-24.04
@@ -777,9 +780,12 @@ jobs:
           extensions: pdo_pgsql, intl, pcntl, bcmath, zip
           coverage: none
 
+      - name: Choose the older versions
+        # On a pull request HEAD is the merge commit, so its first parent is the base branch; on main it is
+        # the commit before.
+        run: echo "OLDER=b34d27e 2026.11.2 $(git rev-parse --short HEAD^1)" >> "$GITHUB_ENV"
+
       - name: Install the older versions and the newer code
-        env:
-          OLDER: b34d27e 2026.11.2
         run: |
           for from in $OLDER; do git worktree add --detach "$RUNNER_TEMP/old-$from" "$from"; done
           for dir in $(for from in $OLDER; do echo "$RUNNER_TEMP/old-$from/apps/shop-server"; done) apps/shop-server; do
@@ -787,8 +793,6 @@ jobs:
           done
 
       - name: Upgrade through every migration in order, and sell on both versions
-        env:
-          OLDER: b34d27e 2026.11.2
         run: |
           for from in $OLDER; do
             echo "::group::From $from"

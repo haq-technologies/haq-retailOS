@@ -32,10 +32,18 @@ final readonly class DriftCheck
             $problems[] = 'The app role can create objects in the public schema.';
         }
 
+        $ahead = null;
         foreach (Schema::tables($db) as $table) {
             $rule = $this->matrix->rule($table);
             if ($rule === null) {
-                $problems[] = "{$table} is not in the mutability matrix.";
+                // After a code-only rollback, a newer release's table is that release's to classify; this
+                // code only checks that the app and reporting roles hold nothing on it (D105).
+                $ahead ??= NewerMigrations::on($db) !== [];
+                if ($ahead) {
+                    array_push($problems, ...$this->newerTableProblems($db, $table));
+                } else {
+                    $problems[] = "{$table} is not in the mutability matrix.";
+                }
 
                 continue;
             }
@@ -77,6 +85,23 @@ final readonly class DriftCheck
                 SQL, [$role]);
             if ($owned) {
                 $problems[] = "The role {$role} owns objects in the public schema.";
+            }
+        }
+
+        return $problems;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function newerTableProblems(Connection $db, string $table): array
+    {
+        $problems = [];
+        foreach (self::TABLE_PRIVILEGES as $privilege) {
+            foreach (['app' => $this->roles->app, 'reporting' => $this->roles->reporting] as $label => $role) {
+                if ($this->bool($db, 'SELECT has_table_privilege(?, ?, ?) AS v', [$role, "public.\"{$table}\"", $privilege])) {
+                    $problems[] = "The {$label} role holds {$privilege} on {$table}, which a newer release made; this code gives it no grant.";
+                }
             }
         }
 

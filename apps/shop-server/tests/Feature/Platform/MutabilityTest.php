@@ -213,6 +213,48 @@ it('refuses to apply the matrix when a table is not classified', function () {
     }
 });
 
+it('leaves a newer release\'s table to it after a code-only rollback, with no grant to the app (D105)', function () {
+    // A newer release made probe_newer, granted the app on it and was rolled back, code only.
+    $migration = '2099_01_01_000100_create_probe_newer';
+    ownerDb()->statement('CREATE TABLE probe_newer (id char(26) PRIMARY KEY)');
+    ownerDb()->statement('GRANT SELECT, INSERT ON probe_newer TO '.config('database.roles.app'));
+    ownerDb()->table('migrations')->insert(['migration' => $migration, 'batch' => 99]);
+    try {
+        $applier = new Applier(probeMatrix(), app(Roles::class));
+        expect($applier->apply(ownerDb()))->toBe(['probe_newer']);
+        expect(attempt('SELECT * FROM probe_newer'))->toContain('permission denied');
+
+        $check = new DriftCheck(probeMatrix(), app(Roles::class), $applier);
+        expect($check->problems(appDb()))->toBe([]);
+
+        ownerDb()->statement('GRANT SELECT ON probe_newer TO '.config('database.roles.app'));
+        expect($check->problems(appDb()))->toBe([
+            'The app role holds SELECT on probe_newer, which a newer release made; this code gives it no grant.',
+        ]);
+    } finally {
+        ownerDb()->table('migrations')->where('migration', $migration)->delete();
+        ownerDb()->statement('DROP TABLE probe_newer');
+    }
+});
+
+it('says so when the migrate job leaves a newer release\'s table (D105)', function () {
+    foreach (PROBES as $table) {
+        ownerDb()->statement("DROP TABLE IF EXISTS {$table}");
+    }
+    $migration = '2099_01_01_000100_create_probe_newer';
+    ownerDb()->statement('CREATE TABLE probe_newer (id char(26) PRIMARY KEY)');
+    ownerDb()->table('migrations')->insert(['migration' => $migration, 'batch' => 99]);
+    try {
+        $this->artisan('db:mutability', ['--database' => 'pgsql_owner'])
+            ->expectsOutputToContain('This database is ahead of this code')
+            ->assertSuccessful();
+        $this->artisan('db:mutability --check')->assertSuccessful();
+    } finally {
+        ownerDb()->table('migrations')->where('migration', $migration)->delete();
+        ownerDb()->statement('DROP TABLE probe_newer');
+    }
+});
+
 it('refuses a mutable-while-open table with no lock condition', function () {
     ownerDb()->statement('CREATE TABLE probe_unlocked (id char(26) PRIMARY KEY, status text)');
     try {
