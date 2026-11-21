@@ -62,13 +62,16 @@ final readonly class Flags
     /**
      * Every flag raised in the period, newest first.
      *
+     * $withCost is whether the reader may see cost. Only then are the below-cost flags listed: even without
+     * the figure, "sold below cost at ₦1,500" says the cost is above ₦1,500 (spec section 3) [F10; D126].
+     *
      * @param  list<string>|null  $kinds  only these kinds
      * @return list<Flag>
      */
     public function list(Period $period, bool $withCost, ?array $kinds = null, ?string $cashierId = null): array
     {
         $wanted = $kinds ?? array_keys(self::KINDS);
-        $belowCost = $this->settings->get('flags.below_cost') !== false;
+        $belowCost = $withCost && $this->settings->get('flags.below_cost') !== false;
         $rows = [];
         foreach ($wanted as $kind) {
             $found = match ($kind) {

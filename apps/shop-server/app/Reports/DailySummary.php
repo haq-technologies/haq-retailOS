@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\DB;
 final readonly class DailySummary
 {
     /** The flags the slip always lists, even at nought (wireframe DailySummary). */
-    public const SLIP_FLAGS = ['below_cost', 'below_floor', 'unusual_price', 'no_reference', 'discarded', 'key_open'];
+    // The paper slip is read at the counter, so it never counts the below-cost flags (D126).
+    public const SLIP_FLAGS = ['below_floor', 'unusual_price', 'no_reference', 'discarded', 'key_open'];
 
     public function __construct(private Flags $flags, private Drawer $drawer) {}
 
@@ -46,7 +47,7 @@ final readonly class DailySummary
             'drawers' => $this->drawers($day),
             'transfers_waiting' => ['count' => (int) $waiting->n, 'amount_kobo' => (int) $waiting->amount],
             'buckets' => $buckets,
-            'flags' => Flags::counts($this->flags->list(Period::day($day, $this->flags->zone()), false)),
+            'flags' => Flags::counts($this->flags->list(Period::day($day, $this->flags->zone()), $withProfit)),
             'root' => $root === null ? null : ['hash' => $root->hash, 'at' => $root->recorded_at],
         ];
     }

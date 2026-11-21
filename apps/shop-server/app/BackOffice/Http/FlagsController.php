@@ -31,14 +31,17 @@ final class FlagsController
     {
         $actor = $this->allowed($request, 'flags');
         [$period, $kinds, $cashier] = $this->filters($request, $flags);
-        $all = $flags->list($period, $cost->canSee($actor), null, $cashier);
+        $withCost = $cost->canSee($actor);
+        $all = $flags->list($period, $withCost, null, $cashier);
         $shown = $this->only($all, $kinds);
         $limit = $request->integer('limit', 50);
+        // Someone who may not see cost is not offered the below-cost kinds at all (D126).
+        $offered = $withCost ? Flags::KINDS : array_diff_key(Flags::KINDS, array_flip(['below_cost', 'below_cost_later']));
 
         return response()->json([
             'period' => $period->name,
-            'kinds' => Flags::KINDS,
-            'counts' => Flags::counts($all),
+            'kinds' => $offered,
+            'counts' => array_intersect_key(Flags::counts($all), $offered),
             'total' => count($shown),
             'flags' => array_slice($shown, 0, max(1, min(1000, $limit))),
             'people' => $this->people($flags, $period),

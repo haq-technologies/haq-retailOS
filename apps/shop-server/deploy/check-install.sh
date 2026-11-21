@@ -89,6 +89,11 @@ ca="$(mktemp)"
 compose exec -T web cat /etc/haq/tls/ca.crt > "$ca"
 code="$(curl -s -o /dev/null -w '%{http_code}' --cacert "$ca" --resolve "$name:$https_port:127.0.0.1" "https://$name:$https_port/up")"
 if [ "$code" = 200 ]; then pass "HTTPS answers with a certificate the shop's authority signed"; else fail "HTTPS did not answer as expected (HTTP $code)"; fi
+# The authority vouches only for this server (D120), and the app that answers the counters cannot read its
+# key (D121).
+constrained="$(compose exec -T app php -r '$c = openssl_x509_parse((string) stream_get_contents(STDIN)); echo is_array($c) && isset($c["extensions"]["nameConstraints"]) ? "yes" : "no";' < "$ca")"
+if [ "$constrained" = yes ]; then pass "the shop's authority vouches only for this server"; else fail "the shop's authority may vouch for any website: install the shop again as a new shop before it trades (D120)"; fi
+if compose exec -T app sh -c 'test ! -e /app/storage/app/ca/ca.key && test ! -e /etc/haq/ca/ca.key'; then pass "the app that answers the counters cannot reach the shop's authority"; else fail "the app can reach the shop's authority: run install.sh again (D121)"; fi
 
 # New devices fetch the setup page and the authority's certificate over plain HTTP, before they trust it (D59).
 http_port="$(env_value HTTP_PORT)"

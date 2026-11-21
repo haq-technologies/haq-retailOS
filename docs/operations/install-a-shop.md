@@ -29,6 +29,7 @@ The counters and printers find the server by its address, so the server and ever
 1. Choose the server's address, such as 192.168.1.10, outside the range the router hands out by itself.
 2. Set each printer's fixed address from its own menu or setup tool, such as 192.168.1.21 for counter 1 and 192.168.1.22 for counter 2. Print the printer's self-test page to confirm it.
 3. The counter PCs may take any address from the router.
+4. **Keep customers off the shop's network.** The server, the counters and the printers share a network that customers never join. If the shop gives customers Wi-Fi, it is the router's guest network, which cannot reach the shop's machines. Change the router's admin password from the one printed on it, and keep it with the shop's records. Anyone on the shop's network can open the setup pages, and a network printer opens its drawer for anyone who sends it the command (D127).
 
 ## 2. Install Ubuntu Server on the server
 
@@ -110,14 +111,14 @@ On each counter, once:
 
 1. **Windows:** a standard local account that signs in by itself, Chrome installed, sleep set to Never and the active hours set to the trading hours ([start-up.md](start-up.md), steps 1, 3 and 4).
    Set the **date and time** to the right day and minute, with the time zone (UTC+01:00) West Central Africa (D72). The counter has no internet to correct its clock, and one that is far behind cannot open the counter. Look again after the first power cut, and change the PC's clock battery if the date went back.
-2. **On the server**, make the counter's code. It works once, for 30 minutes:
+2. **On the server**, make the counter's code. It works once, for 30 minutes, and it shows the shop's certificate thumbprint too: keep its first 16 characters at hand for step 3 (D125).
 
    ```
    sudo haq enrol T01
    ```
 
 3. **On the counter**, open Chrome and go to **http://192.168.1.10/setup**. The page has three steps:
-   - **Trust the shop's certificate.** Press **Copy the line**. Right-click the Start button, choose **Terminal (Admin)** and then **Yes**. Right-click in the window to paste, and press Enter. When it says `command completed successfully`, close every Chrome window and open Chrome again.
+   - **Trust the shop's certificate.** Press **Copy the line**. Right-click the Start button, choose **Terminal (Admin)** and then **Yes**. Right-click in the window to paste, and press Enter. It asks for the thumbprint's first 16 characters: type them from the server's screen (step 2), never from the page, and press Enter. When it says `command completed successfully`, close every Chrome window and open Chrome again. If it says **Not the shop's certificate**, stop and call HAQ support: something on the network is answering for the server.
    - **Register this device.** Press **Open the registration page**, type the code from step 2 and press **Enrol counter**. The counter's name tiles appear.
    - **Open by itself.** Make the start-up shortcut the page shows, so the counter opens full screen after every restart.
 4. **The scanner:** plug it into a USB port, tap the search box and scan any barcode. The digits appear and the search runs.
@@ -130,7 +131,7 @@ Do the same for T02 and any other counter. A counter registered again stops work
 1. On the server: `sudo haq enrol D01`.
 2. On the owner's laptop or phone, on the shop's network, open **http://192.168.1.10/setup**:
    - on a Windows laptop, as for a counter;
-   - on a phone or a Mac, open **A phone, a Mac, or doing it by hand** on that page and follow its steps.
+   - on a phone or a Mac, open **A phone, a Mac, or doing it by hand** on that page and follow its steps. Before installing, check that the certificate's SHA-1 fingerprint begins with the 16 characters `sudo haq enrol D01` showed.
 3. Register it with the code, then open **https://192.168.1.10/back-office** and sign in as the owner.
 4. The owner opens **Shop settings** and sets the closing time and the cashier's discard limit (D37, D38).
 
@@ -204,7 +205,7 @@ Each asks the PIN twice, hidden, and passes it to the server on its standard inp
 ### W3. Another counter
 
 1. On the server's PC: `haq-helper server enrol T02`.
-2. On the counter PC, run the same setup and choose **This PC is a counter**: the server's address, the counter (T02) and the code. A counter takes any 64-bit Windows 10 or 11.
+2. On the counter PC, run the same setup and choose **This PC is a counter**: the server's address, the counter (T02), the code and the thumbprint's first 16 characters, all as `haq-helper server enrol T02` shows them on the server's PC (D125). A counter takes any 64-bit Windows 10 or 11.
 3. A counter with a USB receipt printer gets the print bridge. The setup's last page gives the line to run on the server's PC, such as `haq-helper server printer T02 192.168.1.31`.
 4. Set its date and time as in step 6.1.
 
@@ -225,9 +226,9 @@ On a Windows server the backups share the PC's disk, so a flash drive is the onl
 | `sudo haq pin "Name"` | A new PIN for a person who forgot theirs or whose PIN someone saw; asks it twice, and the old one stops working at once |
 | `sudo haq deactivate "Name"` | For someone who leaves: their tile goes and their PIN stops working. Nobody is deleted. If two people share the name, give the ID from `sudo haq users` |
 | `sudo haq rename "Name" "Right name"` | Corrects the name on a tile; the audit trail keeps both names (D113) |
-| `sudo haq enrol T01` | A one-time code, for 30 minutes, to register counter T01 (or D01 for a back-office device), and a link that fills the code in |
+| `sudo haq enrol T01` | A one-time code, for 30 minutes, to register counter T01 (or D01 for a back-office device), a link that fills the code in, and the shop's certificate thumbprint, whose first 16 characters a new device asks for (D125) |
 | `sudo haq printer T02 192.168.1.22` | Where a counter prints: a network printer's address, or the Windows PC whose print bridge has its USB printer; `none` for no printer. It is kept in the shop's profile, so a later install keeps it (D87) |
-| `sudo haq certificate` | The setup page's address, and the certificate's thumbprint to compare with the page's |
+| `sudo haq certificate` | The setup page's address, and the certificate's thumbprint, whose first 16 characters a new device asks for |
 | `sudo haq check` | Checks the whole install |
 | `sudo haq status` | What is running |
 | `sudo haq backup` | A full backup now |
@@ -249,6 +250,7 @@ Every command here that reaches the shop's records (people, PINs, enrolment, the
 | Chrome says "Your connection is not private" | The certificate step is not finished. Run the setup page's line again in **Terminal (Admin)**, then close every Chrome window and open Chrome again |
 | "That code is not valid, or it has expired" | The code was used, or its 30 minutes ran out. Make a new one with `sudo haq enrol T01` |
 | The setup page does not open | The counter cannot reach the server. Check that the server is on, its cable is in, and the counter is on the same network |
+| "Not the shop's certificate" | The 16 characters typed do not begin the certificate's thumbprint. Check them against `sudo haq certificate` and run the line again. If they match and it still says so, something on the network is answering for the server: stop, and call HAQ support (D125) |
 | "The images did not download" | Check the internet and the token, then run the installer again |
 | A receipt did not print | Check the printer is on, has paper and keeps its fixed address. The counter offers **Print pending receipt** |
 | `sudo haq` says Docker did not answer | Run it with `sudo`. If it still fails, restart the server |

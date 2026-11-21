@@ -60,7 +60,8 @@ final class BackOfficeController
         $can = $access->for($this->actor($request));
         $day = $dashboard->today();
         $firstSales = $can['prices'] ? count(array_filter(FirstSales::forDay($day, Period::day($day, $flags->zone())), fn (array $g) => $g['set'] === null)) : 0;
-        $attention = $can['flags'] ? count(array_filter($flags->list(Period::named('last7', $flags->zone()), false, Flags::ATTENTION), fn (array $f) => $f['seen_at'] === null)) : 0;
+        // The below-cost flags count only for someone who may see cost (D126).
+        $attention = $can['flags'] ? count(array_filter($flags->list(Period::named('last7', $flags->zone()), $can['profit'], Flags::ATTENTION), fn (array $f) => $f['seen_at'] === null)) : 0;
 
         return response()->json([
             'costs' => $can['costs'] ? NeedsCost::queue(limit: 0)['total_items'] : 0,
