@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Catalogue\Console;
 
+use App\Catalogue\NoShopProfile;
 use App\Catalogue\StarterCatalogue;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -21,7 +22,13 @@ class SeedCatalogueCommand extends Command
     public function handle(StarterCatalogue $catalogue): int
     {
         $path = $this->option('path');
-        $created = $catalogue->load(is_string($path) && $path !== '' ? $path : config()->string('catalogue.seed'));
+        try {
+            $created = $catalogue->load(is_string($path) && $path !== '' ? $path : config()->string('catalogue.seed'));
+        } catch (NoShopProfile $e) {
+            $this->components->error($e->getMessage());
+
+            return self::FAILURE;
+        }
 
         if (array_sum($created) === 0) {
             $this->components->info('Nothing to change: the starter catalogue is already loaded.');

@@ -42,13 +42,17 @@ final class TickCommand extends Command
         if (($restore['state'] ?? null) !== 'ready' || $label === null || preg_match('/^[0-9A-Za-z_-]+$/', $label) !== 1) {
             return self::SUCCESS;
         }
-        if (is_file($status->path("verified-{$label}.json"))) {
+        // A copy is checked once. A later try of the same backup is a new copy, so a result counts only for the
+        // try it names by its start (D128); a result left from an earlier try would answer it unchecked.
+        $started = is_int($restore['started_at'] ?? null) ? $restore['started_at'] : null;
+        $done = $status->read("verified-{$label}.json");
+        if ($done !== null && ($started === null || ($done['started_at'] ?? null) === $started)) {
             return self::SUCCESS;
         }
 
         $port = is_int($restore['port'] ?? null) ? $restore['port'] : config()->integer('backups.restore_port');
         $result = $check->run(config()->string('backups.restore_host'), $port);
-        $status->write("verified-{$label}.json", [...$result, 'label' => $label, 'checked_at' => now()->toIso8601String()]);
+        $status->write("verified-{$label}.json", [...$result, 'label' => $label, 'started_at' => $started, 'checked_at' => now()->toIso8601String()]);
         // The label goes in the values: an audit subject is always a ULID.
         $audit->record(new AuditEntry(action: $result['ok'] ? 'backup.restore_verified' : 'backup.restore_failed',
             subjectType: 'backup', after: ['label' => $label, 'counts' => $result['counts'], 'problems' => $result['problems']]));

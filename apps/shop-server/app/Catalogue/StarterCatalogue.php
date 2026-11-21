@@ -11,6 +11,7 @@ use App\Catalogue\Models\Category;
 use App\Catalogue\Models\CategoryTemplate;
 use App\Catalogue\Models\PicklistValue;
 use App\Catalogue\Models\ProductModel;
+use App\Organisation\Models\Branch;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -30,6 +31,9 @@ final readonly class StarterCatalogue
     public function load(string $path): array
     {
         $seed = $this->read($path);
+        if (! Branch::query()->where('is_local', true)->exists()) {
+            throw new NoShopProfile;
+        }
 
         return DB::transaction(function () use ($seed): array {
             $created = ['brands' => 0, 'picklist_values' => 0, 'product_models' => 0, 'categories' => 0, 'category_templates' => 0];

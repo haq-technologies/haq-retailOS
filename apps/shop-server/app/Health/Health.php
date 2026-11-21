@@ -102,7 +102,13 @@ final readonly class Health
 
         /** @var array{last: ?array{label: string, type: string, at: string}, failed_at: ?string, restore: ?array{state: ?string, verified: ?bool, problems: list<string>}, last_verified_restore: ?string, count: int}|null $backups */
         $backups = is_array($snapshot['backups'] ?? null) ? $snapshot['backups'] : null;
-        if ($backups === null) {
+        /** @var array{marked: bool}|null $disk */
+        $disk = is_array($snapshot['backup_disk'] ?? null) ? $snapshot['backup_disk'] : null;
+        if ($disk !== null && $disk['marked'] !== true) {
+            // A disk that failed to mount leaves an empty folder: no backups there, or backups that look fine and
+            // sit on the main disk with the sales (D129).
+            $warn('backup', 'The backup disk is not mounted', 'Backups have stopped: the server cannot find its second disk. Call HAQ support.');
+        } elseif ($backups === null) {
             $warn('backup', 'Backups are not set up on this server', 'There is no backup disk. Call HAQ support.');
         } else {
             $last = $backups['last'] === null ? null : CarbonImmutable::parse($backups['last']['at']);

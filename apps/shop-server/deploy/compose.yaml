@@ -52,10 +52,14 @@ services:
       - pg-socket:/var/run/postgresql
       # The second internal disk (spec section 9): WAL is archived there continuously.
       - ${BACKUP_DIR:-backup-repo}:/backup
+    # An init is PID 1, never PostgreSQL itself. A check that outlives Docker's timeout leaves its pg_isready
+    # behind, and PostgreSQL 18 takes a stray child's exit code 2 for a crash: it ends every counter's
+    # connection and runs crash recovery (D104). pg_isready gives up after 2 s, well inside the 10 s timeout.
+    init: true
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d postgres -t 2"]
       interval: 2s
-      timeout: 3s
+      timeout: 10s
       retries: 60
     restart: unless-stopped
     # The database port is never published (spec section 4).
@@ -143,6 +147,9 @@ services:
     entrypoint: ["/usr/local/bin/haq-backup.sh"]
     environment:
       TZ: ${SHOP_TIMEZONE:-Africa/Lagos}
+      # A backup disk of its own: backups go only where its marker is, never to a folder left empty because
+      # the disk did not mount (D129).
+      BACKUP_OWN_DISK: ${BACKUP_DIR:+true}
     volumes:
       - db-data:/var/lib/postgresql:ro
       - pg-socket:/var/run/postgresql
