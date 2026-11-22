@@ -187,7 +187,7 @@ A shop whose server is a Windows PC is installed with the release's setup progra
 1. Give the PC its fixed address, as in step 1.
 2. Sign in to Windows as an administrator and run the setup. While it is unsigned, Windows asks first: choose **More info**, then **Run anyway** (D88).
 3. Choose **This PC runs the shop**. If Windows' Linux (WSL) is off, the setup turns it on: restart the PC when it asks, and run the setup again.
-4. Answer its pages: the PC's address, the GitHub user name and the token, the shop and its receipt text, the counters and their drawers, the owner's name and 6-digit PIN (twice), and the receipt printer: one plugged into this PC (it prints a test receipt), a network printer's address, or none yet.
+4. Answer its pages: the PC's address, the GitHub user name and the token, the shop and its receipt text, the counters and their drawers, the owner's name and 6-digit PIN (twice), and the receipt printer: one plugged into this PC (it prints a test receipt), a network printer's address, or none yet. The setup lists the printers Windows shows when it starts, so plug a USB printer in, switch it on and load paper before running it. A printer that is not listed, or one that comes later, is set afterwards in Terminal (Admin): `haq-helper printer use "<its name>"`, with the names from `haq-helper printers` (D139).
 5. It installs in 15 to 40 minutes, mostly downloading, numbering each step in its window. It checks the release against its signed manifest before anything is installed (D99), keeps the PC awake, and has Windows Update restart the PC only outside 6:00 to 23:00 (D98).
 6. At the end it opens the page that registers this PC as counter T01, with the code filled in. Press **Enrol counter**, then set the PC's date and time as in step 6.1.
 
@@ -257,6 +257,7 @@ Every command here that reaches the shop's records (people, PINs, enrolment, the
 | "Not the shop's certificate" | The 16 characters typed do not begin the certificate's thumbprint. Check them against `sudo haq certificate` and run the line again. If they match and it still says so, something on the network is answering for the server: stop, and call HAQ support (D125) |
 | "The images did not download" | Check the internet and the token, then run the installer again |
 | A receipt did not print | Check the printer is on, has paper and keeps its fixed address. The counter offers **Print pending receipt** |
+| A Windows PC's USB printer is not in the setup's list, or is new or replaced | Finish the setup with **No printer yet**, or keep the printer it has. Then, with the printer plugged in and on, in Terminal (Admin): `haq-helper printers` to see its name, and `haq-helper printer use "<its name>"`. It prints a test receipt; on a counter other than the server's PC, run the line it ends with on the server's PC. A printer that Windows shows only as a COM port (such as USB-SERIAL CH340) needs its maker's driver or its USB printer mode first (D139) |
 | `sudo haq` says Docker did not answer | Run it with `sudo`. If it still fails, restart the server |
 
 ## Rehearse on a Windows PC

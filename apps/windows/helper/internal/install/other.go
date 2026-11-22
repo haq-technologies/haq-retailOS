@@ -46,3 +46,6 @@ func AsServerWithInput(context.Context, io.Writer, string, ...string) (int, erro
 
 // Prepare is Windows only.
 func Prepare(context.Context, io.Writer) error { return errWindows }
+
+// SetPrinter is Windows only.
+func SetPrinter(context.Context, io.Writer, PrinterChoice) error { return errWindows }
