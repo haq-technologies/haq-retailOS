@@ -19,12 +19,11 @@ $pem = "-----BEGIN CERTIFICATE-----`n" + [Convert]::ToBase64String($ca.RawData, 
 [IO.File]::WriteAllText((Join-Path $site 'ca.crt'), $pem)
 [IO.File]::WriteAllText((Join-Path $site 'ca.thumbprint'), (($ca.Thumbprint -split '(.{4})' | Where-Object { $_ }) -join ' ') + "`n")
 Remove-Item "Cert:\CurrentUser\My\$($ca.Thumbprint)"
-$shop = Start-Job -ArgumentList $site -ScriptBlock {
-  param($site)
+$shop = Start-Job -ScriptBlock {
   $listener = [Net.HttpListener]::new(); $listener.Prefixes.Add('http://127.0.0.2:80/'); $listener.Start()
   while ($listener.IsListening) {
     $context = $listener.GetContext()
-    $file = Join-Path $site $context.Request.Url.AbsolutePath.TrimStart('/')
+    $file = Join-Path $using:site $context.Request.Url.AbsolutePath.TrimStart('/')
     if (Test-Path $file -PathType Leaf) { $body = [IO.File]::ReadAllBytes($file) } else { $body = [byte[]]@(); $context.Response.StatusCode = 404 }
     $context.Response.OutputStream.Write($body, 0, $body.Length); $context.Response.Close()
   }
