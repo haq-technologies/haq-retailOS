@@ -177,7 +177,7 @@ it('keeps selling with the clock at the year 2000, stamps the sales unverified a
     expect(app(Clock::class)->stamp())->toBe('unverified');
     ($this->as)()->postJson('/api/back-office/health/clock')->assertOk()->assertJsonPath('clock.state', 'trusted')->assertJsonPath('clock.confirmed_by', 'Halima');
     expect(DB::table('sales')->where('id', ($this->sell)()['id'])->value('clock_state'))->toBe('trusted');
-    expect(DB::table('audit_log')->whereIn('action', ['clock.unverified', 'clock.confirmed'])->pluck('action')->all())->toBe(['clock.unverified', 'clock.confirmed']);
+    expect(DB::table('audit_log')->whereIn('action', ['clock.unverified', 'clock.confirmed'])->orderBy('recorded_at')->orderBy('seq')->pluck('action')->all())->toBe(['clock.unverified', 'clock.confirmed']);
 });
 
 it('notes a clock that jumped back, and lets the owner confirm a time put back on purpose', function () {
