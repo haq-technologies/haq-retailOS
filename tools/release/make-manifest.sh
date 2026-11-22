@@ -19,6 +19,7 @@
 # haq-server distribution (haq-server.tar.gz), as the workflow windows-release.yml built them from the same
 # commit (D86, D99). Both are copied beside the manifest, which names each with its SHA-256, so the signature
 # covers them; tools/release/check-windows.sh checks them, and release.yml does when the release is published.
+# The distribution names the commit it was built from, and it must be the release's commit (D137).
 #
 # --local uses images built on this computer (retail-os/retail-os-app:local and the others) by name, for
 # the updater's dry run on staging; a shop's manifest always uses digests.
@@ -64,6 +65,16 @@ else
         || { echo "That commit is not in this repository. Give one on main or on a release branch." >&2; exit 1; }
 fi
 tag="sha-$commit"
+
+# The Windows setup and its distribution are the release's commit's, as its images are (D81, D137): the
+# distribution names the commit it was built from, and windows-release.yml builds the setup from the same one.
+if [ -n "$windows" ]; then
+    built="$(python3 -I "$root/tools/release/distro_commit.py" "$windows/haq-server.tar.gz")" || exit 1
+    if [ "$built" != "$commit" ]; then
+        echo "The Windows setup in $windows was built from commit $built, not $commit. Give --commit $built, or build the setup for $commit with windows-release.yml." >&2
+        exit 1
+    fi
+fi
 
 image() {
     if [ "$local" = 1 ]; then

@@ -1,8 +1,9 @@
 #!/bin/bash
 # Checks a release's Windows setup and its haq-server distribution against the release's signed manifest
 # (D86, D99): first the manifest itself, with the updater's own checks against the release public key, then
-# each file's SHA-256 as the manifest names it. release.yml runs it when a release is published; HAQ's team
-# runs it on a downloaded release before taking its setup to a shop.
+# each file's SHA-256 as the manifest names it, and last that the distribution was built from the commit the
+# manifest names (D137). release.yml runs it when a release is published; HAQ's team runs it on a downloaded
+# release before taking its setup to a shop.
 #
 #   tools/release/check-windows.sh --release release/2026.12.1 [--public-key file.pem]
 #
@@ -68,4 +69,15 @@ for part in ("setup", "distribution"):
 if problems:
     sys.exit("\n".join(problems))
 PY
+
+# The distribution, and so the setup built beside it, is from the commit the manifest names (D81, D137).
+commit="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1])).get("commit") or "")' "$release/manifest.json")"
+[ -n "$commit" ] || { echo "The release's manifest names no commit, so its Windows files cannot be matched to it." >&2; exit 1; }
+distro="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["windows"]["distribution"]["file"])' "$release/manifest.json")"
+built="$(python3 -I "$root/tools/release/distro_commit.py" "$release/$distro")" || exit 1
+if [ "$built" != "$commit" ]; then
+    echo "The release's Windows distribution was built from commit $built, not the release's commit $commit." >&2
+    exit 1
+fi
+echo "$distro was built from the release's commit, $commit."
 echo "Release $(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$release/manifest.json")'s Windows setup and distribution are the ones it signs."

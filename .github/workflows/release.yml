@@ -50,6 +50,13 @@ jobs:
             --pattern manifest.json --pattern manifest.json.sig --pattern compose.yaml \
             --pattern "HAQ-Retail-OS-Setup-$VERSION.exe" --pattern haq-server.tar.gz
 
+      # The Windows setup and distribution the release carries are the ones its signed manifest names, from its
+      # commit (D99, D137). Checked before any image is tagged, since a version's tag is never moved.
+      - name: Check the release's Windows setup
+        env:
+          VERSION: ${{ github.event.release.tag_name || inputs.version }}
+        run: tools/release/check-windows.sh --release "release/$VERSION"
+
       # The release's tag, its manifest and its images are one commit's (D81): a manifest that names its
       # commit must name the commit the tag is on.
       - name: Check the release and tag its images
@@ -60,8 +67,3 @@ jobs:
           tagged="$(gh api "repos/$GITHUB_REPOSITORY/commits/$VERSION" --jq .sha)"
           tools/release/tag-images.sh --release "release/$VERSION" --tag-commit "$tagged"
 
-      # The Windows setup and distribution the release carries are the ones its signed manifest names (D99).
-      - name: Check the release's Windows setup
-        env:
-          VERSION: ${{ github.event.release.tag_name || inputs.version }}
-        run: tools/release/check-windows.sh --release "release/$VERSION"

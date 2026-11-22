@@ -121,9 +121,18 @@ fi
 
 # A release carries its Windows setup and haq-server distribution, each named in the signed manifest with its
 # SHA-256 (D99); check-windows.sh checks them before HAQ's team takes the setup to a shop.
-mkdir -p "$tmp/win"
+# The stand-in distribution names its commit as build.sh writes it (D137): this checkout's, as --local releases.
+head="$(git -C "$root" rev-parse HEAD)"
+distro() { # $1: the tar.gz to make, $2: the commit it names
+    mkdir -p "$tmp/distro-root/etc"
+    printf 'HAQ Retail OS server distribution\ncommit=%s\n' "$2" > "$tmp/distro-root/etc/haq-server-release"
+    tar -czf "$1" -C "$tmp/distro-root" etc
+}
+mkdir -p "$tmp/win" "$tmp/win-other"
 printf 'MZ a stand-in setup' > "$tmp/win/HAQ-Retail-OS-Setup-2026.11.2.exe"
-printf 'a stand-in distribution' > "$tmp/win/haq-server.tar.gz"
+distro "$tmp/win/haq-server.tar.gz" "$head"
+cp "$tmp/win/HAQ-Retail-OS-Setup-2026.11.2.exe" "$tmp/win-other/"
+distro "$tmp/win-other/haq-server.tar.gz" 3333333333333333333333333333333333333333
 made() {
     "$root/tools/release/make-manifest.sh" --local --version 2026.11.2 --windows "$tmp/win" --out "$tmp/made" >/dev/null &&
     python3 -I - "$tmp/made" <<'PY'
@@ -136,14 +145,17 @@ for part, name in (("setup", "HAQ-Retail-OS-Setup-2026.11.2.exe"), ("distributio
 PY
 }
 expect pass "make-manifest names the Windows setup and distribution with their SHA-256" made
-with_windows() { # $1: folder made by release(); adds the Windows files and names them in its manifest
+made_other() { "$root/tools/release/make-manifest.sh" --local --version 2026.11.2 --windows "$tmp/win-other" --out "$tmp/made-other"; }
+expect fail "make-manifest refuses a Windows setup built from another commit than the release's" made_other
+with_windows() { # $1: folder made by release(); adds the Windows files and names them, and $2 as its commit (this checkout's by default), in its manifest
     cp "$tmp/win/"* "$1/"
-    python3 -I - "$1" <<'PY'
+    python3 -I - "$1" "${2:-$head}" <<'PY'
 import hashlib, json, sys
 folder = sys.argv[1]
 path = folder + "/manifest.json"
 m = json.load(open(path))
 sha = lambda n: hashlib.sha256(open(folder + "/" + n, "rb").read()).hexdigest()
+m["commit"] = sys.argv[2]
 m["windows"] = {"setup": {"file": "HAQ-Retail-OS-Setup-2026.11.2.exe", "sha256": sha("HAQ-Retail-OS-Setup-2026.11.2.exe")},
                 "distribution": {"file": "haq-server.tar.gz", "sha256": sha("haq-server.tar.gz")}}
 json.dump(m, open(path, "w"))
@@ -164,5 +176,9 @@ cp -r "$tmp/win-good" "$tmp/win-stranger"
 "$root/tools/release/sign.sh" "$tmp/win-stranger/manifest.json" "$tmp/other/release-private.pem" >/dev/null
 expect fail "Windows files under a manifest signed by another key are refused" windows "$tmp/win-stranger"
 expect fail "a release whose manifest names no Windows setup is refused" windows "$tmp/good"
+release "$tmp/win-elsewhere" 2026.11.2
+with_windows "$tmp/win-elsewhere" 4444444444444444444444444444444444444444
+"$root/tools/release/sign.sh" "$tmp/win-elsewhere/manifest.json" "$tmp/key/release-private.pem" >/dev/null
+expect fail "a release whose distribution was built from another commit than it names is refused" windows "$tmp/win-elsewhere"
 
 [ "$failures" = 0 ] && echo "The signing dry run passed." || { echo "The signing dry run failed ($failures)."; exit 1; }
