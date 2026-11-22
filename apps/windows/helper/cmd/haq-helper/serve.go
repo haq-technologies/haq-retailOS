@@ -9,6 +9,7 @@ import (
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/bridge"
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/config"
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/health"
+	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/install"
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/printer"
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/wslnet"
 )
@@ -17,7 +18,8 @@ import (
 const healthEvery = 15 * time.Minute
 
 // serve is the HAQ Helper service's work, until ctx ends: the print bridge for the PC's receipt printer,
-// and, on the PC that runs the server, the report of its disks and clock.
+// and, on the PC that runs the server, the report of its disks and clock and the watch on its port
+// forwarding.
 func serve(ctx context.Context, logf func(string, ...any)) error {
 	cfg, ok := waitForConfig(ctx, logf)
 	if !ok {
@@ -39,6 +41,8 @@ func serve(ctx context.Context, logf func(string, ...any)) error {
 	}
 	if cfg.Mode == config.Server {
 		wg.Go(func() { reportHealth(ctx, logf) })
+		// After a restart, Windows' forwarding may not listen on the PC's address until it is made again (D141).
+		wg.Go(func() { install.KeepForward(ctx, logf, cfg.Address) })
 	}
 	wg.Wait()
 	return nil

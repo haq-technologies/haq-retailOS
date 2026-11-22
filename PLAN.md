@@ -391,3 +391,4 @@ Assumptions:
 | 22 November 2026 | Release 2026.11.4 signed and published as GitHub's latest, the first that carries the Windows setup, which is not yet code-signed; sign.sh says "Signed" only for a signature that checks out (D138) |
 | 22 November 2026 | A Windows PC's receipt printer can be set or changed after the install with `haq-helper printer` (D139) |
 | 22 November 2026 | The shop server can move to a new fixed address with no new install, keeping its sales: `haq address` and `haq-helper address` (D140) |
+| 23 November 2026 | On a Windows server the HAQ Helper keeps the port forwarding working after a restart, and IP Helper starts with Windows (D141) |

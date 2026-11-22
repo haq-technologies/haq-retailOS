@@ -52,3 +52,6 @@ func SetPrinter(context.Context, io.Writer, PrinterChoice) error { return errWin
 
 // ChangeAddress is Windows only.
 func ChangeAddress(context.Context, io.Writer, string, bool) error { return errWindows }
+
+// KeepForward is Windows only: elsewhere there is no port forwarding to keep.
+func KeepForward(context.Context, func(string, ...any), string) {}

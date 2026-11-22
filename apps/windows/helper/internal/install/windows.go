@@ -246,8 +246,13 @@ func removeFirewall(ctx context.Context) error {
 }
 
 // forward passes the PC's address, ports 80 and 443, to the server inside WSL, which WSL itself makes
-// reachable on 127.0.0.1.
+// reachable on 127.0.0.1. Windows' IP Helper service does the forwarding, so it starts with Windows and
+// runs now (D141).
 func forward(ctx context.Context, out io.Writer, address string) error {
+	if err := run(ctx, io.Discard, "sc.exe", "config", "iphlpsvc", "start=", "auto"); err != nil {
+		return fmt.Errorf("setting Windows' IP Helper service, which forwards the shop's ports, to start with Windows: %w", err)
+	}
+	_ = run(ctx, io.Discard, "sc.exe", "start", "iphlpsvc") // it fails when the service runs already
 	for _, port := range []string{"80", "443"} {
 		_ = run(ctx, io.Discard, "netsh.exe", "interface", "portproxy", "delete", "v4tov4", "listenaddress="+address, "listenport="+port)
 		if err := run(ctx, out, "netsh.exe", "interface", "portproxy", "add", "v4tov4", "listenaddress="+address,

@@ -40,6 +40,10 @@ haq-helper server printer T02 192.168.1.21   point counter T02 at the bridge on 
 
 `setup remove` takes away the Windows parts (the service, the tasks, the port forwarding, the firewall rules, the shortcut and the trusted certificate) and keeps the shop, with its sales, so a setup run again finds it. Only `--delete-shop-and-sales` deletes the distribution, the HAQServer account and `C:\ProgramData\HAQ`.
 
+## The port forwarding
+
+On the PC that runs the shop, Windows forwards the PC's address, ports 80 and 443, to the server inside WSL (`netsh interface portproxy`), through its IP Helper service, which the setup sets to start with Windows. Windows keeps the forwarding across a restart, but IP Helper listens on the address only if the PC has it when the service starts, and never tries again. So the service checks every 30 seconds, once the PC has its address, that the address answers on port 443, and makes the forwarding again when it does not, saying so once in its log (D141).
+
 ## The PC's report
 
 The server inside WSL cannot read Windows' disks, so the service writes the report `deploy/host-health.sh` writes on the mini-PC, field for field, into `C:\ProgramData\HAQ\status\host.json`:
