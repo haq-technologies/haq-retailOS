@@ -12,7 +12,7 @@ Write down a pass or a fail for each, with the check reports. The build waits fo
 |---|---|---|
 | 1 | The server starts at power-on with nobody signed in | Restart Windows and wait 5 minutes at the sign-in screen. Then sign in and run `check`: "Server ready" must be earlier than your "Signed in" time |
 | 2 | It stays up | Run `check` again after a day: the distribution's "since" time is unchanged, and `/up` answers 200 |
-| 3 | Other devices reach it | From your phone (it is on its own hotspot) or another device on the same network, open `https://<the PC's address>/up` and accept the certificate warning: the page loads and says the application is up |
+| 3 | Other devices reach it | From your phone (it is on its own hotspot) or another device on the same network, open `https://<the PC's address>/up` and accept the certificate warning: the page loads and says the shop server is up |
 | 4 | It reaches a program on its own PC | Make a sale on the counter (step 5 below); `check` counts one more receipt at the bridge |
 | 5 | It survives a power cut | Optional, since it is a real power cut on your PC: save your work, hold the power button while scripted sales run until the PC switches off, start it again, and `inside "haq artisan shop:rehearsal-check"` passes |
 | 6 | It fits an 8 GB PC | Note "WSL memory" from `check` while scripted sales run, against the machine's memory |

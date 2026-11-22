@@ -37,6 +37,12 @@ final readonly class Journal
     /** A receipt number: terminal, epoch, number (T01-E2-001001). */
     private const RECEIPT = '/^([A-Z][0-9]{2})-E([0-9]{1,6})-([0-9]{6,12})$/';
 
+    /** The highest epoch a receipt number can carry: six digits, as RECEIPT reads them (D131). */
+    private const MAX_EPOCH = 999999;
+
+    /** The highest receipt number within an epoch: twelve digits, as RECEIPT reads them. */
+    private const MAX_NUMBER = 999999999999;
+
     public function __construct(private Epochs $epochs, private AuditLog $audit, private Settings $settings) {}
 
     /** Whether this counter reports its journal before it sells again: its epoch began with a restore, and it has not reported in it. */
@@ -186,7 +192,7 @@ final readonly class Journal
     {
         $validator = Validator::make($data, [
             'highest' => ['present', 'array'],
-            'highest.*' => ['integer', 'min:1'],
+            'highest.*' => ['integer', 'min:1', 'max:'.self::MAX_NUMBER],
             'entries' => ['sometimes', 'array', 'max:5000'],
             'entries.*.receipt_number' => ['required', 'string', 'regex:'.self::RECEIPT],
             'entries.*.at' => ['required', 'date'],
@@ -257,7 +263,31 @@ final readonly class Journal
             $highest[$entry['epoch']] = max($highest[$entry['epoch']] ?? 0, $entry['number']);
         }
         ksort($highest);
+        $this->checkEpochs($terminal, $highest);
 
         return [$highest, $entries];
+    }
+
+    /**
+     * A journal's epochs must be ones this counter could have had (D131, finding VP7). The counter only ever
+     * numbers in an epoch the server gave it, and a restore begins one more than the highest known in the
+     * copy or on the backup disk, so a true journal is at most one epoch past the counter's highest here.
+     * A counter with no epoch at all (a server reinstalled by hand) may show any, up to the six digits a
+     * receipt number holds, and the epoch it is raised to must fit there too. Anything else is refused,
+     * before it can move the counter's receipts or queue a lost sale.
+     *
+     * @param  array<int, int>  $highest
+     */
+    private function checkEpochs(Terminal $terminal, array $highest): void
+    {
+        if ($highest === []) {
+            return;
+        }
+        $top = max(array_keys($highest));
+        $current = DB::table('epochs')->where('terminal_id', $terminal->id)->max('epoch');
+        $limit = is_numeric($current) ? min((int) $current + 1, self::MAX_EPOCH - 1) : self::MAX_EPOCH - 1;
+        if ($top > $limit) {
+            throw new SaleRefused("The counter journal could not be read: it shows receipt epoch {$top}, and this counter can be at most at epoch {$limit}.");
+        }
     }
 }

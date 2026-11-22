@@ -18,7 +18,9 @@ FROM ${PHP_IMAGE} AS base
 
 # pdo_pgsql for PostgreSQL, intl for money and number formatting, pcntl so queue workers stop cleanly,
 # bcmath for exact arithmetic, zip for the owner's data export (D57). OPcache is built into PHP 8.5. The
-# -dev packages are removed after the build. Debian's security updates are taken at build time, so a fix
+# -dev packages are removed after the build, and so are the compilers and C headers the PHP image keeps for
+# building extensions ($PHPIZE_DEPS: gcc, libc6-dev, linux-libc-dev and the like), which no shop needs
+# (D134, finding VP10). Debian's security updates are taken at build time, so a fix
 # released after the base image reaches the shop with the next image (CI's image scan checks, D65).
 #
 # SECURITY_UPDATES is the day of the build, given by CI. A cached layer never takes a newer fix, so the
@@ -30,7 +32,8 @@ RUN set -eux; \
     apt-get upgrade -y --no-install-recommends; \
     apt-get install -y --no-install-recommends libpq5 libicu76 libzip5 libpq-dev libicu-dev libzip-dev; \
     docker-php-ext-install -j"$(nproc)" pdo_pgsql intl pcntl bcmath zip; \
-    apt-get purge -y --auto-remove libpq-dev libicu-dev libzip-dev; \
+    apt-get purge -y --auto-remove libpq-dev libicu-dev libzip-dev $PHPIZE_DEPS libc6-dev linux-libc-dev; \
+    php -m | grep -qx pdo_pgsql; php -m | grep -qx intl; php -m | grep -qx zip; \
     rm -rf /var/lib/apt/lists/*
 
 COPY apps/shop-server/docker/php/conf.d/app.ini /usr/local/etc/php/conf.d/zz-app.ini
