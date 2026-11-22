@@ -222,7 +222,8 @@ grep -v -E '^(APP_IMAGE|WEB_IMAGE|DB_IMAGE|RELEASE_VERSION|SERVER_NAME|SERVER_IP
     echo "HTTP_PORT=$http_port"
     echo "HTTPS_PORT=$https_port"
     if [ -n "$backup_dir" ]; then echo "BACKUP_DIR=$backup_dir"; fi
-    if [ -n "$bind" ]; then echo "BIND_ADDRESS=$bind"; fi
+    # Empty at a shop, which answers on every address; written anyway, so Compose never warns it is unset.
+    echo "BIND_ADDRESS=$bind"
 } >> "$dir/.env.new"
 mv "$dir/.env.new" "$dir/.env"
 chmod 600 "$dir/.env"
