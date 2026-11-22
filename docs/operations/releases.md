@@ -104,7 +104,7 @@ Versions are YEAR.MONTH.N, such as 2026.11.3. A release is one commit: its git t
    gh release edit 2026.11.3 --prerelease=false --latest
    ```
 
-For the very first shop there is no other shop to protect, so steps 5 and 7 can be one: publish without `--prerelease`. Either way, the release that goes live is marked as the latest: until then GitHub's latest is 2026.11.2, which must not go live (D76), and its notes say so.
+For the very first shop there is no other shop to protect, so steps 5 and 7 can be one: publish without `--prerelease`. Either way, the release that goes live is marked as the latest. Since 22 November 2026 GitHub's latest is 2026.11.4, the first release that carries the Windows setup (D138); 2026.11.2 must never go live (D76).
 
 Before taking a release's Windows setup to a shop, check it against the signed manifest on a computer with the repository (the Release workflow has checked it too):
 
