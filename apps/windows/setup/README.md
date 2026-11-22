@@ -50,6 +50,8 @@ On a shop with one PC, the cashier and the owner share the counter, each with th
 
 On a PC that has HAQ Retail OS, a newer setup asks nothing. It stops the HAQ Helper and the keep-alive, puts in its files, and starts them again. The shop and its sales stay as they were; the shop server itself updates with `haq-helper server update`.
 
+An older release's setup stops before it changes anything, and says which release the PC has (D137): run that release's setup or a newer one. It compares releases only (YEAR.MONTH.N), so a build from main can always be tried. HAQ support goes back to an older release on purpose with `/ALLOWDOWNGRADE`.
+
 **Uninstall** (Settings, Apps) removes the Windows parts: the HAQ Helper, its tasks, the port forwarding, the firewall rules, the start-up shortcut, the trusted certificate and its folder on the PATH. The shop and its sales stay in `C:\ProgramData\HAQ`, and running the setup again brings them back. Only HAQ support deletes them for good: `haq-helper setup remove --delete-shop-and-sales`.
 
 ## Building it
@@ -62,7 +64,7 @@ ISCC /DAppVersion=2026.12.1 /DNumericVersion=2026.12.1.0 /DTag=2026.12.1 /DHelpe
 
 A build from main installs the `main` images. A release's build installs that release's images, by its version (D70).
 
-CI also runs it silently as a counter against a stand-in server, runs it a second time as an update, then uninstalls it:
+CI also runs it silently as a counter against a stand-in server, runs it a second time as an update, then uninstalls it, with [test-setup.ps1](test-setup.ps1); windows-release.yml runs the same test on each release's own setup before keeping it (D137). CI also checks that an older release's setup stops on a PC that has a newer one:
 
 ```
 HAQ-Retail-OS-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /MODE=counter /ANSWERS=<file>

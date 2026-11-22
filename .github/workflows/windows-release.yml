@@ -43,6 +43,13 @@ jobs:
           ref: ${{ inputs.commit }}
           persist-credentials: false
 
+      - name: The commit has the release's Windows checks
+        shell: pwsh
+        run: |
+          foreach ($f in 'tools/release/distro_commit.py', 'apps/windows/setup/test-setup.ps1') {
+            if (-not (Test-Path $f)) { throw "$env:COMMIT has no $f, from D137: make the release from a newer commit" }
+          }
+
       # The distribution CI built and checked from this commit when it reached main or a release branch, kept
       # 90 days; never one built again, which would not be the one CI checked.
       - name: The distribution CI built from this commit
@@ -58,7 +65,10 @@ jobs:
           $want = ((Get-Content (Join-Path $dir 'haq-server.tar.gz.sha256') -Raw).Trim() -split '\s+')[0].ToLower()
           $got = (Get-FileHash (Join-Path $dir 'haq-server.tar.gz') -Algorithm SHA256).Hash.ToLower()
           if ($got -ne $want) { throw "The distribution is not the one CI built: $got, not $want" }
-          Write-Host "The distribution from CI run $run, SHA-256 $got"
+          # The distribution names the commit it was built from; make-manifest.sh checks it against the release's (D137).
+          $built = python -I tools/release/distro_commit.py (Join-Path $dir 'haq-server.tar.gz')
+          if ($LASTEXITCODE -or $built -ne $env:COMMIT) { throw "The distribution was built from commit $built, not $env:COMMIT" }
+          Write-Host "The distribution from CI run $run, built from $built, SHA-256 $got"
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -90,6 +100,14 @@ jobs:
           Copy-Item "$env:RUNNER_TEMP\distro\haq-server.tar.gz" $out
           if (-not (Test-Path "$out\HAQ-Retail-OS-Setup-$env:VERSION.exe")) { throw 'the setup is not named for the release' }
           Get-ChildItem $out | ForEach-Object { '{0}  {1}  {2} MB' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name, [math]::Round($_.Length / 1MB) } | Write-Host
+
+      # The release's own setup, as CI tries each commit's (D137): a counter installed silently against a
+      # stand-in server, the setup run again as an update, then uninstalled.
+      - name: The release's setup installs a counter silently, updates it, then uninstalls
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File apps/windows/setup/test-setup.ps1 -Setup "$env:RUNNER_TEMP\release\HAQ-Retail-OS-Setup-$env:VERSION.exe"
+          if ($LASTEXITCODE) { throw 'the release''s setup did not pass its test' }
 
       - name: Keep them for the release
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

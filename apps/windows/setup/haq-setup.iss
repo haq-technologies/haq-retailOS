@@ -11,6 +11,8 @@
 ;
 ; Silent, it asks nothing and installs from an answers file, as CI tries it:
 ;   HAQ-Retail-OS-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /MODE=counter /ANSWERS=<file>
+;
+; It never puts an older release over a newer one (D137); HAQ support goes back on purpose with /ALLOWDOWNGRADE.
 
 #ifndef AppVersion
   #define AppVersion "development"
@@ -73,6 +75,9 @@ const
   NeedsWSL = 20;
   LowMemory = 21;
   EnvironmentKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
+  { Inno Setup's own uninstall key for the AppId above, in Windows' 64-bit view; its DisplayVersion is the
+    AppVersion installed. }
+  UninstallKey = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{6F1E4F2B-6C1D-4E5B-9A43-1B7B2E0C9D21}_is1';
 
 var
   ModePage: TInputOptionWizardPage;
@@ -90,11 +95,59 @@ var
 
 { --- Before anything --- }
 
+{ One part of a version: its digits as a number, or -1 for anything else. The part and its dot leave S. }
+function VersionPart(var S: String): Integer;
+var
+  P, I: Integer;
+  Part: String;
+begin
+  P := Pos('.', S);
+  if P = 0 then
+    P := Length(S) + 1;
+  Part := Copy(S, 1, P - 1);
+  Delete(S, 1, P);
+  Result := -1;
+  if (Part = '') or (Length(Part) > 6) then
+    Exit;
+  for I := 1 to Length(Part) do
+    if (Part[I] < '0') or (Part[I] > '9') then
+      Exit;
+  Result := StrToInt(Part);
+end;
+
+{ A release's version, YEAR.MONTH.N, as one number that orders releases; -1 for any other build, such as
+  main-1a2b3c4 or development, which is never counted as newer or older than a release. }
+function ReleaseNumber(S: String): Int64;
+var
+  Year, Month, N: Integer;
+begin
+  Result := -1;
+  Year := VersionPart(S);
+  Month := VersionPart(S);
+  N := VersionPart(S);
+  if (S <> '') or (Year < 0) or (Month < 0) or (N < 0) then
+    Exit;
+  Result := Year;
+  Result := (Result * 100 + Month) * 1000000 + N;
+end;
+
+{ /ALLOWDOWNGRADE: HAQ support puts an older release's Windows parts back on purpose. }
+function AllowsDowngrade(): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 1 to ParamCount do
+    if CompareText(ParamStr(I), '/ALLOWDOWNGRADE') = 0 then
+      Result := True;
+end;
+
 { 64-bit Windows 10 or 11, for the server and for a counter, said in plain words (D92). Whether this PC can
   run the shop's server is the helper's check, once the person installing has chosen. }
 function InitializeSetup(): Boolean;
 var
   Version: TWindowsVersion;
+  Installed: String;
 begin
   Result := True;
   GetWindowsVersionEx(Version);
@@ -108,6 +161,17 @@ begin
     SuppressibleMsgBox('This PC runs 32-bit Windows. HAQ Retail OS needs 64-bit Windows 10 or 11, on the shop''s ' +
       'server and on every counter.' + #13#10#13#10 + 'Settings, then System, then About shows it, under System type.',
       mbCriticalError, MB_OK, IDOK);
+    Result := False;
+  end
+  { An older release's setup never puts its Windows parts over a newer release's (D137). }
+  else if RegQueryStringValue(HKLM64, UninstallKey, 'DisplayVersion', Installed) and
+    (ReleaseNumber('{#AppVersion}') >= 0) and (ReleaseNumber(Installed) > ReleaseNumber('{#AppVersion}')) and
+    not AllowsDowngrade() then
+  begin
+    Log('Refused: release ' + Installed + ' is installed, which is newer than this setup''s {#AppVersion}.');
+    SuppressibleMsgBox('This PC has HAQ Retail OS ' + Installed + ', which is newer than this setup ({#AppVersion}). ' +
+      'Run the setup of release ' + Installed + ' or a newer one.' + #13#10#13#10 +
+      'Going back to an older release is for HAQ support only.', mbCriticalError, MB_OK, IDOK);
     Result := False;
   end;
 end;
@@ -455,7 +519,7 @@ begin
   else if CurPageID = AddressPage.ID then
   begin
     if IsServer() then Mode := 'server' else Mode := 'counter';
-    if RunHelper('setup check --mode ' + Mode + Warned() + ' --address ' + Trim(AddressPage.Values[0]), Output) <> 0 then
+    if RunHelper('setup check --mode ' + Mode + Warned() + ' --address "' + Trim(AddressPage.Values[0]) + '"', Output) <> 0 then
     begin
       MsgBox(Output, mbError, MB_OK);
       Result := False;

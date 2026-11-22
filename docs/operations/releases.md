@@ -71,14 +71,14 @@ Versions are YEAR.MONTH.N, such as 2026.11.3. A release is one commit: its git t
    gh run download <that run> --name haq-retail-os-windows-2026.11.3 --dir release/2026.11.3/windows
    ```
 
-   It takes the distribution CI built from the commit, never one built again. The folder holds `HAQ-Retail-OS-Setup-2026.11.3.exe` and `haq-server.tar.gz`.
+   It takes the distribution CI built from the commit, never one built again, and checks that the distribution names that commit. Before keeping the setup it runs the setup's own test on it: a counter installed silently, the setup run again as an update, then uninstalled (D137). The folder holds `HAQ-Retail-OS-Setup-2026.11.3.exe` and `haq-server.tar.gz`.
 3. Write the manifest. It names the commit, pins that commit's three images by digest, and records the hash of that commit's Compose file and of the two Windows files:
 
    ```
    tools/release/make-manifest.sh --version 2026.11.3 --commit <the commit> --windows release/2026.11.3/windows
    ```
 
-   With no `--commit` it takes main as GitHub has it now, and prints the commit; it must be the commit the Windows setup was built from. This computer must be signed in to GHCR (`docker login ghcr.io`, with a token that has read:packages). The folder `release/2026.11.3/` holds `manifest.json`, `compose.yaml` and the two Windows files; it is never committed.
+   With no `--commit` it takes main as GitHub has it now, and prints the commit. It refuses Windows files built from another commit than the release's, and says which commit they were built from (D137). This computer must be signed in to GHCR (`docker login ghcr.io`, with a token that has read:packages). The folder `release/2026.11.3/` holds `manifest.json`, `compose.yaml` and the two Windows files; it is never committed.
 4. Sign it on the offline computer:
 
    ```
@@ -91,7 +91,7 @@ Versions are YEAR.MONTH.N, such as 2026.11.3. A release is one commit: its git t
    gh release create 2026.11.3 release/2026.11.3/manifest.json release/2026.11.3/manifest.json.sig release/2026.11.3/compose.yaml release/2026.11.3/HAQ-Retail-OS-Setup-2026.11.3.exe release/2026.11.3/haq-server.tar.gz --title 2026.11.3 --target <commit> --prerelease
    ```
 
-   Publishing starts the Release workflow (D70). It checks the release with the updater's own checks against the release public key on main, checks that the tag is on the commit the manifest names, then gives the three images the version as their tag on GHCR, pointing at the manifest's digests, and checks the Windows setup and distribution against the SHA-256 the manifest signs for each (D99). A version's tag is never moved. Check it is green:
+   Publishing starts the Release workflow (D70). It checks the release with the updater's own checks against the release public key on main, and checks the Windows setup and distribution against the SHA-256 the manifest signs for each, and that the distribution was built from the manifest's commit (D99, D137). Only then does it check that the tag is on the commit the manifest names and give the three images the version as their tag on GHCR, pointing at the manifest's digests; a release whose Windows files are wrong tags nothing. A version's tag is never moved. Check it is green:
 
    ```
    gh run list --workflow Release --limit 1
