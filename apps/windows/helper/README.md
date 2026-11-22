@@ -68,6 +68,19 @@ It reaches the printer, best first:
 
 A print queue on a USB port (USB001) is tied to its USB printing device, so a printer with a Windows driver is still reached two-way.
 
+### Changing the printer after the install
+
+`haq-helper printer`, in Terminal (Admin), changes this PC's receipt printer as the setup's printer page sets it, with no new install (D139): a printer bought or plugged in later, another one in its place, or none.
+
+```
+haq-helper printer                          what this PC's counter prints to, and the printers it sees now
+haq-helper printer use "XP-80C"             a printer on this PC, through the bridge: it prints the test receipt first
+haq-helper printer network 192.168.1.21     a receipt printer with its own network port
+haq-helper printer none                     no printer yet: receipts wait as Print pending
+```
+
+It saves the printer in `helper.json`, opens the bridge's firewall rule to the server only, and starts the HAQ Helper service (or, with no bridge on a counter, removes both). On the PC that runs the shop it also points counter T01 at it on the server (`haq printer T01`). On a counter it ends with the one line to run on the server's PC, such as `haq-helper server printer T02 192.168.1.31`.
+
 ## Commands
 
 ```
@@ -79,6 +92,7 @@ haq-helper addresses                         this PC's own addresses, which the 
 haq-helper printers [--json|--names]         the printers on this PC, and how each is reached; --names lists
                                              the receipt printers there now, not Windows' own (PDF, OneNote, Fax)
 haq-helper test-print --printer "XP-80C"     the test receipt, with a barcode and a QR code for the scanner check
+haq-helper printer [use "XP-80C" | network <address> | none]   this PC's receipt printer, after the install too (D139)
 haq-helper bridge --printer "XP-80C" --allow 192.168.1.10
 haq-helper support-file [--out <file.zip>]   one file for HAQ support, for a USB drive or WhatsApp (D119)
 haq-helper version

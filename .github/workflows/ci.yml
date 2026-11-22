@@ -342,6 +342,21 @@ jobs:
           Start-Sleep -Seconds 2
           if ((Get-Item $receipts).Length -ne $job.Length) { throw 'someone other than the server printed' }
 
+          # The printer after the install (D139): none takes the bridge away, and a printer on this PC brings
+          # it back, letting in only the server, with the line to run on the server's PC.
+          & $exe printer none; if ($LASTEXITCODE) { throw 'printer none failed' }
+          if ((& $exe service state) -ne 'not installed') { throw 'a counter with no printer still runs the bridge' }
+          if (Get-NetFirewallRule -Group 'HAQ Retail OS' -ErrorAction SilentlyContinue) { throw 'the bridge rule is still there with no printer' }
+          if ((Get-Content C:\ProgramData\HAQ\helper.json -Raw | ConvertFrom-Json).printer) { throw 'the printer is still in the settings' }
+          $said = (& $exe printer use "file:$receipts") -join "`n"
+          if ($LASTEXITCODE) { throw "printer use failed: $said" }
+          Write-Host $said
+          if ($said -notlike '*haq-helper server printer T02 127.0.0.1*') { throw "printer use did not give the server's line" }
+          if ((& $exe service state) -ne 'running') { throw 'the bridge is not running again' }
+          $rule = Get-NetFirewallRule -Group 'HAQ Retail OS' | Get-NetFirewallAddressFilter
+          if ($rule.RemoteAddress -ne '127.0.0.2') { throw "the bridge's rule lets in $($rule.RemoteAddress)" }
+          if ((Get-Content C:\ProgramData\HAQ\helper.json -Raw | ConvertFrom-Json).printer -ne "file:$receipts") { throw 'the printer is not in the settings' }
+
           & $exe setup remove; if ($LASTEXITCODE) { throw 'setup remove failed' }
           if ((& $exe service state) -ne 'not installed') { throw 'the service is still there' }
           if (Get-NetFirewallRule -Group 'HAQ Retail OS' -ErrorAction SilentlyContinue) { throw 'the firewall rules are still there' }

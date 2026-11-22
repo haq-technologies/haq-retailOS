@@ -29,7 +29,7 @@ The server is tested with 8 GB of memory. On a PC with less, the setup says so a
 | The counters | How many, and which have a cash drawer | - |
 | The owner | The owner's name and 6-digit PIN, typed twice. The staff are added after the setup (below) | - |
 | The shop's server | - | The server's address, which counter this is (T02, T03 ...), and the one-time code from `haq-helper server enrol T02` on the server's PC |
-| The receipt printer | A printer plugged into this PC (it prints a test receipt, and asks whether it came out), a network printer's address, or none yet | The same |
+| The receipt printer | A printer plugged into this PC (it prints a test receipt, and asks whether it came out), a network printer's address, or none yet. The list is read when the setup starts, so plug the printer in and switch it on first; it can be set or changed later with `haq-helper printer` (D139) | The same |
 
 Then it installs: 15 to 40 minutes for the shop, most of it downloading, and a minute for a counter. At the end it opens the page that registers the PC as a counter, with the code filled in. A counter's last page also gives the line to run on the server's PC for its printer.
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/haq-technologies/haq-retailOS/apps/windows/helper/internal/config"
@@ -55,3 +56,44 @@ func (s *steps) next(what string) {
 	s.n++
 	fmt.Fprintf(s.out, "\n[%d of %d] %s\n", s.n, s.of, what)
 }
+
+// PrinterChoice is this PC's receipt printer, as `haq-helper printer` sets it after the install (D139):
+// Printer, a printer on this PC as `haq-helper printers` names it, reached through the print bridge; or
+// Host, a network receipt printer's address; or neither, for no printer yet.
+type PrinterChoice struct {
+	Printer string
+	Host    string
+}
+
+// target is what the shop server is told this counter prints to: this PC's bridge, the network printer,
+// or none.
+func (c PrinterChoice) target(address string) string {
+	switch {
+	case c.Printer != "":
+		return address
+	case c.Host != "":
+		return c.Host
+	}
+	return "none"
+}
+
+func (c PrinterChoice) describe() string {
+	switch {
+	case c.Printer != "":
+		return c.Printer + ", on this PC, through the print bridge"
+	case c.Host != "":
+		return "the network printer at " + c.Host
+	}
+	return "no printer yet: receipts wait as Print pending until one is set"
+}
+
+// counterFromMark is the counter a counter PC was installed as, from its installed mark ("counter T02 of
+// 192.168.1.10, ..."), or a placeholder when the mark does not say.
+func counterFromMark(mark string) string {
+	if m := counterMark.FindStringSubmatch(mark); m != nil {
+		return m[1]
+	}
+	return "<this counter, such as T02>"
+}
+
+var counterMark = regexp.MustCompile(`^counter (T[0-9]{2}) of `)

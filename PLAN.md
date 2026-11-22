@@ -389,3 +389,4 @@ Assumptions:
 | 22 November 2026 | nginx finds the app container again after an update (D135, finding BK5): it asks Docker's DNS on every request, so an update that recreates app no longer leaves every request answering 502 until web restarts. Tests that compare database rows as a list order them first (D136), after a clock test failed main's CI |
 | 22 November 2026 | The Windows setup's build reviewed and fixed (D137): its files must be from the release's commit, they are checked before any image is tagged, the release's own setup is tested before it is kept, and an older release's setup never runs over a newer one |
 | 22 November 2026 | Release 2026.11.4 signed and published as GitHub's latest, the first that carries the Windows setup, which is not yet code-signed; sign.sh says "Signed" only for a signature that checks out (D138) |
+| 22 November 2026 | A Windows PC's receipt printer can be set or changed after the install with `haq-helper printer` (D139) |

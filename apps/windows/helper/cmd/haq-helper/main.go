@@ -76,6 +76,8 @@ func main() {
 		err = printers(os.Args[2:])
 	case "test-print":
 		err = testPrint(os.Args[2:])
+	case "printer":
+		err = setPrinter(os.Args[2:])
 	case "bridge":
 		err = runBridge(os.Args[2:])
 	case "support-file":
@@ -114,6 +116,11 @@ func usage() {
   haq-helper addresses                     this PC's own addresses, for its fixed address
   haq-helper printers [--json|--names]             the printers on this PC, and how each is reached
   haq-helper test-print --printer <name>   the test receipt, with its barcode and QR code
+  haq-helper printer                       what this PC's counter prints to; after the install too:
+  haq-helper printer use "<name>"            a printer on this PC, through the print bridge (it prints
+                                             a test receipt first); haq-helper printers lists them
+  haq-helper printer network <address>       a receipt printer with its own network port
+  haq-helper printer none                    no printer yet
   haq-helper bridge --printer <name> [--listen :9100] [--allow <address or network>,...]
   haq-helper support-file [--out <file.zip>]   one file for HAQ support: this PC's logs and, on the
                                            server's PC, the server's own; for a USB drive or WhatsApp
@@ -303,6 +310,11 @@ func testPrint(args []string) error {
 	if err != nil {
 		return err
 	}
+	return printTest(p)
+}
+
+// printTest prints the test receipt on p, with the codes the scanner check reads.
+func printTest(p printer.Printer) error {
 	if !p.Present() {
 		return fmt.Errorf("%s is not there now: plug it in and switch it on", p.Name())
 	}
@@ -322,6 +334,57 @@ func testPrint(args []string) error {
 	}
 	fmt.Println("The test receipt went to", p.Name()+". The scanner check reads:", escpos.ScanCheck)
 	return nil
+}
+
+// setPrinter changes this PC's receipt printer after the install (D139), as the setup's printer page sets
+// it: a printer plugged into this PC, through the print bridge, a network printer, or none.
+func setPrinter(args []string) error {
+	if len(args) == 0 {
+		return showPrinter()
+	}
+	var choice install.PrinterChoice
+	switch args[0] {
+	case "use":
+		if len(args) != 2 || strings.TrimSpace(args[1]) == "" {
+			return errors.New(`give the printer as haq-helper printers lists it, in quotes: haq-helper printer use "POS-80 Printer"`)
+		}
+		p, err := printer.Choose(args[1])
+		if err != nil {
+			return fmt.Errorf("%s: %w; haq-helper printers lists the printers on this PC", args[1], err)
+		}
+		if err := printTest(p); err != nil {
+			return err
+		}
+		fmt.Println("Check the receipt came out, and scan its codes: the counter's search box shows the same text.")
+		choice.Printer = args[1]
+	case "network":
+		if len(args) != 2 {
+			return errors.New("give the printer's address: haq-helper printer network 192.168.1.21")
+		}
+		choice.Host = strings.TrimSpace(args[1])
+	case "none":
+		if len(args) != 1 {
+			return errors.New("haq-helper printer none takes nothing more")
+		}
+	default:
+		return fmt.Errorf(`printer takes use "<name>", network <address> or none, not %q`, args[0])
+	}
+	return install.SetPrinter(context.Background(), os.Stdout, choice)
+}
+
+// showPrinter says what this PC's counter prints to, and which printers it could use.
+func showPrinter() error {
+	cfg, err := config.Load(config.Path())
+	if err != nil {
+		return fmt.Errorf("this PC has no HAQ Retail OS yet: %w", err)
+	}
+	if cfg.Printer != "" {
+		fmt.Printf("This PC's counter prints to %s, through the print bridge.\n", cfg.Printer)
+	} else {
+		fmt.Println("This PC has no printer of its own: its counter prints to a network printer, or has none yet.")
+	}
+	fmt.Println("\nThe printers on this PC now:")
+	return printers(nil)
 }
 
 // ascii keeps a printer's name printable on a receipt: anything else becomes '?'.
