@@ -58,6 +58,12 @@ it('enrols a counter with a code that works once', function () {
     $this->post('/enrol', ['code' => $code])->assertSessionHasErrors('code');
 });
 
+it('sends a refused code back to the enrolment page, never to the Referer (D132, VP8)', function () {
+    $from = ['Referer' => 'https://evil.example/phish'];
+    $this->post('/enrol', ['code' => 'NOT-A-CODE'], $from)->assertRedirect('/enrol')->assertSessionHasErrors('code');
+    $this->post('/enrol', [], $from)->assertRedirect('/enrol')->assertSessionHasErrors('code');
+});
+
 it('keeps a code working for 30 minutes, long enough to set up the counter, and not after (D58)', function () {
     [$t1, $t2] = $this->shop['terminals'];
     $enrolment = app(Enrolment::class);

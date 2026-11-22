@@ -16,6 +16,7 @@ use App\Settings\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Inertia\Response;
 use LogicException;
@@ -33,10 +34,15 @@ final class IdentityController
 
     public function enrol(Request $request, Enrolment $enrolment): RedirectResponse
     {
-        $code = $request->validate(['code' => ['required', 'string', 'max:20']])['code'];
-        $cookie = $enrolment->redeem((string) $code);
+        // A refused code goes back to the enrolment page by name, never to the Referer, which anyone can set
+        // (D132, finding VP8). Laravel's own validate() would follow the Referer too.
+        $validator = Validator::make($request->all(), ['code' => ['required', 'string', 'max:20']]);
+        if ($validator->fails()) {
+            return redirect()->route('identity.enrol')->withErrors($validator);
+        }
+        $cookie = $enrolment->redeem((string) $validator->validated()['code']);
         if ($cookie === null) {
-            return back()->withErrors(['code' => 'That code is not valid, or it has expired. Ask HAQ support for a new one.']);
+            return redirect()->route('identity.enrol')->withErrors(['code' => 'That code is not valid, or it has expired. Ask HAQ support for a new one.']);
         }
 
         // Home: the counter page on a counter (spec section 4).

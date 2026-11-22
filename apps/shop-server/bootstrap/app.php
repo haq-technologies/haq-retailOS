@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Middleware\ContentSecurityPolicy;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Platform\Database\Unavailable;
+use App\Platform\Http\HealthCheck;
 use App\Platform\Http\RequestContext;
 use App\Platform\Logging\QueryErrors;
 use App\Platform\Logging\ReportThrottle;
@@ -12,9 +13,12 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /*
  * Every setting lives in config/. Laravel's own defaults are not merged in, so a deleted connection
@@ -24,7 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
-        health: '/up',
+        // The health check is our own page, outside the web group, so it opens no session (D130, VP5).
+        then: function (): void {
+            Route::get('/up', HealthCheck::class);
+            PreventRequestsDuringMaintenance::except('/up');
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // First of all, so every log line of a request, a 404's included, names the request (finding LG5).
@@ -51,6 +59,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 ? response()->json(['message' => 'The shop server is starting. It answers again in a moment.'], 503, $headers)
                 : response((string) file_get_contents(public_path('starting.html')), 503, [...$headers, 'Content-Type' => 'text/html; charset=utf-8']);
         });
+        // An API's not-found answer names nothing inside the server, such as a model's class (D133, finding VP9).
+        $exceptions->render(fn (NotFoundHttpException $e, Request $request) => $request->is('api/*') || $request->expectsJson()
+            ? response()->json(['message' => 'Not found.'], 404, $e->getHeaders())
+            : null);
         // A database still starting is expected after a power cut; it is not an error to log each time.
         $exceptions->dontReportWhen(fn (Throwable $e) => Unavailable::is($e));
         // A failed query is logged without its values: the connections mask the SQL's, and this leaves out

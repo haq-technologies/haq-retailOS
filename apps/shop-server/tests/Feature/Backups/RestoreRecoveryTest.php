@@ -171,6 +171,32 @@ it('records nothing when the journal and the server agree and nothing was restor
         ->assertStatus(422)->assertJsonPath('message', fn (string $m) => str_starts_with($m, 'The counter journal could not be read'));
 });
 
+it('refuses a journal epoch the counter could not have had, in plain words and never with a 500 (D131, VP7)', function () {
+    ($this->sell)($this->t1); // T01 is at E1
+    $journal = fn (array $body) => $this->withCookie(Enrolment::COOKIE, $this->counterDevice)->postJson('/api/counter/journal', $body);
+    $refused = fn (string $m) => str_starts_with($m, 'The counter journal could not be read');
+
+    // Far past its epoch, past the six digits a receipt holds, past PostgreSQL's integer: each a 422.
+    foreach (['1000000', '999999', '3', '99999999999', '9999999999999999999999'] as $epoch) {
+        $journal(['highest' => [$epoch => 1]])->assertStatus(422)->assertJsonPath('message', $refused);
+    }
+    $journal(['highest' => ['1' => 1], 'entries' => [lostEntry('T01-E1000000-000002', $this->a->id, 100, $this->cashier->id)]])
+        ->assertStatus(422)->assertJsonPath('message', $refused);
+    $journal(['highest' => ['1' => 1], 'entries' => [lostEntry('T01-E900000-000002', $this->a->id, 100, $this->cashier->id)]])
+        ->assertStatus(422)->assertJsonPath('message', $refused);
+    $journal(['highest' => ['1' => 10_000_000_000_000]])->assertStatus(422)->assertJsonPath('message', $refused);
+
+    // Nothing moved: the counter still numbers in E1, and no lost sale or report was queued.
+    expect(DB::table('epochs')->where('terminal_id', $this->t1->id)->max('epoch'))->toBe(1);
+    expect(DB::table('lost_sales')->count())->toBe(0);
+    expect(DB::table('journal_reports')->count())->toBe(0);
+    expect(($this->sell)($this->t1)['receipt_number'])->toBe('T01-E1-000002');
+
+    // One epoch past is what a stale backup disk leaves, so it is still taken.
+    $journal(['highest' => ['2' => 1001], 'entries' => [lostEntry('T01-E2-001001', $this->a->id, 5000, $this->cashier->id)]])
+        ->assertOk()->assertJsonPath('raised_to', 3)->assertJsonPath('missing', 1);
+});
+
 it('lists the lost sales for a manager, who re-enters each under its original receipt number', function () {
     ($this->sell)($this->t1);
     ($this->sell)($this->t1);

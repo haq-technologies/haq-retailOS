@@ -1,3 +1,1 @@
-{
-    "GHSA-fc5q-39xc-vjpf": "picomatch, a ReDoS through repeated extglobs. Only build and test tools use it (Vite, Vitest, the Laravel Vite plugin), with the project's own glob patterns, so nothing a shop runs carries it. No fixed version exists yet: 4.0.7 is the newest, and the advisory covers it. Remove this entry when picomatch publishes a fix (D85, 17 November 2026)."
-}
+{}
