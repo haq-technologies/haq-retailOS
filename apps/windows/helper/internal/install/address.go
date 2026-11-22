@@ -64,3 +64,17 @@ func ownAddresses(adapters []wslnet.Adapter) []string {
 	}
 	return list
 }
+
+// privateIPv4 says whether address is an IPv4 address on a private network (10/8, 172.16/12, 192.168/16):
+// the only kind the shop's certificate authority vouches for, so a server can move to it with the same
+// authority (D140).
+func privateIPv4(address string) error {
+	a, err := netip.ParseAddr(strings.TrimSpace(address))
+	if err != nil || !a.Is4() {
+		return fmt.Errorf("type an IPv4 address such as 192.168.1.20, not %q", address)
+	}
+	if !a.IsPrivate() {
+		return fmt.Errorf("%s is not a private address (10.x.x.x, 172.16.x.x to 172.31.x.x or 192.168.x.x), which the shop's certificate vouches for", a)
+	}
+	return nil
+}
