@@ -218,7 +218,7 @@ it('undoes a learned barcode, settles a conflict, removes a wrong search word fo
     $learning->linkBarcode('6953156270342', $b->id, $bola->id);
     expect(($this->stores)()->getJson('/api/back-office/review')->json('conflicts.0.links'))->toHaveCount(2);
     ($this->stores)()->postJson('/api/back-office/review/barcodes/settle', ['code' => '6953156270342', 'keep_item_id' => $a->id])->assertOk();
-    expect(DB::table('barcodes')->where('code', '6953156270342')->pluck('status', 'item_id')->all())->toBe([$a->id => 'confirmed', $b->id => 'disabled']);
+    expect(DB::table('barcodes')->where('code', '6953156270342')->orderBy('status')->pluck('status', 'item_id')->all())->toBe([$a->id => 'confirmed', $b->id => 'disabled']);
 
     // Keep both: the counter asks each time, and choosing one again raises no new conflict.
     $learning->linkBarcode('6900000000017', $a->id, $this->cashier->id);

@@ -45,7 +45,7 @@ it('holds a sale on one counter and resumes it on another, once', function () {
     // Finished on the counter that resumed it, the sale is linked to the held cart.
     $sale = [...$resumed['payload'], 'parked_sale_id' => $id];
     ($this->at)($this->t2)->postJson('/api/counter/sales', $sale)->assertSuccessful();
-    expect(DB::table('parked_sale_events')->where('parked_sale_id', $id)->pluck('type')->all())->toBe(['parked', 'resumed', 'completed']);
+    expect(DB::table('parked_sale_events')->where('parked_sale_id', $id)->orderBy('at')->orderBy('id')->pluck('type')->all())->toBe(['parked', 'resumed', 'completed']);
 
     // A storekeeper never holds.
     People::add('Sola', Role::Storekeeper, '1122');
@@ -66,7 +66,7 @@ it('parks a cart as Awaiting transfer on every counter, flags it after 30 minute
     // Whoever sees the alert finishes it; a second counter trying the same cart is refused.
     ($this->at)($this->t2)->postJson('/api/counter/sales', [...$cart, 'parked_sale_id' => $id])->assertSuccessful();
     ($this->at)($this->t1)->postJson('/api/counter/sales', [...($this->cart)(1_200_000), 'parked_sale_id' => $id])->assertStatus(422);
-    expect(DB::table('parked_sale_events')->where('parked_sale_id', $id)->pluck('type')->all())->toBe(['parked', 'transfer_confirmed', 'completed']);
+    expect(DB::table('parked_sale_events')->where('parked_sale_id', $id)->orderBy('at')->orderBy('id')->pluck('type')->all())->toBe(['parked', 'transfer_confirmed', 'completed']);
     expect(DB::table('sales')->count())->toBe(1);
 });
 

@@ -71,7 +71,7 @@ it('lists first sales with the prices typed, sets one with a tap, and undoes it 
     expect(app(Pricing::class)->setPrice($this->a->id, 'retail'))->toBeNull();
     expect(app(Pricing::class)->info($this->a, 'retail'))->toMatchArray(['set_price' => null, 'prefill' => 800_000, 'prefill_source' => 'last_price']);
     ($this->manages)()->postJson('/api/back-office/prices/undo', ['item_id' => $this->a->id, 'customer_type' => 'retail'])->assertStatus(422);
-    expect(DB::table('audit_log')->whereIn('action', ['price.set', 'price.undone'])->pluck('action')->all())->toBe(['price.set', 'price.undone']);
+    expect(DB::table('audit_log')->whereIn('action', ['price.set', 'price.undone'])->orderBy('recorded_at')->orderBy('seq')->pluck('action')->all())->toBe(['price.set', 'price.undone']);
 
     // An item's prices show both customer types, with who set what.
     $prices = ($this->owns)()->getJson("/api/back-office/prices/items/{$this->a->id}")->assertOk()->json('prices.retail');
