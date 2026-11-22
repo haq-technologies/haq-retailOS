@@ -181,4 +181,20 @@ with_windows "$tmp/win-elsewhere" 4444444444444444444444444444444444444444
 "$root/tools/release/sign.sh" "$tmp/win-elsewhere/manifest.json" "$tmp/key/release-private.pem" >/dev/null
 expect fail "a release whose distribution was built from another commit than it names is refused" windows "$tmp/win-elsewhere"
 
+# sign.sh says "Signed" only for a signature that checks out, and leaves none behind otherwise (D138).
+mkdir -p "$tmp/sign"
+cp "$tmp/good/manifest.json" "$tmp/sign/manifest.json"
+signs() { "$root/tools/release/sign.sh" "$tmp/sign/manifest.json" "$tmp/key/release-private.pem" && [ -s "$tmp/sign/manifest.json.sig" ] && cmp -s "$tmp/sign/manifest.json.sig" "$tmp/good/manifest.json.sig"; }
+expect pass "sign.sh signs a manifest, as the updater checks it" signs
+no_manifest() { "$root/tools/release/sign.sh" "$tmp/sign/missing.json" "$tmp/key/release-private.pem"; }
+expect fail "sign.sh refuses a manifest that is not there" no_manifest
+not_a_key() { printf 'not a key' > "$tmp/sign/not-a-key.pem"; rm -f "$tmp/sign/manifest.json.sig"; "$root/tools/release/sign.sh" "$tmp/sign/manifest.json" "$tmp/sign/not-a-key.pem"; }
+expect fail "sign.sh refuses a file that is not a private key" not_a_key
+if [ -e "$tmp/sign/missing.json.sig" ] || [ -e "$tmp/sign/manifest.json.sig" ]; then
+    echo "FAIL  sign.sh left a signature behind after a failure"
+    failures=$((failures + 1))
+else
+    echo "PASS  sign.sh leaves no signature behind after a failure"
+fi
+
 [ "$failures" = 0 ] && echo "The signing dry run passed." || { echo "The signing dry run failed ($failures)."; exit 1; }
