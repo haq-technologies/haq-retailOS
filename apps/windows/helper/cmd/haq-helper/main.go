@@ -78,6 +78,8 @@ func main() {
 		err = testPrint(os.Args[2:])
 	case "printer":
 		err = setPrinter(os.Args[2:])
+	case "address":
+		err = changeAddress(os.Args[2:])
 	case "bridge":
 		err = runBridge(os.Args[2:])
 	case "support-file":
@@ -114,6 +116,9 @@ func usage() {
   haq-helper health [--write]              the PC's disks and clock, as the server's health page reads them
   haq-helper drives                        the drives, and which are off-site drives
   haq-helper addresses                     this PC's own addresses, for its fixed address
+  haq-helper address <new address>         this PC's new fixed address, after the install; on the PC that
+                                           runs the shop, the server moves with it, and keeps its sales
+  haq-helper address --server <address>    on a counter: the shop server's new address
   haq-helper printers [--json|--names]             the printers on this PC, and how each is reached
   haq-helper test-print --printer <name>   the test receipt, with its barcode and QR code
   haq-helper printer                       what this PC's counter prints to; after the install too:
@@ -385,6 +390,19 @@ func showPrinter() error {
 	}
 	fmt.Println("\nThe printers on this PC now:")
 	return printers(nil)
+}
+
+// changeAddress moves this PC, or on a counter the shop server it uses, to a new fixed address (D140).
+func changeAddress(args []string) error {
+	server := false
+	if len(args) > 0 && args[0] == "--server" {
+		server = true
+		args = args[1:]
+	}
+	if len(args) != 1 {
+		return errors.New("give the new fixed address: haq-helper address 192.168.1.20, or on a counter haq-helper address --server 192.168.1.20")
+	}
+	return install.ChangeAddress(context.Background(), os.Stdout, strings.TrimSpace(args[0]), server)
 }
 
 // ascii keeps a printer's name printable on a receipt: anything else becomes '?'.

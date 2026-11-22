@@ -229,6 +229,7 @@ On a Windows server the backups share the PC's disk, so a flash drive is the onl
 | `sudo haq enrol T01` | A one-time code, for 30 minutes, to register counter T01 (or D01 for a back-office device), a link that fills the code in, and the shop's certificate thumbprint, whose first 16 characters a new device asks for (D125) |
 | `sudo haq printer T02 192.168.1.22` | Where a counter prints: a network printer's address, or the Windows PC whose print bridge has its USB printer; `none` for no printer. It is kept in the shop's profile, so a later install keeps it (D87) |
 | `sudo haq certificate` | The setup page's address, and the certificate's thumbprint, whose first 16 characters a new device asks for |
+| `sudo haq address 192.168.1.20` | A new fixed address for the server, keeping the shop and its sales: its certificate is made again under the same authority, and each device then registers again ([If the server's address changes](#if-the-servers-address-changes), D140) |
 | `sudo haq check` | Checks the whole install |
 | `sudo haq status` | What is running |
 | `sudo haq backup` | A full backup now |
@@ -244,6 +245,22 @@ On a Windows server the backups share the PC's disk, so a flash drive is the onl
 On a Windows server each is `haq-helper server` and the same words, in **Terminal (Admin)**, such as `haq-helper server users`. The support file is the one exception: `haq-helper support-file`, without `server`, so the file lands on Windows with the PC's own logs in it.
 
 Every command here that reaches the shop's records (people, PINs, enrolment, the export, logs, receipts, `artisan` and restore) is written to the audit trail first, with who ran it and from where, and the owner sees it on the flag list (D110). The owner agreed to HAQ's support in the contract; the flag list shows each visit.
+
+## If the server's address changes
+
+The server keeps one fixed address, and every device reaches it there. If the router hands its address to another device, or the shop gets a new router with another range, first try to give the server its old address back (on the router, or in Windows' or Ubuntu's network settings): then nothing else changes. If the address must change, move the server to it with no new install. The shop and its sales stay as they are (D140).
+
+Do it after closing, with no sale open on any counter: a counter's browser keeps its registration and its sale in progress for the address it opened.
+
+1. Give the server its new fixed address, outside the router's own range or reserved for it.
+2. Move the shop server to it:
+   - **A Windows PC** that runs the shop, in Terminal (Admin): `haq-helper address 192.168.1.20`. The PC must have that address already. It moves the server inside, the port forwarding, the settings and the start-up shortcut, then shows counter T01's new code with a link: open the link in Chrome on that PC.
+   - **An Ubuntu mini-PC:** `sudo haq address 192.168.1.20`, after its network settings have the new address.
+
+   The server's certificate is made again for the new address under the shop's same authority, so no device runs the certificate step again. A counter whose printer is the server PC's own print bridge (T01 on a Windows server) follows it. The address must be a private one (10.x.x.x, 172.16.x.x to 172.31.x.x or 192.168.x.x), which is what a shop's router gives.
+3. **Each other Windows counter**, in Terminal (Admin) on it: `haq-helper address --server 192.168.1.20`. Its start-up shortcut and its print bridge follow the server.
+4. **Register each device again:** on the server, `haq-helper server enrol T02` (or `sudo haq enrol T02`) for each counter and D01 for the owner's device, and open the link it gives on that device.
+5. A counter PC whose own address changed, with a USB printer through its print bridge: `haq-helper address <its new address>` on it, then the line it gives on the server's PC.
 
 ## If something goes wrong
 

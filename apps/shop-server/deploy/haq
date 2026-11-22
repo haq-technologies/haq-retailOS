@@ -9,6 +9,7 @@
 #   sudo haq enrol T01                   a one-time code (30 minutes) to register counter T01, or D01 for a phone
 #   sudo haq printer T02 192.168.1.22    where a counter prints: a network printer, or the PC whose print bridge has its USB printer
 #   sudo haq certificate                 the setup address for new devices, and the certificate's thumbprint
+#   sudo haq address 192.168.1.20        a new fixed address for the server; each device registers again after
 #   sudo haq check                       check the whole install
 #   sudo haq status                      what is running
 #   sudo haq backup                      a full backup now
@@ -57,7 +58,7 @@ thumbprint() {
 }
 setup_url() { if [ "${HTTPS_PORT:-443}" = 443 ]; then echo "$(http_url)/setup"; else echo "$(http_url)/setup?https_port=$HTTPS_PORT"; fi; }
 
-usage() { sed -n '2,26p' "$self" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,27p' "$self" | sed 's/^# \{0,1\}//'; }
 
 # Records a support command on the audit trail before it runs (D110). It never stops the command: a server that
 # is restoring or stopped has no app to record it, and the command must still work.
@@ -73,7 +74,7 @@ command="${1:-help}"
 [ $# -gt 0 ] && shift
 case "$command" in
     # errors and support-file read the logs as `logs` does, and support-file takes them off the server (D119).
-    add-user|users|pin|deactivate|rename|enrol|export|receipts|logs|errors|support-file|artisan|restore) record "$command" ;;
+    add-user|users|pin|deactivate|rename|enrol|address|export|receipts|logs|errors|support-file|artisan|restore) record "$command" ;;
 esac
 case "$command" in
     add-user)
@@ -165,6 +166,75 @@ PY
   The line asks for its first 16 characters, ${thumb:0:19}: type them from this screen, never from
   another page, so a device trusts only the shop's own certificate (D125). Windows shows the thumbprint
   under the certificate's Details, and a phone or a Mac as its SHA-1 fingerprint.
+
+TEXT
+        ;;
+    address)
+        # A new fixed address for the server (D140): its settings, its HTTPS certificate, made again under the
+        # shop's same authority, so no device trusts anything anew, and each counter that printed through this
+        # PC's own address (the print bridge on the server's Windows PC). The shop and its sales stay as they
+        # are. A browser keeps a device's registration for the address it opened, so each device registers
+        # again with a new code.
+        if [ $# -ne 1 ]; then echo 'Give the new fixed address: sudo haq address 192.168.1.20' >&2; exit 2; fi
+        new="$1"; old="$IP"
+        python3 -I - "$new" <<'PY' || exit 2
+import ipaddress, sys
+try:
+    address = ipaddress.IPv4Address(sys.argv[1])
+except ValueError:
+    sys.exit("Type an IPv4 address such as 192.168.1.20.")
+if not any(address in ipaddress.ip_network(n) for n in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")):
+    sys.exit("The shop's certificate vouches only for a private address: 10.x.x.x, 172.16.x.x to 172.31.x.x or 192.168.x.x.")
+PY
+        if [ "$new" = "$old" ]; then echo "The server's address is $old already."; exit 0; fi
+        if [ "${WINDOWS:-0}" = 0 ] && command -v ip >/dev/null && ! ip -o -4 addr show | grep -q " ${new}/"; then
+            echo "WARNING: this server does not have the address $new yet. Give it that fixed address too, or the counters cannot reach it." >&2
+        fi
+        # Each file is rewritten in place, so it keeps its owner and mode (.env is root's only).
+        set_line() {
+            python3 -I - "$1" "$2" "$3" <<'PY'
+import sys
+path, key, value = sys.argv[1:4]
+with open(path) as f:
+    lines = f.read().splitlines()
+lines = [f"{key}={value}" if line.startswith(key + "=") else line for line in lines]
+if f"{key}={value}" not in lines:
+    lines.append(f"{key}={value}")
+with open(path, "w") as f:
+    f.write("\n".join(lines) + "\n")
+PY
+        }
+        set_line "$dir/.env" SERVER_IP "$new"
+        set_line "$dir/haq.conf" IP "$new"
+        IP="$new"
+        echo "Making the server's certificate for $new, under the shop's same authority..."
+        compose run --rm certificate
+        compose restart web >/dev/null
+        # A counter that printed through the old address prints through the new one: the server's own PC.
+        if [ -f "$dir/shop.profile.json" ]; then
+            moved="$(python3 -I - "$dir/shop.profile.json" "$old" "$new" <<'PY'
+import json, sys
+path, old, new = sys.argv[1:4]
+for t in json.load(open(path)).get("terminals", []):
+    printer = t.get("printer") or {}
+    if printer.get("host") == old:
+        print(f'{t["code"]} {new}:{printer.get("port", 9100)}')
+PY
+)"
+            while read -r device to; do
+                [ -n "$device" ] || continue
+                "$self" printer "$device" "$to" >/dev/null
+                echo "$device prints through $to now."
+            done <<<"$moved"
+        fi
+        cat <<TEXT
+
+  The server answers at $(https_url) now, and its sales are as they were.
+  The shop's certificate is the same, so no device runs the certificate step again.
+
+  Each counter and back-office device registers again, since its browser knew the old address:
+    sudo haq enrol T01     (then T02, D01 and the others), and open the link it gives on that device.
+  On a Windows counter, first point it at the server's new address: haq-helper address --server $new
 
 TEXT
         ;;

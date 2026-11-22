@@ -68,6 +68,17 @@ It reaches the printer, best first:
 
 A print queue on a USB port (USB001) is tied to its USB printing device, so a printer with a Windows driver is still reached two-way.
 
+### Changing the address after the install
+
+`haq-helper address`, in Terminal (Admin), moves a PC to a new fixed address with no new install, keeping the shop and its sales (D140):
+
+```
+haq-helper address 192.168.1.20             this PC's new address; on the PC that runs the shop, the server moves too
+haq-helper address --server 192.168.1.20    on a counter: the shop server's new address
+```
+
+On the PC that runs the shop it runs `haq address` inside the server first, which makes its certificate again for the new address under the same authority, then moves the port forwarding, the settings and the start-up shortcut, and shows counter T01's new code. On a counter, `--server` points its settings, its print bridge's firewall rule and its shortcut at the server's new address; its own new address only changes where the server reaches its bridge. The PC must have the new address already, and it must be a private one. Each device registers again afterwards ([install-a-shop.md](../../../docs/operations/install-a-shop.md#if-the-servers-address-changes)).
+
 ### Changing the printer after the install
 
 `haq-helper printer`, in Terminal (Admin), changes this PC's receipt printer as the setup's printer page sets it, with no new install (D139): a printer bought or plugged in later, another one in its place, or none.

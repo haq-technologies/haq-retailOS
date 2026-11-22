@@ -357,6 +357,27 @@ jobs:
           if ($rule.RemoteAddress -ne '127.0.0.2') { throw "the bridge's rule lets in $($rule.RemoteAddress)" }
           if ((Get-Content C:\ProgramData\HAQ\helper.json -Raw | ConvertFrom-Json).printer -ne "file:$receipts") { throw 'the printer is not in the settings' }
 
+          # A new address after the install (D140). The shop server moves to 192.168.77.3: the counter's settings,
+          # the bridge's rule and the start-up shortcut follow it, and it says how to register again.
+          & $exe address 8.8.8.8 2>$null; if (-not $LASTEXITCODE) { throw 'a public address was taken' }
+          $said = (& $exe address --server 192.168.77.3) -join "`n"
+          if ($LASTEXITCODE) { throw "address --server failed: $said" }
+          Write-Host $said
+          if ($said -notlike '*haq-helper server enrol T02*') { throw 'address --server did not say how to register again' }
+          if ((Get-Content C:\ProgramData\HAQ\helper.json -Raw | ConvertFrom-Json).server -ne '192.168.77.3') { throw 'the server address is not in the settings' }
+          $rule = Get-NetFirewallRule -Group 'HAQ Retail OS' | Get-NetFirewallAddressFilter
+          if ($rule.RemoteAddress -ne '192.168.77.3') { throw "the bridge's rule lets in $($rule.RemoteAddress), not the new server" }
+          $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
+          if ($shortcut.Arguments -notlike '--kiosk https://192.168.77.3/counter*') { throw "the shortcut opens $($shortcut.Arguments)" }
+          # The counter's own new address: the runner's real one, which it has.
+          $own = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -match '^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)' } | Select-Object -First 1).IPAddress
+          $said = (& $exe address $own) -join "`n"
+          if ($LASTEXITCODE) { throw "address failed: $said" }
+          Write-Host $said
+          if ($said -notlike "*haq-helper server printer T02 $own*") { throw "address did not give the server's printer line" }
+          if ((Get-Content C:\ProgramData\HAQ\helper.json -Raw | ConvertFrom-Json).address -ne $own) { throw 'the address is not in the settings' }
+          & $exe address 192.0.2.1 2>$null; if (-not $LASTEXITCODE) { throw 'an address the PC does not have was taken' }
+
           & $exe setup remove; if ($LASTEXITCODE) { throw 'setup remove failed' }
           if ((& $exe service state) -ne 'not installed') { throw 'the service is still there' }
           if (Get-NetFirewallRule -Group 'HAQ Retail OS' -ErrorAction SilentlyContinue) { throw 'the firewall rules are still there' }
