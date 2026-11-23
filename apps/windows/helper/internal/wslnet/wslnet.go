@@ -36,11 +36,30 @@ func Networks(adapters []Adapter) []netip.Prefix {
 	return nets
 }
 
+// Own are the PC's own IPv4 addresses, each an address alone, never its network, and its loopback (D144).
+// On some PCs the server inside WSL reaches the bridge with the PC's own address as its source, not WSL's
+// network: on the product owner's Windows 11 PC every receipt came from 192.168.0.50, the PC's own, and
+// was refused. A connection with the PC's own address as its source can only start on the PC itself.
+func Own(adapters []Adapter) []netip.Prefix {
+	nets := []netip.Prefix{netip.MustParsePrefix("127.0.0.0/8")}
+	for _, a := range adapters {
+		if IsWSL(a.Name) {
+			continue
+		}
+		for _, p := range a.Prefixes {
+			if p.Addr().Is4() && !p.Addr().IsLoopback() {
+				nets = append(nets, netip.PrefixFrom(p.Addr(), 32))
+			}
+		}
+	}
+	return nets
+}
+
 // retry is the least time between two looks for an address it does not know.
 var retry = time.Second
 
-// Allow lets in WSL's networks as they are now, looking again at most every few seconds, so a server whose
-// network changed when WSL restarted is let in at its first job.
+// Allow lets in WSL's networks and the PC's own addresses as they are now, looking again at most every few
+// seconds, so a server whose network changed when WSL restarted is let in at its first job.
 func Allow(list func() ([]Adapter, error), every time.Duration) func(netip.Addr) bool {
 	var (
 		mu   sync.Mutex
@@ -54,7 +73,7 @@ func Allow(list func() ([]Adapter, error), every time.Duration) func(netip.Addr)
 			// An address it does not know yet may be a network WSL has just made: look again, at once, but
 			// at most once a second, so others on the shop's network cannot make it look all the time.
 			if adapters, err := list(); err == nil {
-				nets, at = Networks(adapters), time.Now()
+				nets, at = append(Networks(adapters), Own(adapters)...), time.Now()
 			}
 		}
 		return contains(nets, ip)

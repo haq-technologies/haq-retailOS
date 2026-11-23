@@ -395,3 +395,4 @@ Assumptions:
 | 23 November 2026 | Releases 2026.11.5 (D139, D140) and 2026.11.6 (D141) signed and published as GitHub's latest |
 | 23 November 2026 | An update brings the server's own scripts (`haq`, the updater, the restore and the others) from the release's signed app image (D142) |
 | 23 November 2026 | On a Windows server, `haq-helper server add-user` and `pin` take the PIN typed again: the audit record had swallowed it (D143) |
+| 23 November 2026 | The print bridge on the server's PC lets in the PC's own address, so a USB printer there prints the sales' receipts (D144) |
