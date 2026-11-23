@@ -63,7 +63,7 @@ It makes a receipt printer on this PC look like a network printer on port 9100, 
 - **Jobs:** a receipt or a drawer kick (it starts with `ESC @`) is read whole and sent to the printer as it came, one job at a time.
 - **The status query:** a connection that starts with `DLE EOT` is the status query. It is answered by the printer itself, when the printer is reached two-way. While another job prints, it gets the printer's last answer, within the server's one second.
 - **Unplugged or off:** it stops listening, so the server reads the printer as offline and the counter offers Print pending receipt. Once the printer is back, it listens again.
-- **Who may print:** only the shop server. On a counter PC, that is the server's address. On the PC that runs the server, it is WSL's own network, which the server reaches the bridge from. WSL chooses that network each time it starts, so the bridge looks it up as connections come, at most once a second for an address it does not know.
+- **Who may print:** only the shop server. On a counter PC, that is the server's address. On the PC that runs the server, it is WSL's own network, which the server reaches the bridge from, and the PC's own addresses, each alone: on some PCs WSL sends the server's receipts with the PC's own address (D144). WSL chooses that network each time it starts, so the bridge looks it up as connections come, at most once a second for an address it does not know.
 
 It reaches the printer, best first:
 1. the Windows USB printing device: two-way, so it answers paper out and cover open

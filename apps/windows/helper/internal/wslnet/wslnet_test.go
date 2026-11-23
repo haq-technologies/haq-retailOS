@@ -25,10 +25,12 @@ func TestOnlyWSLsNetworkIsWSLs(t *testing.T) {
 func TestTheBridgeLetsInTheServerInsideWSLAndNoOneElse(t *testing.T) {
 	allow := Allow(func() ([]Adapter, error) { return shopPC, nil }, time.Minute)
 	for ip, want := range map[string]bool{
-		"172.24.20.7":   true,  // the server's VM
-		"10.92.139.200": false, // the PC's own address on the shop's network
-		"10.92.139.37":  false, // a phone on the hotspot
-		"127.0.0.1":     false,
+		"172.24.20.7": true, // the server's VM
+		// The PC's own address: on some PCs the server's receipts come from it (D144).
+		"10.92.139.200": true,
+		"127.0.0.1":     true,
+		"10.92.139.37":  false, // a phone on the hotspot, on the PC's own network
+		"10.92.139.201": false, // the next address along
 	} {
 		if got := allow(netip.MustParseAddr(ip)); got != want {
 			t.Errorf("%s: %v, want %v", ip, got, want)
