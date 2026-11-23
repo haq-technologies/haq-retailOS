@@ -64,6 +64,10 @@ jobs:
       - name: Support file self-test
         run: tools/ci/support-file-test.sh
 
+      # The PIN the Windows helper sends haq on standard input reaches the server's command (D143).
+      - name: haq PIN on standard input
+        run: tools/ci/haq-pin-test.sh
+
   # The Windows setup's scripts (D86): ShellCheck for what runs inside Linux, and PowerShell's own parser and
   # PSScriptAnalyzer for what runs on Windows. The scripts themselves run on Windows, in the spike.
   windows-scripts:

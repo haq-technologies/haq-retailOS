@@ -394,3 +394,4 @@ Assumptions:
 | 23 November 2026 | On a Windows server the HAQ Helper keeps the port forwarding working after a restart, and IP Helper starts with Windows (D141) |
 | 23 November 2026 | Releases 2026.11.5 (D139, D140) and 2026.11.6 (D141) signed and published as GitHub's latest |
 | 23 November 2026 | An update brings the server's own scripts (`haq`, the updater, the restore and the others) from the release's signed app image (D142) |
+| 23 November 2026 | On a Windows server, `haq-helper server add-user` and `pin` take the PIN typed again: the audit record had swallowed it (D143) |
