@@ -67,7 +67,9 @@ record() {
     from="${from%% *}"
     # sudo clears SSH_CLIENT; the terminal's own login says where an SSH session came from.
     if [ -z "$from" ]; then from="$(who -m 2>/dev/null | sed -n 's/.*(\([^)]*\)).*/\1/p' || true)"; fi
-    compose exec -T app php artisan support:record "$1" --by="$by" ${from:+--from="$from"} >/dev/null 2>&1 || true
+    # It reads nothing: `compose exec` passes on whatever is on its standard input, and the PIN that the
+    # Windows helper sends there (--pin-stdin) is for the command that comes next (D143).
+    compose exec -T app php artisan support:record "$1" --by="$by" ${from:+--from="$from"} </dev/null >/dev/null 2>&1 || true
 }
 
 command="${1:-help}"
