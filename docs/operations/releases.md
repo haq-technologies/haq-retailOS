@@ -97,7 +97,7 @@ Versions are YEAR.MONTH.N, such as 2026.11.3. A release is one commit: its git t
    gh run list --workflow Release --limit 1
    ```
 
-6. Update the beta shop, or name the release at any shop: `sudo haq update --version 2026.11.3`. A shop on the beta channel takes it with a plain `sudo haq update`.
+6. Update the beta shop, or name the release at any shop: `sudo haq update --version 2026.11.3`. A shop on the beta channel takes it with a plain `sudo haq update`. The update brings the release's own server scripts too (`haq`, the updater, the restore, the install check, the host report, the off-site copy and the support file), from its app image, which the manifest pins by digest; the release public key and `install.sh` are never replaced that way (D142).
 7. When it has traded with no fault, mark it as the latest. From then a plain update on a stable shop takes it:
 
    ```
