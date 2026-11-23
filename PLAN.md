@@ -53,7 +53,7 @@ On 17 November 2026 the product owner asked for a simpler install: a small shop 
 
 The privacy checks of 20 November 2026 (a Claude Doc) found the code sound and nine gaps around it, against the Nigeria Data Protection Act 2023. They are fixed on the branch worktree-privacy-fixes (D108 to D114): the privacy drafts for the lawyer in docs/operations/privacy.md, a retention schedule, support visits on the owner's flag list, key-only SSH, a warning while the server's disk is not encrypted, a transfer's sender kept apart and cleared after 90 days, `sudo haq rename`, and a note on the export. The lawyer's review is now an open item before the install.
 
-Release 2026.11.4, the first that carries the Windows setup, was signed and published as GitHub's latest on 22 November 2026, its setup not yet code-signed (D137, D138). Next: the Windows setup's last steps (the checklist below): 2026.11.4's setup tried on the Windows 10 PC and the server's memory measured; the shop owner's answers (Open items); then G3 rehearsed on 2026.11.4, the install at the shop with it (docs/operations/install-a-shop.md), the safety week (docs/operations/safety-week.md) and G5.
+Release 2026.11.4, the first that carries the Windows setup, was signed and published as GitHub's latest on 22 November 2026, its setup not yet code-signed (D137, D138). Release 2026.11.5 followed the same day with the printer and address commands (D139, D140), and 2026.11.6 on 23 November 2026 with the port forwarding kept after a restart (D141), each signed and published as the latest. From the next release, an update brings the server's own scripts too (D142). Next: the Windows setup's last steps (the checklist below): 2026.11.4's setup tried on the Windows 10 PC and the server's memory measured; the shop owner's answers (Open items); then G3 rehearsed on 2026.11.4, the install at the shop with it (docs/operations/install-a-shop.md), the safety week (docs/operations/safety-week.md) and G5.
 
 ## Team
 
@@ -392,3 +392,5 @@ Assumptions:
 | 22 November 2026 | A Windows PC's receipt printer can be set or changed after the install with `haq-helper printer` (D139) |
 | 22 November 2026 | The shop server can move to a new fixed address with no new install, keeping its sales: `haq address` and `haq-helper address` (D140) |
 | 23 November 2026 | On a Windows server the HAQ Helper keeps the port forwarding working after a restart, and IP Helper starts with Windows (D141) |
+| 23 November 2026 | Releases 2026.11.5 (D139, D140) and 2026.11.6 (D141) signed and published as GitHub's latest |
+| 23 November 2026 | An update brings the server's own scripts (`haq`, the updater, the restore and the others) from the release's signed app image (D142) |

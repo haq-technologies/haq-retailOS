@@ -112,6 +112,28 @@ services:
     restart: "no"
     command: ["php", "artisan", "shop:make-certificate", "--name=${SERVER_NAME}", "--ip=${SERVER_IP}", "--tls-dir=/tls", "--move-from=/app/storage/app/ca"]
 
+  # The server's own scripts, this release's (D142): `haq`, the updater, the restore, the install check, the
+  # host report, the off-site copy and the support file, from this release's app image, which the signed
+  # manifest pins by digest, into the install folder's bin/. It runs on every `up`, so an update brings them,
+  # even run by an older updater. Each is put in place by a rename, so a script that is running, such as the
+  # updater that started this, reads on in its old copy. install.sh, staging.sh and the release public key
+  # are never replaced this way.
+  scripts:
+    image: ${APP_IMAGE}
+    logging: *logging
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        for f in haq update.sh restore.sh check-install.sh host-health.sh offsite.sh support-file.sh; do
+          cp "/app/deploy/$$f" "/haq-bin/.$$f.new"
+          chmod 755 "/haq-bin/.$$f.new"
+          mv -f "/haq-bin/.$$f.new" "/haq-bin/$$f"
+        done
+    volumes:
+      - ./bin:/haq-bin
+    restart: "no"
+
   app:
     <<: *app
     command: ["php-fpm"]
@@ -195,6 +217,9 @@ services:
       app:
         condition: service_started
       certificate:
+        condition: service_completed_successfully
+      # An update whose scripts could not be put in place does not start, so it rolls back (D142).
+      scripts:
         condition: service_completed_successfully
     restart: unless-stopped
 

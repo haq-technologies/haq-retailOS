@@ -31,10 +31,17 @@ echo "Checking the shop server in $dir"
 for service in db backup app queue scheduler web; do
     if [ "$(compose ps --status running -q "$service" | wc -l)" -ge 1 ]; then pass "$service is running"; else fail "$service is not running"; fi
 done
-for job in roles migrate certificate; do
+for job in roles migrate certificate scripts; do
     status="$(compose ps -a --format '{{.Service}} {{.State}} {{.ExitCode}}' | awk -v s="$job" '$1 == s { print $2 " " $3 }')"
     if [ "$status" = "exited 0" ]; then pass "the $job job finished cleanly"; else fail "the $job job did not finish cleanly ($status)"; fi
 done
+
+# The server's own scripts are the running release's, from its app image (D142).
+stale=""
+for f in haq update.sh restore.sh check-install.sh host-health.sh offsite.sh support-file.sh; do
+    compose run --rm --no-deps -T --entrypoint cat scripts "/app/deploy/$f" 2>/dev/null | cmp -s - "$dir/bin/$f" || stale="$stale $f"
+done
+if [ -z "$stale" ]; then pass "the server's scripts are the running release's"; else fail "these scripts are not the running release's:$stale (run sudo haq update again)"; fi
 
 # Reboot recovery (D46): every long-running service restarts by itself, and Docker starts with the server.
 norestart=""
