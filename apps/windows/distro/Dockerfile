@@ -2,7 +2,7 @@
 # from this commit. Its file system is exported as a tar, which the Windows setup imports into WSL2 as the
 # hidden haq-server distribution; it is never run as a container. build.sh builds and checks it, from the
 # repository root as the build context.
-FROM ubuntu:noble-20261024.1
+FROM ubuntu:noble-20261110.1
 
 # Security updates as built; systemd, which WSL starts (wsl.conf); Docker from Ubuntu's own packages, as on
 # the mini-PC (install.sh); and what the installer, the updater, the restore and the off-site copy call.
